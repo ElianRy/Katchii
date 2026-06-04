@@ -11,6 +11,7 @@ import { ZONE_BY_ID } from '../data/zones';
 import { PokemonData } from '../types';
 import { NewCaptureModal } from './NewCaptureModal';
 import { ZoneInfoPanel } from './ZoneInfoPanel';
+import { BossFightPanel } from './BossFightPanel';
 
 interface Notification {
   id: number;
@@ -58,6 +59,7 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
   const [onCooldown, setOnCooldown] = useState(false);
   const [newCaptureInfo, setNewCaptureInfo] = useState<NewCaptureInfo | null>(null);
   const [showZoneInfo, setShowZoneInfo] = useState(false);
+  const [showBossFight, setShowBossFight] = useState(false);
   const processingRef = useRef<Set<string>>(new Set());
   const capturingRef = useRef(false);
 
@@ -229,7 +231,7 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
         bossName={currentZone?.boss?.name}
         bossUnlocked={bossUnlocked}
         bossDefeated={bossDefeated}
-        onFightBoss={() => {/* TODO: open boss fight */}}
+        onFightBoss={() => setShowBossFight(true)}
       />
 
       {/* Floating notifications */}
@@ -252,6 +254,20 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
 
       {/* Zone info panel */}
       {showZoneInfo && <ZoneInfoPanel state={gameState.state} onClose={() => setShowZoneInfo(false)} />}
+
+      {/* Boss fight */}
+      {showBossFight && currentZone?.boss && (
+        <BossFightPanel
+          zone={currentZone}
+          state={gameState.state}
+          onClose={() => setShowBossFight(false)}
+          onVictory={(zoneId, nextZoneId) => {
+            gameState.defeatZoneBoss(zoneId, nextZoneId);
+            gameState.spendPoints(-100); // award 100 pts (negative spend = gain)
+            setShowBossFight(false);
+          }}
+        />
+      )}
 
       {/* New capture modal */}
       {newCaptureInfo && (
