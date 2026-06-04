@@ -212,6 +212,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenLures, onOpen
             onCapture={() => handleCapture(s.uid, s.pokemonId, s.characterId, s.isShiny, s.x, s.y)}
             disabled={gameState.isOnCooldown()}
             leaving={spawner.leavingUids.has(s.uid)}
+            facingRight={s.vx >= 0}
           />
         );
       })}

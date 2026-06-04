@@ -8,6 +8,7 @@ interface Props {
   disabled: boolean;
   narutoSpriteUrl?: string;
   leaving?: boolean;
+  facingRight?: boolean;
 }
 
 interface Particle {
@@ -56,7 +57,7 @@ function PokeballSVG({ spinning }: { spinning: boolean }) {
   );
 }
 
-export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, narutoSpriteUrl, leaving }: Props) {
+export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, narutoSpriteUrl, leaving, facingRight = true }: Props) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showParticles, setShowParticles] = useState(false);
 
@@ -275,6 +276,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                     borderRadius: narutoSpriteUrl ? '8px' : undefined,
                     filter: spriteFilter,
                     animation: spriteAnimation,
+                    transform: facingRight ? undefined : 'scaleX(-1)',
                   }}
                   draggable={false}
                   onError={() => setSpriteError(true)}
@@ -284,8 +286,17 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
 
             {/* Name badge */}
             <div
-              className="mt-1 text-xs font-bold whitespace-nowrap px-1 py-0.5 rounded"
-              style={{ background: 'rgba(0,0,0,0.75)', color: rarityColor, fontSize: '0.65rem' }}
+              className="mt-1 font-bold rounded text-center"
+              style={{
+                background: 'rgba(0,0,0,0.75)',
+                color: rarityColor,
+                fontSize: '0.62rem',
+                padding: '2px 5px',
+                maxWidth: 80,
+                lineHeight: 1.3,
+                wordBreak: 'break-word',
+                whiteSpace: 'normal',
+              }}
             >
               {pokemonData.name}
             </div>

@@ -15,7 +15,7 @@ const MAX_LIFETIME = 14000;
 const POKEBALL_SPIN_MS = 1350;
 const POST_CAPTURE_MS = 400;
 const LEAVE_DURATION_MS = 800;
-const WANDER_SPEED = 0.12; // %/tick
+const WANDER_SPEED = 0.035; // %/tick — slow gentle drift
 
 function randomBetween(min: number, max: number): number {
   return Math.random() * (max - min) + min;
@@ -195,7 +195,7 @@ export function useSpawner(
         if (y < 8)  { y = 8;  vy = Math.abs(vy); }
         if (y > 68) { y = 68; vy = -Math.abs(vy); }
         // Random direction change ~1% per tick
-        if (Math.random() < 0.012) {
+        if (Math.random() < 0.005) {
           const angle = Math.random() * Math.PI * 2;
           vx = Math.cos(angle) * WANDER_SPEED;
           vy = Math.sin(angle) * WANDER_SPEED * 0.5;

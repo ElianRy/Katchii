@@ -93,11 +93,16 @@ export function useGameState() {
     setState(prev => {
       const next = updater(prev);
       saveState(next);
-      // Debounced cloud save (2s after last update)
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        if (userIdRef.current) saveCloudState(userIdRef.current, next);
-      }, 2000);
+      // Immediate cloud save — no debounce so nothing is ever lost
+      if (userIdRef.current) {
+        saveCloudState(userIdRef.current, next);
+      } else {
+        // userId not yet loaded — queue a save once it's available
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = setTimeout(() => {
+          if (userIdRef.current) saveCloudState(userIdRef.current, next);
+        }, 3000);
+      }
       return next;
     });
   }, []);

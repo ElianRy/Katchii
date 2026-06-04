@@ -149,6 +149,7 @@ export function App() {
         <TeamBuilder
           state={gameState.state}
           getPokemonLevel={gameState.getPokemonLevel}
+          onAddXp={gameState.addPokemonXp}
           onClose={() => setView('hunt')}
         />
       )}

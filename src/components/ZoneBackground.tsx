@@ -76,10 +76,10 @@ const ZONE_CONFIGS: Record<string, {
   ambientLight?: string;
 }> = {
   zone1: {
-    sky: 'linear-gradient(180deg, #87CEEB 0%, #b0e0f5 25%, #c8eefc 45%, #d4f0b0 65%, #a8d870 80%, #6eb832 100%)',
-    particles: 'leaves',
+    sky: 'linear-gradient(180deg, #5cb8e8 0%, #82cfed 30%, #a8e0f0 55%, #c5eed8 75%, #8ac96a 100%)',
+    particles: 'none',
     fog: undefined,
-    ambientLight: 'radial-gradient(ellipse 50% 30% at 75% 12%, rgba(255,255,180,0.35) 0%, transparent 60%)',
+    ambientLight: undefined,
   },
   zone2: {
     sky: 'linear-gradient(180deg, #062040 0%, #0a3060 30%, #0d4070 55%, #0a2848 80%, #061828 100%)',
@@ -94,7 +94,7 @@ const ZONE_CONFIGS: Record<string, {
     ambientLight: 'radial-gradient(ellipse 50% 40% at 80% 40%, rgba(200,180,0,0.07) 0%, transparent 100%)',
   },
   zone4: {
-    sky: 'linear-gradient(180deg, #0e2818 0%, #1a4020 25%, #253520 55%, #1a2e18 100%)',
+    sky: 'linear-gradient(180deg, #6ec8e0 0%, #9adbc0 40%, #b8e8a0 70%, #7ac855 100%)',
     particles: 'leaves',
     fog: 'radial-gradient(ellipse 90% 50% at 50% 60%, rgba(30,70,30,0.4) 0%, transparent 100%)',
     ambientLight: 'radial-gradient(ellipse 50% 30% at 40% 20%, rgba(200,255,100,0.06) 0%, transparent 100%)',
@@ -159,86 +159,46 @@ export function ZoneBackground({ zoneId }: Props) {
   return (
     <div className="absolute inset-0 overflow-hidden" style={{ background: cfg.sky }}>
 
-      {/* ══ ZONE 1 — Forêt de Pallet : daytime forest scene ══ */}
+      {/* ══ ZONE 1 — Forêt de Pallet : calm daytime ══ */}
       {zoneId === 'zone1' && (
         <>
-          {/* Sun */}
+          {/* Sun — soft, top right */}
           <div className="absolute pointer-events-none" style={{
-            right: '15%', top: '8%',
-            width: 70, height: 70,
+            right: '12%', top: '6%',
+            width: 60, height: 60,
             borderRadius: '50%',
-            background: 'radial-gradient(circle, #fff9a0 0%, #ffe840 40%, #ffcc00 100%)',
-            boxShadow: '0 0 40px 20px rgba(255,220,0,0.45), 0 0 80px 40px rgba(255,200,0,0.2)',
+            background: 'radial-gradient(circle, #fffde0 0%, #ffe066 55%, #ffc800 100%)',
+            boxShadow: '0 0 50px 25px rgba(255,210,0,0.28)',
           }} />
-          {/* Clouds */}
+          {/* 2 slow clouds */}
           {[
-            { left: '5%', top: '12%', w: 110, h: 38, delay: '0s', dur: '28s' },
-            { left: '30%', top: '7%', w: 85, h: 28, delay: '-10s', dur: '35s' },
-            { left: '62%', top: '15%', w: 130, h: 42, delay: '-5s', dur: '32s' },
+            { left: '3%', top: '10%', w: 120, h: 36, dur: '60s', delay: '0s' },
+            { left: '55%', top: '6%', w: 90, h: 28, dur: '80s', delay: '-30s' },
           ].map((c, i) => (
             <div key={i} className="absolute pointer-events-none" style={{
               left: c.left, top: c.top, width: c.w, height: c.h,
-              background: 'rgba(255,255,255,0.88)',
-              borderRadius: '50px',
-              boxShadow: `${c.w * 0.3}px -8px 0 ${c.w * 0.15}px rgba(255,255,255,0.8), -${c.w * 0.2}px 0 0 ${c.w * 0.1}px rgba(255,255,255,0.7)`,
+              background: 'rgba(255,255,255,0.82)',
+              borderRadius: '60px',
+              boxShadow: `${Math.round(c.w * 0.25)}px -6px 0 ${Math.round(c.w * 0.12)}px rgba(255,255,255,0.75)`,
               animation: `cloud-drift ${c.dur} linear infinite`,
               animationDelay: c.delay,
             }} />
           ))}
-          {/* Back trees (darker, smaller) */}
-          {[2, 12, 24, 36, 48, 60, 72, 84, 93].map((left, i) => (
-            <div key={i} className="absolute pointer-events-none" style={{
-              left: `${left}%`,
-              bottom: '25%',
-              width: 60 + (i % 3) * 20,
-              height: 160 + (i % 4) * 40,
-              background: 'linear-gradient(to bottom, #2d6a1f, #1a4a0f)',
-              clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
-              opacity: 0.75,
-            }} />
-          ))}
-          {/* Mid trees */}
-          {[0, 14, 28, 44, 57, 71, 86].map((left, i) => (
-            <div key={i} className="absolute pointer-events-none" style={{
-              left: `${left}%`,
-              bottom: '22%',
-              width: 80 + (i % 3) * 25,
-              height: 200 + (i % 3) * 50,
-              background: 'linear-gradient(to bottom, #3a8a25, #256018)',
-              clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
-              opacity: 0.9,
-            }} />
-          ))}
-          {/* Front trees (bright, tall) */}
-          {[-2, 18, 38, 62, 80].map((left, i) => (
-            <div key={i} className="absolute pointer-events-none" style={{
-              left: `${left}%`,
-              bottom: '20%',
-              width: 100 + (i % 2) * 30,
-              height: 260 + (i % 3) * 60,
-              background: 'linear-gradient(to bottom, #4aaa30, #2e7a1a)',
-              clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
-            }} />
-          ))}
-          {/* Fallen leaves drifting */}
-          {LEAVES.map((leaf, i) => (
-            <div
-              key={i}
-              className="absolute pointer-events-none rounded-full"
-              style={{
-                left: `${leaf.x}%`,
-                top: '-12px',
-                width: leaf.size,
-                height: leaf.size * 0.6,
-                background: leaf.color,
-                opacity: 0.7,
-                '--leaf-x': `${leaf.leafX}px`,
-                '--leaf-rot': `${leaf.leafRot}deg`,
-                animation: `leaf-fall ${leaf.duration}s linear infinite`,
-                animationDelay: `${leaf.delay}s`,
-              } as React.CSSProperties}
-            />
-          ))}
+          {/* Far tree silhouette band */}
+          <div className="absolute pointer-events-none w-full" style={{
+            bottom: '28%',
+            height: '22%',
+            background: 'linear-gradient(to bottom, #3a7a22 0%, #2d6018 100%)',
+            clipPath: 'polygon(0% 60%, 5% 20%, 10% 55%, 15% 10%, 20% 50%, 26% 5%, 32% 45%, 38% 15%, 44% 50%, 50% 8%, 56% 48%, 62% 12%, 68% 45%, 74% 5%, 80% 50%, 86% 18%, 92% 52%, 97% 22%, 100% 55%, 100% 100%, 0% 100%)',
+            opacity: 0.85,
+          }} />
+          {/* Near tree silhouette band */}
+          <div className="absolute pointer-events-none w-full" style={{
+            bottom: '24%',
+            height: '18%',
+            background: 'linear-gradient(to bottom, #4a9428 0%, #3a7018 100%)',
+            clipPath: 'polygon(0% 70%, 4% 25%, 9% 65%, 14% 20%, 20% 60%, 27% 10%, 33% 55%, 40% 18%, 46% 58%, 53% 12%, 59% 52%, 65% 20%, 72% 60%, 78% 8%, 84% 55%, 90% 22%, 96% 58%, 100% 30%, 100% 100%, 0% 100%)',
+          }} />
         </>
       )}
 
