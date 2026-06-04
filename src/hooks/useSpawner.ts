@@ -31,14 +31,17 @@ function weightedRarity(weights: Record<Rarity, number>): Rarity {
   return 'commun';
 }
 
-const SPECIAL_WEIGHT = 1 / 50; // special zone pokemon are 50x rarer than normal pool members
+const SPECIAL_WEIGHT_ELITE = 1 / 100; // elite-equivalent rarity (e.g. Abo, Abra)
+const SPECIAL_WEIGHT_LEGENDARY = 1 / 500; // legendary-equivalent rarity (e.g. Pikachu in zone1)
 
-function pickPokemon(rarity: Rarity, zoneIds: number[], specialIds: Set<number>): number {
+function pickPokemon(rarity: Rarity, zoneIds: number[], specialIds: Set<number>, legendarySpecialIds: Set<number>): number {
   const allPool = POKEMON_BY_RARITY[rarity] ?? [];
   const zonePool = zoneIds.length > 0 ? allPool.filter(p => zoneIds.includes(p.id)) : allPool;
   if (zonePool.length === 0) return zoneIds[Math.floor(Math.random() * zoneIds.length)] ?? GEN1_POKEMON[0].id;
-  // Weighted selection: special IDs get SPECIAL_WEIGHT, others get 1.0
-  const weights = zonePool.map(p => specialIds.has(p.id) ? SPECIAL_WEIGHT : 1);
+  const weights = zonePool.map(p =>
+    legendarySpecialIds.has(p.id) ? SPECIAL_WEIGHT_LEGENDARY :
+    specialIds.has(p.id) ? SPECIAL_WEIGHT_ELITE : 1
+  );
   const total = weights.reduce((a, b) => a + b, 0);
   let r = Math.random() * total;
   for (let i = 0; i < zonePool.length; i++) {
@@ -140,6 +143,7 @@ export function useSpawner(
         const currentZone = ZONE_BY_ID[zoneId];
         const zoneIds = currentZone?.pokemonIds ?? [];
         const specialIds = new Set<number>(currentZone?.specialIds ?? []);
+        const legendarySpecialIds = new Set<number>(currentZone?.legendarySpecialIds ?? []);
         const zoneRarities = universe === 'naruto' ? null : getZoneRarities(zoneIds);
 
         // Zero out rarities not present in this zone
@@ -163,7 +167,7 @@ export function useSpawner(
           const shinyRate = baseShinyRate * mult.shinyRate;
           isShiny = !shinyDepleted.includes(nId) && Math.random() < shinyRate;
         } else {
-          pokemonId = pickPokemon(rarity, zoneIds, specialIds);
+          pokemonId = pickPokemon(rarity, zoneIds, specialIds, legendarySpecialIds);
           const shinyDepleted = gs.state.shinyDepleted;
           const baseShinyRate = (1 / 250) * (151 / Math.max(1, 151 - shinyDepleted.length));
           const shinyRate = baseShinyRate * mult.shinyRate;
