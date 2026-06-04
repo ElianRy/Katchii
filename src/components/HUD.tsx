@@ -22,6 +22,13 @@ interface Props {
   activeUniverse: 'pokemon' | 'naruto';
   currentZoneName?: string;
   missingInZone?: number[];
+  zoneCaughtCount?: number;
+  zoneTotal?: number;
+  zoneNeeded?: number;
+  bossName?: string;
+  bossUnlocked?: boolean;
+  bossDefeated?: boolean;
+  onFightBoss?: () => void;
 }
 
 function formatLureRemaining(expiresAt: number): string {
@@ -61,6 +68,13 @@ export function HUD({
   activeUniverse,
   currentZoneName,
   missingInZone = [],
+  zoneCaughtCount = 0,
+  zoneTotal = 0,
+  zoneNeeded = 0,
+  bossName,
+  bossUnlocked = false,
+  bossDefeated = false,
+  onFightBoss,
 }: Props) {
   return (
     <>
@@ -104,24 +118,54 @@ export function HUD({
               📋 {capturedCount}/{totalPokemon} capturés
             </span>
           </div>
-          {missingInZone.length > 0 && activeUniverse === 'pokemon' && (
-            <div className="bg-black/60 rounded-lg px-2 py-1 border border-slate-600/40">
-              <div className="text-slate-500 text-xs mb-1">Manquants dans la zone :</div>
-              <div className="flex gap-1 items-center flex-wrap">
-                {missingInZone.slice(0, 6).map(id => (
-                  <img
-                    key={id}
-                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
-                    width={28}
-                    height={28}
-                    style={{ imageRendering: 'pixelated', filter: 'brightness(0) opacity(0.5)' }}
-                    draggable={false}
-                  />
-                ))}
-                {missingInZone.length > 6 && (
-                  <span className="text-slate-500 text-xs">+{missingInZone.length - 6}</span>
-                )}
-              </div>
+          {activeUniverse === 'pokemon' && zoneTotal > 0 && !bossDefeated && (
+            <div className="bg-black/60 rounded-lg px-2 py-1.5 border border-slate-600/40 flex flex-col gap-1.5">
+              {missingInZone.length > 0 && (
+                <>
+                  <div className="text-slate-500 text-xs">Manquants dans la zone :</div>
+                  <div className="flex gap-1 items-center flex-wrap">
+                    {missingInZone.slice(0, 6).map(id => (
+                      <img
+                        key={id}
+                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
+                        width={28}
+                        height={28}
+                        style={{ imageRendering: 'pixelated', filter: 'grayscale(1) brightness(0.55) opacity(0.75)' }}
+                        draggable={false}
+                      />
+                    ))}
+                    {missingInZone.length > 6 && (
+                      <span className="text-slate-500 text-xs">+{missingInZone.length - 6}</span>
+                    )}
+                  </div>
+                </>
+              )}
+              {bossName && (
+                <>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-yellow-400/80 font-bold">🏆 {bossName}</span>
+                    <span className="text-slate-500">{zoneCaughtCount}/{zoneNeeded}</span>
+                  </div>
+                  <div className="w-full bg-slate-700/60 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="h-1.5 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.min(1, zoneNeeded > 0 ? zoneCaughtCount / zoneNeeded : 0) * 100}%`,
+                        background: 'linear-gradient(90deg, #f59e0b, #ef4444)',
+                      }}
+                    />
+                  </div>
+                  {bossUnlocked && onFightBoss && (
+                    <button
+                      onClick={onFightBoss}
+                      className="w-full text-xs font-black py-1 rounded-lg mt-0.5 animate-pulse"
+                      style={{ background: 'linear-gradient(90deg, #f59e0b, #ef4444)', color: '#000' }}
+                    >
+                      ⚔️ Combat contre le maître !
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           )}
           {activeLure && Date.now() < activeLure.expiresAt && (

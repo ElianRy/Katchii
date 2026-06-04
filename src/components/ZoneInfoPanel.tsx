@@ -30,12 +30,12 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/80 flex items-end justify-center"
+      className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="bg-slate-900 rounded-t-3xl w-full max-w-lg overflow-y-auto pb-8"
-        style={{ maxHeight: '80vh' }}
+        className="bg-slate-900 rounded-2xl w-full max-w-lg overflow-y-auto"
+        style={{ maxHeight: '85vh' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -90,7 +90,7 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
         </div>
 
         {/* Pokemon list by rarity — grey until caught */}
-        <div className="px-5 py-4">
+        <div className="px-5 py-4 pb-6">
           <h3 className="text-white font-bold text-sm mb-3">Pokémon disponibles dans cette zone</h3>
           {RARITY_ORDER.map(rarity => {
             const ids = byRarity[rarity];

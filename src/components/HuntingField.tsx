@@ -137,9 +137,12 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
 
   const currentZone = ZONE_BY_ID[gameState.state.zoneProgress?.currentZoneId ?? 'zone1'];
   const currentZoneName = currentZone ? currentZone.name : 'Forêt de Pallet';
-  const missingInZone = (currentZone?.pokemonIds ?? []).filter(
-    id => (gameState.state.normalCollection[id] ?? 0) === 0
-  );
+  const zoneIds = currentZone?.pokemonIds ?? [];
+  const missingInZone = zoneIds.filter(id => (gameState.state.normalCollection[id] ?? 0) === 0);
+  const zoneCaughtCount = zoneIds.filter(id => (gameState.state.normalCollection[id] ?? 0) > 0).length;
+  const zoneNeeded = currentZone ? Math.ceil(zoneIds.length * currentZone.completionThreshold) : 0;
+  const bossDefeated = !!gameState.state.zoneProgress?.bossDefeated?.[gameState.state.zoneProgress?.currentZoneId ?? 'zone1'];
+  const bossUnlocked = !bossDefeated && zoneCaughtCount >= zoneNeeded && zoneNeeded > 0;
 
   return (
     <div className={`relative w-full h-screen overflow-hidden bg-gradient-to-b ${activeSkin.gradient}`}>
@@ -220,6 +223,13 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
         activeUniverse={gameState.state.activeUniverse}
         currentZoneName={currentZoneName}
         missingInZone={missingInZone}
+        zoneCaughtCount={zoneCaughtCount}
+        zoneTotal={zoneIds.length}
+        zoneNeeded={zoneNeeded}
+        bossName={currentZone?.boss?.name}
+        bossUnlocked={bossUnlocked}
+        bossDefeated={bossDefeated}
+        onFightBoss={() => {/* TODO: open boss fight */}}
       />
 
       {/* Floating notifications */}
