@@ -22,8 +22,8 @@ export function AdminPanel({ gameState, onClose }: Props) {
   };
 
   const giveAll = () => {
-    GEN1_POKEMON.forEach(p => gameState.addCapture(p.id, false, p.rarity));
-    flash('✅ Tous les Pokémon ajoutés !');
+    gameState.adminGiveAllMax();
+    flash('✅ Tous les Pokémon ajoutés (niveau 100) !');
   };
 
   const giveAllShiny = () => {

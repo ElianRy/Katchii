@@ -619,6 +619,18 @@ export function useGameState() {
     });
   }, [update]);
 
+  const adminGiveAllMax = useCallback(() => {
+    update(prev => {
+      const normalCollection = { ...prev.normalCollection };
+      const pokemonLevels = { ...(prev.pokemonLevels ?? {}) };
+      POKEMON_BY_ID && Object.values(POKEMON_BY_ID).forEach(p => {
+        if (!normalCollection[p.id]) normalCollection[p.id] = 1;
+        pokemonLevels[p.id] = { level: 100, xp: 0 };
+      });
+      return { ...prev, normalCollection, pokemonLevels };
+    });
+  }, [update]);
+
   return {
     state,
     addCapture,
@@ -653,6 +665,7 @@ export function useGameState() {
     getPokemonLevel,
     initPokemonLevel,
     addPokemonXp,
+    adminGiveAllMax,
   };
 }
 
