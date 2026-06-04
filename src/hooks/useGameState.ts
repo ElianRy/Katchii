@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { FUSION_BY_ID, FUSIONS } from '../data/fusions';
 import { getWeekId, todayDate, getTeamDamage } from '../components/RaidPanel';
+import { naturalLevel, xpToNextLevel } from '../data/combatEngine';
 
 
 const COOLDOWN_MS = 60_000;
@@ -137,6 +138,24 @@ export function useGameState() {
           next.globalCooldownUntil = Date.now() + COOLDOWN_MS;
         } else {
           next.fragments = { ...prev.fragments, [pokemonId]: (prev.fragments[pokemonId] ?? 0) + 1 };
+        }
+
+        // Initialize level on first capture
+        if (!alreadyCaught && !next.pokemonLevels?.[pokemonId]) {
+          const lvl = naturalLevel(rarity);
+          next.pokemonLevels = { ...(next.pokemonLevels ?? {}), [pokemonId]: { level: lvl, xp: 0 } };
+        } else if (alreadyCaught) {
+          // Re-capture: grant XP bonus
+          const current = next.pokemonLevels?.[pokemonId] ?? { level: 1, xp: 0 };
+          if (current.level < 100) {
+            let { level, xp } = current;
+            xp += current.level * 10;
+            while (level < 100 && xp >= xpToNextLevel(level)) {
+              xp -= xpToNextLevel(level);
+              level++;
+            }
+            next.pokemonLevels = { ...(next.pokemonLevels ?? {}), [pokemonId]: { level, xp } };
+          }
         }
       }
 
@@ -533,6 +552,42 @@ export function useGameState() {
     }));
   }, [update]);
 
+  const getPokemonLevel = useCallback((pokemonId: number): { level: number; xp: number } => {
+    return state.pokemonLevels?.[pokemonId] ?? { level: 1, xp: 0 };
+  }, [state.pokemonLevels]);
+
+  const initPokemonLevel = useCallback((pokemonId: number, rarity: Rarity) => {
+    update(prev => {
+      if (prev.pokemonLevels?.[pokemonId]) return prev;
+      const level = naturalLevel(rarity);
+      return {
+        ...prev,
+        pokemonLevels: { ...prev.pokemonLevels, [pokemonId]: { level, xp: 0 } },
+      };
+    });
+  }, [update]);
+
+  const addPokemonXp = useCallback((pokemonId: number, xp: number) => {
+    update(prev => {
+      const current = prev.pokemonLevels?.[pokemonId] ?? { level: 1, xp: 0 };
+      if (current.level >= 100) return prev;
+
+      let { level, xp: currentXp } = current;
+      currentXp += xp;
+
+      while (level < 100 && currentXp >= xpToNextLevel(level)) {
+        currentXp -= xpToNextLevel(level);
+        level++;
+      }
+      if (level >= 100) currentXp = 0;
+
+      return {
+        ...prev,
+        pokemonLevels: { ...prev.pokemonLevels, [pokemonId]: { level, xp: currentXp } },
+      };
+    });
+  }, [update]);
+
   return {
     state,
     addCapture,
@@ -563,6 +618,9 @@ export function useGameState() {
     totalShinyCaught,
     badgeToasts,
     dismissBadgeToast,
+    getPokemonLevel,
+    initPokemonLevel,
+    addPokemonXp,
   };
 }
 

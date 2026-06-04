@@ -261,6 +261,7 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
           zone={currentZone}
           state={gameState.state}
           onClose={() => setShowBossFight(false)}
+          onAddXp={(pokemonId, xp) => gameState.addPokemonXp(pokemonId, xp)}
           onVictory={(zoneId, nextZoneId) => {
             gameState.defeatZoneBoss(zoneId, nextZoneId);
             gameState.spendPoints(-100); // award 100 pts (negative spend = gain)

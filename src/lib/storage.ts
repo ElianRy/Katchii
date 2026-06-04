@@ -67,6 +67,7 @@ export const DEFAULT_STATE: GameState = {
     sessionStartTime: null,
     firstPlayedAt: Date.now(),
   },
+  pokemonLevels: {},
 };
 
 export function loadState(): GameState {
@@ -126,6 +127,7 @@ export function loadState(): GameState {
         sessionStartTime: null,
         firstPlayedAt: Date.now(),
       },
+      pokemonLevels: parsed.pokemonLevels ?? {},
     };
   } catch {
     return { ...DEFAULT_STATE };

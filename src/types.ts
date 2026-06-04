@@ -109,6 +109,7 @@ export interface GameState {
     sessionStartTime: number | null;
     firstPlayedAt: number;
   };
+  pokemonLevels: Record<number, { level: number; xp: number }>;
 }
 
 export const RARITY_COLORS: Record<Rarity, string> = {
