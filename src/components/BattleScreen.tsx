@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
+import { ShinySprite } from './ShinySprite';
 import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
 import { calcDamage, xpGainedFromBattle } from '../data/combatEngine';
 import { TeamMember } from './TeamBuilder';
@@ -158,15 +159,14 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName, onBattleEnd }: P
 
     return (
       <div className={`flex flex-col items-center gap-1 transition-all ${fainted ? 'opacity-30' : ''} ${isAnimating ? 'scale-110' : 'scale-100'}`}>
-        <img
-          src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${fighter.pokemonId}.png`}
+        <ShinySprite
+          pokemonId={fighter.pokemonId}
+          isShiny={fighter.isShiny ?? false}
           width={64} height={64}
           style={{
-            imageRendering: 'pixelated',
             filter: !fainted ? `drop-shadow(0 0 8px ${color})` : 'grayscale(1)',
             transform: isPlayer ? 'scaleX(1)' : 'scaleX(-1)',
           }}
-          draggable={false}
         />
         <div className="text-white text-xs font-bold">{p?.name} <span className="text-slate-400">Nv.{fighter.level}</span></div>
         <div className="w-20">
@@ -251,12 +251,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName, onBattleEnd }: P
           const fainted = f.currentHp <= 0;
           return (
             <div key={i} className={`flex flex-col items-center ${fainted ? 'opacity-30' : ''}`}>
-              <img
-                src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${f.pokemonId}.png`}
-                width={36} height={36}
-                style={{ imageRendering: 'pixelated', filter: fainted ? 'grayscale(1)' : 'none' }}
-                draggable={false}
-              />
+              <ShinySprite pokemonId={f.pokemonId} isShiny={f.isShiny ?? false} width={36} height={36}
+                style={{ filter: fainted ? 'grayscale(1)' : 'none' }} />
               <span className="text-xs text-slate-400">Nv.{f.level}</span>
             </div>
           );

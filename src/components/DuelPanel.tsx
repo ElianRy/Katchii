@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { GameState, Rarity, DuelEntry } from '../types';
 import { GEN1_POKEMON, POKEMON_BY_ID, POKEMON_BY_RARITY } from '../data/gen1';
+import { ShinySprite } from './ShinySprite';
 
 interface Props {
   state: GameState;
@@ -150,16 +151,8 @@ export function DuelPanel({ state, onClose, onDuelResult }: Props) {
                   }
                   const p = POKEMON_BY_ID[member.pokemonId];
                   return (
-                    <div key={i} className="relative">
-                      <img
-                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${member.isShiny ? 'shiny/' : ''}${member.pokemonId}.png`}
-                        alt={p?.name}
-                        width={64}
-                        height={64}
-                        className="rounded-lg bg-slate-700"
-                        style={{ imageRendering: 'pixelated' }}
-                      />
-                      {member.isShiny && <span className="absolute -top-1 -right-1 text-xs">✨</span>}
+                    <div key={i} className="flex flex-col items-center">
+                      <ShinySprite pokemonId={member.pokemonId} isShiny={member.isShiny} width={64} height={64} className="rounded-lg bg-slate-700" alt={p?.name} />
                       <div className="text-center text-xs text-slate-300 mt-1">{calcStat(member.pokemonId, member.isShiny)} pts</div>
                     </div>
                   );
@@ -254,8 +247,7 @@ export function DuelPanel({ state, onClose, onDuelResult }: Props) {
                 <div className="text-slate-300 font-bold text-sm">Toi</div>
                 <div className="flex gap-1">
                   {lastResult.myTeam.map((m, i) => (
-                    <img key={i} src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${m.isShiny ? 'shiny/' : ''}${m.pokemonId}.png`}
-                      alt="" width={40} height={40} style={{ imageRendering: 'pixelated' }} className="bg-slate-700 rounded" />
+                    <ShinySprite key={i} pokemonId={m.pokemonId} isShiny={m.isShiny} width={40} height={40} className="bg-slate-700 rounded" />
                   ))}
                 </div>
                 <div className="text-yellow-400 font-bold">{lastResult.myScore} pts</div>
@@ -265,8 +257,7 @@ export function DuelPanel({ state, onClose, onDuelResult }: Props) {
                 <div className="text-slate-300 font-bold text-sm">{lastResult.opponentName}</div>
                 <div className="flex gap-1">
                   {lastResult.opponentTeam.map((m, i) => (
-                    <img key={i} src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${m.isShiny ? 'shiny/' : ''}${m.pokemonId}.png`}
-                      alt="" width={40} height={40} style={{ imageRendering: 'pixelated' }} className="bg-slate-700 rounded" />
+                    <ShinySprite key={i} pokemonId={m.pokemonId} isShiny={m.isShiny} width={40} height={40} className="bg-slate-700 rounded" />
                   ))}
                 </div>
                 <div className="text-yellow-400 font-bold">{lastResult.opponentScore} pts</div>

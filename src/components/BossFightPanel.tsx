@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
+import { ShinySprite } from './ShinySprite';
 import { Zone, ZONE_ORDER } from '../data/zones';
 import { TeamBuilder, TeamMember } from './TeamBuilder';
 import { BattleScreen } from './BattleScreen';
@@ -101,15 +102,11 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp }: Pro
                 const types = POKEMON_TYPE[m.pokemonId] ?? ['normal'];
                 return (
                   <div key={i} className="flex flex-col items-center gap-1">
-                    <img
-                      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${m.isShiny ? 'shiny/' : ''}${m.pokemonId}.png`}
+                    <ShinySprite
+                      pokemonId={m.pokemonId} isShiny={m.isShiny}
+                      width={64} height={64}
                       alt={p?.name ?? '???'}
-                      width={64}
-                      height={64}
-                      style={{
-                        imageRendering: 'pixelated',
-                        filter: p ? `drop-shadow(0 0 6px ${RARITY_COLORS[p.rarity]})` : 'none',
-                      }}
+                      style={{ filter: p ? `drop-shadow(0 0 6px ${RARITY_COLORS[p.rarity]})` : 'none' }}
                     />
                     <span className="text-xs text-slate-300">{p?.name ?? '???'}</span>
                     <span className="text-xs font-bold text-yellow-400">Nv. {bossLevel}</span>

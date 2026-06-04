@@ -4,9 +4,11 @@ import { GEN1_POKEMON, POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
 import { calcMaxHp, calcAttack, xpToNextLevel } from '../data/combatEngine';
 import { BattleScreen } from './BattleScreen';
+import { ShinySprite } from './ShinySprite';
 
 export interface TeamMember {
   pokemonId: number;
+  isShiny?: boolean;
   level: number;
   xp: number;
   currentHp: number;
@@ -145,7 +147,8 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon Ã
     const playerTeam: TeamMember[] = selected.map(id => {
       const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
       const maxHp = calcMaxHp(id, lvData.level);
-      return { pokemonId: id, level: lvData.level, xp: lvData.xp, currentHp: maxHp, maxHp };
+      const isShiny = (state.shinyCollection[id] ?? 0) > 0;
+      return { pokemonId: id, isShiny, level: lvData.level, xp: lvData.xp, currentHp: maxHp, maxHp };
     });
     return (
       <BattleScreen
@@ -291,18 +294,12 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon Ã
               >
                 {/* Sprite */}
                 <div className="relative">
-                  <img
-                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${isShiny ? 'shiny/' : ''}${p.id}.png`}
-                    width={52} height={52}
-                    style={{
-                      imageRendering: 'pixelated',
-                      filter: sel ? `drop-shadow(0 0 6px ${color})` : 'none',
-                    }}
-                    draggable={false}
+                  <ShinySprite
+                    pokemonId={p.id} isShiny={isShiny} width={52} height={52}
+                    style={{ filter: sel ? `drop-shadow(0 0 6px ${color})` : 'none' }}
                   />
-                  {isShiny && <span className="absolute -top-1 -right-1 text-xs">âœ¨</span>}
                   {sel && (
-                    <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-black rounded-full w-4 h-4 flex items-center justify-center text-xs font-black">
+                    <div className="absolute -bottom-1 -right-1 bg-yellow-400 text-black rounded-full w-4 h-4 flex items-center justify-center text-xs font-black z-10">
                       {selected.indexOf(p.id) + 1}
                     </div>
                   )}
@@ -375,14 +372,10 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon Ã
               </div>
             );
             const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
+            const isShinySlot = (state.shinyCollection[id] ?? 0) > 0;
             return (
               <div key={i} className="flex flex-col items-center">
-                <img
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
-                  width={52} height={52}
-                  style={{ imageRendering: 'pixelated' }}
-                  draggable={false}
-                />
+                <ShinySprite pokemonId={id} isShiny={isShinySlot} width={52} height={52} />
                 <span className="text-yellow-400 text-xs font-bold">Nv.{lvData.level}</span>
               </div>
             );
