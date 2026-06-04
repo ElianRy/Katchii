@@ -50,6 +50,12 @@ export const DEFAULT_STATE: GameState = {
     unlockedTerrains: ['foret'],
     activeTerrain: 'foret',
   },
+  fusions: [],
+  raid: null,
+  activeUniverse: 'pokemon',
+  narutoCollection: {},
+  narutoShinyCollection: {},
+  narutoShinyDepleted: [],
 };
 
 export function loadState(): GameState {
@@ -92,6 +98,12 @@ export function loadState(): GameState {
         unlockedTerrains: ['foret'],
         activeTerrain: 'foret',
       },
+      fusions: parsed.fusions ?? [],
+      raid: parsed.raid ?? null,
+      activeUniverse: parsed.activeUniverse ?? 'pokemon',
+      narutoCollection: parsed.narutoCollection ?? {},
+      narutoShinyCollection: parsed.narutoShinyCollection ?? {},
+      narutoShinyDepleted: parsed.narutoShinyDepleted ?? [],
     };
   } catch {
     return { ...DEFAULT_STATE };

@@ -5,7 +5,9 @@ import { HUD } from './HUD';
 import { useGameState } from '../hooks/useGameState';
 import { useSpawner } from '../hooks/useSpawner';
 import { POKEMON_BY_ID } from '../data/gen1';
+import { NARUTO_BY_ID } from '../data/naruto';
 import { TERRAIN_SKINS } from './SkinsPanel';
+import { PokemonData } from '../types';
 
 interface Notification {
   id: number;
@@ -32,10 +34,14 @@ interface Props {
   onOpenDuels: () => void;
   onOpenVillage: () => void;
   onOpenSkins: () => void;
+  onOpenFusion: () => void;
+  onOpenRaid: () => void;
+  onOpenWrapped: () => void;
+  onChangeUniverse: () => void;
   gameState: ReturnType<typeof useGameState>;
 }
 
-export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOpenDuels, onOpenVillage, onOpenSkins, gameState }: Props) {
+export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOpenDuels, onOpenVillage, onOpenSkins, onOpenFusion, onOpenRaid, onOpenWrapped, onChangeUniverse, gameState }: Props) {
   const spawner = useSpawner(gameState);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [cooldownSecs, setCooldownSecs] = useState(0);
@@ -60,7 +66,7 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
   }, []);
 
   const handleCapture = useCallback(
-    (uid: string, pokemonId: number, isShiny: boolean, x: number, y: number) => {
+    (uid: string, pokemonId: number, characterId: string | undefined, isShiny: boolean, x: number, y: number) => {
       if (processingRef.current.has(uid)) return;
       if (gameState.isOnCooldown()) return;
       processingRef.current.add(uid);
@@ -70,12 +76,22 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
 
       // After pokeball spin completes, register the capture
       setTimeout(() => {
-        const pokemon = POKEMON_BY_ID[pokemonId];
-        if (!pokemon) return;
-        const pts = gameState.addCapture(pokemonId, isShiny, pokemon.rarity);
-        if (pts > 0) {
-          addNotification(`+${pts} pts !`, x, y, true);
-          addNotification('Nouveau !', x, y - 8, true);
+        if (characterId && gameState.state.activeUniverse === 'naruto') {
+          const char = NARUTO_BY_ID[characterId];
+          if (!char) { processingRef.current.delete(uid); return; }
+          const pts = gameState.addNarutoCapture(characterId, isShiny, char.rarity);
+          if (pts > 0) {
+            addNotification(`+${pts} pts !`, x, y, true);
+            addNotification('Nouveau !', x, y - 8, true);
+          }
+        } else {
+          const pokemon = POKEMON_BY_ID[pokemonId];
+          if (!pokemon) { processingRef.current.delete(uid); return; }
+          const pts = gameState.addCapture(pokemonId, isShiny, pokemon.rarity);
+          if (pts > 0) {
+            addNotification(`+${pts} pts !`, x, y, true);
+            addNotification('Nouveau !', x, y - 8, true);
+          }
         }
         processingRef.current.delete(uid);
       }, 1350);
@@ -83,7 +99,11 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
     [spawner, gameState, addNotification]
   );
 
-  const capturedCount = Object.keys(gameState.state.normalCollection).length;
+  const isNaruto = gameState.state.activeUniverse === 'naruto';
+  const capturedCount = isNaruto
+    ? Object.keys(gameState.state.narutoCollection).filter(id => (gameState.state.narutoCollection[id] ?? 0) > 0).length
+    : Object.keys(gameState.state.normalCollection).length;
+  const totalPokemon = isNaruto ? 30 : 151;
   const questsCompleted = gameState.state.dailyQuests.quests.filter(
     (q) => q.completed && !q.rewardClaimed
   ).length;
@@ -121,16 +141,25 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
         />
       ))}
 
-      {/* Spawned Pokémon */}
+      {/* Spawned Characters */}
       {spawner.spawned.map((s) => {
-        const pokemon = POKEMON_BY_ID[s.pokemonId];
-        if (!pokemon) return null;
+        let pokemonData: PokemonData | null = null;
+        if (s.characterId) {
+          const char = NARUTO_BY_ID[s.characterId];
+          if (char) {
+            pokemonData = { id: 0, name: char.name, rarity: char.rarity };
+          }
+        } else {
+          pokemonData = POKEMON_BY_ID[s.pokemonId] ?? null;
+        }
+        if (!pokemonData) return null;
         return (
           <SpawnedPokemonCard
             key={s.uid}
             spawned={s}
-            pokemonData={pokemon}
-            onCapture={() => handleCapture(s.uid, s.pokemonId, s.isShiny, s.x, s.y)}
+            pokemonData={pokemonData}
+            narutoSpriteUrl={s.characterId ? NARUTO_BY_ID[s.characterId]?.spriteUrl : undefined}
+            onCapture={() => handleCapture(s.uid, s.pokemonId, s.characterId, s.isShiny, s.x, s.y)}
             disabled={gameState.isOnCooldown()}
           />
         );
@@ -148,9 +177,14 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
         onOpenDuels={onOpenDuels}
         onOpenVillage={onOpenVillage}
         onOpenSkins={onOpenSkins}
+        onOpenFusion={onOpenFusion}
+        onOpenRaid={onOpenRaid}
+        onOpenWrapped={onOpenWrapped}
+        onChangeUniverse={onChangeUniverse}
         capturedCount={capturedCount}
-        totalPokemon={151}
+        totalPokemon={totalPokemon}
         questsCompleted={questsCompleted}
+        activeUniverse={gameState.state.activeUniverse}
       />
 
       {/* Cooldown overlay */}

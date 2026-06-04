@@ -1,6 +1,6 @@
 export type Rarity = 'commun' | 'peu_commun' | 'rare' | 'elite' | 'legendaire';
 export type LureType = 'rare' | 'epique' | 'legendaire' | 'shiny';
-export type View = 'hunt' | 'collection' | 'lures' | 'quests' | 'duels' | 'village' | 'skins';
+export type View = 'universe' | 'hunt' | 'collection' | 'lures' | 'quests' | 'duels' | 'village' | 'skins' | 'fusion' | 'raid' | 'wrapped';
 
 export type QuestType =
   | 'capture_n'
@@ -40,6 +40,7 @@ export interface PokemonData {
 export interface SpawnedPokemon {
   uid: string;
   pokemonId: number;
+  characterId?: string; // for non-pokemon universes (e.g. 'n001')
   isShiny: boolean;
   spawnedAt: number;
   lifetime: number;
@@ -80,6 +81,23 @@ export interface GameState {
     unlockedTerrains: string[];
     activeTerrain: string;
   };
+  fusions: Array<{ fusionId: string; obtainedAt: number }>;
+  raid: {
+    bossId: number;
+    bossMaxHp: number;
+    bossCurrentHp: number;
+    weekId: string;
+    playerDamage: number;
+    playerAttackedToday: boolean;
+    lastAttackDate: string;
+    completed: boolean;
+    rewardClaimed: boolean;
+    simulatedParticipants: number;
+  } | null;
+  activeUniverse: 'pokemon' | 'naruto';
+  narutoCollection: Record<string, number>;
+  narutoShinyCollection: Record<string, number>;
+  narutoShinyDepleted: string[];
 }
 
 export const RARITY_COLORS: Record<Rarity, string> = {

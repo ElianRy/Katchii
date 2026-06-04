@@ -6,6 +6,7 @@ interface Props {
   pokemonData: PokemonData;
   onCapture: () => void;
   disabled: boolean;
+  narutoSpriteUrl?: string;
 }
 
 interface Particle {
@@ -40,7 +41,7 @@ function PokeballSVG({ spinning }: { spinning: boolean }) {
   );
 }
 
-export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled }: Props) {
+export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, narutoSpriteUrl }: Props) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showParticles, setShowParticles] = useState(false);
 
@@ -59,9 +60,12 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled }
 
   const rarityColor = RARITY_COLORS[pokemonData.rarity];
 
-  const spriteUrl = spawned.isShiny
-    ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${spawned.pokemonId}.png`
-    : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${spawned.pokemonId}.png`;
+  const [spriteError, setSpriteError] = useState(false);
+  const spriteUrl = narutoSpriteUrl
+    ? narutoSpriteUrl
+    : spawned.isShiny
+      ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${spawned.pokemonId}.png`
+      : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${spawned.pokemonId}.png`;
 
   const handleClick = () => {
     if (disabled || spawned.capturing || spawned.captured) return;
@@ -141,14 +145,24 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled }
               </div>
             )}
 
-            <img
-              src={spriteUrl}
-              alt={pokemonData.name}
-              width={64}
-              height={64}
-              style={{ imageRendering: 'pixelated' }}
-              draggable={false}
-            />
+            {spriteError ? (
+              <div
+                className="flex items-center justify-center text-center font-bold text-xs p-1"
+                style={{ width: 64, height: 64, background: 'rgba(0,0,0,0.6)', color: rarityColor, borderRadius: 4 }}
+              >
+                {pokemonData.name}
+              </div>
+            ) : (
+              <img
+                src={spriteUrl}
+                alt={pokemonData.name}
+                width={64}
+                height={64}
+                style={{ imageRendering: narutoSpriteUrl ? 'auto' : 'pixelated', objectFit: 'contain' }}
+                draggable={false}
+                onError={() => setSpriteError(true)}
+              />
+            )}
           </div>
 
           {/* Name badge */}

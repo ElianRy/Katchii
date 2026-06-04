@@ -11,9 +11,14 @@ interface Props {
   onOpenDuels: () => void;
   onOpenVillage: () => void;
   onOpenSkins: () => void;
+  onOpenFusion: () => void;
+  onOpenRaid: () => void;
+  onOpenWrapped: () => void;
+  onChangeUniverse: () => void;
   capturedCount: number;
   totalPokemon: number;
   questsCompleted: number;
+  activeUniverse: 'pokemon' | 'naruto';
 }
 
 function formatTime(seconds: number): string {
@@ -46,9 +51,14 @@ export function HUD({
   onOpenDuels,
   onOpenVillage,
   onOpenSkins,
+  onOpenFusion,
+  onOpenRaid,
+  onOpenWrapped,
+  onChangeUniverse,
   capturedCount,
   totalPokemon,
   questsCompleted,
+  activeUniverse,
 }: Props) {
   return (
     <>
@@ -66,8 +76,13 @@ export function HUD({
             <span className="text-yellow-400 font-bold text-lg">{points}</span>
             <span className="text-gray-400 text-sm">pts</span>
           </div>
-          <div className="bg-black/60 rounded-lg px-3 py-1 border border-slate-600/40">
-            <span className="text-slate-300 text-xs">🌲 Zone 1 — Forêt de Pallet</span>
+          <div
+            className="bg-black/60 rounded-lg px-3 py-1 border border-slate-600/40 cursor-pointer hover:border-slate-400/60"
+            onClick={onChangeUniverse}
+          >
+            <span className="text-slate-300 text-xs">
+              {activeUniverse === 'naruto' ? '🍥 Zone 1 — Village de Konoha' : '🌲 Zone 1 — Forêt de Pallet'}
+            </span>
           </div>
           <div className="bg-black/60 rounded-lg px-3 py-1 border border-slate-600/40">
             <span className="text-slate-300 text-xs">
@@ -140,6 +155,27 @@ export function HUD({
           >
             <span className="text-xl">🎨</span>
             <span className="text-xs font-bold">Skins</span>
+          </button>
+          <button
+            onClick={onOpenFusion}
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-purple-300 hover:bg-purple-900/30 transition-colors"
+          >
+            <span className="text-xl">⚗️</span>
+            <span className="text-xs font-bold">Fusion</span>
+          </button>
+          <button
+            onClick={onOpenRaid}
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-red-300 hover:bg-red-900/30 transition-colors"
+          >
+            <span className="text-xl">🐉</span>
+            <span className="text-xs font-bold">Raid</span>
+          </button>
+          <button
+            onClick={onOpenWrapped}
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-yellow-300 hover:bg-yellow-900/30 transition-colors"
+          >
+            <span className="text-xl">🎁</span>
+            <span className="text-xs font-bold">Wrapped</span>
           </button>
         </div>
       </div>
