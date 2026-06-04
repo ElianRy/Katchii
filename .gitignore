@@ -33,3 +33,6 @@ pnpm-debug.log*
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Claude Code worktrees
+.claude/worktrees/
