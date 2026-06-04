@@ -3,7 +3,7 @@ import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_W
 import { loadState, saveState } from '../lib/storage';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { FUSION_BY_ID, FUSIONS } from '../data/fusions';
-import { getWeekId, todayDate, getBestTeam, getTeamDamage } from '../components/RaidPanel';
+import { getWeekId, todayDate, getTeamDamage } from '../components/RaidPanel';
 
 
 const COOLDOWN_MS = 60_000;
