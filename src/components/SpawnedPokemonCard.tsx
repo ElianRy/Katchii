@@ -176,6 +176,9 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
             style={{
               animation: moveAnim.animation,
               animationDelay: moveDelay,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
             }}
           >
             {/* Shiny — rotating rainbow aura */}
@@ -291,15 +294,14 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
 
             {/* Name badge */}
             <div
-              className="mt-1 font-bold rounded self-center"
+              className="mt-1 font-bold rounded"
               style={{
                 background: 'rgba(0,0,0,0.75)',
                 color: rarityColor,
                 fontSize: '0.62rem',
-                padding: '2px 5px',
+                padding: '2px 6px',
                 lineHeight: 1.3,
                 whiteSpace: 'nowrap',
-                display: 'inline-block',
               }}
             >
               {pokemonData.name}

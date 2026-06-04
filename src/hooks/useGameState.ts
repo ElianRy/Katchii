@@ -3,6 +3,7 @@ import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_W
 import { loadState, saveState } from '../lib/storage';
 import { loadCloudState, saveCloudState } from '../lib/cloudSync';
 import { supabase } from '../lib/supabase';
+import { ZONE_BY_ID } from '../data/zones';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { FUSION_BY_ID, FUSIONS } from '../data/fusions';
 import { getWeekId, todayDate, getTeamDamage } from '../components/RaidPanel';
@@ -68,6 +69,7 @@ export function useGameState() {
   const [badgeToasts, setBadgeToasts] = useState<string[]>([]);
   const userIdRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestStateRef = useRef<GameState>(state);
 
   const dismissBadgeToast = useCallback(() => {
     setBadgeToasts((prev) => prev.slice(1));
@@ -92,19 +94,30 @@ export function useGameState() {
   const update = useCallback((updater: (prev: GameState) => GameState) => {
     setState(prev => {
       const next = updater(prev);
+      latestStateRef.current = next;
       saveState(next);
-      // Immediate cloud save — no debounce so nothing is ever lost
+      // Immediate cloud save
       if (userIdRef.current) {
         saveCloudState(userIdRef.current, next);
       } else {
         // userId not yet loaded — queue a save once it's available
         if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
         saveTimerRef.current = setTimeout(() => {
-          if (userIdRef.current) saveCloudState(userIdRef.current, next);
+          if (userIdRef.current) saveCloudState(userIdRef.current, latestStateRef.current);
         }, 3000);
       }
       return next;
     });
+  }, []);
+
+  // Periodic backup save every 20s to catch any missed saves
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (userIdRef.current) {
+        saveCloudState(userIdRef.current, latestStateRef.current);
+      }
+    }, 20000);
+    return () => clearInterval(id);
   }, []);
 
   const awardBadges = useCallback((newState: GameState): GameState => {
@@ -144,9 +157,11 @@ export function useGameState() {
           next.fragments = { ...prev.fragments, [pokemonId]: (prev.fragments[pokemonId] ?? 0) + 1 };
         }
 
-        // Initialize level on first capture
+        // Initialize level on first capture, capped by current zone's maxLevel
         if (!alreadyCaught && !next.pokemonLevels?.[pokemonId]) {
-          const lvl = naturalLevel(rarity);
+          const zoneId = prev.zoneProgress?.currentZoneId ?? 'zone1';
+          const zoneCap = ZONE_BY_ID[zoneId]?.maxLevel;
+          const lvl = naturalLevel(rarity, zoneCap);
           next.pokemonLevels = { ...(next.pokemonLevels ?? {}), [pokemonId]: { level: lvl, xp: 0 } };
         } else if (alreadyCaught) {
           // Re-capture: grant XP bonus

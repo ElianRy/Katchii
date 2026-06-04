@@ -104,7 +104,7 @@ export function App() {
   const showBottomNav = !['auth', 'home', 'universe', 'profile', 'admin'].includes(view);
 
   return (
-    <div className="w-full h-screen bg-slate-900 text-white overflow-hidden">
+    <div className="w-full bg-slate-900 text-white overflow-hidden" style={{ height: '100dvh', maxHeight: '100dvh' }}>
       {/* Auth screen */}
       {view === 'auth' && (
         <AuthScreen

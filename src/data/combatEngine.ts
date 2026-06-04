@@ -14,9 +14,12 @@ export const LEVEL_RANGE: Record<Rarity, [number, number]> = {
   legendaire: [70, 100],
 };
 
-export function naturalLevel(rarity: Rarity): number {
+export function naturalLevel(rarity: Rarity, maxLevel?: number): number {
   const [min, max] = LEVEL_RANGE[rarity];
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  const cap = maxLevel ?? max;
+  const effectiveMax = Math.min(max, cap);
+  const effectiveMin = Math.min(min, effectiveMax);
+  return Math.floor(Math.random() * (effectiveMax - effectiveMin + 1)) + effectiveMin;
 }
 
 export function xpToNextLevel(level: number): number {

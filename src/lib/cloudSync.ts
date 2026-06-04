@@ -16,16 +16,26 @@ export async function loadCloudState(userId: string): Promise<GameState | null> 
 }
 
 export async function saveCloudState(userId: string, state: GameState): Promise<void> {
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 4; attempt++) {
     try {
-      const { error } = await supabase
+      // Try UPDATE first — works even if RLS only allows UPDATE for own rows
+      const { data: updated, error: updateError } = await supabase
         .from('game_saves')
-        .upsert(
-          { user_id: userId, state, updated_at: new Date().toISOString() },
-          { onConflict: 'user_id' }
-        );
-      if (!error) return;
-      console.error('[cloudSync] save error:', error.message);
+        .update({ state, updated_at: new Date().toISOString() })
+        .eq('user_id', userId)
+        .select('user_id');
+
+      if (!updateError && updated && updated.length > 0) return; // success
+
+      if (updateError) console.error('[cloudSync] update error:', updateError.message);
+
+      // No row existed — INSERT
+      const { error: insertError } = await supabase
+        .from('game_saves')
+        .insert({ user_id: userId, state, updated_at: new Date().toISOString() });
+
+      if (!insertError) return;
+      console.error('[cloudSync] insert error:', insertError.message);
     } catch (e) {
       console.error('[cloudSync] save exception:', e);
     }

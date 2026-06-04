@@ -15,7 +15,7 @@ const MAX_LIFETIME = 14000;
 const POKEBALL_SPIN_MS = 1350;
 const POST_CAPTURE_MS = 400;
 const LEAVE_DURATION_MS = 800;
-const WANDER_SPEED = 0.035; // %/tick — slow gentle drift
+const WANDER_SPEED = 0.10; // %/tick — visible drift
 
 function randomBetween(min: number, max: number): number {
   return Math.random() * (max - min) + min;
@@ -63,15 +63,17 @@ function pickNaruto(rarity: Rarity): string {
   return pool[Math.floor(Math.random() * pool.length)].id;
 }
 
+function isInHudZone(x: number, y: number): boolean {
+  // HUD info block: top-left area, roughly x < 58% and y < 68% on mobile
+  return x < 58 && y < 68;
+}
+
 function getValidPosition(existing: SpawnedPokemon[]): { x: number; y: number } | null {
-  for (let attempt = 0; attempt < 10; attempt++) {
-    const x = 5 + Math.random() * 85;
-    const y = 12 + Math.random() * 52;
-    // Avoid HUD zone (top-left is tall on mobile)
-    if (x < 50 && y < 52) continue;
-    // Avoid bottom nav area
-    if (y > 68) continue;
-    // Check distance from existing spawned
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const x = 5 + Math.random() * 88;
+    const y = 10 + Math.random() * 75;
+    if (isInHudZone(x, y)) continue;
+    if (y > 88) continue;
     const tooClose = existing.some(s =>
       Math.sqrt(Math.pow(s.x - x, 2) + Math.pow(s.y - y, 2)) < 15
     );
@@ -202,13 +204,16 @@ export function useSpawner(
         let { x, y, vx, vy } = s;
         x += vx;
         y += vy;
-        // Bounce off edges (avoid HUD top-left and bottom nav)
-        // Keep out of HUD (left side) and bottom nav
-        const minX = (y < 52) ? 52 : 5;
-        if (x < minX) { x = minX; vx = Math.abs(vx); }
-        if (x > 90)   { x = 90;  vx = -Math.abs(vx); }
-        if (y < 12)   { y = 12;  vy = Math.abs(vy); }
-        if (y > 66)   { y = 66;  vy = -Math.abs(vy); }
+        // Bounce off edges, stay out of HUD zone (top-left)
+        if (x < 5)  { x = 5;  vx = Math.abs(vx); }
+        if (x > 90) { x = 90; vx = -Math.abs(vx); }
+        if (y < 10) { y = 10; vy = Math.abs(vy); }
+        if (y > 88) { y = 88; vy = -Math.abs(vy); }
+        // Push out of HUD zone
+        if (isInHudZone(x, y)) {
+          if (x < 58) { x = 58; vx = Math.abs(vx); }
+          if (y < 68) { y = 68; vy = Math.abs(vy); }
+        }
         // Random direction change
         if (Math.random() < 0.005) {
           const angle = Math.random() * Math.PI * 2;
