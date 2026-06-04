@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Rarity, RARITY_COLORS, RARITY_LABELS } from '../types';
 
 interface Props {
@@ -13,6 +13,8 @@ const AUTO_DISMISS_MS = 3000;
 
 export function NewCaptureModal({ pokemonName, pokemonId, isShiny, rarity, onDismiss }: Props) {
   const [progress, setProgress] = useState(100);
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
 
   useEffect(() => {
     const start = Date.now();
@@ -22,11 +24,11 @@ export function NewCaptureModal({ pokemonName, pokemonId, isShiny, rarity, onDis
       setProgress(remaining);
       if (remaining <= 0) {
         clearInterval(timer);
-        onDismiss();
+        onDismissRef.current();
       }
     }, 50);
     return () => clearInterval(timer);
-  }, [onDismiss]);
+  }, []);
 
   const rarityColor = RARITY_COLORS[rarity];
   const spriteUrl = pokemonId > 0

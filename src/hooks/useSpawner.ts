@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { SpawnedPokemon, Rarity, RARITY_WEIGHTS } from '../types';
 import { GEN1_POKEMON, POKEMON_BY_RARITY } from '../data/gen1';
 import { NARUTO_ZONE1, NARUTO_BY_RARITY } from '../data/naruto';
+import { ZONE_BY_ID } from '../data/zones';
 import { useGameState } from './useGameState';
 
 const MAX_SPAWNED = 3;
@@ -28,9 +29,13 @@ function weightedRarity(weights: Record<Rarity, number>): Rarity {
   return 'commun';
 }
 
-function pickPokemon(rarity: Rarity): number {
-  const pool = POKEMON_BY_RARITY[rarity];
-  if (!pool || pool.length === 0) return GEN1_POKEMON[0].id;
+function pickPokemon(rarity: Rarity, zoneIds: number[]): number {
+  const allPool = POKEMON_BY_RARITY[rarity] ?? [];
+  const zonePool = zoneIds.length > 0
+    ? allPool.filter(p => zoneIds.includes(p.id))
+    : allPool;
+  const pool = zonePool.length > 0 ? zonePool : allPool;
+  if (pool.length === 0) return GEN1_POKEMON[0].id;
   return pool[Math.floor(Math.random() * pool.length)].id;
 }
 
@@ -110,6 +115,10 @@ export function useSpawner(
         let characterId: string | undefined;
         let isShiny: boolean;
 
+        const zoneId = gs.state.zoneProgress?.currentZoneId ?? 'zone1';
+        const currentZone = ZONE_BY_ID[zoneId];
+        const zoneIds = currentZone?.pokemonIds ?? [];
+
         if (universe === 'naruto') {
           const nId = pickNaruto(rarity);
           characterId = nId;
@@ -120,7 +129,7 @@ export function useSpawner(
           const shinyRate = baseShinyRate * mult.shinyRate;
           isShiny = !shinyDepleted.includes(nId) && Math.random() < shinyRate;
         } else {
-          pokemonId = pickPokemon(rarity);
+          pokemonId = pickPokemon(rarity, zoneIds);
           const shinyDepleted = gs.state.shinyDepleted;
           const baseShinyRate = (1 / 250) * (151 / Math.max(1, 151 - shinyDepleted.length));
           const shinyRate = baseShinyRate * mult.shinyRate;

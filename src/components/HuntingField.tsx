@@ -137,6 +137,9 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
 
   const currentZone = ZONE_BY_ID[gameState.state.zoneProgress?.currentZoneId ?? 'zone1'];
   const currentZoneName = currentZone ? currentZone.name : 'Forêt de Pallet';
+  const missingInZone = (currentZone?.pokemonIds ?? []).filter(
+    id => (gameState.state.normalCollection[id] ?? 0) === 0
+  );
 
   return (
     <div className={`relative w-full h-screen overflow-hidden bg-gradient-to-b ${activeSkin.gradient}`}>
@@ -216,6 +219,7 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
         questsCompleted={questsCompleted}
         activeUniverse={gameState.state.activeUniverse}
         currentZoneName={currentZoneName}
+        missingInZone={missingInZone}
       />
 
       {/* Floating notifications */}

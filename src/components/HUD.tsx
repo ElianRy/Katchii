@@ -21,6 +21,7 @@ interface Props {
   questsCompleted: number;
   activeUniverse: 'pokemon' | 'naruto';
   currentZoneName?: string;
+  missingInZone?: number[];
 }
 
 function formatLureRemaining(expiresAt: number): string {
@@ -59,6 +60,7 @@ export function HUD({
   questsCompleted,
   activeUniverse,
   currentZoneName,
+  missingInZone = [],
 }: Props) {
   return (
     <>
@@ -102,6 +104,26 @@ export function HUD({
               📋 {capturedCount}/{totalPokemon} capturés
             </span>
           </div>
+          {missingInZone.length > 0 && activeUniverse === 'pokemon' && (
+            <div className="bg-black/60 rounded-lg px-2 py-1 border border-slate-600/40">
+              <div className="text-slate-500 text-xs mb-1">Manquants dans la zone :</div>
+              <div className="flex gap-1 items-center flex-wrap">
+                {missingInZone.slice(0, 6).map(id => (
+                  <img
+                    key={id}
+                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
+                    width={28}
+                    height={28}
+                    style={{ imageRendering: 'pixelated', filter: 'brightness(0) opacity(0.5)' }}
+                    draggable={false}
+                  />
+                ))}
+                {missingInZone.length > 6 && (
+                  <span className="text-slate-500 text-xs">+{missingInZone.length - 6}</span>
+                )}
+              </div>
+            </div>
+          )}
           {activeLure && Date.now() < activeLure.expiresAt && (
             <div className="bg-purple-900/70 rounded-lg px-3 py-1 border border-purple-500/60">
               <span className="text-purple-300 text-xs font-bold">

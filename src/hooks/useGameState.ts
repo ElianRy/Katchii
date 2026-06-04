@@ -1,6 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_WEIGHTS } from '../types';
 import { loadState, saveState } from '../lib/storage';
+import { loadCloudState, saveCloudState } from '../lib/cloudSync';
+import { supabase } from '../lib/supabase';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { FUSION_BY_ID, FUSIONS } from '../data/fusions';
 import { getWeekId, todayDate, getTeamDamage } from '../components/RaidPanel';
@@ -63,15 +65,39 @@ export function useGameState() {
   const [state, setState] = useState<GameState>(() => loadState());
   // Badge toast queue
   const [badgeToasts, setBadgeToasts] = useState<string[]>([]);
+  const userIdRef = useRef<string | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const dismissBadgeToast = useCallback(() => {
     setBadgeToasts((prev) => prev.slice(1));
+  }, []);
+
+  // Load cloud state on auth
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      userIdRef.current = user.id;
+      loadCloudState(user.id).then(cloudState => {
+        if (!cloudState) return;
+        // Use cloud state if it has more points (newer/more complete)
+        setState(local => {
+          const merged = cloudState.points >= local.points ? cloudState : local;
+          saveState(merged);
+          return merged;
+        });
+      });
+    });
   }, []);
 
   const update = useCallback((updater: (prev: GameState) => GameState) => {
     setState(prev => {
       const next = updater(prev);
       saveState(next);
+      // Debounced cloud save (2s after last update)
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        if (userIdRef.current) saveCloudState(userIdRef.current, next);
+      }, 2000);
       return next;
     });
   }, []);
