@@ -72,15 +72,17 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
   const isEpic = pokemonData.rarity === 'elite';
   const isLegendary = pokemonData.rarity === 'legendaire';
 
-  const auraStyle: React.CSSProperties = {};
+  let spriteFilter: string;
+  let spriteAnimation: string | undefined;
   if (isLegendary) {
-    auraStyle.boxShadow = `0 0 30px 12px ${rarityColor}cc, 0 0 60px 25px ${rarityColor}66, 0 0 90px 35px ${rarityColor}33`;
-    auraStyle.animation = 'aura-pulse 1.5s ease-in-out infinite';
+    spriteFilter = `drop-shadow(0 0 14px ${rarityColor}) drop-shadow(0 0 28px ${rarityColor}88) drop-shadow(0 0 42px ${rarityColor}55)`;
+    spriteAnimation = 'aura-pulse 1.5s ease-in-out infinite';
   } else if (isEpic) {
-    auraStyle.boxShadow = `0 0 20px 8px ${rarityColor}aa, 0 0 40px 15px ${rarityColor}55`;
-    auraStyle.animation = 'aura-pulse 2s ease-in-out infinite';
+    spriteFilter = `drop-shadow(0 0 10px ${rarityColor}) drop-shadow(0 0 20px ${rarityColor}88)`;
+    spriteAnimation = 'aura-pulse 2s ease-in-out infinite';
   } else {
-    auraStyle.boxShadow = `0 0 15px 5px ${rarityColor}66, 0 0 30px 10px ${rarityColor}33`;
+    spriteFilter = `drop-shadow(0 0 6px ${rarityColor})`;
+    spriteAnimation = undefined;
   }
 
   const containerClass = `absolute select-none ${leaving ? 'animate-leave' : 'animate-appear'}`;
@@ -137,11 +139,10 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
             />
           )}
 
-          {/* Aura glow wrapper — no border */}
+          {/* Aura glow wrapper */}
           <div
             className="relative flex items-center justify-center"
             style={{
-              ...auraStyle,
               borderRadius: narutoSpriteUrl ? '8px' : '50%',
               background: 'rgba(0,0,0,0.0)',
               padding: 0,
@@ -176,6 +177,8 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                   background: `linear-gradient(135deg, ${rarityColor}33, ${rarityColor}11)`,
                   border: `1px solid ${rarityColor}66`,
                   borderRadius: 8,
+                  filter: spriteFilter,
+                  animation: spriteAnimation,
                 }}
               >
                 <span style={{ fontSize: 26 }}>忍</span>
@@ -194,6 +197,8 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                   objectFit: narutoSpriteUrl ? 'cover' : 'contain',
                   objectPosition: narutoSpriteUrl ? 'top center' : undefined,
                   borderRadius: narutoSpriteUrl ? '8px' : undefined,
+                  filter: spriteFilter,
+                  animation: spriteAnimation,
                 }}
                 draggable={false}
                 onError={() => setSpriteError(true)}

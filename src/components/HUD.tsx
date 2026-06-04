@@ -15,6 +15,7 @@ interface Props {
   onOpenRaid: () => void;
   onOpenWrapped: () => void;
   onChangeUniverse: () => void;
+  onOpenZoneInfo?: () => void;
   capturedCount: number;
   totalPokemon: number;
   questsCompleted: number;
@@ -52,6 +53,7 @@ export function HUD({
   onOpenRaid,
   onOpenWrapped,
   onChangeUniverse,
+  onOpenZoneInfo,
   capturedCount,
   totalPokemon,
   questsCompleted,
@@ -74,15 +76,26 @@ export function HUD({
             <span className="text-yellow-400 font-bold text-lg">{points}</span>
             <span className="text-gray-400 text-sm">pts</span>
           </div>
-          <div
-            className="bg-black/60 rounded-lg px-3 py-1 border border-slate-600/40 cursor-pointer hover:border-slate-400/60"
-            onClick={onChangeUniverse}
-          >
-            <span className="text-slate-300 text-xs">
-              {activeUniverse === 'naruto'
-                ? '🍥 Zone 1 — Village de Konoha'
-                : `🌲 ${currentZoneName ?? 'Zone 1 — Forêt de Pallet'}`}
-            </span>
+          <div className="flex items-center gap-1">
+            <div
+              className="bg-black/60 rounded-lg px-3 py-1 border border-slate-600/40 cursor-pointer hover:border-slate-400/60 flex-1"
+              onClick={onChangeUniverse}
+            >
+              <span className="text-slate-300 text-xs">
+                {activeUniverse === 'naruto'
+                  ? '🍥 Zone 1 — Village de Konoha'
+                  : `🌲 ${currentZoneName ?? 'Zone 1 — Forêt de Pallet'}`}
+              </span>
+            </div>
+            {onOpenZoneInfo && (
+              <button
+                onClick={onOpenZoneInfo}
+                className="bg-black/60 rounded-lg px-2 py-1 border border-slate-600/40 hover:border-slate-400/60 text-slate-300 hover:text-white text-xs"
+                title="Info zone"
+              >
+                ℹ️
+              </button>
+            )}
           </div>
           <div className="bg-black/60 rounded-lg px-3 py-1 border border-slate-600/40">
             <span className="text-slate-300 text-xs">
@@ -99,18 +112,25 @@ export function HUD({
         </div>
       </div>
 
+      {/* Top-right menu button */}
+      <button
+        onClick={onChangeUniverse}
+        className="absolute top-3 right-3 z-20 bg-black/70 rounded-xl px-3 py-2 flex items-center gap-1 text-slate-300 hover:text-white border border-slate-600/40 hover:border-slate-400/60 text-sm font-bold"
+      >
+        🏠 <span className="text-xs">Menu</span>
+      </button>
+
       {/* Cooldown bar — centered above bottom nav */}
       {isOnCooldown && (
-        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 w-64">
-          <div className="bg-black/70 rounded-xl px-4 py-2 text-center">
-            <div className="text-yellow-400 text-xs font-bold mb-1">⏳ Prochain Personnage</div>
-            <div className="w-full bg-slate-700 rounded-full h-2">
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20" style={{ width: '85%', maxWidth: 360 }}>
+          <div className="bg-black/80 rounded-2xl px-5 py-3 text-center border border-yellow-500/30 backdrop-blur-sm">
+            <div className="text-yellow-300 text-sm font-bold mb-2">⏳ Prochaine capture dans {cooldownRemaining}s</div>
+            <div className="w-full bg-slate-700/60 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-yellow-400 h-2 rounded-full transition-all duration-500"
-                style={{ width: `${(cooldownRemaining / 60) * 100}%` }}
+                className="h-3 rounded-full transition-all duration-500"
+                style={{ width: `${(cooldownRemaining / 60) * 100}%`, background: 'linear-gradient(90deg, #f59e0b, #ef4444)' }}
               />
             </div>
-            <div className="text-slate-400 text-xs mt-1">{cooldownRemaining}s</div>
           </div>
         </div>
       )}
@@ -118,13 +138,6 @@ export function HUD({
       {/* Bottom navigation bar */}
       <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none">
         <div className="flex items-center justify-around bg-black/80 border-t border-slate-700/60 backdrop-blur-sm px-2 py-2 pointer-events-auto">
-          <button
-            onClick={onChangeUniverse}
-            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-slate-400 hover:bg-slate-700/30 transition-colors"
-          >
-            <span className="text-xl">🏠</span>
-            <span className="text-xs font-bold">Accueil</span>
-          </button>
           <button
             onClick={onOpenCollection}
             className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-blue-400 hover:bg-blue-900/30 transition-colors"

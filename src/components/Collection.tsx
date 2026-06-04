@@ -111,8 +111,8 @@ export function Collection({ state, onClose }: Props) {
                     <div
                       className="relative rounded-lg p-1 w-16 h-16 flex items-center justify-center"
                       style={{
-                        border: `2px solid ${caught ? rarityColor : '#374151'}`,
-                        background: caught ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.6)',
+                        border: caught ? `2px solid ${rarityColor}` : '2px solid transparent',
+                        background: caught ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.5)',
                         boxShadow: caught ? `0 0 8px 2px ${rarityColor}44` : 'none',
                       }}
                     >
@@ -127,7 +127,7 @@ export function Collection({ state, onClose }: Props) {
                         height={48}
                         style={{
                           imageRendering: 'pixelated',
-                          filter: caught ? 'none' : 'brightness(0) opacity(20%)',
+                          filter: caught ? 'none' : 'brightness(0) opacity(0.45)',
                         }}
                         draggable={false}
                       />

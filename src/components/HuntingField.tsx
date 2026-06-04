@@ -10,6 +10,7 @@ import { TERRAIN_SKINS } from './SkinsPanel';
 import { ZONE_BY_ID } from '../data/zones';
 import { PokemonData } from '../types';
 import { NewCaptureModal } from './NewCaptureModal';
+import { ZoneInfoPanel } from './ZoneInfoPanel';
 
 interface Notification {
   id: number;
@@ -56,6 +57,7 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
   const [cooldownSecs, setCooldownSecs] = useState(0);
   const [onCooldown, setOnCooldown] = useState(false);
   const [newCaptureInfo, setNewCaptureInfo] = useState<NewCaptureInfo | null>(null);
+  const [showZoneInfo, setShowZoneInfo] = useState(false);
   const processingRef = useRef<Set<string>>(new Set());
   const capturingRef = useRef(false);
 
@@ -208,6 +210,7 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
         onOpenRaid={onOpenRaid}
         onOpenWrapped={onOpenWrapped}
         onChangeUniverse={onChangeUniverse}
+        onOpenZoneInfo={() => setShowZoneInfo(true)}
         capturedCount={capturedCount}
         totalPokemon={totalPokemon}
         questsCompleted={questsCompleted}
@@ -232,6 +235,9 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
           {n.text}
         </div>
       ))}
+
+      {/* Zone info panel */}
+      {showZoneInfo && <ZoneInfoPanel state={gameState.state} onClose={() => setShowZoneInfo(false)} />}
 
       {/* New capture modal */}
       {newCaptureInfo && (
