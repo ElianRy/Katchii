@@ -254,11 +254,12 @@
 
 .shiny-sparkle {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 16px;
+  height: 16px;
   pointer-events: none;
   animation: shiny-sparkle var(--sp-duration, 1.2s) ease-in-out infinite;
   animation-delay: var(--sp-delay, 0s);
+  filter: drop-shadow(0 0 4px var(--sp-color, #fde047));
 }
 .shiny-sparkle::before,
 .shiny-sparkle::after {
@@ -270,7 +271,24 @@
 }
 .shiny-sparkle::after {
   transform: rotate(45deg);
-  opacity: 0.6;
+  opacity: 0.7;
+}
+/* Second smaller orbiting sparkle per slot */
+.shiny-sparkle-orbit {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  animation: shiny-sparkle var(--sp-duration, 1.2s) ease-in-out infinite;
+  animation-delay: calc(var(--sp-delay, 0s) + 0.5s);
+  filter: drop-shadow(0 0 3px var(--sp-color, #fde047));
+}
+.shiny-sparkle-orbit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--sp-color, #fde047);
+  clip-path: polygon(50% 0%, 55% 40%, 100% 50%, 55% 60%, 50% 100%, 45% 60%, 0% 50%, 45% 40%);
 }
 
 /* ── Battle arena animations ── */
@@ -301,6 +319,62 @@
 @keyframes p-rtl-2 { 0%{opacity:1;transform:translate(0,0) scale(1.4)} 100%{opacity:0;transform:translate(-190px,-35px) scale(0.3)} }
 @keyframes p-rtl-3 { 0%{opacity:1;transform:translate(0,0) scale(0.9)} 100%{opacity:0;transform:translate(-245px,8px) scale(0.5)} }
 @keyframes p-rtl-4 { 0%{opacity:1;transform:translate(0,0) scale(1.2)} 100%{opacity:0;transform:translate(-200px,30px) scale(0.4)} }
+
+/* ── Type-specific attack animations ── */
+
+/* FIRE: projectiles shoot from attacker toward target */
+@keyframes fire-shoot-ltr { 0%{opacity:1;transform:translate(0,var(--vy,0)) scale(1.2)} 100%{opacity:0;transform:translate(220px,var(--vy,0)) scale(0.4)} }
+@keyframes fire-shoot-rtl { 0%{opacity:1;transform:translate(0,var(--vy,0)) scale(1.2)} 100%{opacity:0;transform:translate(-220px,var(--vy,0)) scale(0.4)} }
+@keyframes fire-heatwave { 0%{opacity:0.8;transform:scaleX(0) scaleY(1)} 50%{opacity:0.6} 100%{opacity:0;transform:scaleX(1) scaleY(0.5)} }
+
+/* WATER: arc trajectory up then down */
+@keyframes water-arc-ltr { 0%{opacity:1;transform:translate(0,0) scale(1.1)} 40%{transform:translate(100px,-50px) scale(1)} 100%{opacity:0;transform:translate(220px,20px) scale(0.5)} }
+@keyframes water-arc-rtl { 0%{opacity:1;transform:translate(0,0) scale(1.1)} 40%{transform:translate(-100px,-50px) scale(1)} 100%{opacity:0;transform:translate(-220px,20px) scale(0.5)} }
+
+/* GRASS: rises from below attacker, then arcs toward target */
+@keyframes grass-rise-ltr { 0%{opacity:0;transform:translate(0,60px) scale(0.5)} 35%{opacity:1;transform:translate(20px,-10px) scale(1.1)} 100%{opacity:0;transform:translate(180px,-30px) scale(0.6)} }
+@keyframes grass-rise-rtl { 0%{opacity:0;transform:translate(0,60px) scale(0.5)} 35%{opacity:1;transform:translate(-20px,-10px) scale(1.1)} 100%{opacity:0;transform:translate(-180px,-30px) scale(0.6)} }
+
+/* ELECTRIC: SVG bolt extend, then ricochet sparks */
+@keyframes bolt-extend { 0%{stroke-dashoffset:300} 100%{stroke-dashoffset:0} }
+@keyframes spark-ricochet-ltr { 0%{opacity:1;transform:translate(200px,0) scale(1)} 100%{opacity:0;transform:translate(200px,var(--vy,0)) scale(0.3) rotate(var(--vr,0deg))} }
+@keyframes spark-ricochet-rtl { 0%{opacity:1;transform:translate(-200px,0) scale(1)} 100%{opacity:0;transform:translate(-200px,var(--vy,0)) scale(0.3) rotate(var(--vr,0deg))} }
+
+/* ICE: spin + fly */
+@keyframes ice-spin-ltr { 0%{opacity:1;transform:translate(0,var(--vy,0)) rotate(0deg) scale(1)} 100%{opacity:0;transform:translate(210px,var(--vy,0)) rotate(540deg) scale(0.4)} }
+@keyframes ice-spin-rtl { 0%{opacity:1;transform:translate(0,var(--vy,0)) rotate(0deg) scale(1)} 100%{opacity:0;transform:translate(-210px,var(--vy,0)) rotate(-540deg) scale(0.4)} }
+
+/* PSYCHIC: rings pulse and travel */
+@keyframes psychic-ring-ltr { 0%{opacity:0.8;transform:scale(0.3) translateX(0)} 50%{opacity:0.6} 100%{opacity:0;transform:scale(1.6) translateX(160px)} }
+@keyframes psychic-ring-rtl { 0%{opacity:0.8;transform:scale(0.3) translateX(0)} 50%{opacity:0.6} 100%{opacity:0;transform:scale(1.6) translateX(-160px)} }
+
+/* GHOST: wavy slow drift */
+@keyframes ghost-wave-ltr { 0%{opacity:0;transform:translate(0,0)} 15%{opacity:0.65} 50%{transform:translate(100px,-25px)} 80%{transform:translate(180px,15px)} 100%{opacity:0;transform:translate(230px,0)} }
+@keyframes ghost-wave-rtl { 0%{opacity:0;transform:translate(0,0)} 15%{opacity:0.65} 50%{transform:translate(-100px,-25px)} 80%{transform:translate(-180px,15px)} 100%{opacity:0;transform:translate(-230px,0)} }
+
+/* POISON: bubbles rise from ground at target */
+@keyframes poison-bubble-ltr { 0%{opacity:0;transform:translate(200px,50px) scale(0.5)} 40%{opacity:1;transform:translate(200px,0) scale(1)} 100%{opacity:0;transform:translate(200px,-60px) scale(0.7)} }
+@keyframes poison-bubble-rtl { 0%{opacity:0;transform:translate(-200px,50px) scale(0.5)} 40%{opacity:1;transform:translate(-200px,0) scale(1)} 100%{opacity:0;transform:translate(-200px,-60px) scale(0.7)} }
+
+/* GROUND: rocks thrown in high arc */
+@keyframes ground-arc-ltr { 0%{opacity:1;transform:translate(0,0) rotate(0deg) scale(1.2)} 40%{transform:translate(110px,-70px) rotate(180deg) scale(1)} 100%{opacity:0;transform:translate(220px,30px) rotate(360deg) scale(0.5)} }
+@keyframes ground-arc-rtl { 0%{opacity:1;transform:translate(0,0) rotate(0deg) scale(1.2)} 40%{transform:translate(-110px,-70px) rotate(-180deg) scale(1)} 100%{opacity:0;transform:translate(-220px,30px) rotate(-360deg) scale(0.5)} }
+
+/* FIGHTING: impact burst at target */
+@keyframes fight-impact-ltr { 0%{opacity:0;transform:translate(195px,var(--vy,0)) scale(0.3)} 40%{opacity:1;transform:translate(200px,var(--vy,0)) scale(1.5)} 100%{opacity:0;transform:translate(200px,var(--vy,0)) scale(0.6)} }
+@keyframes fight-impact-rtl { 0%{opacity:0;transform:translate(-195px,var(--vy,0)) scale(0.3)} 40%{opacity:1;transform:translate(-200px,var(--vy,0)) scale(1.5)} 100%{opacity:0;transform:translate(-200px,var(--vy,0)) scale(0.6)} }
+
+/* FLYING: wind sweep */
+@keyframes wind-sweep-ltr { 0%{opacity:0;transform:translate(-20px,var(--vy,0)) scale(0.8)} 20%{opacity:1} 100%{opacity:0;transform:translate(250px,var(--vy,0)) scale(0.5)} }
+@keyframes wind-sweep-rtl { 0%{opacity:0;transform:translate(20px,var(--vy,0)) scale(0.8)} 20%{opacity:1} 100%{opacity:0;transform:translate(-250px,var(--vy,0)) scale(0.5)} }
+
+/* DRAGON: full-width sweep */
+@keyframes dragon-sweep-ltr { 0%{opacity:0;transform:translateX(-60px) scale(0.6)} 20%{opacity:1;transform:translateX(0) scale(1)} 100%{opacity:0;transform:translateX(280px) scale(0.8)} }
+@keyframes dragon-sweep-rtl { 0%{opacity:0;transform:translateX(60px) scale(0.6)} 20%{opacity:1;transform:translateX(0) scale(1)} 100%{opacity:0;transform:translateX(-280px) scale(0.8)} }
+
+/* NORMAL: star burst from attacker */
+@keyframes star-fly-ltr { 0%{opacity:1;transform:translate(0,var(--vy,0)) scale(1.1) rotate(0deg)} 100%{opacity:0;transform:translate(210px,var(--vy,0)) scale(0.4) rotate(180deg)} }
+@keyframes star-fly-rtl { 0%{opacity:1;transform:translate(0,var(--vy,0)) scale(1.1) rotate(0deg)} 100%{opacity:0;transform:translate(-210px,var(--vy,0)) scale(0.4) rotate(-180deg)} }
 
 /* screen flash on hit */
 @keyframes hit-flash { 0%,100%{opacity:0} 50%{opacity:0.35} }

@@ -90,15 +90,16 @@ export function useGameState() {
           saveCloudState(user.id, localState);
           return;
         }
-        // Keep whichever has more pokemon (guards against empty cloud overwriting local)
-        const cloudCount = Object.keys(cloudState.normalCollection ?? {}).length +
-          Object.keys(cloudState.narutoCollection ?? {}).length;
-        const localCount = Object.keys(localState.normalCollection ?? {}).length +
-          Object.keys(localState.narutoCollection ?? {}).length;
-        const best = cloudCount >= localCount ? cloudState : localState;
+        // Keep whichever has the best score: pokemon count (×1000) + total level sum
+        const score = (s: GameState) => {
+          const count = Object.keys(s.normalCollection ?? {}).length + Object.keys(s.narutoCollection ?? {}).length;
+          const levels = Object.values(s.pokemonLevels ?? {}).reduce((sum, l) => sum + (l.level ?? 1), 0);
+          return count * 1000 + levels;
+        };
+        const best = score(cloudState) >= score(localState) ? cloudState : localState;
         setState(() => { saveState(best); return best; });
         // If local was richer, re-upload it so cloud catches up
-        if (localCount > cloudCount) saveCloudState(user.id, localState);
+        if (score(localState) > score(cloudState)) saveCloudState(user.id, localState);
       });
     });
   }, []);
