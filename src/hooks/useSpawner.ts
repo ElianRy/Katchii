@@ -31,24 +31,24 @@ function weightedRarity(weights: Record<Rarity, number>): Rarity {
   return 'commun';
 }
 
-const SPECIAL_WEIGHT_ELITE = 1 / 100; // elite-equivalent rarity (e.g. Abo, Abra)
-const SPECIAL_WEIGHT_LEGENDARY = 1 / 500; // legendary-equivalent rarity (e.g. Pikachu in zone1)
+// Flat per-spawn-check probabilities for special pokemon
+// These bypass the rarity pool entirely so being alone in a rarity tier doesn't inflate rate
+const LEGENDARY_SPECIAL_RATE = 1 / 400; // ~1 per 10 min
+const ELITE_SPECIAL_RATE = 1 / 40;      // ~1 per 1 min
 
-function pickPokemon(rarity: Rarity, zoneIds: number[], specialIds: Set<number>, legendarySpecialIds: Set<number>): number {
+function pickPokemon(rarity: Rarity, zoneIds: number[], excludeIds: Set<number>): number {
   const allPool = POKEMON_BY_RARITY[rarity] ?? [];
-  const zonePool = zoneIds.length > 0 ? allPool.filter(p => zoneIds.includes(p.id)) : allPool;
-  if (zonePool.length === 0) return zoneIds[Math.floor(Math.random() * zoneIds.length)] ?? GEN1_POKEMON[0].id;
-  const weights = zonePool.map(p =>
-    legendarySpecialIds.has(p.id) ? SPECIAL_WEIGHT_LEGENDARY :
-    specialIds.has(p.id) ? SPECIAL_WEIGHT_ELITE : 1
-  );
-  const total = weights.reduce((a, b) => a + b, 0);
-  let r = Math.random() * total;
-  for (let i = 0; i < zonePool.length; i++) {
-    r -= weights[i];
-    if (r <= 0) return zonePool[i].id;
+  const zonePool = zoneIds.length > 0
+    ? allPool.filter(p => zoneIds.includes(p.id) && !excludeIds.has(p.id))
+    : allPool.filter(p => !excludeIds.has(p.id));
+  // Fallback to full zone pool (excluding specials) if rarity tier is empty
+  if (zonePool.length === 0) {
+    const fallback = zoneIds.filter(id => !excludeIds.has(id));
+    return fallback.length > 0
+      ? fallback[Math.floor(Math.random() * fallback.length)]
+      : GEN1_POKEMON[0].id;
   }
-  return zonePool[zonePool.length - 1].id;
+  return zonePool[Math.floor(Math.random() * zonePool.length)].id;
 }
 
 function getZoneRarities(zoneIds: number[]): Set<Rarity> {
@@ -144,6 +144,7 @@ export function useSpawner(
         const zoneIds = currentZone?.pokemonIds ?? [];
         const specialIds = new Set<number>(currentZone?.specialIds ?? []);
         const legendarySpecialIds = new Set<number>(currentZone?.legendarySpecialIds ?? []);
+        const allExcluded = new Set<number>([...specialIds, ...legendarySpecialIds]);
         const zoneRarities = universe === 'naruto' ? null : getZoneRarities(zoneIds);
 
         // Zero out rarities not present in this zone
@@ -167,7 +168,16 @@ export function useSpawner(
           const shinyRate = baseShinyRate * mult.shinyRate;
           isShiny = !shinyDepleted.includes(nId) && Math.random() < shinyRate;
         } else {
-          pokemonId = pickPokemon(rarity, zoneIds, specialIds, legendarySpecialIds);
+          // Check legendary/elite specials first via flat absolute rates
+          const legendaryPool = [...legendarySpecialIds].filter(id => zoneIds.includes(id));
+          const elitePool = [...specialIds].filter(id => zoneIds.includes(id));
+          if (legendaryPool.length > 0 && Math.random() < LEGENDARY_SPECIAL_RATE) {
+            pokemonId = legendaryPool[Math.floor(Math.random() * legendaryPool.length)];
+          } else if (elitePool.length > 0 && Math.random() < ELITE_SPECIAL_RATE) {
+            pokemonId = elitePool[Math.floor(Math.random() * elitePool.length)];
+          } else {
+            pokemonId = pickPokemon(rarity, zoneIds, allExcluded);
+          }
           const shinyDepleted = gs.state.shinyDepleted;
           const baseShinyRate = (1 / 250) * (151 / Math.max(1, 151 - shinyDepleted.length));
           const shinyRate = baseShinyRate * mult.shinyRate;
