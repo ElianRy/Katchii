@@ -46,6 +46,8 @@ const BUSHES = [
 interface Props {
   onOpenCollection: () => void;
   onOpenTeam: () => void;
+  onOpenAdmin?: () => void;
+  isAdmin?: boolean;
   onOpenLures: () => void;
   onOpenQuests: () => void;
   onOpenDuels: () => void;
@@ -65,7 +67,7 @@ interface NewCaptureInfo {
   rarity: string;
 }
 
-export function HuntingField({ onOpenCollection, onOpenTeam, onOpenLures, onOpenQuests, onOpenDuels, onOpenVillage, onOpenSkins, onOpenFusion, onOpenRaid, onOpenWrapped, onChangeUniverse, gameState }: Props) {
+export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmin, onOpenLures, onOpenQuests, onOpenDuels, onOpenVillage, onOpenSkins, onOpenFusion, onOpenRaid, onOpenWrapped, onChangeUniverse, gameState }: Props) {
   const spawner = useSpawner(gameState);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [cooldownSecs, setCooldownSecs] = useState(0);
@@ -165,11 +167,11 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenLures, onOpen
       {/* Zone-specific background */}
       <ZoneBackground zoneId={currentZoneId} />
 
-      {/* Ground gradient — extends behind nav bar */}
+      {/* Ground gradient */}
       <div
         className="absolute bottom-0 left-0 right-0 pointer-events-none"
         style={{
-          height: '28%',
+          height: '20%',
           background: zoneGround.ground,
         }}
       />
@@ -225,6 +227,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenLures, onOpen
         isOnCooldown={onCooldown}
         onOpenCollection={onOpenCollection}
         onOpenTeam={onOpenTeam}
+        onOpenAdmin={onOpenAdmin}
+        isAdmin={isAdmin}
         onOpenLures={onOpenLures}
         onOpenQuests={onOpenQuests}
         onOpenDuels={onOpenDuels}

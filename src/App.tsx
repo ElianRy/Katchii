@@ -16,6 +16,7 @@ import { AuthScreen } from './components/AuthScreen';
 import { HomeScreen } from './components/HomeScreen';
 import { ProfileScreen } from './components/ProfileScreen';
 import { TeamBuilder } from './components/TeamBuilder';
+import { AdminPanel } from './components/AdminPanel';
 import { useGameState } from './hooks/useGameState';
 import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
@@ -125,6 +126,8 @@ export function App() {
         <HuntingField
           onOpenCollection={() => setView('collection')}
           onOpenTeam={() => setView('team')}
+          onOpenAdmin={() => setView('admin')}
+          isAdmin={username === 'admin'}
           onOpenLures={() => setView('lures')}
           onOpenQuests={() => setView('quests')}
           onOpenDuels={() => setView('duels')}
@@ -141,6 +144,13 @@ export function App() {
       {view === 'collection' && (
         <Collection
           state={gameState.state}
+          onClose={() => setView('hunt')}
+        />
+      )}
+
+      {view === 'admin' && username === 'admin' && (
+        <AdminPanel
+          gameState={gameState}
           onClose={() => setView('hunt')}
         />
       )}

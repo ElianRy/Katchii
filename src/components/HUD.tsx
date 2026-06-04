@@ -17,6 +17,8 @@ interface Props {
   onOpenWrapped: () => void;
   onChangeUniverse: () => void;
   onOpenZoneInfo?: () => void;
+  onOpenAdmin?: () => void;
+  isAdmin?: boolean;
   capturedCount: number;
   totalPokemon: number;
   questsCompleted: number;
@@ -64,6 +66,8 @@ export function HUD({
   onOpenWrapped,
   onChangeUniverse,
   onOpenZoneInfo,
+  onOpenAdmin,
+  isAdmin = false,
   capturedCount,
   totalPokemon,
   questsCompleted,
@@ -180,13 +184,24 @@ export function HUD({
         </div>
       </div>
 
-      {/* Top-right menu button */}
-      <button
-        onClick={onChangeUniverse}
-        className="absolute top-3 right-3 z-20 bg-black/70 rounded-xl px-3 py-2 flex items-center gap-1 text-slate-300 hover:text-white border border-slate-600/40 hover:border-slate-400/60 text-sm font-bold"
-      >
-        🏠 <span className="text-xs">Menu</span>
-      </button>
+      {/* Top-right buttons */}
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
+        {isAdmin && onOpenAdmin && (
+          <button
+            onClick={onOpenAdmin}
+            className="bg-red-900/80 rounded-xl px-2 py-2 flex items-center gap-1 text-red-300 hover:text-white border border-red-700/60 hover:border-red-400 text-sm font-bold"
+            title="Panneau Admin"
+          >
+            🔧
+          </button>
+        )}
+        <button
+          onClick={onChangeUniverse}
+          className="bg-black/70 rounded-xl px-3 py-2 flex items-center gap-1 text-slate-300 hover:text-white border border-slate-600/40 hover:border-slate-400/60 text-sm font-bold"
+        >
+          🏠 <span className="text-xs">Menu</span>
+        </button>
+      </div>
 
       {/* Cooldown bar — centered above bottom nav */}
       {isOnCooldown && (

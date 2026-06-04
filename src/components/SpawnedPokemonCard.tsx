@@ -125,7 +125,12 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
   return (
     <div
       className={containerClass}
-      style={{ left: `${spawned.x}%`, top: `${spawned.y}%`, transform: 'translate(-50%, -50%)' }}
+      style={{
+        left: `${spawned.x}%`,
+        top: `${spawned.y}%`,
+        transform: 'translate(-50%, -50%)',
+        transition: leaving ? undefined : 'left 0.08s linear, top 0.08s linear',
+      }}
     >
       {/* Confetti particles on capture */}
       {showParticles && particles.map((p) => {

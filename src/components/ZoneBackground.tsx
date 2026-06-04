@@ -186,16 +186,16 @@ export function ZoneBackground({ zoneId }: Props) {
           ))}
           {/* Far tree silhouette band */}
           <div className="absolute pointer-events-none w-full" style={{
-            bottom: '28%',
-            height: '22%',
+            bottom: '18%',
+            height: '16%',
             background: 'linear-gradient(to bottom, #3a7a22 0%, #2d6018 100%)',
             clipPath: 'polygon(0% 60%, 5% 20%, 10% 55%, 15% 10%, 20% 50%, 26% 5%, 32% 45%, 38% 15%, 44% 50%, 50% 8%, 56% 48%, 62% 12%, 68% 45%, 74% 5%, 80% 50%, 86% 18%, 92% 52%, 97% 22%, 100% 55%, 100% 100%, 0% 100%)',
             opacity: 0.85,
           }} />
           {/* Near tree silhouette band */}
           <div className="absolute pointer-events-none w-full" style={{
-            bottom: '24%',
-            height: '18%',
+            bottom: '15%',
+            height: '13%',
             background: 'linear-gradient(to bottom, #4a9428 0%, #3a7018 100%)',
             clipPath: 'polygon(0% 70%, 4% 25%, 9% 65%, 14% 20%, 20% 60%, 27% 10%, 33% 55%, 40% 18%, 46% 58%, 53% 12%, 59% 52%, 65% 20%, 72% 60%, 78% 8%, 84% 55%, 90% 22%, 96% 58%, 100% 30%, 100% 100%, 0% 100%)',
           }} />

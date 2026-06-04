@@ -55,10 +55,12 @@ function pickNaruto(rarity: Rarity): string {
 
 function getValidPosition(existing: SpawnedPokemon[]): { x: number; y: number } | null {
   for (let attempt = 0; attempt < 10; attempt++) {
-    const x = 5 + Math.random() * 80;
-    const y = 10 + Math.random() * 60;
-    // Avoid HUD zone (top-left)
-    if (x < 35 && y < 30) continue;
+    const x = 5 + Math.random() * 85;
+    const y = 12 + Math.random() * 52;
+    // Avoid HUD zone (top-left is tall on mobile)
+    if (x < 50 && y < 52) continue;
+    // Avoid bottom nav area
+    if (y > 68) continue;
     // Check distance from existing spawned
     const tooClose = existing.some(s =>
       Math.sqrt(Math.pow(s.x - x, 2) + Math.pow(s.y - y, 2)) < 15
@@ -190,11 +192,13 @@ export function useSpawner(
         x += vx;
         y += vy;
         // Bounce off edges (avoid HUD top-left and bottom nav)
-        if (x < 8)  { x = 8;  vx = Math.abs(vx); }
-        if (x > 88) { x = 88; vx = -Math.abs(vx); }
-        if (y < 8)  { y = 8;  vy = Math.abs(vy); }
-        if (y > 68) { y = 68; vy = -Math.abs(vy); }
-        // Random direction change ~1% per tick
+        // Keep out of HUD (left side) and bottom nav
+        const minX = (y < 52) ? 52 : 5;
+        if (x < minX) { x = minX; vx = Math.abs(vx); }
+        if (x > 90)   { x = 90;  vx = -Math.abs(vx); }
+        if (y < 12)   { y = 12;  vy = Math.abs(vy); }
+        if (y > 66)   { y = 66;  vy = -Math.abs(vy); }
+        // Random direction change
         if (Math.random() < 0.005) {
           const angle = Math.random() * Math.PI * 2;
           vx = Math.cos(angle) * WANDER_SPEED;
