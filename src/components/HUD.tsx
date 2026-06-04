@@ -214,42 +214,66 @@ export function HUD({
 
       {/* Cooldown — pokeball drawn progressively, disappears when ready */}
       {isOnCooldown && (() => {
-        const cx = 32; const cy = 32; const r = 30;
-        // How much of the pokeball is revealed: 0 at start of cooldown, 1 at end
-        const elapsed = 1 - (cooldownRemaining / 60);
-        const angle = elapsed * 2 * Math.PI; // 0 → 2π
-        // Pie-slice clip: from 12 o'clock clockwise
-        const ex = cx + r * Math.sin(angle);
-        const ey = cy - r * Math.cos(angle);
-        const largeArc = angle > Math.PI ? 1 : 0;
-        const clipId = 'pb-reveal';
-        // When almost done (< 2s), add a "glowing ready" feel
-        const nearlyDone = cooldownRemaining <= 2;
+        const cx = 32, cy = 32, r = 26;
+        const circumference = 2 * Math.PI * r;
+        // elapsed: 0 at start of cooldown, 1 when done
+        const elapsed = Math.min(1, Math.max(0, (60 - cooldownRemaining) / 60));
+        // Phase 1 (0→55%): draw outer circle arc from top clockwise
+        const p1 = Math.min(1, elapsed / 0.55);
+        // Phase 2 (30%→70%): fade in divider line
+        const p2 = Math.min(1, Math.max(0, (elapsed - 0.30) / 0.40));
+        // Phase 3 (55%→80%): pop in center button
+        const p3 = Math.min(1, Math.max(0, (elapsed - 0.55) / 0.25));
+        // Phase 4 (78%→100%): fill with colors
+        const p4 = Math.min(1, Math.max(0, (elapsed - 0.78) / 0.22));
+        const nearlyDone = cooldownRemaining <= 4;
+        const dashOffset = circumference * (1 - p1);
         return (
           <div className="absolute right-3 z-20" style={{ bottom: '84px' }}>
-            <svg width="56" height="70" viewBox={`0 0 56 80`} style={{ overflow: 'visible' }}>
-              <defs>
-                <clipPath id={clipId}>
-                  {elapsed >= 1
-                    ? <circle cx={cx-4} cy={cy-4} r={r} />
-                    : <path d={`M ${cx-4} ${cy-4} L ${cx-4} ${cy-4-r} A ${r} ${r} 0 ${largeArc} 1 ${ex-4} ${ey-4} Z`} />
-                  }
-                </clipPath>
-              </defs>
-              {/* Ghost outline — always visible so player sees what's being drawn */}
-              <circle cx={cx-4} cy={cy-4} r={r} fill="none" stroke="#ffffff18" strokeWidth="1.5" />
-              {/* Pokeball revealed progressively via clip */}
-              <g clipPath={`url(#${clipId})`}
-                style={nearlyDone ? { filter: 'drop-shadow(0 0 6px #fbbf24cc)' } : undefined}>
-                <path d={`M ${cx-4} ${cy-4-r} A ${r} ${r} 0 0 1 ${cx-4+r} ${cy-4} L ${cx-4+6} ${cy-4} A 6 6 0 0 0 ${cx-4-6} ${cy-4} L ${cx-4-r} ${cy-4} A ${r} ${r} 0 0 1 ${cx-4} ${cy-4-r} Z`} fill="#ef4444" />
-                <path d={`M ${cx-4-r} ${cy-4} A ${r} ${r} 0 0 0 ${cx-4+r} ${cy-4} L ${cx-4+6} ${cy-4} A 6 6 0 0 1 ${cx-4-6} ${cy-4} Z`} fill="white" />
-                <circle cx={cx-4} cy={cy-4} r={r} fill="none" stroke="#111" strokeWidth="2" />
-                <line x1={cx-4-r} y1={cy-4} x2={cx-4+r} y2={cy-4} stroke="#111" strokeWidth="2" />
-                <circle cx={cx-4} cy={cy-4} r="6" fill="white" stroke="#111" strokeWidth="2" />
-                <circle cx={cx-4} cy={cy-4} r="3" fill="#d1d5db" />
+            <svg width="64" height="76" viewBox="0 0 64 76"
+              style={nearlyDone ? { filter: 'drop-shadow(0 0 7px #fbbf24bb)', transition: 'filter 0.4s ease' } : { transition: 'filter 0.4s ease' }}>
+              {/* Color fills — fade in during phase 4 */}
+              <path
+                d={`M ${cx} ${cy-r} A ${r} ${r} 0 0 1 ${cx+r} ${cy} L ${cx+5} ${cy} A 5 5 0 0 0 ${cx-5} ${cy} L ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx} ${cy-r} Z`}
+                fill="#ef4444" opacity={p4}
+              />
+              <path
+                d={`M ${cx-r} ${cy} A ${r} ${r} 0 0 0 ${cx+r} ${cy} L ${cx+5} ${cy} A 5 5 0 0 1 ${cx-5} ${cy} Z`}
+                fill="white" opacity={p4}
+              />
+              {/* Ghost circle — faint guide so player sees what's coming */}
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#ffffff14" strokeWidth="2" />
+              {/* Outer circle drawn from top clockwise */}
+              <circle
+                cx={cx} cy={cy} r={r}
+                fill="none"
+                stroke={p4 > 0.5 ? '#111' : '#fff'}
+                strokeWidth="2.5"
+                strokeDasharray={circumference}
+                strokeDashoffset={dashOffset}
+                transform={`rotate(-90, ${cx}, ${cy})`}
+                style={{ transition: 'stroke-dashoffset 0.5s linear, stroke 0.3s ease' }}
+              />
+              {/* Divider line — fades in */}
+              <line
+                x1={cx - r} y1={cy} x2={cx + r} y2={cy}
+                stroke={p4 > 0.5 ? '#111' : '#fff'}
+                strokeWidth="2"
+                opacity={p2}
+                style={{ transition: 'opacity 0.4s ease, stroke 0.3s ease' }}
+              />
+              {/* Center button — scales in */}
+              <g style={{
+                transformOrigin: `${cx}px ${cy}px`,
+                transform: `scale(${0.2 + 0.8 * p3})`,
+                opacity: p3,
+                transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease',
+              }}>
+                <circle cx={cx} cy={cy} r={6} fill={p4 > 0.5 ? 'white' : '#1e293b'} stroke={p4 > 0.5 ? '#111' : '#fff'} strokeWidth="2" style={{ transition: 'fill 0.3s ease, stroke 0.3s ease' }} />
+                <circle cx={cx} cy={cy} r={2.5} fill="#94a3b8" />
               </g>
-              {/* Countdown text below */}
-              <text x={cx-4} y={cy+r+16} textAnchor="middle" fill="#94a3b8" fontSize="9" fontWeight="bold">
+              {/* Countdown */}
+              <text x={cx} y={cy + r + 15} textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">
                 {cooldownRemaining}s
               </text>
             </svg>

@@ -84,12 +84,21 @@ export function useGameState() {
       if (!user) return;
       userIdRef.current = user.id;
       loadCloudState(user.id).then(cloudState => {
-        if (!cloudState) return;
-        // Cloud is the source of truth — always prefer it over localStorage
-        setState(() => {
-          saveState(cloudState);
-          return cloudState;
-        });
+        const localState = loadState();
+        if (!cloudState) {
+          // No cloud data — push local state up so next deploy has it
+          saveCloudState(user.id, localState);
+          return;
+        }
+        // Keep whichever has more pokemon (guards against empty cloud overwriting local)
+        const cloudCount = Object.keys(cloudState.normalCollection ?? {}).length +
+          Object.keys(cloudState.narutoCollection ?? {}).length;
+        const localCount = Object.keys(localState.normalCollection ?? {}).length +
+          Object.keys(localState.narutoCollection ?? {}).length;
+        const best = cloudCount >= localCount ? cloudState : localState;
+        setState(() => { saveState(best); return best; });
+        // If local was richer, re-upload it so cloud catches up
+        if (localCount > cloudCount) saveCloudState(user.id, localState);
       });
     });
   }, []);
