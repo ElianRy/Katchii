@@ -205,7 +205,7 @@ export function HUD({
 
       {/* Cooldown bar — centered above bottom nav */}
       {isOnCooldown && (
-        <div className="absolute left-1/2 -translate-x-1/2 z-20" style={{ bottom: '72px', width: '85%', maxWidth: 360 }}>
+        <div className="absolute left-1/2 -translate-x-1/2 z-20" style={{ bottom: '80px', width: '85%', maxWidth: 360 }}>
           <div className="bg-black/80 rounded-2xl px-5 py-3 text-center border border-yellow-500/30 backdrop-blur-sm">
             <div className="text-yellow-300 text-sm font-bold mb-2">⏳ Prochaine capture dans {cooldownRemaining}s</div>
             <div className="w-full bg-slate-700/60 rounded-full h-3 overflow-hidden">

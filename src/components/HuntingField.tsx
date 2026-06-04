@@ -156,7 +156,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const zoneGround = ZONE_GROUND[currentZoneId] ?? ZONE_GROUND['zone1'];
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full overflow-hidden" style={{ height: 'calc(100vh - 72px)' }}>
       {/* Zone-specific background */}
       <ZoneBackground zoneId={currentZoneId} />
 
