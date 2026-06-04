@@ -1,6 +1,5 @@
 import React from 'react';
 
-// 8 primary sparkles + 8 orbit sparkles = 16 total
 export const SPARKLE_POSITIONS = [
   { top: '-16px',  left: '50%',    color: '#fde047', duration: '1.0s', delay: '0s' },
   { top: '5%',     right: '-16px', color: '#f472b6', duration: '1.2s', delay: '0.15s' },
@@ -12,7 +11,6 @@ export const SPARKLE_POSITIONS = [
   { bottom: '-12px',right: '20%',  color: '#f87171', duration: '1.05s', delay: '1.05s' },
 ];
 
-// Smaller orbiting sparkles between the main ones
 const ORBIT_POSITIONS = [
   { top: '-8px',   left: '30%',   color: '#fde047', duration: '1.15s', delay: '0.5s' },
   { top: '20%',    right: '-10px',color: '#60a5fa', duration: '0.9s',  delay: '0.7s' },
@@ -28,16 +26,19 @@ interface Props {
   className?: string;
   style?: React.CSSProperties;
   alt?: string;
+  /** compact=true skips animated sparkle divs (use in grids with many pokemon) */
+  compact?: boolean;
 }
 
-export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, className, style, alt }: Props) {
+export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, className, style, alt, compact = false }: Props) {
   const src = isShiny
     ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${pokemonId}.png`
     : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
 
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width, height }}>
-      {isShiny && SPARKLE_POSITIONS.map((sp, i) => (
+      {/* Full sparkles only in non-compact mode */}
+      {isShiny && !compact && SPARKLE_POSITIONS.map((sp, i) => (
         <div
           key={i}
           className="shiny-sparkle"
@@ -53,7 +54,7 @@ export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, class
           } as React.CSSProperties}
         />
       ))}
-      {isShiny && ORBIT_POSITIONS.map((sp, i) => (
+      {isShiny && !compact && ORBIT_POSITIONS.map((sp, i) => (
         <div
           key={`o${i}`}
           className="shiny-sparkle-orbit"
@@ -86,3 +87,4 @@ export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, class
     </div>
   );
 }
+

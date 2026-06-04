@@ -6,7 +6,7 @@ import { useGameState } from '../hooks/useGameState';
 import { useSpawner } from '../hooks/useSpawner';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { NARUTO_BY_ID } from '../data/naruto';
-import { ZONE_BY_ID } from '../data/zones';
+import { ZONE_BY_ID, ZONE_ORDER } from '../data/zones';
 
 const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
   zone1: { ground: 'linear-gradient(to top, #14532d 0%, #166534 40%, transparent 100%)', bush: 'linear-gradient(to top, #15803d, #22c55e)' },
@@ -145,6 +145,12 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
 
   const currentZoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
   const currentZone = ZONE_BY_ID[currentZoneId];
+  const currentZoneIdx = ZONE_ORDER.indexOf(currentZoneId);
+  const prevZoneId = currentZoneIdx > 0 ? ZONE_ORDER[currentZoneIdx - 1] : null;
+  const nextZoneId = currentZoneIdx >= 0 && currentZoneIdx < ZONE_ORDER.length - 1 ? ZONE_ORDER[currentZoneIdx + 1] : null;
+  const unlockedZones = gameState.state.zoneProgress?.unlockedZones ?? ['zone1'];
+  const canGoNext = nextZoneId !== null && unlockedZones.includes(nextZoneId);
+  const canGoPrev = prevZoneId !== null;
   const currentZoneName = currentZone ? currentZone.name : 'Forêt de Pallet';
   const zoneIds = currentZone?.pokemonIds ?? [];
   const missingInZone = zoneIds.filter(id => (gameState.state.normalCollection[id] ?? 0) === 0);
@@ -252,6 +258,26 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       {/* Zone info panel */}
       {showZoneInfo && <ZoneInfoPanel state={gameState.state} onClose={() => setShowZoneInfo(false)} />}
 
+      {/* Zone nav arrows */}
+      {canGoPrev && (
+        <button
+          onClick={() => gameState.setCurrentZone(prevZoneId!)}
+          className="absolute left-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl transition-all"
+          title={ZONE_BY_ID[prevZoneId!]?.name}
+        >
+          ‹
+        </button>
+      )}
+      {canGoNext && (
+        <button
+          onClick={() => gameState.setCurrentZone(nextZoneId!)}
+          className="absolute right-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl transition-all"
+          title={ZONE_BY_ID[nextZoneId!]?.name}
+        >
+          ›
+        </button>
+      )}
+
       {/* Boss fight */}
       {showBossFight && currentZone?.boss && (
         <BossFightPanel
@@ -261,8 +287,9 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           onAddXp={(pokemonId, xp) => gameState.addPokemonXp(pokemonId, xp)}
           onVictory={(zoneId, nextZoneId) => {
             gameState.defeatZoneBoss(zoneId, nextZoneId);
-            gameState.spendPoints(-100); // award 100 pts (negative spend = gain)
-            setShowBossFight(false);
+            gameState.spendPoints(-100);
+            // Auto-navigate to next zone, panel stays open to show result screen
+            if (nextZoneId) gameState.setCurrentZone(nextZoneId);
           }}
         />
       )}

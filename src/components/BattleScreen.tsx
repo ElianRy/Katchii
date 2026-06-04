@@ -746,17 +746,6 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
         ))}
       </div>
 
-      {/* Bench */}
-      <div className="shrink-0 flex gap-3 px-4 py-2 border-t border-slate-700/40 bg-black/60">
-        <span className="text-slate-500 text-xs self-center">Banc :</span>
-        {playerFighters.filter((_, i) => i !== playerIdx).map((f, i) => (
-          <div key={i} className={`flex flex-col items-center ${f.currentHp <= 0 ? 'opacity-30' : ''}`}>
-            <ShinySprite pokemonId={f.pokemonId} isShiny={f.isShiny ?? false} width={34} height={34}
-              style={{ filter: f.currentHp <= 0 ? 'grayscale(1)' : 'none' }} />
-            <span className="text-xs text-slate-400">Nv.{f.level}</span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

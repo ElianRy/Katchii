@@ -296,6 +296,7 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon Ã
                 <div className="relative">
                   <ShinySprite
                     pokemonId={p.id} isShiny={isShiny} width={52} height={52}
+                    compact
                     style={{ filter: sel ? `drop-shadow(0 0 6px ${color})` : 'none' }}
                   />
                   {sel && (
