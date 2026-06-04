@@ -170,10 +170,18 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
 
             {spriteError ? (
               <div
-                className="flex items-center justify-center text-center font-bold text-xs p-1"
-                style={{ width: 64, height: 64, background: 'rgba(0,0,0,0.6)', color: rarityColor, borderRadius: 8 }}
+                className="flex flex-col items-center justify-center gap-0.5"
+                style={{
+                  width: 64, height: 64,
+                  background: `linear-gradient(135deg, ${rarityColor}33, ${rarityColor}11)`,
+                  border: `1px solid ${rarityColor}66`,
+                  borderRadius: 8,
+                }}
               >
-                {pokemonData.name}
+                <span style={{ fontSize: 26 }}>忍</span>
+                <span className="font-black text-center leading-none" style={{ color: rarityColor, fontSize: '0.5rem', maxWidth: 58 }}>
+                  {pokemonData.name.split(' ')[0]}
+                </span>
               </div>
             ) : (
               <img

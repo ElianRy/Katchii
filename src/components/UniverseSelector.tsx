@@ -1,10 +1,21 @@
 interface Props {
   onSelect: (universe: 'pokemon' | 'naruto') => void;
+  narutoLocked?: boolean;
+  onBack?: () => void;
 }
 
-export function UniverseSelector({ onSelect }: Props) {
+export function UniverseSelector({ onSelect, narutoLocked = true, onBack }: Props) {
   return (
     <div className="fixed inset-0 bg-slate-950 text-white flex flex-col items-center justify-center gap-8 p-6">
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute top-4 left-4 text-slate-400 hover:text-white text-sm flex items-center gap-1"
+        >
+          ← Retour
+        </button>
+      )}
+
       <div className="text-center">
         <h1 className="text-4xl font-black mb-2 bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">
           Katchii
@@ -26,7 +37,6 @@ export function UniverseSelector({ onSelect }: Props) {
             <div className="text-sm text-yellow-400 font-bold">Kanto — Génération 1</div>
             <div className="text-xs text-slate-400 mt-1">151 Pokémon à capturer</div>
           </div>
-          {/* Mini pokeball */}
           <svg width="40" height="40" viewBox="0 0 64 64" className="opacity-70">
             <path d="M 32 2 A 30 30 0 0 1 62 32 L 38 32 A 6 6 0 0 0 26 32 L 2 32 A 30 30 0 0 1 32 2 Z" fill="#ef4444" />
             <path d="M 2 32 A 30 30 0 0 0 62 32 L 38 32 A 6 6 0 0 1 26 32 Z" fill="white" />
@@ -38,18 +48,30 @@ export function UniverseSelector({ onSelect }: Props) {
 
         {/* Naruto */}
         <button
-          onClick={() => onSelect('naruto')}
-          className="flex-1 rounded-2xl border-2 border-orange-500/60 p-6 flex flex-col items-center gap-4
-                     bg-gradient-to-br from-orange-950/60 to-slate-900/60 hover:from-orange-900/80 hover:to-slate-800/80
-                     transition-all hover:scale-105 hover:border-orange-400 cursor-pointer group"
+          onClick={() => !narutoLocked && onSelect('naruto')}
+          disabled={narutoLocked}
+          className={`flex-1 rounded-2xl border-2 p-6 flex flex-col items-center gap-4 transition-all
+            ${narutoLocked
+              ? 'border-slate-700/40 bg-slate-900/40 opacity-60 cursor-not-allowed'
+              : 'border-orange-500/60 bg-gradient-to-br from-orange-950/60 to-slate-900/60 hover:from-orange-900/80 hover:to-slate-800/80 hover:scale-105 hover:border-orange-400 cursor-pointer group'
+            }`}
         >
-          <div className="text-5xl group-hover:animate-bounce">🍥</div>
+          <div className="text-5xl">{narutoLocked ? '🔒' : '🍥'}</div>
           <div className="text-center">
             <div className="text-xl font-black text-white">Naruto</div>
-            <div className="text-sm text-orange-400 font-bold">Zone 1 — Village de Konoha</div>
-            <div className="text-xs text-slate-400 mt-1">30 ninjas à débloquer</div>
+            {narutoLocked ? (
+              <>
+                <div className="text-sm text-slate-500 font-bold">Verrouillé</div>
+                <div className="text-xs text-slate-600 mt-1">Termine la Ligue Pokémon pour débloquer</div>
+              </>
+            ) : (
+              <>
+                <div className="text-sm text-orange-400 font-bold">Zone 1 — Village de Konoha</div>
+                <div className="text-xs text-slate-400 mt-1">30 ninjas à débloquer</div>
+              </>
+            )}
           </div>
-          <div className="text-3xl opacity-70">忍</div>
+          <div className={`text-3xl ${narutoLocked ? 'opacity-30' : 'opacity-70'}`}>忍</div>
         </button>
       </div>
 

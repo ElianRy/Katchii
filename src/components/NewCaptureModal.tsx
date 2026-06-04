@@ -42,14 +42,21 @@ export function NewCaptureModal({ pokemonName, pokemonId, isShiny, rarity, onDis
       onClick={onDismiss}
     >
       <div
-        className="flex flex-col items-center gap-3 rounded-2xl border px-8 py-6 max-w-xs w-full mx-4"
+        className="relative flex flex-col items-center gap-3 rounded-2xl border px-8 py-6 max-w-xs w-full mx-4 cursor-pointer"
         style={{
           background: 'rgba(10,10,30,0.95)',
           border: `2px solid ${rarityColor}88`,
           boxShadow: `0 0 30px ${rarityColor}44`,
         }}
-        onClick={(e) => e.stopPropagation()}
+        onClick={onDismiss}
       >
+        <button
+          className="absolute top-3 right-3 text-slate-400 hover:text-white text-lg leading-none"
+          onClick={onDismiss}
+          aria-label="Fermer"
+        >
+          ✕
+        </button>
         {/* Title */}
         <div className="text-center">
           <div className="text-2xl mb-1">✨</div>

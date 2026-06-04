@@ -119,6 +119,13 @@ export function HUD({
       <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none">
         <div className="flex items-center justify-around bg-black/80 border-t border-slate-700/60 backdrop-blur-sm px-2 py-2 pointer-events-auto">
           <button
+            onClick={onChangeUniverse}
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-slate-400 hover:bg-slate-700/30 transition-colors"
+          >
+            <span className="text-xl">🏠</span>
+            <span className="text-xs font-bold">Accueil</span>
+          </button>
+          <button
             onClick={onOpenCollection}
             className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-blue-400 hover:bg-blue-900/30 transition-colors"
           >

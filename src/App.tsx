@@ -114,6 +114,8 @@ export function App() {
             gameState.setActiveUniverse(universe);
             setView('hunt');
           }}
+          narutoLocked={!gameState.state.zoneProgress?.bossDefeated?.['ligue']}
+          onBack={() => setView('home')}
         />
       )}
 
