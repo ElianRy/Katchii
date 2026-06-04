@@ -1,6 +1,25 @@
 export type Rarity = 'commun' | 'peu_commun' | 'rare' | 'elite' | 'legendaire';
 export type LureType = 'rare' | 'epique' | 'legendaire' | 'shiny';
-export type View = 'hunt' | 'collection' | 'lures';
+export type View = 'hunt' | 'collection' | 'lures' | 'quests';
+
+export type QuestType =
+  | 'capture_n'
+  | 'capture_rarity'
+  | 'capture_shiny'
+  | 'evolve_n'
+  | 'activate_lure';
+
+export interface DailyQuest {
+  id: string;
+  label: string;
+  type: QuestType;
+  rarity?: Rarity;
+  target: number;
+  progress: number;
+  completed: boolean;
+  reward: { points: number; fragments?: number };
+  rewardClaimed: boolean;
+}
 
 export interface PokemonData {
   id: number;
@@ -29,6 +48,12 @@ export interface GameState {
   activeLure: { type: LureType; expiresAt: number } | null;
   globalCooldownUntil: number | null;       // timestamp ms
   shinyDepleted: number[];                  // pokemonIds caught as shiny
+  evolvedPokemon: number[];                 // pokemonIds obtained via evolution
+  badges: string[];                         // earned badge IDs
+  dailyQuests: {
+    date: string;
+    quests: DailyQuest[];
+  };
 }
 
 export const RARITY_COLORS: Record<Rarity, string> = {

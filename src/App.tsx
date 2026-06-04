@@ -3,6 +3,8 @@ import { View } from './types';
 import { HuntingField } from './components/HuntingField';
 import { Collection } from './components/Collection';
 import { LurePanel } from './components/LurePanel';
+import { QuestPanel } from './components/QuestPanel';
+import { BadgeToast } from './components/BadgeToast';
 import { useGameState } from './hooks/useGameState';
 
 export function App() {
@@ -16,6 +18,7 @@ export function App() {
         <HuntingField
           onOpenCollection={() => setView('collection')}
           onOpenLures={() => setView('lures')}
+          onOpenQuests={() => setView('quests')}
           gameState={gameState}
         />
       </div>
@@ -24,6 +27,7 @@ export function App() {
         <Collection
           state={gameState.state}
           onClose={() => setView('hunt')}
+          onEvolve={gameState.evolve}
         />
       )}
 
@@ -33,6 +37,22 @@ export function App() {
           onBuy={gameState.buyLure}
           onActivate={gameState.activateLure}
           onClose={() => setView('hunt')}
+        />
+      )}
+
+      {view === 'quests' && (
+        <QuestPanel
+          state={gameState.state}
+          onClaim={gameState.claimQuestReward}
+          onClose={() => setView('hunt')}
+        />
+      )}
+
+      {/* Badge toasts */}
+      {gameState.badgeToasts.length > 0 && (
+        <BadgeToast
+          badgeId={gameState.badgeToasts[0]}
+          onDismiss={gameState.dismissBadgeToast}
         />
       )}
     </div>

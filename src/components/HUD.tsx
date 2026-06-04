@@ -7,8 +7,10 @@ interface Props {
   isOnCooldown: boolean;
   onOpenCollection: () => void;
   onOpenLures: () => void;
+  onOpenQuests: () => void;
   capturedCount: number;
   totalPokemon: number;
+  questsCompleted: number;
 }
 
 function formatTime(seconds: number): string {
@@ -37,8 +39,10 @@ export function HUD({
   isOnCooldown,
   onOpenCollection,
   onOpenLures,
+  onOpenQuests,
   capturedCount,
   totalPokemon,
+  questsCompleted,
 }: Props) {
   return (
     <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
@@ -94,6 +98,17 @@ export function HUD({
             className="bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-bold px-4 py-2 rounded-xl text-sm shadow-lg border border-purple-400/40 transition-colors"
           >
             🎣 Leurres
+          </button>
+          <button
+            onClick={onOpenQuests}
+            className="relative bg-green-700 hover:bg-green-600 active:bg-green-800 text-white font-bold px-4 py-2 rounded-xl text-sm shadow-lg border border-green-400/40 transition-colors"
+          >
+            📋 Quêtes
+            {questsCompleted > 0 && (
+              <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {questsCompleted}
+              </span>
+            )}
           </button>
         </div>
       </div>

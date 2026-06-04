@@ -27,10 +27,11 @@ const BUSHES = [
 interface Props {
   onOpenCollection: () => void;
   onOpenLures: () => void;
+  onOpenQuests: () => void;
   gameState: ReturnType<typeof useGameState>;
 }
 
-export function HuntingField({ onOpenCollection, onOpenLures, gameState }: Props) {
+export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, gameState }: Props) {
   const spawner = useSpawner(gameState);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [cooldownSecs, setCooldownSecs] = useState(0);
@@ -79,6 +80,9 @@ export function HuntingField({ onOpenCollection, onOpenLures, gameState }: Props
   );
 
   const capturedCount = Object.keys(gameState.state.normalCollection).length;
+  const questsCompleted = gameState.state.dailyQuests.quests.filter(
+    (q) => q.completed && !q.rewardClaimed
+  ).length;
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
@@ -134,8 +138,10 @@ export function HuntingField({ onOpenCollection, onOpenLures, gameState }: Props
         isOnCooldown={onCooldown}
         onOpenCollection={onOpenCollection}
         onOpenLures={onOpenLures}
+        onOpenQuests={onOpenQuests}
         capturedCount={capturedCount}
         totalPokemon={151}
+        questsCompleted={questsCompleted}
       />
 
       {/* Cooldown overlay */}
