@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { SpawnedPokemon, Rarity, RARITY_WEIGHTS } from '../types';
-import { GEN1_POKEMON, POKEMON_BY_RARITY } from '../data/gen1';
+import { GEN1_POKEMON, POKEMON_BY_RARITY, POKEMON_BY_ID } from '../data/gen1';
 import { NARUTO_ZONE1, NARUTO_BY_RARITY } from '../data/naruto';
 import { ZONE_BY_ID } from '../data/zones';
 import { useGameState } from './useGameState';
@@ -31,12 +31,18 @@ function weightedRarity(weights: Record<Rarity, number>): Rarity {
 
 function pickPokemon(rarity: Rarity, zoneIds: number[]): number {
   const allPool = POKEMON_BY_RARITY[rarity] ?? [];
-  const zonePool = zoneIds.length > 0
-    ? allPool.filter(p => zoneIds.includes(p.id))
-    : allPool;
-  const pool = zonePool.length > 0 ? zonePool : allPool;
-  if (pool.length === 0) return GEN1_POKEMON[0].id;
-  return pool[Math.floor(Math.random() * pool.length)].id;
+  const zonePool = zoneIds.length > 0 ? allPool.filter(p => zoneIds.includes(p.id)) : allPool;
+  if (zonePool.length === 0) return zoneIds[Math.floor(Math.random() * zoneIds.length)] ?? GEN1_POKEMON[0].id;
+  return zonePool[Math.floor(Math.random() * zonePool.length)].id;
+}
+
+function getZoneRarities(zoneIds: number[]): Set<Rarity> {
+  const rarities = new Set<Rarity>();
+  for (const id of zoneIds) {
+    const p = POKEMON_BY_ID[id];
+    if (p) rarities.add(p.rarity);
+  }
+  return rarities;
 }
 
 function pickNaruto(rarity: Rarity): string {
@@ -100,7 +106,7 @@ export function useSpawner(
         const gs = stateRef.current;
         const mult = gs.getActiveLureMultipliers();
 
-        const weights: Record<Rarity, number> = {
+        const baseWeights: Record<Rarity, number> = {
           commun: RARITY_WEIGHTS.commun,
           peu_commun: RARITY_WEIGHTS.peu_commun,
           rare: RARITY_WEIGHTS.rare * mult.rare,
@@ -108,7 +114,6 @@ export function useSpawner(
           legendaire: RARITY_WEIGHTS.legendaire * mult.legendaire,
         };
 
-        const rarity = weightedRarity(weights);
         const universe = gs.state.activeUniverse;
 
         let pokemonId: number;
@@ -118,6 +123,18 @@ export function useSpawner(
         const zoneId = gs.state.zoneProgress?.currentZoneId ?? 'zone1';
         const currentZone = ZONE_BY_ID[zoneId];
         const zoneIds = currentZone?.pokemonIds ?? [];
+        const zoneRarities = universe === 'naruto' ? null : getZoneRarities(zoneIds);
+
+        // Zero out rarities not present in this zone
+        const zoneWeights: Record<Rarity, number> = {
+          commun: (!zoneRarities || zoneRarities.has('commun')) ? baseWeights.commun : 0,
+          peu_commun: (!zoneRarities || zoneRarities.has('peu_commun')) ? baseWeights.peu_commun : 0,
+          rare: (!zoneRarities || zoneRarities.has('rare')) ? baseWeights.rare : 0,
+          elite: (!zoneRarities || zoneRarities.has('elite')) ? baseWeights.elite : 0,
+          legendaire: (!zoneRarities || zoneRarities.has('legendaire')) ? baseWeights.legendaire : 0,
+        };
+
+        const rarity = weightedRarity(zoneWeights);
 
         if (universe === 'naruto') {
           const nId = pickNaruto(rarity);
