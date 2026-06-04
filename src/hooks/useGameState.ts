@@ -472,6 +472,41 @@ export function useGameState() {
     return success;
   }, [update]);
 
+  const addPlayTime = useCallback((ms: number) => {
+    update(prev => ({
+      ...prev,
+      stats: {
+        ...prev.stats,
+        totalPlayTimeMs: (prev.stats?.totalPlayTimeMs ?? 0) + ms,
+      },
+    }));
+  }, [update]);
+
+  const defeatZoneBoss = useCallback((zoneId: string, nextZoneId: string | null) => {
+    update(prev => {
+      const newBossDefeated = { ...prev.zoneProgress.bossDefeated, [zoneId]: true };
+      const newUnlocked = [...prev.zoneProgress.unlockedZones];
+      if (nextZoneId && !newUnlocked.includes(nextZoneId)) {
+        newUnlocked.push(nextZoneId);
+      }
+      return {
+        ...prev,
+        zoneProgress: {
+          ...prev.zoneProgress,
+          bossDefeated: newBossDefeated,
+          unlockedZones: newUnlocked,
+        },
+      };
+    });
+  }, [update]);
+
+  const setCurrentZone = useCallback((zoneId: string) => {
+    update(prev => ({
+      ...prev,
+      zoneProgress: { ...prev.zoneProgress, currentZoneId: zoneId },
+    }));
+  }, [update]);
+
   return {
     state,
     addCapture,
@@ -489,6 +524,9 @@ export function useGameState() {
     attackRaid,
     claimRaidReward,
     spendPoints,
+    addPlayTime,
+    defeatZoneBoss,
+    setCurrentZone,
     getActiveLureMultipliers,
     getEffectiveWeights,
     isOnCooldown,

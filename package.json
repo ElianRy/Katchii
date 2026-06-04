@@ -1,5 +1,5 @@
 {
-  "name": "animeverse-hunt",
+  "name": "katchii",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.1",

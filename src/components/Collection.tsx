@@ -17,8 +17,8 @@ export function Collection({ state, onClose }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('collection');
   const [filter, setFilter] = useState<FilterTab>('tous');
 
-  const totalCaught = Object.keys(state.normalCollection).length;
-  const totalShinyCaught = Object.keys(state.shinyCollection).length;
+  const totalCaught = GEN1_POKEMON.filter(p => (state.normalCollection[p.id] ?? 0) > 0).length;
+  const totalShinyCaught = GEN1_POKEMON.filter(p => (state.shinyCollection[p.id] ?? 0) > 0).length;
 
   const filteredPokemon = GEN1_POKEMON.filter((p) => {
     if (filter === 'tous') return true;
@@ -39,7 +39,7 @@ export function Collection({ state, onClose }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
         <div>
-          <h2 className="text-white font-bold text-xl">Ma Collection</h2>
+          <h2 className="text-white font-bold text-xl">Pokédex — Génération 1</h2>
           <p className="text-slate-400 text-sm">
             {totalCaught}/151 capturés · {totalShinyCaught} shinies
           </p>
@@ -117,13 +117,17 @@ export function Collection({ state, onClose }: Props) {
                       }}
                     >
                       <img
-                        src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${shinyCaught ? 'shiny/' : ''}${pokemon.id}.png`}
-                        alt={pokemon.name}
+                        src={
+                          caught
+                            ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${shinyCaught ? 'shiny/' : ''}${pokemon.id}.png`
+                            : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`
+                        }
+                        alt={caught ? pokemon.name : '???'}
                         width={48}
                         height={48}
                         style={{
                           imageRendering: 'pixelated',
-                          filter: caught ? 'none' : 'grayscale(100%) opacity(30%)',
+                          filter: caught ? 'none' : 'brightness(0) opacity(20%)',
                         }}
                         draggable={false}
                       />
@@ -133,15 +137,15 @@ export function Collection({ state, onClose }: Props) {
                     </div>
                     <div
                       className="text-xs px-1 rounded font-bold"
-                      style={{ color: rarityColor, fontSize: '0.6rem' }}
+                      style={{ color: caught ? rarityColor : '#374151', fontSize: '0.6rem' }}
                     >
-                      {RARITY_LABELS[pokemon.rarity].charAt(0).toUpperCase()}
+                      {RARITY_LABELS[pokemon.rarity].slice(0, 3)}
                     </div>
                     <div
                       className="text-center leading-tight"
                       style={{ color: caught ? '#e2e8f0' : '#4b5563', fontSize: '0.6rem' }}
                     >
-                      #{pokemon.id} {pokemon.name}
+                      #{pokemon.id} {caught ? pokemon.name : '???'}
                     </div>
                     {caught && (
                       <div className="flex gap-1" style={{ fontSize: '0.55rem' }}>

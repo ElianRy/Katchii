@@ -12,6 +12,7 @@ const MIN_LIFETIME = 9000;
 const MAX_LIFETIME = 14000;
 const POKEBALL_SPIN_MS = 1350;
 const POST_CAPTURE_MS = 400;
+const LEAVE_DURATION_MS = 800;
 
 function randomBetween(min: number, max: number): number {
   return Math.random() * (max - min) + min;
@@ -39,6 +40,21 @@ function pickNaruto(rarity: Rarity): string {
   return pool[Math.floor(Math.random() * pool.length)].id;
 }
 
+function getValidPosition(existing: SpawnedPokemon[]): { x: number; y: number } | null {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const x = 5 + Math.random() * 80;
+    const y = 10 + Math.random() * 60;
+    // Avoid HUD zone (top-left)
+    if (x < 35 && y < 30) continue;
+    // Check distance from existing spawned
+    const tooClose = existing.some(s =>
+      Math.sqrt(Math.pow(s.x - x, 2) + Math.pow(s.y - y, 2)) < 15
+    );
+    if (!tooClose) return { x, y };
+  }
+  return null;
+}
+
 let uidCounter = 0;
 function nextUid(): string {
   return `spawn_${Date.now()}_${uidCounter++}`;
@@ -48,6 +64,7 @@ export function useSpawner(
   gameState: ReturnType<typeof useGameState>
 ) {
   const [spawned, setSpawned] = useState<SpawnedPokemon[]>([]);
+  const [leavingUids, setLeavingUids] = useState<Set<string>>(new Set());
   const stateRef = useRef(gameState);
   stateRef.current = gameState;
 
@@ -96,7 +113,7 @@ export function useSpawner(
         if (universe === 'naruto') {
           const nId = pickNaruto(rarity);
           characterId = nId;
-          pokemonId = 0; // placeholder, unused for naruto
+          pokemonId = 0;
           const shinyDepleted = gs.state.narutoShinyDepleted;
           const total = NARUTO_ZONE1.length;
           const baseShinyRate = (1 / 250) * (total / Math.max(1, total - shinyDepleted.length));
@@ -110,6 +127,9 @@ export function useSpawner(
           isShiny = !shinyDepleted.includes(pokemonId) && Math.random() < shinyRate;
         }
 
+        const pos = getValidPosition(active);
+        if (!pos) return prev; // skip if no valid position found
+
         const newSpawn: SpawnedPokemon = {
           uid: nextUid(),
           pokemonId,
@@ -117,8 +137,8 @@ export function useSpawner(
           isShiny,
           spawnedAt: Date.now(),
           lifetime: randomBetween(MIN_LIFETIME, MAX_LIFETIME),
-          x: randomBetween(5, 80),
-          y: randomBetween(10, 70),
+          x: pos.x,
+          y: pos.y,
           capturing: false,
           captured: false,
         };
@@ -130,17 +150,45 @@ export function useSpawner(
     return () => clearInterval(id);
   }, []);
 
-  // Expire interval
+  // Expire interval — add leaving animation before removal
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
-      setSpawned((prev) =>
-        prev.filter((s) => s.capturing || s.captured || now - s.spawnedAt < s.lifetime)
-      );
+      setSpawned((prev) => {
+        const toLeave: string[] = [];
+        const filtered = prev.filter((s) => {
+          if (s.capturing || s.captured) return true;
+          const elapsed = now - s.spawnedAt;
+          if (elapsed >= s.lifetime) {
+            // About to expire
+            toLeave.push(s.uid);
+            return false;
+          }
+          return true;
+        });
+
+        if (toLeave.length > 0) {
+          setLeavingUids((prev) => {
+            const next = new Set(prev);
+            toLeave.forEach((uid) => next.add(uid));
+            return next;
+          });
+          // After leave animation, remove from leavingUids
+          setTimeout(() => {
+            setLeavingUids((prev) => {
+              const next = new Set(prev);
+              toLeave.forEach((uid) => next.delete(uid));
+              return next;
+            });
+          }, LEAVE_DURATION_MS);
+        }
+
+        return filtered;
+      });
     }, EXPIRE_INTERVAL_MS);
 
     return () => clearInterval(id);
   }, []);
 
-  return { spawned, capture };
+  return { spawned, capture, leavingUids };
 }

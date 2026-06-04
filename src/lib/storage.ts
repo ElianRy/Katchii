@@ -1,7 +1,7 @@
 import { GameState } from '../types';
 import { pickDailyQuests, todayDate } from '../data/quests';
 
-const STORAGE_KEY = 'animeverse_hunt_state';
+const STORAGE_KEY = 'katchii_state';
 
 function buildDailyQuests() {
   const date = todayDate();
@@ -56,6 +56,17 @@ export const DEFAULT_STATE: GameState = {
   narutoCollection: {},
   narutoShinyCollection: {},
   narutoShinyDepleted: [],
+  zoneProgress: {
+    currentZoneId: 'zone1',
+    unlockedZones: ['zone1'],
+    bossDefeated: {},
+    pokemonCaughtInZone: {},
+  },
+  stats: {
+    totalPlayTimeMs: 0,
+    sessionStartTime: null,
+    firstPlayedAt: Date.now(),
+  },
 };
 
 export function loadState(): GameState {
@@ -104,6 +115,17 @@ export function loadState(): GameState {
       narutoCollection: parsed.narutoCollection ?? {},
       narutoShinyCollection: parsed.narutoShinyCollection ?? {},
       narutoShinyDepleted: parsed.narutoShinyDepleted ?? [],
+      zoneProgress: parsed.zoneProgress ?? {
+        currentZoneId: 'zone1',
+        unlockedZones: ['zone1'],
+        bossDefeated: {},
+        pokemonCaughtInZone: {},
+      },
+      stats: parsed.stats ?? {
+        totalPlayTimeMs: 0,
+        sessionStartTime: null,
+        firstPlayedAt: Date.now(),
+      },
     };
   } catch {
     return { ...DEFAULT_STATE };

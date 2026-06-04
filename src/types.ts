@@ -1,6 +1,6 @@
 export type Rarity = 'commun' | 'peu_commun' | 'rare' | 'elite' | 'legendaire';
 export type LureType = 'rare' | 'epique' | 'legendaire' | 'shiny';
-export type View = 'universe' | 'hunt' | 'collection' | 'lures' | 'quests' | 'duels' | 'village' | 'skins' | 'fusion' | 'raid' | 'wrapped';
+export type View = 'auth' | 'home' | 'universe' | 'hunt' | 'collection' | 'lures' | 'quests' | 'duels' | 'village' | 'skins' | 'fusion' | 'raid' | 'wrapped' | 'profile' | 'zones';
 
 export type QuestType =
   | 'capture_n'
@@ -98,10 +98,21 @@ export interface GameState {
   narutoCollection: Record<string, number>;
   narutoShinyCollection: Record<string, number>;
   narutoShinyDepleted: string[];
+  zoneProgress: {
+    currentZoneId: string;
+    unlockedZones: string[];
+    bossDefeated: Record<string, boolean>;
+    pokemonCaughtInZone: Record<string, number[]>;
+  };
+  stats: {
+    totalPlayTimeMs: number;
+    sessionStartTime: number | null;
+    firstPlayedAt: number;
+  };
 }
 
 export const RARITY_COLORS: Record<Rarity, string> = {
-  commun: '#9ca3af',
+  commun: '#6b7280',
   peu_commun: '#22c55e',
   rare: '#3b82f6',
   elite: '#a855f7',
@@ -109,11 +120,11 @@ export const RARITY_COLORS: Record<Rarity, string> = {
 };
 
 export const RARITY_LABELS: Record<Rarity, string> = {
-  commun: 'Commun',
-  peu_commun: 'Peu commun',
-  rare: 'Rare',
-  elite: 'Élite',
-  legendaire: 'Légendaire',
+  commun: 'Niveau 1 — Commun',
+  peu_commun: 'Niveau 2 — Peu commun',
+  rare: 'Niveau 3 — Rare',
+  elite: 'Niveau 4 — Épique',
+  legendaire: 'Niveau 5 — Légendaire',
 };
 
 export const RARITY_WEIGHTS: Record<Rarity, number> = {

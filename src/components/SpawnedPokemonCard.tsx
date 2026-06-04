@@ -7,6 +7,7 @@ interface Props {
   onCapture: () => void;
   disabled: boolean;
   narutoSpriteUrl?: string;
+  leaving?: boolean;
 }
 
 interface Particle {
@@ -26,22 +27,17 @@ function PokeballSVG({ spinning }: { spinning: boolean }) {
       viewBox="0 0 64 64"
       className={spinning ? 'animate-spin-pokeball' : ''}
     >
-      {/* Top half - red */}
       <path d="M 32 2 A 30 30 0 0 1 62 32 L 38 32 A 6 6 0 0 0 26 32 L 2 32 A 30 30 0 0 1 32 2 Z" fill="#ef4444" />
-      {/* Bottom half - white */}
       <path d="M 2 32 A 30 30 0 0 0 62 32 L 38 32 A 6 6 0 0 1 26 32 Z" fill="white" />
-      {/* Black border */}
       <circle cx="32" cy="32" r="30" fill="none" stroke="black" strokeWidth="2.5" />
-      {/* Center line */}
       <line x1="2" y1="32" x2="62" y2="32" stroke="black" strokeWidth="2.5" />
-      {/* Center button */}
       <circle cx="32" cy="32" r="7" fill="white" stroke="black" strokeWidth="2.5" />
       <circle cx="32" cy="32" r="3.5" fill="#d1d5db" />
     </svg>
   );
 }
 
-export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, narutoSpriteUrl }: Props) {
+export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, narutoSpriteUrl, leaving }: Props) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showParticles, setShowParticles] = useState(false);
 
@@ -72,9 +68,26 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
     onCapture();
   };
 
+  // Build aura glow styles based on rarity
+  const isEpic = pokemonData.rarity === 'elite';
+  const isLegendary = pokemonData.rarity === 'legendaire';
+
+  const auraStyle: React.CSSProperties = {};
+  if (isLegendary) {
+    auraStyle.boxShadow = `0 0 30px 12px ${rarityColor}cc, 0 0 60px 25px ${rarityColor}66, 0 0 90px 35px ${rarityColor}33`;
+    auraStyle.animation = 'aura-pulse 1.5s ease-in-out infinite';
+  } else if (isEpic) {
+    auraStyle.boxShadow = `0 0 20px 8px ${rarityColor}aa, 0 0 40px 15px ${rarityColor}55`;
+    auraStyle.animation = 'aura-pulse 2s ease-in-out infinite';
+  } else {
+    auraStyle.boxShadow = `0 0 15px 5px ${rarityColor}66, 0 0 30px 10px ${rarityColor}33`;
+  }
+
+  const containerClass = `absolute select-none ${leaving ? 'animate-leave' : 'animate-appear'}`;
+
   return (
     <div
-      className="absolute select-none"
+      className={containerClass}
       style={{ left: `${spawned.x}%`, top: `${spawned.y}%`, transform: 'translate(-50%, -50%)' }}
     >
       {/* Confetti particles */}
@@ -85,7 +98,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
         return (
           <div
             key={p.id}
-            className="absolute rounded-full animate-float-up pointer-events-none"
+            className="absolute rounded-full pointer-events-none"
             style={{
               width: 8,
               height: 8,
@@ -103,15 +116,13 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
       })}
 
       {spawned.capturing ? (
-        /* Pokéball spinning */
         <div className="flex items-center justify-center w-16 h-16">
           <PokeballSVG spinning />
         </div>
       ) : !spawned.captured ? (
-        /* Pokémon sprite */
         <div
           onClick={handleClick}
-          className="relative cursor-pointer animate-float"
+          className="relative cursor-pointer animate-float flex flex-col items-center"
           style={{ animationDelay: `${(spawned.pokemonId % 5) * 0.3}s` }}
           title={pokemonData.name}
         >
@@ -126,14 +137,14 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
             />
           )}
 
-          {/* Rarity border glow */}
+          {/* Aura glow wrapper — no border */}
           <div
-            className="relative rounded-lg p-1"
+            className="relative flex items-center justify-center"
             style={{
-              boxShadow: `0 0 10px 3px ${rarityColor}88`,
-              border: `2px solid ${rarityColor}`,
-              background: 'rgba(0,0,0,0.5)',
-              backdropFilter: 'blur(2px)',
+              ...auraStyle,
+              borderRadius: narutoSpriteUrl ? '8px' : '50%',
+              background: 'rgba(0,0,0,0.0)',
+              padding: 0,
             }}
           >
             {/* Orbiting shiny stars */}
@@ -145,10 +156,22 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               </div>
             )}
 
+            {/* Legendary rays */}
+            {isLegendary && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  borderRadius: '50%',
+                  background: `radial-gradient(ellipse, ${rarityColor}22 0%, transparent 70%)`,
+                  animation: 'legendary-rays 4s linear infinite',
+                }}
+              />
+            )}
+
             {spriteError ? (
               <div
                 className="flex items-center justify-center text-center font-bold text-xs p-1"
-                style={{ width: 64, height: 64, background: 'rgba(0,0,0,0.6)', color: rarityColor, borderRadius: 4 }}
+                style={{ width: 64, height: 64, background: 'rgba(0,0,0,0.6)', color: rarityColor, borderRadius: 8 }}
               >
                 {pokemonData.name}
               </div>
@@ -158,7 +181,12 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                 alt={pokemonData.name}
                 width={64}
                 height={64}
-                style={{ imageRendering: narutoSpriteUrl ? 'auto' : 'pixelated', objectFit: 'contain' }}
+                style={{
+                  imageRendering: narutoSpriteUrl ? 'auto' : 'pixelated',
+                  objectFit: narutoSpriteUrl ? 'cover' : 'contain',
+                  objectPosition: narutoSpriteUrl ? 'top center' : undefined,
+                  borderRadius: narutoSpriteUrl ? '8px' : undefined,
+                }}
                 draggable={false}
                 onError={() => setSpriteError(true)}
               />
@@ -167,7 +195,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
 
           {/* Name badge */}
           <div
-            className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-xs font-bold whitespace-nowrap px-1 py-0.5 rounded"
+            className="mt-1 text-xs font-bold whitespace-nowrap px-1 py-0.5 rounded"
             style={{ background: 'rgba(0,0,0,0.75)', color: rarityColor, fontSize: '0.65rem' }}
           >
             {spawned.isShiny ? '✨ ' : ''}{pokemonData.name}

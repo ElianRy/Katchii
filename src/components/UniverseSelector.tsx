@@ -7,7 +7,7 @@ export function UniverseSelector({ onSelect }: Props) {
     <div className="fixed inset-0 bg-slate-950 text-white flex flex-col items-center justify-center gap-8 p-6">
       <div className="text-center">
         <h1 className="text-4xl font-black mb-2 bg-gradient-to-r from-yellow-400 to-red-500 bg-clip-text text-transparent">
-          AnimeVerse Hunt
+          Katchii
         </h1>
         <p className="text-slate-400 text-sm">Choisis ton univers</p>
       </div>

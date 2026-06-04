@@ -7,7 +7,9 @@ import { useSpawner } from '../hooks/useSpawner';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { NARUTO_BY_ID } from '../data/naruto';
 import { TERRAIN_SKINS } from './SkinsPanel';
+import { ZONE_BY_ID } from '../data/zones';
 import { PokemonData } from '../types';
+import { NewCaptureModal } from './NewCaptureModal';
 
 interface Notification {
   id: number;
@@ -41,12 +43,21 @@ interface Props {
   gameState: ReturnType<typeof useGameState>;
 }
 
+interface NewCaptureInfo {
+  pokemonName: string;
+  pokemonId: number;
+  isShiny: boolean;
+  rarity: string;
+}
+
 export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOpenDuels, onOpenVillage, onOpenSkins, onOpenFusion, onOpenRaid, onOpenWrapped, onChangeUniverse, gameState }: Props) {
   const spawner = useSpawner(gameState);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [cooldownSecs, setCooldownSecs] = useState(0);
   const [onCooldown, setOnCooldown] = useState(false);
+  const [newCaptureInfo, setNewCaptureInfo] = useState<NewCaptureInfo | null>(null);
   const processingRef = useRef<Set<string>>(new Set());
+  const capturingRef = useRef(false);
 
   // Update cooldown every second
   useEffect(() => {
@@ -67,33 +78,45 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
 
   const handleCapture = useCallback(
     (uid: string, pokemonId: number, characterId: string | undefined, isShiny: boolean, x: number, y: number) => {
+      if (capturingRef.current) return; // LOCK: only one capture at a time
       if (processingRef.current.has(uid)) return;
       if (gameState.isOnCooldown()) return;
+
+      capturingRef.current = true;
       processingRef.current.add(uid);
 
-      // Start capture animation immediately
       spawner.capture(uid);
 
-      // After pokeball spin completes, register the capture
       setTimeout(() => {
         if (characterId && gameState.state.activeUniverse === 'naruto') {
           const char = NARUTO_BY_ID[characterId];
-          if (!char) { processingRef.current.delete(uid); return; }
+          if (!char) {
+            processingRef.current.delete(uid);
+            capturingRef.current = false;
+            return;
+          }
           const pts = gameState.addNarutoCapture(characterId, isShiny, char.rarity);
           if (pts > 0) {
             addNotification(`+${pts} pts !`, x, y, true);
             addNotification('Nouveau !', x, y - 8, true);
+            setNewCaptureInfo({ pokemonName: char.name, pokemonId: 0, isShiny, rarity: char.rarity });
           }
         } else {
           const pokemon = POKEMON_BY_ID[pokemonId];
-          if (!pokemon) { processingRef.current.delete(uid); return; }
+          if (!pokemon) {
+            processingRef.current.delete(uid);
+            capturingRef.current = false;
+            return;
+          }
           const pts = gameState.addCapture(pokemonId, isShiny, pokemon.rarity);
           if (pts > 0) {
             addNotification(`+${pts} pts !`, x, y, true);
             addNotification('Nouveau !', x, y - 8, true);
+            setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity });
           }
         }
         processingRef.current.delete(uid);
+        capturingRef.current = false; // UNLOCK
       }, 1350);
     },
     [spawner, gameState, addNotification]
@@ -109,6 +132,9 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
   ).length;
 
   const activeSkin = TERRAIN_SKINS.find(s => s.id === (gameState.state.skins?.activeTerrain ?? 'foret')) ?? TERRAIN_SKINS[0];
+
+  const currentZone = ZONE_BY_ID[gameState.state.zoneProgress?.currentZoneId ?? 'zone1'];
+  const currentZoneName = currentZone ? currentZone.name : 'Forêt de Pallet';
 
   return (
     <div className={`relative w-full h-screen overflow-hidden bg-gradient-to-b ${activeSkin.gradient}`}>
@@ -161,6 +187,7 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
             narutoSpriteUrl={s.characterId ? NARUTO_BY_ID[s.characterId]?.spriteUrl : undefined}
             onCapture={() => handleCapture(s.uid, s.pokemonId, s.characterId, s.isShiny, s.x, s.y)}
             disabled={gameState.isOnCooldown()}
+            leaving={spawner.leavingUids.has(s.uid)}
           />
         );
       })}
@@ -185,22 +212,8 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
         totalPokemon={totalPokemon}
         questsCompleted={questsCompleted}
         activeUniverse={gameState.state.activeUniverse}
+        currentZoneName={currentZoneName}
       />
-
-      {/* Cooldown overlay */}
-      {onCooldown && (
-        <div className="absolute inset-0 z-10 pointer-events-none flex items-end justify-center pb-24">
-          <div className="bg-black/60 border border-red-500/50 rounded-2xl px-6 py-4 text-center backdrop-blur-sm">
-            <div className="text-red-400 font-bold text-lg">⏳ Nouveau Pokémon détecté !</div>
-            <div className="text-slate-300 text-sm mt-1">
-              Prochaine capture dans{' '}
-              <span className="text-yellow-400 font-bold">
-                {Math.floor(cooldownSecs / 60)}:{(cooldownSecs % 60).toString().padStart(2, '0')}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Floating notifications */}
       {notifications.map((n) => (
@@ -219,6 +232,17 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
           {n.text}
         </div>
       ))}
+
+      {/* New capture modal */}
+      {newCaptureInfo && (
+        <NewCaptureModal
+          pokemonName={newCaptureInfo.pokemonName}
+          pokemonId={newCaptureInfo.pokemonId}
+          isShiny={newCaptureInfo.isShiny}
+          rarity={newCaptureInfo.rarity as import('../types').Rarity}
+          onDismiss={() => setNewCaptureInfo(null)}
+        />
+      )}
     </div>
   );
 }

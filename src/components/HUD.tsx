@@ -19,18 +19,15 @@ interface Props {
   totalPokemon: number;
   questsCompleted: number;
   activeUniverse: 'pokemon' | 'naruto';
-}
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  currentZoneName?: string;
 }
 
 function formatLureRemaining(expiresAt: number): string {
   const ms = Math.max(0, expiresAt - Date.now());
   const totalSec = Math.ceil(ms / 1000);
-  return formatTime(totalSec);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 const LURE_LABELS_HUD: Record<string, string> = {
@@ -59,6 +56,7 @@ export function HUD({
   totalPokemon,
   questsCompleted,
   activeUniverse,
+  currentZoneName,
 }: Props) {
   return (
     <>
@@ -81,7 +79,9 @@ export function HUD({
             onClick={onChangeUniverse}
           >
             <span className="text-slate-300 text-xs">
-              {activeUniverse === 'naruto' ? '🍥 Zone 1 — Village de Konoha' : '🌲 Zone 1 — Forêt de Pallet'}
+              {activeUniverse === 'naruto'
+                ? '🍥 Zone 1 — Village de Konoha'
+                : `🌲 ${currentZoneName ?? 'Zone 1 — Forêt de Pallet'}`}
             </span>
           </div>
           <div className="bg-black/60 rounded-lg px-3 py-1 border border-slate-600/40">
@@ -96,15 +96,24 @@ export function HUD({
               </span>
             </div>
           )}
-          {isOnCooldown && (
-            <div className="bg-red-900/70 rounded-lg px-3 py-1 border border-red-500/60">
-              <span className="text-red-300 text-xs font-bold">
-                ⏳ Cooldown : {formatTime(cooldownRemaining)}
-              </span>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Cooldown bar — centered above bottom nav */}
+      {isOnCooldown && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 w-64">
+          <div className="bg-black/70 rounded-xl px-4 py-2 text-center">
+            <div className="text-yellow-400 text-xs font-bold mb-1">⏳ Prochain Personnage</div>
+            <div className="w-full bg-slate-700 rounded-full h-2">
+              <div
+                className="bg-yellow-400 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${(cooldownRemaining / 60) * 100}%` }}
+              />
+            </div>
+            <div className="text-slate-400 text-xs mt-1">{cooldownRemaining}s</div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom navigation bar */}
       <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none">

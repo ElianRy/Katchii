@@ -39,8 +39,8 @@
 }
 
 @keyframes appear {
-  from { transform: scale(0) translateY(20px); opacity: 0; }
-  to   { transform: scale(1) translateY(0);    opacity: 1; }
+  from { transform: translate(-50%, -50%) scale(0) translateY(20px); opacity: 0; }
+  to   { transform: translate(-50%, -50%) scale(1) translateY(0);    opacity: 1; }
 }
 
 @keyframes pokeball-wobble {
@@ -49,6 +49,28 @@
   40%       { transform: rotate(20deg); }
   60%       { transform: rotate(-10deg); }
   80%       { transform: rotate(10deg); }
+}
+
+@keyframes leave {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -80%) scale(0.7); }
+}
+
+@keyframes aura-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes legendary-rays {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes firefly {
+  0% { transform: translate(0, 0); opacity: 0; }
+  20% { opacity: 0.8; }
+  80% { opacity: 0.6; }
+  100% { transform: translate(var(--fx), var(--fy)); opacity: 0; }
 }
 
 .animate-float {
@@ -70,6 +92,10 @@
 
 .animate-appear {
   animation: appear 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-leave {
+  animation: leave 0.8s ease-in forwards;
 }
 
 .animate-bush {
@@ -97,3 +123,14 @@
 }
 .orbit-star:nth-child(2) { animation-delay: -0.53s; }
 .orbit-star:nth-child(3) { animation-delay: -1.06s; }
+
+.firefly {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fde68a;
+  box-shadow: 0 0 6px 2px rgba(253, 230, 138, 0.8);
+  animation: firefly var(--ff-duration, 6s) ease-in-out infinite;
+  animation-delay: var(--ff-delay, 0s);
+}

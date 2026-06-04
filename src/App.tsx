@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { View, DuelEntry } from './types';
 import { HuntingField } from './components/HuntingField';
 import { Collection } from './components/Collection';
@@ -12,18 +12,101 @@ import { RaidPanel } from './components/RaidPanel';
 import { WrappedPanel } from './components/WrappedPanel';
 import { UniverseSelector } from './components/UniverseSelector';
 import { BadgeToast } from './components/BadgeToast';
+import { AuthScreen } from './components/AuthScreen';
+import { HomeScreen } from './components/HomeScreen';
+import { ProfileScreen } from './components/ProfileScreen';
 import { useGameState } from './hooks/useGameState';
+import { supabase } from './lib/supabase';
+import { getUsername, logoutUser } from './lib/auth';
 
 export function App() {
-  const [view, setView] = useState<View>('universe');
+  const [view, setView] = useState<View>('auth');
+  const [username, setUsername] = useState<string>('Joueur');
+  const [authChecked, setAuthChecked] = useState(false);
   const gameState = useGameState();
+
+  // Check auth state on mount
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setUsername(getUsername(user));
+        setView('home');
+      } else {
+        setView('auth');
+      }
+      setAuthChecked(true);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUsername(getUsername(session.user));
+        setView('home');
+      } else {
+        setView('auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Play time tracking
+  useEffect(() => {
+    const startTime = Date.now();
+    const id = setInterval(() => {
+      gameState.addPlayTime(60000);
+    }, 60000);
+    return () => {
+      clearInterval(id);
+      // Add partial time when unmounting
+      const elapsed = Date.now() - startTime;
+      if (elapsed > 5000) gameState.addPlayTime(elapsed);
+    };
+  }, []);
 
   const handleDuelResult = useCallback((entry: DuelEntry, pointsDelta: number, fragment: { pokemonId: number } | null, lurePrize: boolean) => {
     gameState.addDuelResult(entry, pointsDelta, fragment?.pokemonId ?? null, lurePrize);
   }, [gameState]);
 
+  const handleLogout = useCallback(async () => {
+    await logoutUser();
+    setView('auth');
+    setUsername('Joueur');
+  }, []);
+
+  if (!authChecked) {
+    return (
+      <div className="w-full h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-yellow-400 text-2xl font-black animate-pulse">KATCHII</div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-screen bg-slate-900 text-white overflow-hidden">
+      {/* Auth screen */}
+      {view === 'auth' && (
+        <AuthScreen
+          onSuccess={() => {
+            supabase.auth.getUser().then(({ data: { user } }) => {
+              if (user) setUsername(getUsername(user));
+            });
+            setView('home');
+          }}
+        />
+      )}
+
+      {/* Home screen */}
+      {view === 'home' && (
+        <HomeScreen
+          username={username}
+          onPlay={() => setView('universe')}
+          onCollection={() => setView('collection')}
+          onProfile={() => setView('profile')}
+          onLogout={handleLogout}
+        />
+      )}
+
       {/* Universe selector */}
       {view === 'universe' && (
         <UniverseSelector
@@ -46,7 +129,7 @@ export function App() {
           onOpenFusion={() => setView('fusion')}
           onOpenRaid={() => setView('raid')}
           onOpenWrapped={() => setView('wrapped')}
-          onChangeUniverse={() => setView('universe')}
+          onChangeUniverse={() => setView('home')}
           gameState={gameState}
         />
       </div>
@@ -123,6 +206,15 @@ export function App() {
         <WrappedPanel
           state={gameState.state}
           onClose={() => setView('hunt')}
+        />
+      )}
+
+      {view === 'profile' && (
+        <ProfileScreen
+          username={username}
+          state={gameState.state}
+          onClose={() => setView('home')}
+          onLogout={handleLogout}
         />
       )}
 
