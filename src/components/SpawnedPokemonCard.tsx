@@ -298,7 +298,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
 
             {/* Name badge */}
             <div
-              className="mt-1 font-bold rounded"
+              className="font-bold rounded"
               style={{
                 background: 'rgba(0,0,0,0.75)',
                 color: rarityColor,

@@ -42,202 +42,220 @@ const STARS = Array.from({ length: 40 }, (_, i) => ({
 
 let dmgCounter = 0;
 
-// ── Type VFX — streams of emojis from the attacker's position toward the target ──────
+// ── Type VFX — each type has a distinct trajectory and visual ────────────────
 // ltr = player (bottom-left) attacks enemy (top-right)
 // rtl = enemy (top-right) attacks player (bottom-left)
 function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction: 'ltr' | 'rtl'; uid: number }) {
   const d = direction;
+  type P = React.CSSProperties;
 
-  // Attacker position: player = bottom-left (left 17%, top 52%), enemy = top-right (left 73%, top 20%)
-  const origin: React.CSSProperties = {
+  // Attacker origin: top-right corner of each sprite
+  // Player (ltr): sprite at bottom-left → top-right ≈ left 30%, top 66%
+  // Enemy  (rtl): sprite at top-right   → front/left ≈ left 70%, top 24%
+  const origin: P = {
     position: 'absolute', pointerEvents: 'none', zIndex: 15,
-    left: d === 'ltr' ? '17%' : '73%',
-    top:  d === 'ltr' ? '52%' : '20%',
+    left: d === 'ltr' ? '30%' : '70%',
+    top:  d === 'ltr' ? '66%' : '24%',
   };
 
-  // Helper: 4-particle stream with increasing size (biggest = front of stream, delay=0)
-  // Each particle uses `stream-ltr/rtl` keyframe + CSS --s for scale
-  const stream = (emoji: string, glow: string, dur = '0.75s') =>
-    [{ s: 2.2, d: '0s' }, { s: 1.6, d: '0.07s' }, { s: 1.2, d: '0.13s' }, { s: 0.85, d: '0.18s' }].map(
-      (p, i) => (
-        <div key={i} style={{
-          position: 'absolute', fontSize: '1rem',
-          filter: glow,
-          '--s': p.s,
-          animation: `stream-${d} ${dur} ${p.d} ease-out forwards`,
-        } as React.CSSProperties}>{emoji}</div>
-      )
-    );
-
   switch (type) {
-    // FIRE: stream of fireballs, biggest at front
+
+    // FIRE: parabolic arc — big fireball rises high then comes down at target
     case 'fire': return (
       <div style={origin}>
-        {stream('🔥', 'drop-shadow(0 0 8px #f97316)')}
-        <div style={{ position: 'absolute', width: 48, height: 48, top: -24, left: -24, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(253,115,0,0.6) 0%, transparent 70%)',
-          animation: `stream-${d} 0.3s ease-out forwards`, '--s': 0.5 } as React.CSSProperties} />
+        <div style={{ position:'absolute', fontSize:'2.2rem', filter:'drop-shadow(0 0 14px #f97316) drop-shadow(0 0 24px #ef4444)', animation:`fire-arc-${d} 0.75s ease-in-out forwards` } as P}>🔥</div>
+        <div style={{ position:'absolute', fontSize:'1.3rem', filter:'drop-shadow(0 0 8px #fb923c)', animation:`fire-arc-${d} 0.75s 0.09s ease-in-out forwards` } as P}>🔥</div>
+        <div style={{ position:'absolute', fontSize:'0.9rem', animation:`fire-arc-${d} 0.75s 0.17s ease-in-out forwards` } as P}>🔥</div>
       </div>
     );
 
-    // WATER: stream of water drops arcing toward target
+    // WATER: very high arc (different peak height from fire)
     case 'water': return (
       <div style={origin}>
-        {stream('💧', 'drop-shadow(0 0 8px #38bdf8)', '0.8s')}
-        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2.5,
-          animation: `stream-${d} 0.72s ease-out forwards`, filter: 'drop-shadow(0 0 10px #0ea5e9)' } as React.CSSProperties}>🌊</div>
+        <div style={{ position:'absolute', fontSize:'1.9rem', filter:'drop-shadow(0 0 12px #38bdf8) drop-shadow(0 0 20px #0ea5e9)', animation:`water-arc-${d} 0.78s ease-in-out forwards` } as P}>💧</div>
+        <div style={{ position:'absolute', fontSize:'1.2rem', filter:'drop-shadow(0 0 6px #7dd3fc)', animation:`water-arc-${d} 0.78s 0.08s ease-in-out forwards` } as P}>💧</div>
+        <div style={{ position:'absolute', fontSize:'1.4rem', filter:'drop-shadow(0 0 8px #0ea5e9)', animation:`water-arc-${d} 0.78s 0.15s ease-in-out forwards` } as P}>🌊</div>
       </div>
     );
 
-    // ELECTRIC: SVG bolt extending from attacker, then ⚡ stream
-    case 'electric': return (
-      <div style={{ ...origin, overflow: 'visible' }}>
-        <svg width={d === 'ltr' ? 220 : 220} height="50" style={{
-          position: 'absolute', top: -25, left: d === 'ltr' ? 0 : -220,
-          transform: d === 'rtl' ? 'scaleX(-1)' : undefined, overflow: 'visible',
-        }}>
-          <polyline points="0,25 40,8 68,38 100,4 132,32 162,10 190,27 220,20"
-            fill="none" stroke="#fbbf24" strokeWidth="6" strokeLinecap="round"
-            strokeDasharray="320" strokeDashoffset="0"
-            style={{ filter: 'blur(4px)', animation: 'bolt-extend 0.35s ease-out forwards', opacity: 0.9 }} />
-          <polyline points="0,25 40,8 68,38 100,4 132,32 162,10 190,27 220,20"
-            fill="none" stroke="#fef08a" strokeWidth="2.5" strokeLinecap="round"
-            strokeDasharray="320" strokeDashoffset="0"
-            style={{ filter: 'drop-shadow(0 0 5px #fbbf24)', animation: 'bolt-extend 0.32s ease-out forwards' }} />
+    // ELECTRIC: SVG zigzag bolt drawn instantly across the arena
+    case 'electric': {
+      const pts = d === 'ltr'
+        ? '30,66 41,54 34,43 52,33 44,22 65,13 58,5 78,20'
+        : '70,24 59,36 66,47 48,57 56,68 35,76 42,84 22,66';
+      return (
+        <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none', zIndex:15 }}
+          viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs><filter id="glow-e"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+          <polyline points={pts} fill="none" stroke="#facc15" strokeWidth="1.4"
+            strokeLinecap="round" strokeLinejoin="round" filter="url(#glow-e)"
+            style={{ strokeDasharray:220, strokeDashoffset:220, animation:'bolt-extend 0.2s ease-out forwards, bolt-fade 0.4s 0.2s ease-out forwards' }} />
+          <polyline points={pts} fill="none" stroke="white" strokeWidth="0.5"
+            strokeLinecap="round" strokeLinejoin="round"
+            style={{ strokeDasharray:220, strokeDashoffset:220, animation:'bolt-extend 0.18s ease-out forwards, bolt-fade 0.3s 0.18s ease-out forwards' }} />
         </svg>
-        {stream('⚡', 'drop-shadow(0 0 6px #fbbf24)', '0.55s')}
-      </div>
-    );
+      );
+    }
 
-    // GRASS: leaves rise from below attacker then stream toward target
+    // GRASS: leaves rise from below, then spiral to target
     case 'grass': return (
-      <div style={{ ...origin, top: d === 'ltr' ? '68%' : '35%' }}>
-        {[{ s: 2.2, d2: '0s' }, { s: 1.6, d2: '0.07s' }, { s: 1.2, d2: '0.13s' }, { s: 0.85, d2: '0.18s' }].map(
-          (p, i) => (
-            <div key={i} style={{
-              position: 'absolute', fontSize: '1rem',
-              filter: 'drop-shadow(0 0 6px #22c55e)',
-              '--s': p.s,
-              animation: `grass-up-${d} 0.85s ${p.d2} ease-out forwards`,
-            } as React.CSSProperties}>{['🌿','🍃','🌱','🍃'][i]}</div>
-          )
-        )}
+      <div style={origin}>
+        <div style={{ position:'absolute', fontSize:'1.7rem', filter:'drop-shadow(0 0 6px #4ade80)', animation:`grass-fly-${d} 0.78s ease-in-out forwards` } as P}>🍃</div>
+        <div style={{ position:'absolute', fontSize:'1.2rem', filter:'drop-shadow(0 0 5px #22c55e)', animation:`grass-fly-${d} 0.78s 0.08s ease-in-out forwards` } as P}>🌿</div>
+        <div style={{ position:'absolute', fontSize:'0.95rem', animation:`grass-fly-${d} 0.78s 0.15s ease-in-out forwards` } as P}>🍃</div>
       </div>
     );
 
-    // ICE: spinning ice shards stream toward target
+    // ICE: ultra-fast straight beam (very different from fire's slow arc)
     case 'ice': return (
       <div style={origin}>
-        {stream('❄️', 'drop-shadow(0 0 8px #7dd3fc)', '0.7s')}
-        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 1.8,
-          animation: `stream-${d} 0.65s 0.04s ease-out forwards`, filter: 'drop-shadow(0 0 8px #a5f3fc)' } as React.CSSProperties}>🔷</div>
+        <div style={{ position:'absolute', fontSize:'2rem', filter:'drop-shadow(0 0 16px #bae6fd) drop-shadow(0 0 28px #38bdf8)', animation:`ice-beam-${d} 0.22s ease-out forwards` } as P}>❄️</div>
+        <div style={{ position:'absolute', fontSize:'1.3rem', filter:'drop-shadow(0 0 10px #93c5fd)', animation:`ice-beam-${d} 0.22s 0.05s ease-out forwards` } as P}>🔷</div>
+        <div style={{ position:'absolute', fontSize:'1rem', animation:`ice-beam-${d} 0.22s 0.09s ease-out forwards` } as P}>❄️</div>
       </div>
     );
 
-    // PSYCHIC: concentric rings shoot from attacker to target
-    case 'psychic': return (
-      <div style={origin}>
-        {[{ sz: 60, del: '0s', op: 0.9 }, { sz: 90, del: '0.1s', op: 0.65 }, { sz: 120, del: '0.2s', op: 0.4 }].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute',
-            width: p.sz, height: p.sz, top: -(p.sz / 2), left: -(p.sz / 2),
-            border: `2.5px solid rgba(244,114,182,${p.op})`,
-            borderRadius: '50%',
-            boxShadow: '0 0 14px #f472b6',
-            animation: `psyring-${d} 0.75s ${p.del} ease-out forwards`,
-          }} />
-        ))}
-        <div style={{ position: 'absolute', fontSize: '1.5rem', top: -12, left: -12,
-          animation: `stream-${d} 0.75s ease-out forwards`, '--s': 1.5,
-          filter: 'drop-shadow(0 0 12px #e879f9)' } as React.CSSProperties}>🔮</div>
-      </div>
-    );
+    // PSYCHIC: gem travels to target; rings expand at target (dual element)
+    case 'psychic': {
+      const tgt: P = {
+        position:'absolute', pointerEvents:'none', zIndex:15,
+        left: d === 'ltr' ? '78%' : '22%',
+        top:  d === 'ltr' ? '18%' : '64%',
+      };
+      return (
+        <>
+          <div style={origin}>
+            <div style={{ position:'absolute', fontSize:'1.6rem', filter:'drop-shadow(0 0 12px #d946ef)',
+              '--s': 1, animation:`stream-${d} 0.58s ease-in-out forwards` } as P}>🔮</div>
+          </div>
+          <div style={tgt}>
+            {([0,1,2] as number[]).map(i => (
+              <div key={i} style={{ position:'absolute', width:34, height:34, borderRadius:'50%',
+                border:'2.5px solid #e879f9', top:-17, left:-17,
+                filter:'drop-shadow(0 0 8px #a855f7)', opacity:0,
+                animation:`psyring-expand 0.6s ${0.38 + i * 0.13}s ease-out forwards` } as P} />
+            ))}
+          </div>
+        </>
+      );
+    }
 
-    // FIGHTING: fist stream punches toward target, burst at impact
+    // FIGHTING: very fast direct punch (shortest animation)
     case 'fighting': return (
       <div style={origin}>
-        {stream('👊', 'drop-shadow(0 0 6px #ef4444)', '0.5s')}
-        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2.5,
-          animation: `stream-${d} 0.48s 0.02s ease-out forwards`, filter: 'drop-shadow(0 0 8px #ef4444)' } as React.CSSProperties}>💥</div>
+        <div style={{ position:'absolute', fontSize:'2.2rem', filter:'drop-shadow(0 0 12px #f97316)', animation:`fight-dash-${d} 0.3s ease-in forwards` } as P}>👊</div>
+        <div style={{ position:'absolute', fontSize:'1.7rem', filter:'drop-shadow(0 0 12px #fbbf24)', animation:`fight-dash-${d} 0.3s 0.18s ease-out forwards` } as P}>💥</div>
       </div>
     );
 
-    // GHOST: slow wavy ghost drifts from attacker to target
+    // GHOST: slow, undulating wave (longest animation — opposite of fighting)
     case 'ghost': return (
       <div style={origin}>
-        <div style={{ position: 'absolute', fontSize: '2.5rem', top: -20, left: -12,
-          filter: 'drop-shadow(0 0 16px #7c3aed) blur(1px)', opacity: 0.8,
-          animation: `ghost-${d} 1.0s ease-in-out forwards` }}>👻</div>
-        <div style={{ position: 'absolute', fontSize: '0.9rem', top: -10, left: -4, opacity: 0.5,
-          filter: 'blur(0.5px)',
-          animation: `ghost-${d} 1.0s 0.12s ease-in-out forwards` }}>💀</div>
+        <div style={{ position:'absolute', fontSize:'2.6rem', top:-20, left:-13,
+          filter:'drop-shadow(0 0 16px #7c3aed) blur(0.5px)', opacity:0,
+          animation:`ghost-wave2-${d} 1.2s ease-in-out forwards` } as P}>👻</div>
       </div>
     );
 
-    // POISON: stream of poison orbs toward target
+    // POISON: three purple bubbles drifting in slightly different paths
     case 'poison': return (
       <div style={origin}>
-        {stream('🟣', 'drop-shadow(0 0 8px #a855f7)', '0.7s')}
-        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2,
-          animation: `stream-${d} 0.68s 0.03s ease-out forwards`, filter: 'drop-shadow(0 0 10px #7e22ce)' } as React.CSSProperties}>☠️</div>
+        {([
+          {t:0,  l:0,  s:15, delay:'0s'   },
+          {t:9,  l:-6, s:11, delay:'0.1s' },
+          {t:-5, l:7,  s:12, delay:'0.17s'},
+        ] as Array<{t:number,l:number,s:number,delay:string}>).map((b,i) => (
+          <div key={i} style={{ position:'absolute', width:b.s, height:b.s, borderRadius:'50%',
+            background:'radial-gradient(circle at 35% 35%, #d946ef, #7e22ce)',
+            border:'1px solid #e879f9', top:b.t, left:b.l,
+            filter:'drop-shadow(0 0 4px #a855f7)',
+            animation:`poison-drift-${d} 0.9s ${b.delay} ease-in-out forwards` } as P} />
+        ))}
+        <div style={{ position:'absolute', fontSize:'1.1rem', top:-4, left:-4,
+          filter:'drop-shadow(0 0 6px #a855f7)',
+          animation:`poison-drift-${d} 0.9s 0.06s ease-in-out forwards` } as P}>☠️</div>
       </div>
     );
 
-    // GROUND: rocks thrown in arc toward target
+    // GROUND: rock rolls LOW along the ground, then rises to hit target
     case 'ground': return (
-      <div style={origin}>
-        {stream('🪨', '', '0.7s')}
-        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2,
-          animation: `stream-${d} 0.65s 0.03s ease-out forwards` } as React.CSSProperties}>💥</div>
+      <div style={{ ...origin, top: d === 'ltr' ? '74%' : '34%' }}>
+        <div style={{ position:'absolute', fontSize:'1.9rem', filter:'drop-shadow(0 0 5px #92400e)', animation:`ground-roll-${d} 0.82s ease-in-out forwards` } as P}>🪨</div>
+        <div style={{ position:'absolute', fontSize:'1.3rem', animation:`ground-roll-${d} 0.82s 0.09s ease-in-out forwards` } as P}>🪨</div>
+        <div style={{ position:'absolute', fontSize:'1rem', filter:'drop-shadow(0 0 5px #f97316)', animation:`ground-roll-${d} 0.82s 0.28s ease-out forwards` } as P}>💥</div>
       </div>
     );
 
-    // FLYING: wind gusts stream across
-    case 'flying': return (
-      <div style={origin}>
-        {stream('💨', 'drop-shadow(0 0 6px #c4b5fd)', '0.6s')}
-        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2.2,
-          animation: `stream-${d} 0.55s ease-out forwards`, filter: 'drop-shadow(0 0 8px #a78bfa)' } as React.CSSProperties}>🌪️</div>
-      </div>
-    );
-
-    // DRAGON: large dragon sweeps from attacker side
-    case 'dragon': return (
-      <div style={{ ...origin, top: d === 'ltr' ? '45%' : '25%' }}>
-        <div style={{ position: 'absolute', fontSize: '2.8rem', top: -22, left: -14,
-          filter: 'drop-shadow(0 0 14px #4f46e5) drop-shadow(0 0 24px #818cf8)',
-          transform: d === 'rtl' ? 'scaleX(-1)' : undefined,
-          animation: `stream-${d} 0.85s ease-in-out forwards`, '--s': 1.2 } as React.CSSProperties}>🐉</div>
-        {stream('✨', 'drop-shadow(0 0 6px #818cf8)', '0.8s')}
-      </div>
-    );
-
-    // ROCK: rocks stream toward target
-    case 'rock': return (
-      <div style={origin}>
-        {stream('🪨', 'drop-shadow(0 0 4px #a8a29e)', '0.6s')}
-        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2,
-          animation: `stream-${d} 0.58s ease-out forwards` } as React.CSSProperties}>💥</div>
-      </div>
-    );
-
-    // BUG: bug swarm streams toward target
-    case 'bug': return (
-      <div style={origin}>
-        {stream('🐛', 'drop-shadow(0 0 5px #84cc16)', '0.65s')}
-        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 1.8,
-          animation: `stream-${d} 0.6s 0.04s ease-out forwards`, filter: 'drop-shadow(0 0 6px #a3e635)' } as React.CSSProperties}>🍃</div>
-      </div>
-    );
-
-    default: // normal
+    // FLYING: three parallel wind slash lines sweep horizontally
+    case 'flying': {
+      const slashBase: P = { position:'absolute', borderRadius:2, background:'rgba(186,230,253,0.9)',
+        filter:'drop-shadow(0 0 4px #7dd3fc)', transformOrigin: d === 'ltr' ? 'left center' : 'right center' };
       return (
-        <div style={origin}>
-          {stream('⭐', 'drop-shadow(0 0 6px #fde047)', '0.65s')}
-          <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2.2,
-            animation: `stream-${d} 0.6s 0.02s ease-out forwards`, filter: 'drop-shadow(0 0 8px #fbbf24)' } as React.CSSProperties}>💥</div>
+        <div style={{ position:'absolute', zIndex:15, pointerEvents:'none',
+          left: d === 'ltr' ? '8%' : 'auto', right: d === 'ltr' ? 'auto' : '8%',
+          top:0, bottom:0, width:'100%' }}>
+          {([
+            {top:'38%', w:54, h:3, delay:'0s'   },
+            {top:'44%', w:40, h:2, delay:'0.06s'},
+            {top:'33%', w:31, h:2, delay:'0.1s' },
+          ] as Array<{top:string,w:number,h:number,delay:string}>).map((s,i) => (
+            <div key={i} style={{ ...slashBase, top:s.top, width:s.w, height:s.h,
+              animation:`wind-slash-${d} 0.62s ${s.delay} ease-in-out forwards` } as P} />
+          ))}
+          <div style={{ position:'absolute', top:'35%', fontSize:'1.4rem',
+            filter:'drop-shadow(0 0 6px #bae6fd)',
+            animation:`wind-slash-${d} 0.62s ease-in-out forwards` } as P}>💨</div>
         </div>
       );
+    }
+
+    // DRAGON: slow powerful sweep with energy trail
+    case 'dragon': return (
+      <div style={{ ...origin, top: d === 'ltr' ? '62%' : '28%' }}>
+        <div style={{ position:'absolute', fontSize:'3rem', top:-24, left:-15,
+          filter:'drop-shadow(0 0 14px #4f46e5) drop-shadow(0 0 28px #818cf8)',
+          transform: d === 'rtl' ? 'scaleX(-1)' : undefined,
+          animation:`dragon-arc-${d} 0.9s ease-in-out forwards` } as P}>🐉</div>
+        <div style={{ position:'absolute', fontSize:'1rem', filter:'drop-shadow(0 0 6px #818cf8)',
+          animation:`dragon-arc-${d} 0.9s 0.13s ease-in-out forwards` } as P}>✨</div>
+        <div style={{ position:'absolute', fontSize:'0.8rem', filter:'drop-shadow(0 0 4px #a5b4fc)',
+          animation:`dragon-arc-${d} 0.9s 0.23s ease-in-out forwards` } as P}>✨</div>
+      </div>
+    );
+
+    // ROCK: tumbling rocks with rotation
+    case 'rock': return (
+      <div style={origin}>
+        <div style={{ position:'absolute', fontSize:'1.9rem', filter:'drop-shadow(0 0 4px #a8a29e)', animation:`rock-throw-${d} 0.65s ease-in-out forwards` } as P}>🪨</div>
+        <div style={{ position:'absolute', fontSize:'1.2rem', animation:`rock-throw-${d} 0.65s 0.1s ease-in-out forwards` } as P}>🪨</div>
+        <div style={{ position:'absolute', fontSize:'1.1rem', filter:'drop-shadow(0 0 5px #fbbf24)', animation:`rock-throw-${d} 0.65s 0.19s ease-out forwards` } as P}>💥</div>
+      </div>
+    );
+
+    // BUG: four bugs in erratic zigzag paths
+    case 'bug': return (
+      <div style={origin}>
+        {([0,1,2,3] as number[]).map(i => (
+          <div key={i} style={{ position:'absolute', fontSize:'1rem',
+            top:(i%2)*10-5, left:(Math.floor(i/2))*8-4,
+            animation:`bug-swarm-${d} 0.8s ${(i*0.07).toFixed(2)}s ease-in-out forwards` } as P}>🐛</div>
+        ))}
+      </div>
+    );
+
+    // NORMAL: star stream
+    default: return (
+      <div style={origin}>
+        {([{s:2,d2:'0s'},{s:1.5,d2:'0.07s'},{s:1.1,d2:'0.13s'},{s:.8,d2:'0.18s'}] as Array<{s:number,d2:string}>).map((p,i)=>(
+          <div key={i} style={{ position:'absolute', fontSize:'1rem',
+            filter:'drop-shadow(0 0 6px #fde047)', '--s':p.s,
+            animation:`stream-${d} 0.65s ${p.d2} ease-out forwards` } as P}>⭐</div>
+        ))}
+        <div style={{ position:'absolute', fontSize:'1rem', '--s':2.2,
+          animation:`stream-${d} 0.6s 0.02s ease-out forwards`,
+          filter:'drop-shadow(0 0 8px #fbbf24)' } as P}>💥</div>
+      </div>
+    );
   }
 }
 
@@ -252,7 +270,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const [playerIdx, setPlayerIdx] = useState(0);
   const [enemyIdx, setEnemyIdx] = useState(0);
   const [log, setLog] = useState<LogEntry[]>([]);
-  const [phase, setPhase] = useState<'battle' | 'switch' | 'end'>('battle');
+  const [phase, setPhase] = useState<'intro' | 'battle' | 'switch' | 'end'>('intro');
   const [attackEvt, setAttackEvt] = useState<AttackEvent | null>(null);
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [xpGains, setXpGains] = useState<Record<number, number>>({});
@@ -265,6 +283,13 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
     setLog(prev => [...prev.slice(-5), { text, color }]);
   }, []);
+
+  // Intro → battle transition (2s cinematic)
+  useEffect(() => {
+    if (phase !== 'intro') return;
+    const t = setTimeout(() => setPhase('battle'), 2000);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   const addDmg = useCallback((value: number, target: 'player' | 'enemy', effectiveness: number) => {
     const id = dmgCounter++;
@@ -383,6 +408,62 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const activeEF = enemyFighters[enemyIdx];
   const hpColor = (pct: number) => pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#f59e0b' : '#ef4444';
 
+  // ── INTRO PHASE ──
+  if (phase === 'intro') {
+    return (
+      <div className="fixed inset-0 z-[400] flex flex-col" style={{ background: '#020617' }}>
+        <div className="relative flex-1 overflow-hidden">
+          <div className="absolute inset-0" style={{
+            background: 'radial-gradient(ellipse at 50% 20%, #1e1b4b 0%, #0f0720 55%, #020617 100%)',
+          }} />
+
+          {/* Enemy pokemon slides in from top-right */}
+          <div className="absolute" style={{ top:'5%', right:'7%', animation:'battle-enter-enemy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
+            <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-white font-black text-sm">{POKEMON_BY_ID[enemyFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-slate-400 text-xs">Nv.{enemyFighters[0]?.level}</span>
+              </div>
+              <div className="w-full bg-slate-700 rounded-full h-2.5">
+                <div className="h-2.5 rounded-full" style={{ width:'100%', background:'#22c55e' }} />
+              </div>
+            </div>
+            <div className="flex justify-end">
+              {enemyFighters[0] && <ShinySprite pokemonId={enemyFighters[0].pokemonId} isShiny={enemyFighters[0].isShiny ?? false} width={88} height={88}
+                style={{ filter:`drop-shadow(0 0 10px ${RARITY_COLORS[POKEMON_BY_ID[enemyFighters[0].pokemonId]?.rarity ?? 'commun']})`, transform:'scaleX(-1)' }} />}
+            </div>
+          </div>
+
+          {/* Player pokemon slides in from bottom-left */}
+          <div className="absolute" style={{ bottom:'13%', left:'7%', animation:'battle-enter-player 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
+            {playerFighters[0] && <ShinySprite pokemonId={playerFighters[0].pokemonId} isShiny={playerFighters[0].isShiny ?? false} width={96} height={96}
+              style={{ filter:`drop-shadow(0 0 10px ${RARITY_COLORS[POKEMON_BY_ID[playerFighters[0].pokemonId]?.rarity ?? 'commun']})` }} />}
+            <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-white font-black text-sm">{POKEMON_BY_ID[playerFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-slate-400 text-xs">Nv.{playerFighters[0]?.level}</span>
+              </div>
+              <div className="w-full bg-slate-700 rounded-full h-2.5">
+                <div className="h-2.5 rounded-full" style={{ width:'100%', background:'#22c55e' }} />
+              </div>
+            </div>
+          </div>
+
+          {/* VS */}
+          <div className="absolute inset-x-0 top-1/2 flex justify-center"
+            style={{ animation:'battle-vs 0.5s 0.4s ease-out both' }}>
+            <span className="font-black" style={{
+              fontSize:'5rem',
+              background:'linear-gradient(135deg, #ef4444, #f97316)',
+              WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
+              filter:'drop-shadow(0 0 20px #ef4444)',
+            }}>VS</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-[400] flex flex-col" style={{ background: '#020617' }}>
 
@@ -452,7 +533,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
         {/* Floating damage */}
         {floatingDmg.map(d => {
-          const color = d.effectiveness >= 2 ? '#4ade80' : d.effectiveness === 0 ? '#94a3b8' : d.effectiveness < 1 ? '#fb923c' : '#fde047';
+          const color = d.effectiveness === 0 ? '#94a3b8' : '#ef4444';
           const pos = d.target === 'enemy'
             ? { top: '22%', right: '14%' }
             : { bottom: '26%', left: '20%' };
