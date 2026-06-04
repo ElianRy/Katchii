@@ -212,48 +212,46 @@ export function HUD({
         </button>
       </div>
 
-      {/* Cooldown — circular progress ring around pokeball */}
-      {(() => {
-        const SIZE = 52;
-        const R = 22;
-        const CIRC = 2 * Math.PI * R;
-        const progress = isOnCooldown ? cooldownRemaining / 60 : 0; // 1=empty, 0=full
+      {/* Cooldown — pokeball drawn progressively, disappears when ready */}
+      {isOnCooldown && (() => {
+        const cx = 32; const cy = 32; const r = 30;
+        // How much of the pokeball is revealed: 0 at start of cooldown, 1 at end
+        const elapsed = 1 - (cooldownRemaining / 60);
+        const angle = elapsed * 2 * Math.PI; // 0 → 2π
+        // Pie-slice clip: from 12 o'clock clockwise
+        const ex = cx + r * Math.sin(angle);
+        const ey = cy - r * Math.cos(angle);
+        const largeArc = angle > Math.PI ? 1 : 0;
+        const clipId = 'pb-reveal';
+        // When almost done (< 2s), add a "glowing ready" feel
+        const nearlyDone = cooldownRemaining <= 2;
         return (
           <div className="absolute right-3 z-20" style={{ bottom: '84px' }}>
-            <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ display: 'block' }}>
-              {/* Track ring */}
-              <circle cx={SIZE/2} cy={SIZE/2} r={R} fill="none" stroke="#1e293b" strokeWidth="3.5" />
-              {/* Progress ring — fills as cooldown expires */}
-              <circle
-                cx={SIZE/2} cy={SIZE/2} r={R}
-                fill="none"
-                stroke={isOnCooldown ? '#f59e0b' : '#22c55e'}
-                strokeWidth="3.5"
-                strokeLinecap="round"
-                strokeDasharray={CIRC}
-                strokeDashoffset={CIRC * progress}
-                style={{
-                  transformOrigin: `${SIZE/2}px ${SIZE/2}px`,
-                  transform: 'rotate(-90deg)',
-                  transition: 'stroke-dashoffset 0.5s linear, stroke 0.3s',
-                  filter: isOnCooldown ? 'none' : 'drop-shadow(0 0 4px #22c55e88)',
-                }}
-              />
-              {/* Pokeball inside */}
-              <g transform={`translate(${SIZE/2 - 14}, ${SIZE/2 - 14})`} opacity={isOnCooldown ? 0.45 : 1}>
-                <path d="M 14 1 A 13 13 0 0 1 27 14 L 19 14 A 5 5 0 0 0 9 14 L 1 14 A 13 13 0 0 1 14 1 Z" fill={isOnCooldown ? '#6b7280' : '#ef4444'} />
-                <path d="M 1 14 A 13 13 0 0 0 27 14 L 19 14 A 5 5 0 0 1 9 14 Z" fill="white" />
-                <circle cx="14" cy="14" r="13" fill="none" stroke="#111" strokeWidth="1.2" />
-                <line x1="1" y1="14" x2="27" y2="14" stroke="#111" strokeWidth="1.2" />
-                <circle cx="14" cy="14" r="3.5" fill="white" stroke="#111" strokeWidth="1.2" />
-                <circle cx="14" cy="14" r="1.8" fill={isOnCooldown ? '#9ca3af' : '#ef4444'} />
+            <svg width="56" height="70" viewBox={`0 0 56 80`} style={{ overflow: 'visible' }}>
+              <defs>
+                <clipPath id={clipId}>
+                  {elapsed >= 1
+                    ? <circle cx={cx-4} cy={cy-4} r={r} />
+                    : <path d={`M ${cx-4} ${cy-4} L ${cx-4} ${cy-4-r} A ${r} ${r} 0 ${largeArc} 1 ${ex-4} ${ey-4} Z`} />
+                  }
+                </clipPath>
+              </defs>
+              {/* Ghost outline — always visible so player sees what's being drawn */}
+              <circle cx={cx-4} cy={cy-4} r={r} fill="none" stroke="#ffffff18" strokeWidth="1.5" />
+              {/* Pokeball revealed progressively via clip */}
+              <g clipPath={`url(#${clipId})`}
+                style={nearlyDone ? { filter: 'drop-shadow(0 0 6px #fbbf24cc)' } : undefined}>
+                <path d={`M ${cx-4} ${cy-4-r} A ${r} ${r} 0 0 1 ${cx-4+r} ${cy-4} L ${cx-4+6} ${cy-4} A 6 6 0 0 0 ${cx-4-6} ${cy-4} L ${cx-4-r} ${cy-4} A ${r} ${r} 0 0 1 ${cx-4} ${cy-4-r} Z`} fill="#ef4444" />
+                <path d={`M ${cx-4-r} ${cy-4} A ${r} ${r} 0 0 0 ${cx-4+r} ${cy-4} L ${cx-4+6} ${cy-4} A 6 6 0 0 1 ${cx-4-6} ${cy-4} Z`} fill="white" />
+                <circle cx={cx-4} cy={cy-4} r={r} fill="none" stroke="#111" strokeWidth="2" />
+                <line x1={cx-4-r} y1={cy-4} x2={cx-4+r} y2={cy-4} stroke="#111" strokeWidth="2" />
+                <circle cx={cx-4} cy={cy-4} r="6" fill="white" stroke="#111" strokeWidth="2" />
+                <circle cx={cx-4} cy={cy-4} r="3" fill="#d1d5db" />
               </g>
-              {/* Seconds label when on cooldown */}
-              {isOnCooldown && (
-                <text x={SIZE/2} y={SIZE - 3} textAnchor="middle" fill="#f59e0b" fontSize="7" fontWeight="bold">
-                  {cooldownRemaining}s
-                </text>
-              )}
+              {/* Countdown text below */}
+              <text x={cx-4} y={cy+r+16} textAnchor="middle" fill="#94a3b8" fontSize="9" fontWeight="bold">
+                {cooldownRemaining}s
+              </text>
             </svg>
           </div>
         );
