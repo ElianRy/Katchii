@@ -19,7 +19,10 @@ export async function saveCloudState(userId: string, state: GameState): Promise<
   try {
     await supabase
       .from('game_saves')
-      .upsert({ user_id: userId, state, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+      .upsert(
+        { user_id: userId, state, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      );
   } catch {
     // fail silently — localStorage is the fallback
   }
