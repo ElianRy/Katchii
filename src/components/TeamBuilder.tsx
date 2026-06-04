@@ -158,7 +158,7 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon Ã
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
+    <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col pb-[72px]">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
         <div>
