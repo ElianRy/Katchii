@@ -291,16 +291,15 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
 
             {/* Name badge */}
             <div
-              className="mt-1 font-bold rounded text-center"
+              className="mt-1 font-bold rounded self-center"
               style={{
                 background: 'rgba(0,0,0,0.75)',
                 color: rarityColor,
                 fontSize: '0.62rem',
                 padding: '2px 5px',
-                maxWidth: 80,
                 lineHeight: 1.3,
-                wordBreak: 'break-word',
-                whiteSpace: 'normal',
+                whiteSpace: 'nowrap',
+                display: 'inline-block',
               }}
             >
               {pokemonData.name}
