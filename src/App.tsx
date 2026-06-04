@@ -146,7 +146,7 @@ export function App() {
           onOpenCollection={() => persistView('collection')}
           onOpenTeam={() => persistView('team')}
           onOpenAdmin={() => setView('admin')}
-          isAdmin={username === 'admin'}
+          isAdmin={['admin', 'elian'].includes(username.toLowerCase())}
           onOpenLures={() => persistView('lures')}
           onOpenQuests={() => persistView('quests')}
           onOpenDuels={() => persistView('duels')}
@@ -167,7 +167,7 @@ export function App() {
         />
       )}
 
-      {view === 'admin' && username === 'admin' && (
+      {view === 'admin' && ['admin', 'elian'].includes(username.toLowerCase()) && (
         <AdminPanel
           gameState={gameState}
           onClose={() => persistView('hunt')}

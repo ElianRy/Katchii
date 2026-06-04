@@ -1,5 +1,6 @@
 import { GameState } from '../types';
 import type { SaveStatus } from '../lib/cloudSync';
+import { lastSaveError } from '../lib/cloudSync';
 
 interface Props {
   points: number;
@@ -101,11 +102,16 @@ export function HUD({
             <span className="text-yellow-400 font-bold text-lg">{points}</span>
             <span className="text-gray-400 text-sm">pts</span>
             <span
-              title={saveStatus === 'error' ? 'Erreur sauvegarde cloud !' : saveStatus === 'saving' ? 'Sauvegarde...' : 'Sauvegardé'}
+              title={saveStatus === 'error' ? `Erreur: ${lastSaveError}` : saveStatus === 'saving' ? 'Sauvegarde...' : 'Sauvegardé'}
               style={{ fontSize: '0.65rem', marginLeft: 2 }}
             >
               {saveStatus === 'saving' ? '🔄' : saveStatus === 'error' ? '⚠️' : '☁️'}
             </span>
+            {saveStatus === 'error' && isAdmin && lastSaveError && (
+              <span style={{ fontSize: '0.5rem', color: '#f87171', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                {lastSaveError.slice(0, 60)}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1">
             <div
