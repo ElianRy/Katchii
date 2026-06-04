@@ -31,7 +31,7 @@ function weightedRarity(weights: Record<Rarity, number>): Rarity {
   return 'commun';
 }
 
-const SPECIAL_WEIGHT = 1 / 15; // special zone pokemon are 15x rarer than normal pool members
+const SPECIAL_WEIGHT = 1 / 50; // special zone pokemon are 50x rarer than normal pool members
 
 function pickPokemon(rarity: Rarity, zoneIds: number[], specialIds: Set<number>): number {
   const allPool = POKEMON_BY_RARITY[rarity] ?? [];

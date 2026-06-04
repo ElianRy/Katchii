@@ -45,6 +45,15 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes pokeball-ready {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px #ef4444aa); }
+  50% { transform: scale(1.15); filter: drop-shadow(0 0 10px #ef4444cc) drop-shadow(0 0 20px #f59e0b88); }
+}
+
+.animate-spin-pokeball-ready {
+  animation: pokeball-ready 1.2s ease-in-out infinite;
+}
+
 @keyframes capture-flash {
   0% { transform: translate(-50%, -50%) scale(1); opacity: 1; filter: brightness(1); }
   20% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; filter: brightness(3); }

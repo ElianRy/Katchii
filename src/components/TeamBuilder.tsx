@@ -223,7 +223,7 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon √
 
       {/* Difficulty picker */}
       {mode === 'difficulty' && (
-        <div className="absolute inset-0 z-40 bg-black/80 flex items-end justify-center p-4 pb-8">
+        <div className="absolute inset-0 z-40 bg-black/80 flex items-end justify-center p-4 pb-[80px]">
           <div className="bg-slate-900 rounded-2xl w-full max-w-sm border border-slate-700 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
               <h3 className="text-white font-black">Choix de la difficult√©</h3>

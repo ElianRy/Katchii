@@ -203,20 +203,38 @@ export function HUD({
         </button>
       </div>
 
-      {/* Cooldown bar — centered above bottom nav */}
-      {isOnCooldown && (
-        <div className="absolute left-1/2 -translate-x-1/2 z-20" style={{ bottom: '80px', width: '85%', maxWidth: 360 }}>
-          <div className="bg-black/80 rounded-2xl px-5 py-3 text-center border border-yellow-500/30 backdrop-blur-sm">
-            <div className="text-yellow-300 text-sm font-bold mb-2">⏳ Prochaine capture dans {cooldownRemaining}s</div>
-            <div className="w-full bg-slate-700/60 rounded-full h-3 overflow-hidden">
-              <div
-                className="h-3 rounded-full transition-all duration-500"
-                style={{ width: `${(cooldownRemaining / 60) * 100}%`, background: 'linear-gradient(90deg, #f59e0b, #ef4444)' }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Cooldown — right-side pokeball indicator */}
+      <div className="absolute right-3 z-20 flex flex-col items-center gap-1" style={{ bottom: '84px' }}>
+        {isOnCooldown ? (
+          <>
+            {/* Empty / locked pokeball */}
+            <svg width="44" height="44" viewBox="0 0 64 64" style={{ filter: 'grayscale(1) brightness(0.5)' }}>
+              <path d="M 32 2 A 30 30 0 0 1 62 32 L 38 32 A 6 6 0 0 0 26 32 L 2 32 A 30 30 0 0 1 32 2 Z" fill="#ef4444" />
+              <path d="M 2 32 A 30 30 0 0 0 62 32 L 38 32 A 6 6 0 0 1 26 32 Z" fill="white" />
+              <circle cx="32" cy="32" r="30" fill="none" stroke="black" strokeWidth="2.5" />
+              <line x1="2" y1="32" x2="62" y2="32" stroke="black" strokeWidth="2.5" />
+              <circle cx="32" cy="32" r="7" fill="white" stroke="black" strokeWidth="2.5" />
+              <circle cx="32" cy="32" r="3.5" fill="#d1d5db" />
+            </svg>
+            {/* Countdown arc */}
+            <svg width="44" height="6" viewBox="0 0 44 6">
+              <rect x="0" y="1" width="44" height="4" rx="2" fill="#374151" />
+              <rect x="0" y="1" width={44 * (1 - cooldownRemaining / 60)} height="4" rx="2" fill="#f59e0b" />
+            </svg>
+            <span className="text-yellow-400 font-black" style={{ fontSize: '0.6rem' }}>{cooldownRemaining}s</span>
+          </>
+        ) : (
+          /* Ready pokeball — glowing pulse */
+          <svg width="44" height="44" viewBox="0 0 64 64" className="animate-spin-pokeball-ready">
+            <path d="M 32 2 A 30 30 0 0 1 62 32 L 38 32 A 6 6 0 0 0 26 32 L 2 32 A 30 30 0 0 1 32 2 Z" fill="#ef4444" />
+            <path d="M 2 32 A 30 30 0 0 0 62 32 L 38 32 A 6 6 0 0 1 26 32 Z" fill="white" />
+            <circle cx="32" cy="32" r="30" fill="none" stroke="black" strokeWidth="2.5" />
+            <line x1="2" y1="32" x2="62" y2="32" stroke="black" strokeWidth="2.5" />
+            <circle cx="32" cy="32" r="7" fill="white" stroke="black" strokeWidth="2.5" />
+            <circle cx="32" cy="32" r="3.5" fill="#ef4444" />
+          </svg>
+        )}
+      </div>
 
       {/* Bottom navigation bar — kept for hunt view, BottomNav in App overlays this */}
       <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none" style={{ display: 'none' }}>
