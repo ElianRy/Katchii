@@ -19,6 +19,25 @@ interface Particle {
 
 const CONFETTI_COLORS = ['#f59e0b', '#ef4444', '#3b82f6', '#22c55e', '#a855f7', '#ec4899', '#06b6d4'];
 
+// 5 movement animation styles, assigned by pokemonId
+const MOVE_ANIMS = [
+  { animation: 'float 2.6s ease-in-out infinite' },
+  { animation: 'bounce-pokemon 1.8s ease-in-out infinite' },
+  { animation: 'sway 2.2s ease-in-out infinite' },
+  { animation: 'hop 3s ease-in-out infinite' },
+  { animation: 'wiggle 2.4s ease-in-out infinite' },
+];
+
+// Shiny sparkle positions around the sprite
+const SPARKLE_POSITIONS = [
+  { top: '-12px', left: '50%', color: '#fde047', duration: '1.1s', delay: '0s' },
+  { top: '10%', right: '-12px', color: '#f9a8d4', duration: '1.3s', delay: '0.25s' },
+  { bottom: '-10px', left: '50%', color: '#93c5fd', duration: '0.9s', delay: '0.5s' },
+  { top: '10%', left: '-12px', color: '#fde047', duration: '1.4s', delay: '0.75s' },
+  { top: '50%', right: '-14px', color: '#86efac', duration: '1.0s', delay: '0.35s' },
+  { top: '50%', left: '-14px', color: '#f9a8d4', duration: '1.2s', delay: '0.6s' },
+];
+
 function PokeballSVG({ spinning }: { spinning: boolean }) {
   return (
     <svg
@@ -43,11 +62,11 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
 
   useEffect(() => {
     if (spawned.captured && !showParticles) {
-      const newParticles: Particle[] = Array.from({ length: 12 }, (_, i) => ({
+      const newParticles: Particle[] = Array.from({ length: 14 }, (_, i) => ({
         id: i,
-        angle: (i / 12) * 360,
+        angle: (i / 14) * 360,
         color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-        distance: 40 + Math.random() * 30,
+        distance: 40 + Math.random() * 35,
       }));
       setParticles(newParticles);
       setShowParticles(true);
@@ -68,7 +87,6 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
     onCapture();
   };
 
-  // Build aura glow styles based on rarity
   const isEpic = pokemonData.rarity === 'elite';
   const isLegendary = pokemonData.rarity === 'legendaire';
 
@@ -85,6 +103,19 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
     spriteAnimation = undefined;
   }
 
+  // During cooldown: grayscale + dim instead of black overlay
+  const cooldownStyle = disabled ? {
+    filter: 'grayscale(0.85) brightness(0.55)',
+    opacity: 0.7,
+    transition: 'filter 0.3s, opacity 0.3s',
+  } : {
+    transition: 'filter 0.3s, opacity 0.3s',
+  };
+
+  // Movement animation — varied by pokemonId
+  const moveAnim = MOVE_ANIMS[(spawned.pokemonId || 0) % MOVE_ANIMS.length];
+  const moveDelay = `${(spawned.pokemonId % 7) * 0.3}s`;
+
   const containerClass = `absolute select-none ${leaving ? 'animate-leave' : 'animate-appear'}`;
 
   return (
@@ -92,7 +123,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
       className={containerClass}
       style={{ left: `${spawned.x}%`, top: `${spawned.y}%`, transform: 'translate(-50%, -50%)' }}
     >
-      {/* Confetti particles */}
+      {/* Confetti particles on capture */}
       {showParticles && particles.map((p) => {
         const rad = (p.angle * Math.PI) / 180;
         const dx = Math.cos(rad) * p.distance;
@@ -111,7 +142,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               marginLeft: -4,
               '--dx': `${dx}px`,
               '--dy': `${dy}px`,
-              animation: 'confetti-fly 0.8s ease-out forwards',
+              animation: 'confetti-fly 0.9s ease-out forwards',
             } as React.CSSProperties}
           />
         );
@@ -124,102 +155,111 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
       ) : !spawned.captured ? (
         <div
           onClick={handleClick}
-          className="relative cursor-pointer animate-float flex flex-col items-center"
-          style={{ animationDelay: `${(spawned.pokemonId % 5) * 0.3}s` }}
+          className="relative flex flex-col items-center"
+          style={{
+            ...cooldownStyle,
+            cursor: disabled ? 'not-allowed' : 'pointer',
+          }}
           title={pokemonData.name}
         >
-          {/* Shiny halo */}
-          {spawned.isShiny && (
-            <div
-              className="absolute inset-0 rounded-full pointer-events-none"
-              style={{
-                boxShadow: '0 0 20px 8px rgba(253,224,71,0.6), 0 0 40px 16px rgba(236,72,153,0.3)',
-                borderRadius: '50%',
-              }}
-            />
-          )}
-
-          {/* Aura glow wrapper */}
+          {/* Movement wrapper */}
           <div
-            className="relative flex items-center justify-center"
             style={{
-              borderRadius: narutoSpriteUrl ? '8px' : '50%',
-              background: 'rgba(0,0,0,0.0)',
-              padding: 0,
+              animation: moveAnim.animation,
+              animationDelay: moveDelay,
             }}
           >
-            {/* Orbiting shiny stars */}
+            {/* Shiny halo glow */}
             {spawned.isShiny && (
-              <div className="absolute inset-0 pointer-events-none" style={{ borderRadius: '50%' }}>
-                <div className="orbit-star" style={{ background: '#fde047' }} />
-                <div className="orbit-star" style={{ background: '#f9a8d4', animationDelay: '-0.53s' }} />
-                <div className="orbit-star" style={{ background: '#93c5fd', animationDelay: '-1.06s' }} />
-              </div>
-            )}
-
-            {/* Legendary rays */}
-            {isLegendary && (
               <div
-                className="absolute inset-0 pointer-events-none"
+                className="absolute inset-0 rounded-full pointer-events-none"
                 style={{
+                  boxShadow: '0 0 24px 10px rgba(253,224,71,0.5), 0 0 50px 20px rgba(236,72,153,0.25)',
                   borderRadius: '50%',
-                  background: `radial-gradient(ellipse, ${rarityColor}22 0%, transparent 70%)`,
-                  animation: 'legendary-rays 4s linear infinite',
                 }}
               />
             )}
 
-            {spriteError ? (
-              <div
-                className="flex flex-col items-center justify-center gap-0.5"
-                style={{
-                  width: 64, height: 64,
-                  background: `linear-gradient(135deg, ${rarityColor}33, ${rarityColor}11)`,
-                  border: `1px solid ${rarityColor}66`,
-                  borderRadius: 8,
-                  filter: spriteFilter,
-                  animation: spriteAnimation,
-                }}
-              >
-                <span style={{ fontSize: 26 }}>忍</span>
-                <span className="font-black text-center leading-none" style={{ color: rarityColor, fontSize: '0.5rem', maxWidth: 58 }}>
-                  {pokemonData.name.split(' ')[0]}
-                </span>
-              </div>
-            ) : (
-              <img
-                src={spriteUrl}
-                alt={pokemonData.name}
-                width={64}
-                height={64}
-                style={{
-                  imageRendering: narutoSpriteUrl ? 'auto' : 'pixelated',
-                  objectFit: narutoSpriteUrl ? 'cover' : 'contain',
-                  objectPosition: narutoSpriteUrl ? 'top center' : undefined,
-                  borderRadius: narutoSpriteUrl ? '8px' : undefined,
-                  filter: spriteFilter,
-                  animation: spriteAnimation,
-                }}
-                draggable={false}
-                onError={() => setSpriteError(true)}
-              />
-            )}
-          </div>
+            {/* Sprite + aura */}
+            <div
+              className="relative flex items-center justify-center"
+              style={{ borderRadius: narutoSpriteUrl ? '8px' : '50%', padding: 0 }}
+            >
+              {/* Shiny sparkles — always visible for shiny */}
+              {spawned.isShiny && SPARKLE_POSITIONS.map((sp, i) => (
+                <div
+                  key={i}
+                  className="shiny-sparkle"
+                  style={{
+                    top: sp.top,
+                    left: sp.left,
+                    right: (sp as { right?: string }).right,
+                    bottom: (sp as { bottom?: string }).bottom,
+                    transform: sp.left === '50%' ? 'translateX(-50%)' : undefined,
+                    '--sp-color': sp.color,
+                    '--sp-duration': sp.duration,
+                    '--sp-delay': sp.delay,
+                  } as React.CSSProperties}
+                />
+              ))}
 
-          {/* Name badge */}
-          <div
-            className="mt-1 text-xs font-bold whitespace-nowrap px-1 py-0.5 rounded"
-            style={{ background: 'rgba(0,0,0,0.75)', color: rarityColor, fontSize: '0.65rem' }}
-          >
-            {spawned.isShiny ? '✨ ' : ''}{pokemonData.name}
-          </div>
+              {/* Legendary ambient rays */}
+              {isLegendary && (
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    borderRadius: '50%',
+                    background: `radial-gradient(ellipse, ${rarityColor}22 0%, transparent 70%)`,
+                    animation: 'legendary-rays 4s linear infinite',
+                  }}
+                />
+              )}
 
-          {/* Disabled overlay */}
-          {disabled && (
-            <div className="absolute inset-0 rounded-lg bg-black/50 flex items-center justify-center">
-              <span className="text-yellow-400 text-xs font-bold">⏳</span>
+              {spriteError ? (
+                <div
+                  className="flex flex-col items-center justify-center gap-0.5"
+                  style={{
+                    width: 64, height: 64,
+                    background: `linear-gradient(135deg, ${rarityColor}33, ${rarityColor}11)`,
+                    border: `1px solid ${rarityColor}66`,
+                    borderRadius: 8,
+                    filter: spriteFilter,
+                    animation: spriteAnimation,
+                  }}
+                >
+                  <span style={{ fontSize: 26 }}>忍</span>
+                  <span className="font-black text-center leading-none" style={{ color: rarityColor, fontSize: '0.5rem', maxWidth: 58 }}>
+                    {pokemonData.name.split(' ')[0]}
+                  </span>
+                </div>
+              ) : (
+                <img
+                  src={spriteUrl}
+                  alt={pokemonData.name}
+                  width={64}
+                  height={64}
+                  style={{
+                    imageRendering: narutoSpriteUrl ? 'auto' : 'pixelated',
+                    objectFit: narutoSpriteUrl ? 'cover' : 'contain',
+                    objectPosition: narutoSpriteUrl ? 'top center' : undefined,
+                    borderRadius: narutoSpriteUrl ? '8px' : undefined,
+                    filter: spriteFilter,
+                    animation: spriteAnimation,
+                  }}
+                  draggable={false}
+                  onError={() => setSpriteError(true)}
+                />
+              )}
             </div>
-          )}
+
+            {/* Name badge */}
+            <div
+              className="mt-1 text-xs font-bold whitespace-nowrap px-1 py-0.5 rounded"
+              style={{ background: 'rgba(0,0,0,0.75)', color: rarityColor, fontSize: '0.65rem' }}
+            >
+              {spawned.isShiny ? '✨ ' : ''}{pokemonData.name}
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

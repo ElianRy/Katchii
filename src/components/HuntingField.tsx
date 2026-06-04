@@ -1,13 +1,25 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { StarField } from './StarField';
+import { ZoneBackground } from './ZoneBackground';
 import { SpawnedPokemonCard } from './SpawnedPokemonCard';
 import { HUD } from './HUD';
 import { useGameState } from '../hooks/useGameState';
 import { useSpawner } from '../hooks/useSpawner';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { NARUTO_BY_ID } from '../data/naruto';
-import { TERRAIN_SKINS } from './SkinsPanel';
 import { ZONE_BY_ID } from '../data/zones';
+
+const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
+  zone1: { ground: 'linear-gradient(to top, #14532d 0%, #166534 40%, transparent 100%)', bush: 'linear-gradient(to top, #15803d, #22c55e)' },
+  zone2: { ground: 'linear-gradient(to top, #0c4a6e 0%, #075985 40%, transparent 100%)', bush: 'linear-gradient(to top, #0369a1, #38bdf8)' },
+  zone3: { ground: 'linear-gradient(to top, #1c1917 0%, #292524 40%, transparent 100%)', bush: 'linear-gradient(to top, #44403c, #78716c)' },
+  zone4: { ground: 'linear-gradient(to top, #14532d 0%, #166534 40%, transparent 100%)', bush: 'linear-gradient(to top, #15803d, #86efac)' },
+  zone5: { ground: 'linear-gradient(to top, #1e1b4b 0%, #2e1065 40%, transparent 100%)', bush: 'linear-gradient(to top, #4c1d95, #7c3aed)' },
+  zone6: { ground: 'linear-gradient(to top, #2e1065 0%, #4a1d96 40%, transparent 100%)', bush: 'linear-gradient(to top, #6d28d9, #a855f7)' },
+  zone7: { ground: 'linear-gradient(to top, #7c2d12 0%, #9a3412 40%, transparent 100%)', bush: 'linear-gradient(to top, #b45309, #f97316)' },
+  zone8: { ground: 'linear-gradient(to top, #1c1917 0%, #292524 40%, transparent 100%)', bush: 'linear-gradient(to top, #57534e, #a8a29e)' },
+  ligue: { ground: 'linear-gradient(to top, #0f0a1e 0%, #1e1040 40%, transparent 100%)', bush: 'linear-gradient(to top, #312e81, #6366f1)' },
+  zone_libre: { ground: 'linear-gradient(to top, #1e1b4b 0%, #312e81 40%, transparent 100%)', bush: 'linear-gradient(to top, #4f46e5, #818cf8)' },
+};
 import { PokemonData } from '../types';
 import { NewCaptureModal } from './NewCaptureModal';
 import { ZoneInfoPanel } from './ZoneInfoPanel';
@@ -135,9 +147,8 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
     (q) => q.completed && !q.rewardClaimed
   ).length;
 
-  const activeSkin = TERRAIN_SKINS.find(s => s.id === (gameState.state.skins?.activeTerrain ?? 'foret')) ?? TERRAIN_SKINS[0];
-
-  const currentZone = ZONE_BY_ID[gameState.state.zoneProgress?.currentZoneId ?? 'zone1'];
+  const currentZoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
+  const currentZone = ZONE_BY_ID[currentZoneId];
   const currentZoneName = currentZone ? currentZone.name : 'Forêt de Pallet';
   const zoneIds = currentZone?.pokemonIds ?? [];
   const missingInZone = zoneIds.filter(id => (gameState.state.normalCollection[id] ?? 0) === 0);
@@ -146,17 +157,19 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
   const bossDefeated = !!gameState.state.zoneProgress?.bossDefeated?.[gameState.state.zoneProgress?.currentZoneId ?? 'zone1'];
   const bossUnlocked = !bossDefeated && zoneCaughtCount >= zoneNeeded && zoneNeeded > 0;
 
+  const zoneGround = ZONE_GROUND[currentZoneId] ?? ZONE_GROUND['zone1'];
+
   return (
-    <div className={`relative w-full h-screen overflow-hidden bg-gradient-to-b ${activeSkin.gradient}`}>
-      {/* Background */}
-      <StarField />
+    <div className="relative w-full h-screen overflow-hidden">
+      {/* Zone-specific background */}
+      <ZoneBackground zoneId={currentZoneId} />
 
       {/* Ground gradient */}
       <div
         className="absolute bottom-0 left-0 right-0 pointer-events-none"
         style={{
           height: '22%',
-          background: 'linear-gradient(to top, #14532d 0%, #166534 40%, transparent 100%)',
+          background: zoneGround.ground,
         }}
       />
 
@@ -169,7 +182,7 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOp
             left: bush.left,
             width: bush.width,
             height: bush.height,
-            background: 'linear-gradient(to top, #15803d, #22c55e)',
+            background: zoneGround.bush,
             '--bush-delay': `${bush.delay}s`,
             '--bush-duration': `${bush.duration}s`,
             boxShadow: '0 -4px 12px rgba(0,0,0,0.3)',
