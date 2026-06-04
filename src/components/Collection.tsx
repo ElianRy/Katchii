@@ -1,0 +1,153 @@
+import { useState } from 'react';
+import { GameState, RARITY_COLORS, RARITY_LABELS, Rarity } from '../types';
+import { GEN1_POKEMON } from '../data/gen1';
+
+interface Props {
+  state: GameState;
+  onClose: () => void;
+}
+
+type FilterTab = 'tous' | 'captures' | 'shinies' | Rarity;
+
+const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
+
+export function Collection({ state, onClose }: Props) {
+  const [filter, setFilter] = useState<FilterTab>('tous');
+
+  const totalCaught = Object.keys(state.normalCollection).length;
+  const totalShinyCaught = Object.keys(state.shinyCollection).length;
+
+  const filteredPokemon = GEN1_POKEMON.filter((p) => {
+    if (filter === 'tous') return true;
+    if (filter === 'captures') return (state.normalCollection[p.id] ?? 0) > 0;
+    if (filter === 'shinies') return (state.shinyCollection[p.id] ?? 0) > 0;
+    return p.rarity === filter;
+  });
+
+  const tabs: { id: FilterTab; label: string }[] = [
+    { id: 'tous', label: 'Tous' },
+    { id: 'captures', label: 'Capturés' },
+    { id: 'shinies', label: 'Shinies' },
+    ...RARITY_ORDER.map((r) => ({ id: r as FilterTab, label: RARITY_LABELS[r] })),
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+        <div>
+          <h2 className="text-white font-bold text-xl">Ma Collection</h2>
+          <p className="text-slate-400 text-sm">
+            {totalCaught}/151 capturés · {totalShinyCaught} shinies
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-slate-400 hover:text-white text-2xl leading-none px-2"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex gap-2 px-4 py-2 border-b border-slate-700 overflow-x-auto shrink-0">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setFilter(tab.id)}
+            className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+              filter === tab.id
+                ? 'bg-blue-600 text-white'
+                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+            }`}
+            style={
+              RARITY_ORDER.includes(tab.id as Rarity) && filter === tab.id
+                ? { backgroundColor: RARITY_COLORS[tab.id as Rarity] + 'cc' }
+                : undefined
+            }
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Grid */}
+      <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+          {filteredPokemon.map((pokemon) => {
+            const caught = (state.normalCollection[pokemon.id] ?? 0) > 0;
+            const shinyCaught = (state.shinyCollection[pokemon.id] ?? 0) > 0;
+            const normalCount = state.normalCollection[pokemon.id] ?? 0;
+            const shinyCount = state.shinyCollection[pokemon.id] ?? 0;
+            const rarityColor = RARITY_COLORS[pokemon.rarity];
+
+            return (
+              <div
+                key={pokemon.id}
+                className="flex flex-col items-center gap-1 relative"
+              >
+                <div
+                  className="relative rounded-lg p-1 w-16 h-16 flex items-center justify-center"
+                  style={{
+                    border: `2px solid ${caught ? rarityColor : '#374151'}`,
+                    background: caught ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.6)',
+                    boxShadow: caught ? `0 0 8px 2px ${rarityColor}44` : 'none',
+                  }}
+                >
+                  <img
+                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${shinyCaught ? 'shiny/' : ''}${pokemon.id}.png`}
+                    alt={pokemon.name}
+                    width={48}
+                    height={48}
+                    style={{
+                      imageRendering: 'pixelated',
+                      filter: caught ? 'none' : 'grayscale(100%) opacity(30%)',
+                    }}
+                    draggable={false}
+                  />
+                  {shinyCaught && (
+                    <div className="absolute -top-1 -right-1 text-xs">✨</div>
+                  )}
+                </div>
+
+                {/* Rarity badge */}
+                <div
+                  className="text-xs px-1 rounded font-bold"
+                  style={{ color: rarityColor, fontSize: '0.6rem' }}
+                >
+                  {RARITY_LABELS[pokemon.rarity].charAt(0).toUpperCase()}
+                </div>
+
+                {/* Name */}
+                <div
+                  className="text-center leading-tight"
+                  style={{ color: caught ? '#e2e8f0' : '#4b5563', fontSize: '0.6rem' }}
+                >
+                  #{pokemon.id} {pokemon.name}
+                </div>
+
+                {/* Counts */}
+                {caught && (
+                  <div className="flex gap-1" style={{ fontSize: '0.55rem' }}>
+                    <span className="text-slate-400">×{normalCount}</span>
+                    {shinyCount > 0 && (
+                      <span className="text-yellow-400">✨×{shinyCount}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {filteredPokemon.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+            <div className="text-4xl mb-3">🔍</div>
+            <p className="text-lg font-bold">Aucun Pokémon trouvé</p>
+            <p className="text-sm">Continuez à chasser !</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
