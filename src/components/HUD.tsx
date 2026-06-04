@@ -1,10 +1,12 @@
 import { GameState } from '../types';
+import type { SaveStatus } from '../lib/cloudSync';
 
 interface Props {
   points: number;
   activeLure: GameState['activeLure'];
   cooldownRemaining: number;
   isOnCooldown: boolean;
+  saveStatus?: SaveStatus;
   onOpenCollection: () => void;
   onOpenTeam: () => void;
   onOpenLures: () => void;
@@ -81,6 +83,7 @@ export function HUD({
   bossUnlocked = false,
   bossDefeated = false,
   onFightBoss,
+  saveStatus = 'idle',
 }: Props) {
   return (
     <>
@@ -97,6 +100,12 @@ export function HUD({
             </svg>
             <span className="text-yellow-400 font-bold text-lg">{points}</span>
             <span className="text-gray-400 text-sm">pts</span>
+            <span
+              title={saveStatus === 'error' ? 'Erreur sauvegarde cloud !' : saveStatus === 'saving' ? 'Sauvegarde...' : 'Sauvegardé'}
+              style={{ fontSize: '0.65rem', marginLeft: 2 }}
+            >
+              {saveStatus === 'saving' ? '🔄' : saveStatus === 'error' ? '⚠️' : '☁️'}
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <div
@@ -203,38 +212,52 @@ export function HUD({
         </button>
       </div>
 
-      {/* Cooldown — right-side pokeball indicator */}
-      <div className="absolute right-3 z-20 flex flex-col items-center gap-1" style={{ bottom: '84px' }}>
-        {isOnCooldown ? (
-          <>
-            {/* Empty / locked pokeball */}
-            <svg width="44" height="44" viewBox="0 0 64 64" style={{ filter: 'grayscale(1) brightness(0.5)' }}>
-              <path d="M 32 2 A 30 30 0 0 1 62 32 L 38 32 A 6 6 0 0 0 26 32 L 2 32 A 30 30 0 0 1 32 2 Z" fill="#ef4444" />
-              <path d="M 2 32 A 30 30 0 0 0 62 32 L 38 32 A 6 6 0 0 1 26 32 Z" fill="white" />
-              <circle cx="32" cy="32" r="30" fill="none" stroke="black" strokeWidth="2.5" />
-              <line x1="2" y1="32" x2="62" y2="32" stroke="black" strokeWidth="2.5" />
-              <circle cx="32" cy="32" r="7" fill="white" stroke="black" strokeWidth="2.5" />
-              <circle cx="32" cy="32" r="3.5" fill="#d1d5db" />
+      {/* Cooldown — circular progress ring around pokeball */}
+      {(() => {
+        const SIZE = 52;
+        const R = 22;
+        const CIRC = 2 * Math.PI * R;
+        const progress = isOnCooldown ? cooldownRemaining / 60 : 0; // 1=empty, 0=full
+        return (
+          <div className="absolute right-3 z-20" style={{ bottom: '84px' }}>
+            <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ display: 'block' }}>
+              {/* Track ring */}
+              <circle cx={SIZE/2} cy={SIZE/2} r={R} fill="none" stroke="#1e293b" strokeWidth="3.5" />
+              {/* Progress ring — fills as cooldown expires */}
+              <circle
+                cx={SIZE/2} cy={SIZE/2} r={R}
+                fill="none"
+                stroke={isOnCooldown ? '#f59e0b' : '#22c55e'}
+                strokeWidth="3.5"
+                strokeLinecap="round"
+                strokeDasharray={CIRC}
+                strokeDashoffset={CIRC * progress}
+                style={{
+                  transformOrigin: `${SIZE/2}px ${SIZE/2}px`,
+                  transform: 'rotate(-90deg)',
+                  transition: 'stroke-dashoffset 0.5s linear, stroke 0.3s',
+                  filter: isOnCooldown ? 'none' : 'drop-shadow(0 0 4px #22c55e88)',
+                }}
+              />
+              {/* Pokeball inside */}
+              <g transform={`translate(${SIZE/2 - 14}, ${SIZE/2 - 14})`} opacity={isOnCooldown ? 0.45 : 1}>
+                <path d="M 14 1 A 13 13 0 0 1 27 14 L 19 14 A 5 5 0 0 0 9 14 L 1 14 A 13 13 0 0 1 14 1 Z" fill={isOnCooldown ? '#6b7280' : '#ef4444'} />
+                <path d="M 1 14 A 13 13 0 0 0 27 14 L 19 14 A 5 5 0 0 1 9 14 Z" fill="white" />
+                <circle cx="14" cy="14" r="13" fill="none" stroke="#111" strokeWidth="1.2" />
+                <line x1="1" y1="14" x2="27" y2="14" stroke="#111" strokeWidth="1.2" />
+                <circle cx="14" cy="14" r="3.5" fill="white" stroke="#111" strokeWidth="1.2" />
+                <circle cx="14" cy="14" r="1.8" fill={isOnCooldown ? '#9ca3af' : '#ef4444'} />
+              </g>
+              {/* Seconds label when on cooldown */}
+              {isOnCooldown && (
+                <text x={SIZE/2} y={SIZE - 3} textAnchor="middle" fill="#f59e0b" fontSize="7" fontWeight="bold">
+                  {cooldownRemaining}s
+                </text>
+              )}
             </svg>
-            {/* Countdown arc */}
-            <svg width="44" height="6" viewBox="0 0 44 6">
-              <rect x="0" y="1" width="44" height="4" rx="2" fill="#374151" />
-              <rect x="0" y="1" width={44 * (1 - cooldownRemaining / 60)} height="4" rx="2" fill="#f59e0b" />
-            </svg>
-            <span className="text-yellow-400 font-black" style={{ fontSize: '0.6rem' }}>{cooldownRemaining}s</span>
-          </>
-        ) : (
-          /* Ready pokeball — glowing pulse */
-          <svg width="44" height="44" viewBox="0 0 64 64" className="animate-spin-pokeball-ready">
-            <path d="M 32 2 A 30 30 0 0 1 62 32 L 38 32 A 6 6 0 0 0 26 32 L 2 32 A 30 30 0 0 1 32 2 Z" fill="#ef4444" />
-            <path d="M 2 32 A 30 30 0 0 0 62 32 L 38 32 A 6 6 0 0 1 26 32 Z" fill="white" />
-            <circle cx="32" cy="32" r="30" fill="none" stroke="black" strokeWidth="2.5" />
-            <line x1="2" y1="32" x2="62" y2="32" stroke="black" strokeWidth="2.5" />
-            <circle cx="32" cy="32" r="7" fill="white" stroke="black" strokeWidth="2.5" />
-            <circle cx="32" cy="32" r="3.5" fill="#ef4444" />
-          </svg>
-        )}
-      </div>
+          </div>
+        );
+      })()}
 
       {/* Bottom navigation bar — kept for hunt view, BottomNav in App overlays this */}
       <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none" style={{ display: 'none' }}>

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_WEIGHTS } from '../types';
 import { loadState, saveState } from '../lib/storage';
-import { loadCloudState, saveCloudState } from '../lib/cloudSync';
+import { loadCloudState, saveCloudState, onSaveStatus, SaveStatus } from '../lib/cloudSync';
 import { supabase } from '../lib/supabase';
 import { ZONE_BY_ID } from '../data/zones';
 import { POKEMON_BY_ID } from '../data/gen1';
@@ -65,11 +65,14 @@ function checkBadges(state: GameState): string[] {
 
 export function useGameState() {
   const [state, setState] = useState<GameState>(() => loadState());
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   // Badge toast queue
   const [badgeToasts, setBadgeToasts] = useState<string[]>([]);
   const userIdRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestStateRef = useRef<GameState>(state);
+
+  useEffect(() => { return onSaveStatus(setSaveStatus); }, []);
 
   const dismissBadgeToast = useCallback(() => {
     setBadgeToasts((prev) => prev.slice(1));
@@ -635,6 +638,7 @@ export function useGameState() {
     isShinyCaught,
     totalCaught,
     totalShinyCaught,
+    saveStatus,
     badgeToasts,
     dismissBadgeToast,
     getPokemonLevel,
