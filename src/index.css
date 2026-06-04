@@ -141,6 +141,12 @@
   100% { transform: translate(var(--fx), var(--fy)); opacity: 0; }
 }
 
+/* Cloud drift */
+@keyframes cloud-drift {
+  0% { transform: translateX(-120px); }
+  100% { transform: translateX(110vw); }
+}
+
 /* Water ripple for ocean zone */
 @keyframes ripple {
   0% { transform: scale(0.8); opacity: 0.6; }

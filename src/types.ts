@@ -1,6 +1,6 @@
 export type Rarity = 'commun' | 'peu_commun' | 'rare' | 'elite' | 'legendaire';
 export type LureType = 'rare' | 'epique' | 'legendaire' | 'shiny';
-export type View = 'auth' | 'home' | 'universe' | 'hunt' | 'collection' | 'lures' | 'quests' | 'duels' | 'village' | 'skins' | 'fusion' | 'raid' | 'wrapped' | 'profile' | 'zones';
+export type View = 'auth' | 'home' | 'universe' | 'hunt' | 'collection' | 'team' | 'lures' | 'quests' | 'duels' | 'village' | 'skins' | 'fusion' | 'raid' | 'wrapped' | 'profile' | 'zones';
 
 export type QuestType =
   | 'capture_n'
@@ -46,6 +46,8 @@ export interface SpawnedPokemon {
   lifetime: number;
   x: number; // percentage 5-85
   y: number; // percentage 10-70
+  vx: number; // wander velocity
+  vy: number;
   capturing: boolean;
   captured: boolean;
 }

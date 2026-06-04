@@ -6,6 +6,7 @@ interface Props {
   cooldownRemaining: number;
   isOnCooldown: boolean;
   onOpenCollection: () => void;
+  onOpenTeam: () => void;
   onOpenLures: () => void;
   onOpenQuests: () => void;
   onOpenDuels: () => void;
@@ -52,6 +53,7 @@ export function HUD({
   cooldownRemaining,
   isOnCooldown,
   onOpenCollection,
+  onOpenTeam,
   onOpenLures,
   onOpenQuests,
   onOpenDuels,
@@ -210,6 +212,13 @@ export function HUD({
           >
             <span className="text-xl">📚</span>
             <span className="text-xs font-bold">Collection</span>
+          </button>
+          <button
+            onClick={onOpenTeam}
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-emerald-400 hover:bg-emerald-900/30 transition-colors"
+          >
+            <span className="text-xl">⚔️</span>
+            <span className="text-xs font-bold">Équipe</span>
           </button>
           <button
             onClick={onOpenLures}

@@ -9,11 +9,13 @@ const MAX_SPAWNED = 3;
 const SPAWN_INTERVAL_MS = 300;
 const SPAWN_CHANCE = 0.28;
 const EXPIRE_INTERVAL_MS = 500;
+const WANDER_INTERVAL_MS = 80;
 const MIN_LIFETIME = 9000;
 const MAX_LIFETIME = 14000;
 const POKEBALL_SPIN_MS = 1350;
 const POST_CAPTURE_MS = 400;
 const LEAVE_DURATION_MS = 800;
+const WANDER_SPEED = 0.12; // %/tick
 
 function randomBetween(min: number, max: number): number {
   return Math.random() * (max - min) + min;
@@ -156,6 +158,7 @@ export function useSpawner(
         const pos = getValidPosition(active);
         if (!pos) return prev; // skip if no valid position found
 
+        const angle = Math.random() * Math.PI * 2;
         const newSpawn: SpawnedPokemon = {
           uid: nextUid(),
           pokemonId,
@@ -165,6 +168,8 @@ export function useSpawner(
           lifetime: randomBetween(MIN_LIFETIME, MAX_LIFETIME),
           x: pos.x,
           y: pos.y,
+          vx: Math.cos(angle) * WANDER_SPEED,
+          vy: Math.sin(angle) * WANDER_SPEED * 0.5,
           capturing: false,
           captured: false,
         };
@@ -173,6 +178,31 @@ export function useSpawner(
       });
     }, SPAWN_INTERVAL_MS);
 
+    return () => clearInterval(id);
+  }, []);
+
+  // Wander interval — move pokemon around
+  useEffect(() => {
+    const id = setInterval(() => {
+      setSpawned(prev => prev.map(s => {
+        if (s.capturing || s.captured) return s;
+        let { x, y, vx, vy } = s;
+        x += vx;
+        y += vy;
+        // Bounce off edges (avoid HUD top-left and bottom nav)
+        if (x < 8)  { x = 8;  vx = Math.abs(vx); }
+        if (x > 88) { x = 88; vx = -Math.abs(vx); }
+        if (y < 8)  { y = 8;  vy = Math.abs(vy); }
+        if (y > 68) { y = 68; vy = -Math.abs(vy); }
+        // Random direction change ~1% per tick
+        if (Math.random() < 0.012) {
+          const angle = Math.random() * Math.PI * 2;
+          vx = Math.cos(angle) * WANDER_SPEED;
+          vy = Math.sin(angle) * WANDER_SPEED * 0.5;
+        }
+        return { ...s, x, y, vx, vy };
+      }));
+    }, WANDER_INTERVAL_MS);
     return () => clearInterval(id);
   }, []);
 

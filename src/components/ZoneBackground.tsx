@@ -76,10 +76,10 @@ const ZONE_CONFIGS: Record<string, {
   ambientLight?: string;
 }> = {
   zone1: {
-    sky: 'linear-gradient(180deg, #0d2b18 0%, #1a4a28 30%, #0f3520 60%, #0a2015 100%)',
-    particles: 'fireflies',
-    fog: 'radial-gradient(ellipse 90% 50% at 50% 70%, rgba(16,60,30,0.5) 0%, transparent 100%)',
-    ambientLight: 'radial-gradient(ellipse 60% 40% at 70% 20%, rgba(100,200,100,0.08) 0%, transparent 100%)',
+    sky: 'linear-gradient(180deg, #87CEEB 0%, #b0e0f5 25%, #c8eefc 45%, #d4f0b0 65%, #a8d870 80%, #6eb832 100%)',
+    particles: 'leaves',
+    fog: undefined,
+    ambientLight: 'radial-gradient(ellipse 50% 30% at 75% 12%, rgba(255,255,180,0.35) 0%, transparent 60%)',
   },
   zone2: {
     sky: 'linear-gradient(180deg, #062040 0%, #0a3060 30%, #0d4070 55%, #0a2848 80%, #061828 100%)',
@@ -158,6 +158,90 @@ export function ZoneBackground({ zoneId }: Props) {
 
   return (
     <div className="absolute inset-0 overflow-hidden" style={{ background: cfg.sky }}>
+
+      {/* ══ ZONE 1 — Forêt de Pallet : daytime forest scene ══ */}
+      {zoneId === 'zone1' && (
+        <>
+          {/* Sun */}
+          <div className="absolute pointer-events-none" style={{
+            right: '15%', top: '8%',
+            width: 70, height: 70,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, #fff9a0 0%, #ffe840 40%, #ffcc00 100%)',
+            boxShadow: '0 0 40px 20px rgba(255,220,0,0.45), 0 0 80px 40px rgba(255,200,0,0.2)',
+          }} />
+          {/* Clouds */}
+          {[
+            { left: '5%', top: '12%', w: 110, h: 38, delay: '0s', dur: '28s' },
+            { left: '30%', top: '7%', w: 85, h: 28, delay: '-10s', dur: '35s' },
+            { left: '62%', top: '15%', w: 130, h: 42, delay: '-5s', dur: '32s' },
+          ].map((c, i) => (
+            <div key={i} className="absolute pointer-events-none" style={{
+              left: c.left, top: c.top, width: c.w, height: c.h,
+              background: 'rgba(255,255,255,0.88)',
+              borderRadius: '50px',
+              boxShadow: `${c.w * 0.3}px -8px 0 ${c.w * 0.15}px rgba(255,255,255,0.8), -${c.w * 0.2}px 0 0 ${c.w * 0.1}px rgba(255,255,255,0.7)`,
+              animation: `cloud-drift ${c.dur} linear infinite`,
+              animationDelay: c.delay,
+            }} />
+          ))}
+          {/* Back trees (darker, smaller) */}
+          {[2, 12, 24, 36, 48, 60, 72, 84, 93].map((left, i) => (
+            <div key={i} className="absolute pointer-events-none" style={{
+              left: `${left}%`,
+              bottom: '25%',
+              width: 60 + (i % 3) * 20,
+              height: 160 + (i % 4) * 40,
+              background: 'linear-gradient(to bottom, #2d6a1f, #1a4a0f)',
+              clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
+              opacity: 0.75,
+            }} />
+          ))}
+          {/* Mid trees */}
+          {[0, 14, 28, 44, 57, 71, 86].map((left, i) => (
+            <div key={i} className="absolute pointer-events-none" style={{
+              left: `${left}%`,
+              bottom: '22%',
+              width: 80 + (i % 3) * 25,
+              height: 200 + (i % 3) * 50,
+              background: 'linear-gradient(to bottom, #3a8a25, #256018)',
+              clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
+              opacity: 0.9,
+            }} />
+          ))}
+          {/* Front trees (bright, tall) */}
+          {[-2, 18, 38, 62, 80].map((left, i) => (
+            <div key={i} className="absolute pointer-events-none" style={{
+              left: `${left}%`,
+              bottom: '20%',
+              width: 100 + (i % 2) * 30,
+              height: 260 + (i % 3) * 60,
+              background: 'linear-gradient(to bottom, #4aaa30, #2e7a1a)',
+              clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)',
+            }} />
+          ))}
+          {/* Fallen leaves drifting */}
+          {LEAVES.map((leaf, i) => (
+            <div
+              key={i}
+              className="absolute pointer-events-none rounded-full"
+              style={{
+                left: `${leaf.x}%`,
+                top: '-12px',
+                width: leaf.size,
+                height: leaf.size * 0.6,
+                background: leaf.color,
+                opacity: 0.7,
+                '--leaf-x': `${leaf.leafX}px`,
+                '--leaf-rot': `${leaf.leafRot}deg`,
+                animation: `leaf-fall ${leaf.duration}s linear infinite`,
+                animationDelay: `${leaf.delay}s`,
+              } as React.CSSProperties}
+            />
+          ))}
+        </>
+      )}
+
       {/* Fog */}
       {cfg.fog && (
         <div className="absolute inset-0 pointer-events-none" style={{ background: cfg.fog }} />
@@ -167,7 +251,7 @@ export function ZoneBackground({ zoneId }: Props) {
         <div className="absolute inset-0 pointer-events-none" style={{ background: cfg.ambientLight }} />
       )}
 
-      {/* FIREFLIES — forest zone1 */}
+      {/* FIREFLIES — forest (kept for other green zones) */}
       {cfg.particles === 'fireflies' && FIREFLIES.map((ff, i) => (
         <div
           key={i}

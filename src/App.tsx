@@ -15,6 +15,7 @@ import { BadgeToast } from './components/BadgeToast';
 import { AuthScreen } from './components/AuthScreen';
 import { HomeScreen } from './components/HomeScreen';
 import { ProfileScreen } from './components/ProfileScreen';
+import { TeamBuilder } from './components/TeamBuilder';
 import { useGameState } from './hooks/useGameState';
 import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
@@ -123,6 +124,7 @@ export function App() {
       <div className={view === 'hunt' ? 'block' : 'hidden'}>
         <HuntingField
           onOpenCollection={() => setView('collection')}
+          onOpenTeam={() => setView('team')}
           onOpenLures={() => setView('lures')}
           onOpenQuests={() => setView('quests')}
           onOpenDuels={() => setView('duels')}
@@ -139,6 +141,14 @@ export function App() {
       {view === 'collection' && (
         <Collection
           state={gameState.state}
+          onClose={() => setView('hunt')}
+        />
+      )}
+
+      {view === 'team' && (
+        <TeamBuilder
+          state={gameState.state}
+          getPokemonLevel={gameState.getPokemonLevel}
           onClose={() => setView('hunt')}
         />
       )}

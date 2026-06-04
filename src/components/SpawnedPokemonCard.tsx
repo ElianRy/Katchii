@@ -287,7 +287,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               className="mt-1 text-xs font-bold whitespace-nowrap px-1 py-0.5 rounded"
               style={{ background: 'rgba(0,0,0,0.75)', color: rarityColor, fontSize: '0.65rem' }}
             >
-              {spawned.isShiny ? '✨ ' : ''}{pokemonData.name}
+              {pokemonData.name}
             </div>
           </div>
         </div>

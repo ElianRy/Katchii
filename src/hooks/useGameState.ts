@@ -80,11 +80,10 @@ export function useGameState() {
       userIdRef.current = user.id;
       loadCloudState(user.id).then(cloudState => {
         if (!cloudState) return;
-        // Use cloud state if it has more points (newer/more complete)
-        setState(local => {
-          const merged = cloudState.points >= local.points ? cloudState : local;
-          saveState(merged);
-          return merged;
+        // Cloud is the source of truth — always prefer it over localStorage
+        setState(() => {
+          saveState(cloudState);
+          return cloudState;
         });
       });
     });

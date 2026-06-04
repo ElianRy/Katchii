@@ -14,7 +14,8 @@ export interface TeamMember {
 
 interface Props {
   state: GameState;
-  onConfirm: (team: TeamMember[]) => void;
+  getPokemonLevel?: (id: number) => { level: number; xp: number };
+  onConfirm?: (team: TeamMember[]) => void;
   onClose: () => void;
   title?: string;
 }
@@ -52,7 +53,7 @@ export function TeamBuilder({ state, onConfirm, onClose, title = 'Choisir mon é
       const maxHp = calcMaxHp(id, lvData.level);
       return { pokemonId: id, level: lvData.level, xp: lvData.xp, currentHp: maxHp, maxHp };
     });
-    onConfirm(team);
+    onConfirm?.(team);
   };
 
   return (

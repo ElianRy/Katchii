@@ -37,7 +37,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [10,11,13,14,16,17,19,20,21,22,27,29,32,39,41,43,46,48,50,72,74,84,96,98,100,102,104,109,111,116,118,120,129],
     completionThreshold: 0.70,
     boss: {
-      name: 'Pierre',
+      name: 'Maître Pierre',
       title: 'Gym Leader Roche',
       team: [
         { pokemonId: 74, isShiny: false },
@@ -58,7 +58,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [54,55,60,61,62,72,73,79,80,86,87,90,91,98,99,116,117,118,119,120,121,129,130,131],
     completionThreshold: 0.70,
     boss: {
-      name: 'Ondine',
+      name: 'Maître Ondine',
       title: 'Gym Leader Eau',
       team: [
         { pokemonId: 120, isShiny: false },
@@ -79,7 +79,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [25,26,41,42,81,82,84,85,96,97,100,101,109,110,137],
     completionThreshold: 0.70,
     boss: {
-      name: 'Roguele',
+      name: 'Maître Roguele',
       title: 'Gym Leader Électrik',
       team: [
         { pokemonId: 100, isShiny: false },
@@ -100,7 +100,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [1,2,3,10,11,12,13,14,15,43,44,45,46,47,48,49,69,70,71,102,103,114],
     completionThreshold: 0.70,
     boss: {
-      name: 'Erika',
+      name: 'Maître Erika',
       title: 'Gym Leader Plante',
       team: [
         { pokemonId: 43, isShiny: false },
@@ -121,7 +121,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [23,24,41,42,63,64,88,89,92,93,94,96,97,109,110],
     completionThreshold: 0.70,
     boss: {
-      name: 'Koga',
+      name: 'Maître Koga',
       title: 'Gym Leader Poison',
       team: [
         { pokemonId: 23, isShiny: false },
@@ -142,7 +142,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [35,36,39,40,52,53,63,64,65,79,80,96,97,103,113,122,132,137],
     completionThreshold: 0.70,
     boss: {
-      name: 'Sabrina',
+      name: 'Maître Sabrina',
       title: 'Gym Leader Psy',
       team: [
         { pokemonId: 63, isShiny: false },
@@ -163,7 +163,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [4,5,6,37,38,58,59,77,78,126,128,129,130,133,134,135,136,147,148,149],
     completionThreshold: 0.70,
     boss: {
-      name: 'Blaine',
+      name: 'Maître Blaine',
       title: 'Gym Leader Feu',
       team: [
         { pokemonId: 77, isShiny: false },
@@ -184,7 +184,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [27,28,50,51,56,57,66,67,68,74,75,76,83,95,98,99,104,105,106,107,108,111,112,115,123,124,125,127,128,142,143],
     completionThreshold: 0.70,
     boss: {
-      name: 'Giovanni',
+      name: 'Maître Giovanni',
       title: 'Gym Leader Sol',
       team: [
         { pokemonId: 34, isShiny: false },
