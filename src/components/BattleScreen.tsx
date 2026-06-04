@@ -42,6 +42,16 @@ const STARS = Array.from({ length: 40 }, (_, i) => ({
 
 let dmgCounter = 0;
 
+const CONFETTI_BATTLE = Array.from({ length: 22 }, (_, i) => ({
+  color: ['#fbbf24','#f472b6','#60a5fa','#4ade80','#fb923c','#c084fc'][i % 6],
+  cx: `${(i * 37 + 11) % 100 - 50}px`,
+  cdx: `${((i * 23) % 60) - 30}px`,
+  cr: `${(i * 47) % 720 - 360}deg`,
+  left: `${(i * 37 + 11) % 100}%`,
+  delay: `${(i * 0.06).toFixed(2)}s`,
+  dur: `${0.7 + (i % 5) * 0.1}s`,
+}));
+
 // ── Type VFX — each type has a distinct trajectory and visual ────────────────
 // ltr = player (bottom-left) attacks enemy (top-right)
 // rtl = enemy (top-right) attacks player (bottom-left)
@@ -49,13 +59,13 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
   const d = direction;
   type P = React.CSSProperties;
 
-  // Attacker origin: top-right corner of each sprite
-  // Player (ltr): sprite at bottom-left → top-right ≈ left 30%, top 66%
-  // Enemy  (rtl): sprite at top-right   → front/left ≈ left 70%, top 24%
+  // Attacker origin: front edge of sprite
+  // Player (ltr): sprite at bottom-left, right edge ≈ left:33%, top:57%
+  // Enemy  (rtl): sprite at top-right,   left edge  ≈ left:70%, top:34%
   const origin: P = {
     position: 'absolute', pointerEvents: 'none', zIndex: 15,
-    left: d === 'ltr' ? '30%' : '70%',
-    top:  d === 'ltr' ? '66%' : '24%',
+    left: d === 'ltr' ? '33%' : '70%',
+    top:  d === 'ltr' ? '57%' : '34%',
   };
 
   switch (type) {
@@ -80,9 +90,10 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 
     // ELECTRIC: SVG zigzag bolt drawn instantly across the arena
     case 'electric': {
+      // Zigzag from attacker front to target center in % coordinates
       const pts = d === 'ltr'
-        ? '30,66 41,54 34,43 52,33 44,22 65,13 58,5 78,20'
-        : '70,24 59,36 66,47 48,57 56,68 35,76 42,84 22,66';
+        ? '33,57 42,47 36,36 53,27 46,16 66,9 59,3 82,22'
+        : '70,34 61,44 67,55 50,63 57,73 38,80 44,87 20,64';
       return (
         <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none', zIndex:15 }}
           viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -119,8 +130,8 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
     case 'psychic': {
       const tgt: P = {
         position:'absolute', pointerEvents:'none', zIndex:15,
-        left: d === 'ltr' ? '78%' : '22%',
-        top:  d === 'ltr' ? '18%' : '64%',
+        left: d === 'ltr' ? '82%' : '20%',
+        top:  d === 'ltr' ? '22%' : '64%',
       };
       return (
         <>
@@ -190,19 +201,24 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
     case 'flying': {
       const slashBase: P = { position:'absolute', borderRadius:2, background:'rgba(186,230,253,0.9)',
         filter:'drop-shadow(0 0 4px #7dd3fc)', transformOrigin: d === 'ltr' ? 'left center' : 'right center' };
+      // ltr slashes: player (bottom) attacks up-right → slashes at ~50% height
+      // rtl slashes: enemy (top) attacks down-left   → slashes at ~20% height
+      const tops = d === 'ltr'
+        ? ['52%', '58%', '46%']
+        : ['20%', '26%', '14%'];
       return (
         <div style={{ position:'absolute', zIndex:15, pointerEvents:'none',
           left: d === 'ltr' ? '8%' : 'auto', right: d === 'ltr' ? 'auto' : '8%',
           top:0, bottom:0, width:'100%' }}>
           {([
-            {top:'38%', w:54, h:3, delay:'0s'   },
-            {top:'44%', w:40, h:2, delay:'0.06s'},
-            {top:'33%', w:31, h:2, delay:'0.1s' },
-          ] as Array<{top:string,w:number,h:number,delay:string}>).map((s,i) => (
-            <div key={i} style={{ ...slashBase, top:s.top, width:s.w, height:s.h,
+            {w:54, h:3, delay:'0s'   },
+            {w:40, h:2, delay:'0.06s'},
+            {w:31, h:2, delay:'0.1s' },
+          ] as Array<{w:number,h:number,delay:string}>).map((s,i) => (
+            <div key={i} style={{ ...slashBase, top:tops[i], width:s.w, height:s.h,
               animation:`wind-slash-${d} 0.62s ${s.delay} ease-in-out forwards` } as P} />
           ))}
-          <div style={{ position:'absolute', top:'35%', fontSize:'1.4rem',
+          <div style={{ position:'absolute', top: d === 'ltr' ? '49%' : '17%', fontSize:'1.4rem',
             filter:'drop-shadow(0 0 6px #bae6fd)',
             animation:`wind-slash-${d} 0.62s ease-in-out forwards` } as P}>💨</div>
         </div>
@@ -275,7 +291,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [xpGains, setXpGains] = useState<Record<number, number>>({});
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
-  const [speedX2, setSpeedX2] = useState(false);
+  const [speedLevel, setSpeedLevel] = useState(0); // 0=x1, 1=x2, 2=x4
   const won = useRef(false);
   const battleDone = useRef(false);
   const paused = useRef(false); // paused while player chooses switch
@@ -299,6 +315,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
   useEffect(() => {
     if (battleDone.current) return;
+    const intervalMs = speedLevel === 2 ? 400 : speedLevel === 1 ? 800 : 1600;
 
     const runTurn = () => {
       if (battleDone.current || paused.current) return;
@@ -370,7 +387,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
               }
               return newPf;
             });
-          }, (speedX2 ? 800 : 1600) / 2);
+          }, intervalMs / 2);
 
           return newEf;
         });
@@ -379,13 +396,12 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     };
 
     if (phase !== 'battle' || battleDone.current) return;
-    const intervalMs = speedX2 ? 800 : 1600;
     const timer = setInterval(() => {
       if (battleDone.current) { clearInterval(timer); return; }
       runTurn();
     }, intervalMs);
     return () => clearInterval(timer);
-  }, [playerIdx, enemyIdx, phase, addLog, addDmg, speedX2]);
+  }, [playerIdx, enemyIdx, phase, addLog, addDmg, speedLevel]);
 
   useEffect(() => {
     if (phase === 'end') {
@@ -615,16 +631,50 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
         </div>
 
         {/* VS / End banner */}
-        <div className="absolute inset-x-0 top-1/2 flex justify-center pointer-events-none" style={{ transform: 'translateY(-50%)' }}>
-          {phase === 'end' ? (
-            <div className={`font-black text-4xl drop-shadow-lg ${won.current ? 'text-yellow-400' : 'text-red-400'}`}
-              style={{ textShadow: won.current ? '0 0 20px #fbbf24' : '0 0 20px #ef4444' }}>
-              {won.current ? '🏆 VICTOIRE !' : '💀 DÉFAITE !'}
-            </div>
-          ) : (
+        {phase !== 'end' && (
+          <div className="absolute inset-x-0 top-1/2 flex justify-center pointer-events-none" style={{ transform: 'translateY(-50%)' }}>
             <div className="text-slate-500/30 font-black text-6xl">VS</div>
-          )}
-        </div>
+          </div>
+        )}
+        {phase === 'end' && (
+          <>
+            {/* Confetti for victory */}
+            {won.current && CONFETTI_BATTLE.map((c, i) => (
+              <div key={i} style={{
+                position: 'absolute', top: 0, left: c.left,
+                width: 9, height: 9, borderRadius: 2,
+                background: c.color,
+                '--cx': c.cx, '--cdx': c.cdx, '--cr': c.cr,
+                animation: `confetti-fall ${c.dur} ${c.delay} ease-in forwards`,
+                pointerEvents: 'none', zIndex: 24,
+              } as React.CSSProperties} />
+            ))}
+            {/* Victory/defeat text */}
+            <div className="absolute inset-x-0 top-1/2 flex flex-col items-center gap-2 pointer-events-none"
+              style={{ transform: 'translateY(-50%)', zIndex: 25 }}>
+              {won.current ? (
+                <>
+                  <div style={{ fontSize: '4rem', animation: 'victory-trophy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>🏆</div>
+                  <div className="font-black" style={{
+                    fontSize: '2.8rem',
+                    background: 'linear-gradient(90deg, #fbbf24, #4ade80, #60a5fa)',
+                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                    filter: 'drop-shadow(0 0 16px #fbbf24)',
+                    animation: 'victory-title 0.6s 0.3s ease-out both',
+                  }}>VICTOIRE !</div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: '4rem', animation: 'victory-trophy 0.6s ease-out forwards' }}>💀</div>
+                  <div className="font-black text-red-400 text-4xl"
+                    style={{ textShadow: '0 0 20px #ef4444', animation: 'victory-title 0.5s 0.25s ease-out both' }}>
+                    DÉFAITE…
+                  </div>
+                </>
+              )}
+            </div>
+          </>
+        )}
 
         {/* ── Switch overlay ── */}
         {phase === 'switch' && (
@@ -671,15 +721,15 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           </div>
           {phase === 'battle' && (
             <button
-              onClick={() => setSpeedX2(v => !v)}
-              className="ml-3 px-3 py-1.5 rounded-xl font-black text-sm border transition-all shrink-0"
+              onClick={() => setSpeedLevel(v => (v + 1) % 3)}
+              className="ml-3 px-3 py-1.5 rounded-xl font-black text-sm shrink-0"
               style={{
-                background: speedX2 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : '#1e293b',
-                border: speedX2 ? '2px solid #f59e0b' : '2px solid #475569',
-                color: speedX2 ? '#000' : '#94a3b8',
+                background: speedLevel === 2 ? 'linear-gradient(90deg, #ef4444, #7c3aed)' : speedLevel === 1 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : '#1e293b',
+                border: speedLevel > 0 ? `2px solid ${speedLevel === 2 ? '#ef4444' : '#f59e0b'}` : '2px solid #475569',
+                color: speedLevel > 0 ? '#000' : '#94a3b8',
               }}
             >
-              {speedX2 ? '⚡ x2' : '▶ x1'}
+              {speedLevel === 2 ? '⚡ x4' : speedLevel === 1 ? '⚡ x2' : '▶ x1'}
             </button>
           )}
         </div>
