@@ -89,6 +89,10 @@
   100% { opacity: 0; transform: rotate(var(--angle)) translateX(var(--dist)) scale(0); }
 }
 
+@keyframes wander-a { 0%,100%{translate:0px 0px} 25%{translate:18px -14px} 50%{translate:-12px 10px} 75%{translate:8px 16px} }
+@keyframes wander-b { 0%,100%{translate:0px 0px} 25%{translate:-16px -10px} 50%{translate:14px 12px} 75%{translate:-8px -16px} }
+@keyframes wander-c { 0%,100%{translate:0px 0px} 25%{translate:12px 16px} 50%{translate:-18px -8px} 75%{translate:10px -14px} }
+
 @keyframes shiny-sparkle {
   0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
   50% { opacity: 1; transform: scale(1) rotate(180deg); }
@@ -319,6 +323,20 @@
 @keyframes p-rtl-2 { 0%{opacity:1;transform:translate(0,0) scale(1.4)} 100%{opacity:0;transform:translate(-190px,-35px) scale(0.3)} }
 @keyframes p-rtl-3 { 0%{opacity:1;transform:translate(0,0) scale(0.9)} 100%{opacity:0;transform:translate(-245px,8px) scale(0.5)} }
 @keyframes p-rtl-4 { 0%{opacity:1;transform:translate(0,0) scale(1.2)} 100%{opacity:0;transform:translate(-200px,30px) scale(0.4)} }
+
+/* ── Battle stream animations (start at attacker, fly to target) ── */
+/* ltr = player attacks → top-right enemy  |  rtl = enemy attacks → bottom-left player */
+@keyframes stream-ltr { 0%{opacity:0;transform:translate(0,0) scale(var(--s,1))} 10%{opacity:1} 90%{opacity:1} 100%{opacity:0;transform:translate(210px,-165px) scale(calc(var(--s,1)*0.5))} }
+@keyframes stream-rtl { 0%{opacity:0;transform:translate(0,0) scale(var(--s,1))} 10%{opacity:1} 90%{opacity:1} 100%{opacity:0;transform:translate(-210px,165px) scale(calc(var(--s,1)*0.5))} }
+/* special: grass rises from below then streams */
+@keyframes grass-up-ltr { 0%{opacity:0;transform:translate(0,40px) scale(0.4)} 25%{opacity:1;transform:translate(10px,-5px) scale(var(--s,1))} 90%{opacity:1} 100%{opacity:0;transform:translate(210px,-165px) scale(0.4)} }
+@keyframes grass-up-rtl { 0%{opacity:0;transform:translate(0,40px) scale(0.4)} 25%{opacity:1;transform:translate(-10px,-5px) scale(var(--s,1))} 90%{opacity:1} 100%{opacity:0;transform:translate(-210px,165px) scale(0.4)} }
+/* ghost: slow wavy drift */
+@keyframes ghost-ltr { 0%{opacity:0;transform:translate(0,0) scale(0.6)} 20%{opacity:0.7} 60%{transform:translate(110px,-80px) scale(1)} 100%{opacity:0;transform:translate(210px,-165px) scale(0.5)} }
+@keyframes ghost-rtl { 0%{opacity:0;transform:translate(0,0) scale(0.6)} 20%{opacity:0.7} 60%{transform:translate(-110px,80px) scale(1)} 100%{opacity:0;transform:translate(-210px,165px) scale(0.5)} }
+/* psychic: rings expand outward toward target */
+@keyframes psyring-ltr { 0%{opacity:0.9;transform:translate(0,0) scale(0.2)} 100%{opacity:0;transform:translate(210px,-165px) scale(1.8)} }
+@keyframes psyring-rtl { 0%{opacity:0.9;transform:translate(0,0) scale(0.2)} 100%{opacity:0;transform:translate(-210px,165px) scale(1.8)} }
 
 /* ── Type-specific attack animations ── */
 

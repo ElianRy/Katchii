@@ -81,10 +81,10 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon Ã
     if (sort === 'level') {
       const la = state.pokemonLevels?.[a.id]?.level ?? 1;
       const lb = state.pokemonLevels?.[b.id]?.level ?? 1;
-      return lb - la;
+      return lb - la || a.id - b.id;
     }
     const order = ['legendaire', 'elite', 'rare', 'peu_commun', 'commun'];
-    return order.indexOf(a.rarity) - order.indexOf(b.rarity);
+    return order.indexOf(a.rarity) - order.indexOf(b.rarity) || a.id - b.id;
   });
 
   const toggle = (id: number) => {
@@ -396,7 +396,7 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon Ã
 
           {/* Trainer battle */}
           <button
-            onClick={() => selected.length > 0 && setMode('difficulty')}
+            onClick={() => { if (selected.length === 0) return; if (onConfirm) { handleSave(); } else { setMode('difficulty'); } }}
             disabled={selected.length === 0}
             className="flex-1 py-3 rounded-2xl font-black text-sm text-black disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: selected.length > 0 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : '#374151' }}

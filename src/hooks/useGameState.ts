@@ -572,6 +572,7 @@ export function useGameState() {
           ...prev.zoneProgress,
           bossDefeated: newBossDefeated,
           unlockedZones: newUnlocked,
+          currentZoneId: nextZoneId ?? prev.zoneProgress.currentZoneId,
         },
       };
     });

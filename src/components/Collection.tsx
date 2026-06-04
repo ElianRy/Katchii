@@ -25,7 +25,7 @@ export function Collection({ state, onClose }: Props) {
     if (filter === 'captures') return (state.normalCollection[p.id] ?? 0) > 0;
     if (filter === 'shinies') return (state.shinyCollection[p.id] ?? 0) > 0;
     return p.rarity === filter;
-  });
+  }).sort((a, b) => a.id - b.id);
 
   const filterTabs: { id: FilterTab; label: string }[] = [
     { id: 'tous', label: 'Tous' },

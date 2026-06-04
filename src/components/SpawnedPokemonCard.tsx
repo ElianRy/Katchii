@@ -130,6 +130,10 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
         top: `${spawned.y}%`,
         transform: 'translate(-50%, -50%)',
         transition: leaving ? undefined : 'left 0.08s linear, top 0.08s linear',
+        ...(!spawned.captured && !leaving ? {
+          animation: spawned.pokemonId % 3 === 0 ? 'wander-a 9s ease-in-out infinite' : spawned.pokemonId % 3 === 1 ? 'wander-b 11s ease-in-out infinite' : 'wander-c 13s ease-in-out infinite',
+          animationDelay: `${(spawned.pokemonId % 5) * 1.8}s`,
+        } : {}),
       }}
     >
       {/* Confetti particles on capture */}

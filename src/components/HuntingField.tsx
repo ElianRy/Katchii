@@ -129,7 +129,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         }
         processingRef.current.delete(uid);
         capturingRef.current = false; // UNLOCK
-      }, 1350);
+      }, 700);
     },
     [spawner, gameState, addNotification]
   );
@@ -288,8 +288,6 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           onVictory={(zoneId, nextZoneId) => {
             gameState.defeatZoneBoss(zoneId, nextZoneId);
             gameState.spendPoints(-100);
-            // Auto-navigate to next zone, panel stays open to show result screen
-            if (nextZoneId) gameState.setCurrentZone(nextZoneId);
           }}
         />
       )}

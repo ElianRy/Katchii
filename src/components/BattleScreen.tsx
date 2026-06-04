@@ -39,364 +39,203 @@ const STARS = Array.from({ length: 40 }, (_, i) => ({
   del: (i * 0.37) % 2.5,
 }));
 
-const TURN_DELAY_MS = 1600;
+
 let dmgCounter = 0;
 
-// ── Type attack animation components ──────────────────────────────────────
-// Each type has a unique directional animation — particles travel FROM attacker TO target
-function TypeVfx({ type, direction, uid }: { type: PokemonType; direction: 'ltr' | 'rtl'; uid: number }) {
-  const d = direction; // 'ltr' = player attacks right, 'rtl' = enemy attacks left
+// ── Type VFX — streams of emojis from the attacker's position toward the target ──────
+// ltr = player (bottom-left) attacks enemy (top-right)
+// rtl = enemy (top-right) attacks player (bottom-left)
+function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction: 'ltr' | 'rtl'; uid: number }) {
+  const d = direction;
 
-  // Attacker origin: ltr starts at left 20%, rtl starts at right 20% (= left 62%)
-  const originLeft = d === 'ltr' ? '20%' : '62%';
-  const suf = d; // keyframe suffix: 'ltr' or 'rtl'
-
-  const base: React.CSSProperties = {
-    position: 'absolute',
-    pointerEvents: 'none',
-    zIndex: 15,
-    top: '40%',
-    left: originLeft,
+  // Attacker position: player = bottom-left (left 17%, top 52%), enemy = top-right (left 73%, top 20%)
+  const origin: React.CSSProperties = {
+    position: 'absolute', pointerEvents: 'none', zIndex: 15,
+    left: d === 'ltr' ? '17%' : '73%',
+    top:  d === 'ltr' ? '52%' : '20%',
   };
 
+  // Helper: 4-particle stream with increasing size (biggest = front of stream, delay=0)
+  // Each particle uses `stream-ltr/rtl` keyframe + CSS --s for scale
+  const stream = (emoji: string, glow: string, dur = '0.75s') =>
+    [{ s: 2.2, d: '0s' }, { s: 1.6, d: '0.07s' }, { s: 1.2, d: '0.13s' }, { s: 0.85, d: '0.18s' }].map(
+      (p, i) => (
+        <div key={i} style={{
+          position: 'absolute', fontSize: '1rem',
+          filter: glow,
+          '--s': p.s,
+          animation: `stream-${d} ${dur} ${p.d} ease-out forwards`,
+        } as React.CSSProperties}>{emoji}</div>
+      )
+    );
+
   switch (type) {
-    // FIRE: stream of 🔥 shoots horizontally from attacker's position toward target
+    // FIRE: stream of fireballs, biggest at front
     case 'fire': return (
-      <div key={uid} style={base}>
-        {/* Main fire stream — 7 fireballs in a horizontal spray, fanning slightly */}
-        {[
-          { vy: '-40px', size: '1.5rem', delay: '0s',    dur: '0.6s' },
-          { vy: '-20px', size: '2rem',   delay: '0.05s', dur: '0.62s' },
-          { vy: '0px',   size: '2.2rem', delay: '0.02s', dur: '0.58s' },
-          { vy: '20px',  size: '2rem',   delay: '0.07s', dur: '0.63s' },
-          { vy: '40px',  size: '1.5rem', delay: '0.04s', dur: '0.6s' },
-          { vy: '-10px', size: '1.2rem', delay: '0.12s', dur: '0.55s' },
-          { vy: '10px',  size: '1.2rem', delay: '0.14s', dur: '0.55s' },
-        ].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: p.size,
-            animation: `fire-shoot-${suf} ${p.dur} ${p.delay} ease-out forwards`,
-            filter: 'drop-shadow(0 0 6px #f97316)',
-            '--vy': p.vy,
-          } as React.CSSProperties}>🔥</div>
-        ))}
-        {/* Heat wave glow that expands at origin */}
-        <div style={{
-          position: 'absolute', top: '-28px', left: '-28px',
-          width: 56, height: 56,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(253,115,0,0.7) 0%, transparent 70%)',
-          animation: `fire-heatwave 0.5s ease-out forwards`,
-        }} />
+      <div style={origin}>
+        {stream('🔥', 'drop-shadow(0 0 8px #f97316)')}
+        <div style={{ position: 'absolute', width: 48, height: 48, top: -24, left: -24, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(253,115,0,0.6) 0%, transparent 70%)',
+          animation: `stream-${d} 0.3s ease-out forwards`, '--s': 0.5 } as React.CSSProperties} />
       </div>
     );
 
-    // WATER: droplets arc upward then crash down at the target
+    // WATER: stream of water drops arcing toward target
     case 'water': return (
-      <div key={uid} style={base}>
-        {[
-          { vy: '0px', size: '2rem', delay: '0s',    emoji: '🌊' },
-          { vy: '-15px', size: '1.4rem', delay: '0.06s', emoji: '💧' },
-          { vy: '15px',  size: '1.4rem', delay: '0.04s', emoji: '💧' },
-          { vy: '-30px', size: '1.1rem', delay: '0.1s',  emoji: '💧' },
-          { vy: '30px',  size: '1.1rem', delay: '0.08s', emoji: '💧' },
-        ].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: p.size,
-            animation: `water-arc-${suf} 0.8s ${p.delay} cubic-bezier(0.25,0.46,0.45,0.94) forwards`,
-            filter: 'drop-shadow(0 0 8px #38bdf8)',
-          }}>{p.emoji}</div>
-        ))}
+      <div style={origin}>
+        {stream('💧', 'drop-shadow(0 0 8px #38bdf8)', '0.8s')}
+        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2.5,
+          animation: `stream-${d} 0.72s ease-out forwards`, filter: 'drop-shadow(0 0 10px #0ea5e9)' } as React.CSSProperties}>🌊</div>
       </div>
     );
 
-    // ELECTRIC: bolt SVG extends across the field, then sparks ricochet off impact
+    // ELECTRIC: SVG bolt extending from attacker, then ⚡ stream
     case 'electric': return (
-      <div key={uid} style={{ ...base, top: '38%', left: d === 'ltr' ? '18%' : 'auto', right: d === 'rtl' ? '18%' : undefined }}>
-        {/* Lightning bolt SVG — draws itself from attacker to target */}
-        <svg width="240" height="50" style={{
-          position: 'absolute', top: -25,
-          left: d === 'ltr' ? 0 : 'auto', right: d === 'rtl' ? 0 : 'auto',
-          transform: d === 'rtl' ? 'scaleX(-1)' : undefined,
-          overflow: 'visible',
+      <div style={{ ...origin, overflow: 'visible' }}>
+        <svg width={d === 'ltr' ? 220 : 220} height="50" style={{
+          position: 'absolute', top: -25, left: d === 'ltr' ? 0 : -220,
+          transform: d === 'rtl' ? 'scaleX(-1)' : undefined, overflow: 'visible',
         }}>
-          {/* Glow layer */}
-          <polyline
-            points="0,25 35,8 62,38 95,4 128,32 158,10 185,27 215,18 240,24"
-            fill="none" stroke="#fbbf24" strokeWidth="7"
-            strokeLinecap="round" strokeLinejoin="round"
-            strokeDasharray="300" strokeDashoffset="0"
-            style={{ filter: 'blur(4px)', animation: `bolt-extend 0.35s ease-out forwards`, opacity: 0.9 }}
-          />
-          {/* Sharp bolt */}
-          <polyline
-            points="0,25 35,8 62,38 95,4 128,32 158,10 185,27 215,18 240,24"
-            fill="none" stroke="#fef08a" strokeWidth="3"
-            strokeLinecap="round" strokeLinejoin="round"
-            strokeDasharray="300" strokeDashoffset="0"
-            style={{ filter: 'drop-shadow(0 0 6px #fbbf24)', animation: `bolt-extend 0.32s ease-out forwards` }}
-          />
+          <polyline points="0,25 40,8 68,38 100,4 132,32 162,10 190,27 220,20"
+            fill="none" stroke="#fbbf24" strokeWidth="6" strokeLinecap="round"
+            strokeDasharray="320" strokeDashoffset="0"
+            style={{ filter: 'blur(4px)', animation: 'bolt-extend 0.35s ease-out forwards', opacity: 0.9 }} />
+          <polyline points="0,25 40,8 68,38 100,4 132,32 162,10 190,27 220,20"
+            fill="none" stroke="#fef08a" strokeWidth="2.5" strokeLinecap="round"
+            strokeDasharray="320" strokeDashoffset="0"
+            style={{ filter: 'drop-shadow(0 0 5px #fbbf24)', animation: 'bolt-extend 0.32s ease-out forwards' }} />
         </svg>
-        {/* Ricochet sparks that explode at impact point */}
-        {[
-          { vy: '-50px', vr: '-30deg', delay: '0.3s' },
-          { vy: '-20px', vr: '15deg',  delay: '0.32s' },
-          { vy: '20px',  vr: '-20deg', delay: '0.31s' },
-          { vy: '50px',  vr: '40deg',  delay: '0.33s' },
-        ].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: '1.1rem',
-            animation: `spark-ricochet-${suf} 0.4s ${p.delay} ease-out forwards`,
-            '--vy': p.vy, '--vr': p.vr,
-          } as React.CSSProperties}>⚡</div>
-        ))}
+        {stream('⚡', 'drop-shadow(0 0 6px #fbbf24)', '0.55s')}
       </div>
     );
 
-    // GRASS: leaves and vines rise UP from UNDER the attacker, then arc toward target
+    // GRASS: leaves rise from below attacker then stream toward target
     case 'grass': return (
-      <div key={uid} style={{ ...base, top: '65%' }}>
-        {/* Vines/leaves grow up from ground */}
-        {[
-          { delay: '0s',    size: '2rem',  emoji: '🌿', x: '-10px' },
-          { delay: '0.06s', size: '1.8rem', emoji: '🍃', x: '5px' },
-          { delay: '0.03s', size: '2.2rem', emoji: '🌱', x: '0px' },
-          { delay: '0.09s', size: '1.5rem', emoji: '🍃', x: '-5px' },
-          { delay: '0.12s', size: '1.3rem', emoji: '🌿', x: '12px' },
-        ].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: p.size,
-            left: p.x,
-            animation: `grass-rise-${suf} 0.85s ${p.delay} ease-out forwards`,
-            filter: 'drop-shadow(0 0 6px #4ade80)',
-          }}>{p.emoji}</div>
-        ))}
-        {/* Big tree bursts at impact */}
-        <div style={{
-          position: 'absolute', fontSize: '2.5rem',
-          animation: `grass-rise-${suf} 0.7s 0.05s ease-out forwards`,
-          filter: 'drop-shadow(0 0 10px #16a34a)',
-        }}>🌳</div>
+      <div style={{ ...origin, top: d === 'ltr' ? '68%' : '35%' }}>
+        {[{ s: 2.2, d2: '0s' }, { s: 1.6, d2: '0.07s' }, { s: 1.2, d2: '0.13s' }, { s: 0.85, d2: '0.18s' }].map(
+          (p, i) => (
+            <div key={i} style={{
+              position: 'absolute', fontSize: '1rem',
+              filter: 'drop-shadow(0 0 6px #22c55e)',
+              '--s': p.s,
+              animation: `grass-up-${d} 0.85s ${p.d2} ease-out forwards`,
+            } as React.CSSProperties}>{['🌿','🍃','🌱','🍃'][i]}</div>
+          )
+        )}
       </div>
     );
 
-    // ICE: spinning ice shards fly toward target in spread
+    // ICE: spinning ice shards stream toward target
     case 'ice': return (
-      <div key={uid} style={base}>
-        {[
-          { vy: '-45px', size: '1.6rem', delay: '0s',    emoji: '❄️' },
-          { vy: '-20px', size: '1.8rem', delay: '0.05s', emoji: '❄️' },
-          { vy: '0px',   size: '2rem',   delay: '0.02s', emoji: '🔷' },
-          { vy: '20px',  size: '1.8rem', delay: '0.07s', emoji: '❄️' },
-          { vy: '45px',  size: '1.6rem', delay: '0.04s', emoji: '❄️' },
-          { vy: '-35px', size: '1.1rem', delay: '0.1s',  emoji: '🔷' },
-          { vy: '35px',  size: '1.1rem', delay: '0.1s',  emoji: '🔷' },
-        ].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: p.size,
-            animation: `ice-spin-${suf} 0.75s ${p.delay} ease-out forwards`,
-            filter: 'drop-shadow(0 0 6px #7dd3fc)',
-            '--vy': p.vy,
-          } as React.CSSProperties}>{p.emoji}</div>
-        ))}
+      <div style={origin}>
+        {stream('❄️', 'drop-shadow(0 0 8px #7dd3fc)', '0.7s')}
+        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 1.8,
+          animation: `stream-${d} 0.65s 0.04s ease-out forwards`, filter: 'drop-shadow(0 0 8px #a5f3fc)' } as React.CSSProperties}>🔷</div>
       </div>
     );
 
-    // PSYCHIC: concentric energy rings travel from attacker to target
+    // PSYCHIC: concentric rings shoot from attacker to target
     case 'psychic': return (
-      <div key={uid} style={{ ...base, top: '35%' }}>
-        {[40, 65, 90].map((size, i) => (
+      <div style={origin}>
+        {[{ sz: 60, del: '0s', op: 0.9 }, { sz: 90, del: '0.1s', op: 0.65 }, { sz: 120, del: '0.2s', op: 0.4 }].map((p, i) => (
           <div key={i} style={{
             position: 'absolute',
-            width: size, height: size,
-            top: -(size / 2), left: -(size / 2),
-            border: `2.5px solid rgba(244,114,182,${0.9 - i * 0.2})`,
+            width: p.sz, height: p.sz, top: -(p.sz / 2), left: -(p.sz / 2),
+            border: `2.5px solid rgba(244,114,182,${p.op})`,
             borderRadius: '50%',
-            boxShadow: `0 0 12px #f472b6, inset 0 0 8px rgba(244,114,182,0.3)`,
-            animation: `psychic-ring-${suf} 0.8s ${i * 0.1}s ease-out forwards`,
+            boxShadow: '0 0 14px #f472b6',
+            animation: `psyring-${d} 0.75s ${p.del} ease-out forwards`,
           }} />
         ))}
-        <div style={{
-          position: 'absolute', fontSize: '2rem', top: '-16px', left: '-16px',
-          animation: `psychic-ring-${suf} 0.85s 0.05s ease-out forwards`,
-          filter: 'drop-shadow(0 0 10px #e879f9)',
-        }}>🔮</div>
+        <div style={{ position: 'absolute', fontSize: '1.5rem', top: -12, left: -12,
+          animation: `stream-${d} 0.75s ease-out forwards`, '--s': 1.5,
+          filter: 'drop-shadow(0 0 12px #e879f9)' } as React.CSSProperties}>🔮</div>
       </div>
     );
 
-    // FIGHTING: attacker lunges, big impact 💥 bursts at target's face
+    // FIGHTING: fist stream punches toward target, burst at impact
     case 'fighting': return (
-      <div key={uid} style={base}>
-        {[
-          { vy: '-35px', size: '2.5rem', delay: '0.15s', emoji: '💥' },
-          { vy: '0px',   size: '2rem',   delay: '0.17s', emoji: '💢' },
-          { vy: '35px',  size: '2.5rem', delay: '0.13s', emoji: '💥' },
-          { vy: '-18px', size: '1.5rem', delay: '0.22s', emoji: '⭐' },
-          { vy: '18px',  size: '1.5rem', delay: '0.2s',  emoji: '⭐' },
-        ].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: p.size,
-            animation: `fight-impact-${suf} 0.5s ${p.delay} ease-out forwards`,
-            filter: 'drop-shadow(0 0 5px #ef4444)',
-            '--vy': p.vy,
-          } as React.CSSProperties}>{p.emoji}</div>
-        ))}
+      <div style={origin}>
+        {stream('👊', 'drop-shadow(0 0 6px #ef4444)', '0.5s')}
+        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2.5,
+          animation: `stream-${d} 0.48s 0.02s ease-out forwards`, filter: 'drop-shadow(0 0 8px #ef4444)' } as React.CSSProperties}>💥</div>
       </div>
     );
 
-    // GHOST: semi-transparent 👻 phases out of attacker and drifts with a wave to target
+    // GHOST: slow wavy ghost drifts from attacker to target
     case 'ghost': return (
-      <div key={uid} style={{ ...base, top: '35%' }}>
-        <div style={{
-          position: 'absolute', fontSize: '3.5rem',
-          top: '-28px', left: '-14px',
-          filter: 'drop-shadow(0 0 14px #7c3aed) blur(1.5px)',
-          animation: `ghost-wave-${suf} 1.1s ease-in-out forwards`,
-        }}>👻</div>
-        {/* Trailing wisps */}
-        {['-30px', '0px', '30px'].map((vy, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: '1.1rem',
-            top: vy, opacity: 0.5,
-            filter: 'blur(1px)',
-            animation: `ghost-wave-${suf} 1.1s ${(i + 1) * 0.1}s ease-in-out forwards`,
-          }}>💀</div>
-        ))}
+      <div style={origin}>
+        <div style={{ position: 'absolute', fontSize: '2.5rem', top: -20, left: -12,
+          filter: 'drop-shadow(0 0 16px #7c3aed) blur(1px)', opacity: 0.8,
+          animation: `ghost-${d} 1.0s ease-in-out forwards` }}>👻</div>
+        <div style={{ position: 'absolute', fontSize: '0.9rem', top: -10, left: -4, opacity: 0.5,
+          filter: 'blur(0.5px)',
+          animation: `ghost-${d} 1.0s 0.12s ease-in-out forwards` }}>💀</div>
       </div>
     );
 
-    // POISON: purple bubbles rise from ground at the TARGET's position
+    // POISON: stream of poison orbs toward target
     case 'poison': return (
-      <div key={uid} style={{ ...base, top: '70%' }}>
-        {[
-          { delay: '0s',    size: '1.8rem', emoji: '💜', offset: '-15px' },
-          { delay: '0.08s', size: '2rem',   emoji: '☠️', offset: '0px' },
-          { delay: '0.05s', size: '1.8rem', emoji: '💜', offset: '15px' },
-          { delay: '0.13s', size: '1.3rem', emoji: '🟣', offset: '-8px' },
-          { delay: '0.1s',  size: '1.3rem', emoji: '🟣', offset: '8px' },
-        ].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute', left: p.offset, fontSize: p.size,
-            animation: `poison-bubble-${suf} 0.85s ${p.delay} ease-out forwards`,
-            filter: 'drop-shadow(0 0 6px #a855f7)',
-          }}>{p.emoji}</div>
-        ))}
+      <div style={origin}>
+        {stream('🟣', 'drop-shadow(0 0 8px #a855f7)', '0.7s')}
+        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2,
+          animation: `stream-${d} 0.68s 0.03s ease-out forwards`, filter: 'drop-shadow(0 0 10px #7e22ce)' } as React.CSSProperties}>☠️</div>
       </div>
     );
 
-    // GROUND: rocks thrown in a HIGH arc from attacker to target (earthquake style)
+    // GROUND: rocks thrown in arc toward target
     case 'ground': return (
-      <div key={uid} style={{ ...base, top: '55%' }}>
-        {[
-          { vy: '-12px', size: '2rem',   delay: '0s',    emoji: '🪨' },
-          { vy: '0px',   size: '1.7rem', delay: '0.07s', emoji: '🪨' },
-          { vy: '-20px', size: '1.4rem', delay: '0.04s', emoji: '💥' },
-          { vy: '12px',  size: '1.7rem', delay: '0.1s',  emoji: '🪨' },
-          { vy: '5px',   size: '1.3rem', delay: '0.06s', emoji: '💥' },
-        ].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: p.size,
-            animation: `ground-arc-${suf} 0.75s ${p.delay} cubic-bezier(0.55,0,1,0.45) forwards`,
-          }}>{p.emoji}</div>
-        ))}
+      <div style={origin}>
+        {stream('🪨', '', '0.7s')}
+        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2,
+          animation: `stream-${d} 0.65s 0.03s ease-out forwards` } as React.CSSProperties}>💥</div>
       </div>
     );
 
-    // FLYING: gusts of wind sweep horizontally across the arena
+    // FLYING: wind gusts stream across
     case 'flying': return (
-      <div key={uid} style={{ ...base, top: '30%' }}>
-        {[
-          { vy: '-40px', size: '2rem',   delay: '0s',    emoji: '🌪️', dur: '0.55s' },
-          { vy: '-15px', size: '1.5rem', delay: '0.05s', emoji: '💨', dur: '0.6s' },
-          { vy: '5px',   size: '1.7rem', delay: '0.03s', emoji: '🍃', dur: '0.58s' },
-          { vy: '25px',  size: '1.5rem', delay: '0.08s', emoji: '💨', dur: '0.62s' },
-          { vy: '50px',  size: '2rem',   delay: '0.01s', emoji: '🌪️', dur: '0.55s' },
-        ].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: p.size,
-            animation: `wind-sweep-${suf} ${p.dur} ${p.delay} ease-in-out forwards`,
-            filter: 'drop-shadow(0 0 5px #c4b5fd)',
-            '--vy': p.vy,
-          } as React.CSSProperties}>{p.emoji}</div>
-        ))}
+      <div style={origin}>
+        {stream('💨', 'drop-shadow(0 0 6px #c4b5fd)', '0.6s')}
+        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2.2,
+          animation: `stream-${d} 0.55s ease-out forwards`, filter: 'drop-shadow(0 0 8px #a78bfa)' } as React.CSSProperties}>🌪️</div>
       </div>
     );
 
-    // DRAGON: a large dragon sweeps the entire field
+    // DRAGON: large dragon sweeps from attacker side
     case 'dragon': return (
-      <div key={uid} style={{ ...base, top: '25%', left: d === 'ltr' ? '-5%' : 'auto', right: d === 'rtl' ? '-5%' : undefined }}>
-        <div style={{
-          position: 'absolute', fontSize: '3.5rem',
-          filter: 'drop-shadow(0 0 12px #4f46e5) drop-shadow(0 0 20px #818cf8)',
+      <div style={{ ...origin, top: d === 'ltr' ? '45%' : '25%' }}>
+        <div style={{ position: 'absolute', fontSize: '2.8rem', top: -22, left: -14,
+          filter: 'drop-shadow(0 0 14px #4f46e5) drop-shadow(0 0 24px #818cf8)',
           transform: d === 'rtl' ? 'scaleX(-1)' : undefined,
-          animation: `dragon-sweep-${suf} 0.9s ease-in-out forwards`,
-        }}>🐉</div>
-        {['✨', '🔥', '✨'].map((e, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: '1.3rem',
-            top: `${(i - 1) * 30}px`,
-            animation: `dragon-sweep-${suf} 0.9s ${(i + 1) * 0.08}s ease-in-out forwards`,
-            filter: 'drop-shadow(0 0 8px #818cf8)',
-          }}>{e}</div>
-        ))}
+          animation: `stream-${d} 0.85s ease-in-out forwards`, '--s': 1.2 } as React.CSSProperties}>🐉</div>
+        {stream('✨', 'drop-shadow(0 0 6px #818cf8)', '0.8s')}
       </div>
     );
 
-    // ROCK: rocks fly directly at target (flatter arc than ground)
+    // ROCK: rocks stream toward target
     case 'rock': return (
-      <div key={uid} style={base}>
-        {[
-          { vy: '-30px', size: '1.8rem', delay: '0s',    emoji: '🪨' },
-          { vy: '0px',   size: '2rem',   delay: '0.04s', emoji: '🪨' },
-          { vy: '30px',  size: '1.8rem', delay: '0.02s', emoji: '🪨' },
-          { vy: '-15px', size: '1.3rem', delay: '0.09s', emoji: '💥' },
-          { vy: '15px',  size: '1.3rem', delay: '0.07s', emoji: '💥' },
-        ].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: p.size,
-            animation: `ground-arc-${suf} 0.6s ${p.delay} ease-out forwards`,
-          }}>{p.emoji}</div>
-        ))}
+      <div style={origin}>
+        {stream('🪨', 'drop-shadow(0 0 4px #a8a29e)', '0.6s')}
+        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2,
+          animation: `stream-${d} 0.58s ease-out forwards` } as React.CSSProperties}>💥</div>
       </div>
     );
 
-    // BUG: swarm of 🐛 and leaves charge toward target
+    // BUG: bug swarm streams toward target
     case 'bug': return (
-      <div key={uid} style={base}>
-        {[
-          { vy: '-35px', size: '1.4rem', delay: '0s',    emoji: '🐛' },
-          { vy: '-12px', size: '1.6rem', delay: '0.05s', emoji: '🍃' },
-          { vy: '5px',   size: '1.8rem', delay: '0.02s', emoji: '🐛' },
-          { vy: '25px',  size: '1.6rem', delay: '0.07s', emoji: '🍃' },
-          { vy: '45px',  size: '1.4rem', delay: '0.04s', emoji: '🐛' },
-          { vy: '-50px', size: '1.2rem', delay: '0.09s', emoji: '⚡' },
-        ].map((p, i) => (
-          <div key={i} style={{
-            position: 'absolute', fontSize: p.size,
-            animation: `fire-shoot-${suf} 0.65s ${p.delay} ease-out forwards`,
-            filter: 'drop-shadow(0 0 4px #84cc16)',
-            '--vy': p.vy,
-          } as React.CSSProperties}>{p.emoji}</div>
-        ))}
+      <div style={origin}>
+        {stream('🐛', 'drop-shadow(0 0 5px #84cc16)', '0.65s')}
+        <div style={{ position: 'absolute', fontSize: '1rem', '--s': 1.8,
+          animation: `stream-${d} 0.6s 0.04s ease-out forwards`, filter: 'drop-shadow(0 0 6px #a3e635)' } as React.CSSProperties}>🍃</div>
       </div>
     );
 
-    default: // normal — stars shoot toward target
+    default: // normal
       return (
-        <div key={uid} style={base}>
-          {[
-            { vy: '-40px', size: '1.6rem', delay: '0s',    emoji: '⭐' },
-            { vy: '-15px', size: '1.9rem', delay: '0.04s', emoji: '💥' },
-            { vy: '5px',   size: '2rem',   delay: '0.02s', emoji: '⭐' },
-            { vy: '25px',  size: '1.9rem', delay: '0.06s', emoji: '✨' },
-            { vy: '45px',  size: '1.6rem', delay: '0.03s', emoji: '⭐' },
-          ].map((p, i) => (
-            <div key={i} style={{
-              position: 'absolute', fontSize: p.size,
-              animation: `star-fly-${suf} 0.65s ${p.delay} ease-out forwards`,
-              '--vy': p.vy,
-            } as React.CSSProperties}>{p.emoji}</div>
-          ))}
+        <div style={origin}>
+          {stream('⭐', 'drop-shadow(0 0 6px #fde047)', '0.65s')}
+          <div style={{ position: 'absolute', fontSize: '1rem', '--s': 2.2,
+            animation: `stream-${d} 0.6s 0.02s ease-out forwards`, filter: 'drop-shadow(0 0 8px #fbbf24)' } as React.CSSProperties}>💥</div>
         </div>
       );
   }
@@ -418,6 +257,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [xpGains, setXpGains] = useState<Record<number, number>>({});
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
+  const [speedX2, setSpeedX2] = useState(false);
   const won = useRef(false);
   const battleDone = useRef(false);
   const paused = useRef(false); // paused while player chooses switch
@@ -505,7 +345,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
               }
               return newPf;
             });
-          }, TURN_DELAY_MS / 2);
+          }, (speedX2 ? 800 : 1600) / 2);
 
           return newEf;
         });
@@ -514,12 +354,13 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     };
 
     if (phase !== 'battle' || battleDone.current) return;
+    const intervalMs = speedX2 ? 800 : 1600;
     const timer = setInterval(() => {
       if (battleDone.current) { clearInterval(timer); return; }
       runTurn();
-    }, TURN_DELAY_MS);
+    }, intervalMs);
     return () => clearInterval(timer);
-  }, [playerIdx, enemyIdx, phase, addLog, addDmg]);
+  }, [playerIdx, enemyIdx, phase, addLog, addDmg, speedX2]);
 
   useEffect(() => {
     if (phase === 'end') {
@@ -739,11 +580,28 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
       {/* Battle log */}
       <div className="shrink-0 bg-black/90 border-t border-slate-700/50 px-4 py-2" style={{ minHeight: 80 }}>
-        {log.slice(-3).map((entry, i) => (
-          <div key={i} className="text-xs font-medium" style={{ color: entry.color, opacity: 0.4 + i * 0.3 }}>
-            {entry.text}
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            {log.slice(-3).map((entry, i) => (
+              <div key={i} className="text-xs font-medium" style={{ color: entry.color, opacity: 0.4 + i * 0.3 }}>
+                {entry.text}
+              </div>
+            ))}
           </div>
-        ))}
+          {phase === 'battle' && (
+            <button
+              onClick={() => setSpeedX2(v => !v)}
+              className="ml-3 px-3 py-1.5 rounded-xl font-black text-sm border transition-all shrink-0"
+              style={{
+                background: speedX2 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : '#1e293b',
+                border: speedX2 ? '2px solid #f59e0b' : '2px solid #475569',
+                color: speedX2 ? '#000' : '#94a3b8',
+              }}
+            >
+              {speedX2 ? '⚡ x2' : '▶ x1'}
+            </button>
+          )}
+        </div>
       </div>
 
     </div>
