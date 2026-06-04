@@ -31,11 +31,11 @@ const MOVE_ANIMS = [
 // Shiny sparkle positions around the sprite
 const SPARKLE_POSITIONS = [
   { top: '-12px', left: '50%', color: '#fde047', duration: '1.1s', delay: '0s' },
-  { top: '10%', right: '-12px', color: '#f9a8d4', duration: '1.3s', delay: '0.25s' },
-  { bottom: '-10px', left: '50%', color: '#93c5fd', duration: '0.9s', delay: '0.5s' },
-  { top: '10%', left: '-12px', color: '#fde047', duration: '1.4s', delay: '0.75s' },
-  { top: '50%', right: '-14px', color: '#86efac', duration: '1.0s', delay: '0.35s' },
-  { top: '50%', left: '-14px', color: '#f9a8d4', duration: '1.2s', delay: '0.6s' },
+  { top: '10%', right: '-12px', color: '#f472b6', duration: '1.3s', delay: '0.2s' },
+  { bottom: '-10px', left: '50%', color: '#60a5fa', duration: '0.9s', delay: '0.4s' },
+  { top: '10%', left: '-12px', color: '#4ade80', duration: '1.4s', delay: '0.6s' },
+  { top: '50%', right: '-14px', color: '#fb923c', duration: '1.0s', delay: '0.8s' },
+  { top: '50%', left: '-14px', color: '#c084fc', duration: '1.2s', delay: '1.0s' },
 ];
 
 function PokeballSVG({ spinning }: { spinning: boolean }) {
@@ -93,11 +93,14 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
   let spriteFilter: string;
   let spriteAnimation: string | undefined;
   if (isLegendary) {
-    spriteFilter = `drop-shadow(0 0 14px ${rarityColor}) drop-shadow(0 0 28px ${rarityColor}88) drop-shadow(0 0 42px ${rarityColor}55)`;
+    spriteFilter = `drop-shadow(0 0 14px #fbbf24) drop-shadow(0 0 28px #f59e0b88) drop-shadow(0 0 42px #d97706aa)`;
     spriteAnimation = 'aura-pulse 1.5s ease-in-out infinite';
   } else if (isEpic) {
     spriteFilter = `drop-shadow(0 0 10px ${rarityColor}) drop-shadow(0 0 20px ${rarityColor}88)`;
     spriteAnimation = 'aura-pulse 2s ease-in-out infinite';
+  } else if (spawned.isShiny) {
+    spriteFilter = `drop-shadow(0 0 8px #fde047) drop-shadow(0 0 16px #f0abfc88)`;
+    spriteAnimation = undefined;
   } else {
     spriteFilter = `drop-shadow(0 0 6px ${rarityColor})`;
     spriteAnimation = undefined;
@@ -169,15 +172,31 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               animationDelay: moveDelay,
             }}
           >
-            {/* Shiny halo glow */}
+            {/* Shiny — rotating rainbow aura */}
             {spawned.isShiny && (
-              <div
-                className="absolute inset-0 rounded-full pointer-events-none"
-                style={{
-                  boxShadow: '0 0 24px 10px rgba(253,224,71,0.5), 0 0 50px 20px rgba(236,72,153,0.25)',
-                  borderRadius: '50%',
-                }}
-              />
+              <>
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    inset: -10,
+                    borderRadius: '50%',
+                    background: 'conic-gradient(from 0deg, #f87171, #fb923c, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
+                    animation: 'rainbow-spin 2s linear infinite',
+                    opacity: 0.7,
+                    filter: 'blur(6px)',
+                  }}
+                />
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    inset: -4,
+                    borderRadius: '50%',
+                    background: 'conic-gradient(from 0deg, #f87171aa, #fb923caa, #fde047aa, #4ade80aa, #60a5faaa, #c084fcaa, #f472b6aa, #f87171aa)',
+                    animation: 'rainbow-spin 2s linear infinite',
+                    opacity: 0.5,
+                  }}
+                />
+              </>
             )}
 
             {/* Sprite + aura */}
@@ -203,16 +222,27 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                 />
               ))}
 
-              {/* Legendary ambient rays */}
+              {/* Legendary — golden pulsing aura */}
               {isLegendary && (
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    borderRadius: '50%',
-                    background: `radial-gradient(ellipse, ${rarityColor}22 0%, transparent 70%)`,
-                    animation: 'legendary-rays 4s linear infinite',
-                  }}
-                />
+                <>
+                  <div
+                    className="absolute pointer-events-none"
+                    style={{
+                      inset: -12,
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle, rgba(251,191,36,0.35) 0%, rgba(245,158,11,0.15) 50%, transparent 100%)',
+                      animation: 'rainbow-pulse 1.8s ease-in-out infinite',
+                    }}
+                  />
+                  <div
+                    className="absolute pointer-events-none rounded-full"
+                    style={{
+                      inset: -6,
+                      animation: 'gold-pulse 1.8s ease-in-out infinite',
+                      borderRadius: '50%',
+                    }}
+                  />
+                </>
               )}
 
               {spriteError ? (

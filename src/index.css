@@ -119,6 +119,21 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes rainbow-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rainbow-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.08); }
+}
+
+@keyframes gold-pulse {
+  0%, 100% { opacity: 0.6; box-shadow: 0 0 18px 8px rgba(251,191,36,0.45), 0 0 36px 16px rgba(245,158,11,0.25); }
+  50% { opacity: 1; box-shadow: 0 0 28px 14px rgba(251,191,36,0.7), 0 0 56px 28px rgba(245,158,11,0.4); }
+}
+
 @keyframes firefly {
   0% { transform: translate(0, 0); opacity: 0; }
   20% { opacity: 0.8; }
