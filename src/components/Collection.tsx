@@ -2,20 +2,18 @@ import { useState } from 'react';
 import { GameState, RARITY_COLORS, RARITY_LABELS, Rarity } from '../types';
 import { GEN1_POKEMON } from '../data/gen1';
 import { BADGES } from '../data/badges';
-import { EvolutionPanel } from './EvolutionPanel';
 
 interface Props {
   state: GameState;
   onClose: () => void;
-  onEvolve: (pokemonId: number, isShiny: boolean, targetId: number) => boolean;
 }
 
 type FilterTab = 'tous' | 'captures' | 'shinies' | Rarity;
-type MainTab = 'collection' | 'evolution' | 'badges';
+type MainTab = 'collection' | 'badges';
 
 const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
 
-export function Collection({ state, onClose, onEvolve }: Props) {
+export function Collection({ state, onClose }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('collection');
   const [filter, setFilter] = useState<FilterTab>('tous');
 
@@ -58,7 +56,6 @@ export function Collection({ state, onClose, onEvolve }: Props) {
       <div className="flex gap-2 px-4 pt-2 border-b border-slate-700 shrink-0">
         {([
           { id: 'collection' as MainTab, label: '📚 Collection' },
-          { id: 'evolution' as MainTab, label: '🔄 Évolution' },
           { id: 'badges' as MainTab, label: '🏅 Badges' },
         ]).map((tab) => (
           <button
@@ -168,12 +165,6 @@ export function Collection({ state, onClose, onEvolve }: Props) {
             )}
           </div>
         </>
-      )}
-
-      {mainTab === 'evolution' && (
-        <div className="flex-1 overflow-y-auto">
-          <EvolutionPanel state={state} onEvolve={onEvolve} />
-        </div>
       )}
 
       {mainTab === 'badges' && (

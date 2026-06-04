@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_WEIGHTS } from '../types';
 import { loadState, saveState } from '../lib/storage';
-import { EVOLUTIONS, EVOLUTION_COST } from '../data/evolutions';
 import { POKEMON_BY_ID } from '../data/gen1';
 
 
@@ -40,8 +39,6 @@ function checkBadges(state: GameState): string[] {
 
   check('first_shiny', shinyIds.length >= 1);
   check('shiny_3', shinyIds.length >= 3);
-
-  check('first_evolution', state.evolvedPokemon.length >= 1);
 
   check('first_lure', state.badges.includes('first_lure') || newBadges.includes('first_lure') ? true :
     // first_lure is awarded on activateLure, checked separately — but keep here as fallback
@@ -185,75 +182,6 @@ export function useGameState() {
     return success;
   }, [update]);
 
-  /** Evolve a Pokémon. targetEvolutionId needed for branching (Évoli). */
-  const evolve = useCallback((pokemonId: number, isShiny: boolean, targetEvolutionId: number): boolean => {
-    let success = false;
-    update(prev => {
-      const pokemon = POKEMON_BY_ID[pokemonId];
-      if (!pokemon) return prev;
-      const cost = EVOLUTION_COST(pokemon.rarity);
-      const currentFragments = prev.fragments[pokemonId] ?? 0;
-      if (currentFragments < cost) return prev;
-
-      // Check the pokemon is caught
-      if (isShiny) {
-        if ((prev.shinyCollection[pokemonId] ?? 0) === 0) return prev;
-      } else {
-        if ((prev.normalCollection[pokemonId] ?? 0) === 0) return prev;
-      }
-
-      // Check evolution is valid
-      const validEvos = EVOLUTIONS[pokemonId] ?? [];
-      if (!validEvos.includes(targetEvolutionId)) return prev;
-
-      success = true;
-      let next = { ...prev };
-
-      // Deduct fragments
-      next.fragments = { ...prev.fragments, [pokemonId]: currentFragments - cost };
-
-      // Add evolved Pokémon
-      if (isShiny) {
-        next.shinyCollection = {
-          ...prev.shinyCollection,
-          [targetEvolutionId]: (prev.shinyCollection[targetEvolutionId] ?? 0) + 1,
-        };
-      } else {
-        const alreadyCaught = (prev.normalCollection[targetEvolutionId] ?? 0) > 0;
-        next.normalCollection = {
-          ...prev.normalCollection,
-          [targetEvolutionId]: (prev.normalCollection[targetEvolutionId] ?? 0) + 1,
-        };
-        // If duplicate, add fragment for evolved form
-        if (alreadyCaught) {
-          next.fragments = {
-            ...next.fragments,
-            [targetEvolutionId]: (next.fragments[targetEvolutionId] ?? 0) + 1,
-          };
-        }
-      }
-
-      // Track evolved
-      if (!prev.evolvedPokemon.includes(targetEvolutionId)) {
-        next.evolvedPokemon = [...prev.evolvedPokemon, targetEvolutionId];
-      }
-
-      // Quest progress for evolve_n
-      const quests = next.dailyQuests.quests.map((q) => {
-        if (q.completed || q.type !== 'evolve_n') return q;
-        const progress = q.progress + 1;
-        return { ...q, progress, completed: progress >= q.target };
-      });
-      next.dailyQuests = { ...next.dailyQuests, quests };
-
-      // Badge check
-      next = awardBadges(next);
-
-      return next;
-    });
-    return success;
-  }, [update, awardBadges]);
-
   const claimQuestReward = useCallback((questId: string) => {
     update(prev => {
       const quests = prev.dailyQuests.quests.map((q) => {
@@ -322,13 +250,71 @@ export function useGameState() {
   const totalCaught = Object.keys(state.normalCollection).length;
   const totalShinyCaught = Object.keys(state.shinyCollection).length;
 
+  const updateDuels = useCallback((updater: (prev: GameState['duels']) => GameState['duels']) => {
+    update(prev => ({ ...prev, duels: updater(prev.duels) }));
+  }, [update]);
+
+  const addDuelResult = useCallback((entry: import('../types').DuelEntry, rankingPointsDelta: number, fragmentPokemonId: number | null, giveLure: boolean) => {
+    update(prev => {
+      const newStreak = entry.won ? prev.duels.streak + 1 : 0;
+      let next = {
+        ...prev,
+        duels: {
+          wins: prev.duels.wins + (entry.won ? 1 : 0),
+          losses: prev.duels.losses + (entry.won ? 0 : 1),
+          streak: newStreak,
+          rankingPoints: prev.duels.rankingPoints + rankingPointsDelta,
+          history: [entry, ...prev.duels.history].slice(0, 20),
+        },
+      };
+
+      if (fragmentPokemonId !== null) {
+        next = {
+          ...next,
+          fragments: { ...next.fragments, [fragmentPokemonId]: (next.fragments[fragmentPokemonId] ?? 0) + 1 },
+        };
+      }
+
+      if (giveLure) {
+        next = {
+          ...next,
+          lures: { ...next.lures, rare: next.lures.rare + 1 },
+        };
+      }
+
+      return next;
+    });
+  }, [update]);
+
+  const updateVillage = useCallback((updater: (prev: GameState['village']) => GameState['village']) => {
+    update(prev => ({ ...prev, village: updater(prev.village) }));
+  }, [update]);
+
+  const updateSkins = useCallback((updater: (prev: GameState['skins']) => GameState['skins']) => {
+    update(prev => ({ ...prev, skins: updater(prev.skins) }));
+  }, [update]);
+
+  const spendPoints = useCallback((amount: number): boolean => {
+    let success = false;
+    update(prev => {
+      if (prev.points < amount) return prev;
+      success = true;
+      return { ...prev, points: prev.points - amount };
+    });
+    return success;
+  }, [update]);
+
   return {
     state,
     addCapture,
     buyLure,
     activateLure,
-    evolve,
     claimQuestReward,
+    updateDuels,
+    addDuelResult,
+    updateVillage,
+    updateSkins,
+    spendPoints,
     getActiveLureMultipliers,
     getEffectiveWeights,
     isOnCooldown,

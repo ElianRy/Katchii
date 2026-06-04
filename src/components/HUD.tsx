@@ -8,6 +8,9 @@ interface Props {
   onOpenCollection: () => void;
   onOpenLures: () => void;
   onOpenQuests: () => void;
+  onOpenDuels: () => void;
+  onOpenVillage: () => void;
+  onOpenSkins: () => void;
   capturedCount: number;
   totalPokemon: number;
   questsCompleted: number;
@@ -40,17 +43,19 @@ export function HUD({
   onOpenCollection,
   onOpenLures,
   onOpenQuests,
+  onOpenDuels,
+  onOpenVillage,
+  onOpenSkins,
   capturedCount,
   totalPokemon,
   questsCompleted,
 }: Props) {
   return (
-    <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
-      <div className="flex items-start justify-between px-4 pt-3 gap-3">
-        {/* Left: Points + Zone */}
-        <div className="flex flex-col gap-1 pointer-events-auto">
+    <>
+      {/* Top-left info */}
+      <div className="absolute top-0 left-0 z-20 pointer-events-none">
+        <div className="flex flex-col gap-1 px-4 pt-3 pointer-events-auto">
           <div className="flex items-center gap-2 bg-black/70 rounded-xl px-3 py-2 border border-yellow-500/40">
-            {/* Pokéball icon */}
             <svg width="20" height="20" viewBox="0 0 64 64">
               <path d="M 32 2 A 30 30 0 0 1 62 32 L 38 32 A 6 6 0 0 0 26 32 L 2 32 A 30 30 0 0 1 32 2 Z" fill="#ef4444" />
               <path d="M 2 32 A 30 30 0 0 0 62 32 L 38 32 A 6 6 0 0 1 26 32 Z" fill="white" />
@@ -84,34 +89,60 @@ export function HUD({
             </div>
           )}
         </div>
+      </div>
 
-        {/* Right: Buttons */}
-        <div className="flex flex-col gap-2 pointer-events-auto">
+      {/* Bottom navigation bar */}
+      <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none">
+        <div className="flex items-center justify-around bg-black/80 border-t border-slate-700/60 backdrop-blur-sm px-2 py-2 pointer-events-auto">
           <button
             onClick={onOpenCollection}
-            className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-sm shadow-lg border border-blue-400/40 transition-colors"
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-blue-400 hover:bg-blue-900/30 transition-colors"
           >
-            📚 Ma Collection
+            <span className="text-xl">📚</span>
+            <span className="text-xs font-bold">Collection</span>
           </button>
           <button
             onClick={onOpenLures}
-            className="bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white font-bold px-4 py-2 rounded-xl text-sm shadow-lg border border-purple-400/40 transition-colors"
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-purple-400 hover:bg-purple-900/30 transition-colors"
           >
-            🎣 Leurres
+            <span className="text-xl">🎣</span>
+            <span className="text-xs font-bold">Leurres</span>
           </button>
           <button
             onClick={onOpenQuests}
-            className="relative bg-green-700 hover:bg-green-600 active:bg-green-800 text-white font-bold px-4 py-2 rounded-xl text-sm shadow-lg border border-green-400/40 transition-colors"
+            className="relative flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-green-400 hover:bg-green-900/30 transition-colors"
           >
-            📋 Quêtes
+            <span className="text-xl">📋</span>
+            <span className="text-xs font-bold">Quêtes</span>
             {questsCompleted > 0 && (
-              <span className="absolute -top-1 -right-1 bg-yellow-500 text-black text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              <span className="absolute top-1 right-1 bg-yellow-500 text-black text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
                 {questsCompleted}
               </span>
             )}
           </button>
+          <button
+            onClick={onOpenDuels}
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-red-400 hover:bg-red-900/30 transition-colors"
+          >
+            <span className="text-xl">⚔️</span>
+            <span className="text-xs font-bold">Duels</span>
+          </button>
+          <button
+            onClick={onOpenVillage}
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-yellow-400 hover:bg-yellow-900/30 transition-colors"
+          >
+            <span className="text-xl">🏘️</span>
+            <span className="text-xs font-bold">Village</span>
+          </button>
+          <button
+            onClick={onOpenSkins}
+            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-pink-400 hover:bg-pink-900/30 transition-colors"
+          >
+            <span className="text-xl">🎨</span>
+            <span className="text-xs font-bold">Skins</span>
+          </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -4,7 +4,6 @@ export type QuestType =
   | 'capture_n'
   | 'capture_rarity'
   | 'capture_shiny'
-  | 'evolve_n'
   | 'activate_lure';
 
 export interface QuestDefinition {
@@ -23,8 +22,7 @@ export const QUEST_POOL: QuestDefinition[] = [
   { id: 'capture_elite_1', label: 'Capture 1 Élite', type: 'capture_rarity', rarity: 'elite', target: 1, reward: { points: 35 } },
   { id: 'capture_legendaire_1', label: 'Capture 1 Légendaire', type: 'capture_rarity', rarity: 'legendaire', target: 1, reward: { points: 60 } },
   { id: 'capture_shiny_1', label: "Capture ton premier shiny aujourd'hui", type: 'capture_shiny', target: 1, reward: { points: 50 } },
-  { id: 'evolve_1', label: 'Fais évoluer 1 Pokémon', type: 'evolve_n', target: 1, reward: { points: 25, fragments: 5 } },
-  { id: 'activate_lure_1', label: 'Active un leurre', type: 'activate_lure', target: 1, reward: { points: 20 } },
+{ id: 'activate_lure_1', label: 'Active un leurre', type: 'activate_lure', target: 1, reward: { points: 20 } },
   { id: 'capture_commun_10', label: 'Capture 10 Pokémon Communs', type: 'capture_rarity', rarity: 'commun', target: 10, reward: { points: 25 } },
 ];
 

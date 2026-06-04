@@ -5,6 +5,7 @@ import { HUD } from './HUD';
 import { useGameState } from '../hooks/useGameState';
 import { useSpawner } from '../hooks/useSpawner';
 import { POKEMON_BY_ID } from '../data/gen1';
+import { TERRAIN_SKINS } from './SkinsPanel';
 
 interface Notification {
   id: number;
@@ -28,10 +29,13 @@ interface Props {
   onOpenCollection: () => void;
   onOpenLures: () => void;
   onOpenQuests: () => void;
+  onOpenDuels: () => void;
+  onOpenVillage: () => void;
+  onOpenSkins: () => void;
   gameState: ReturnType<typeof useGameState>;
 }
 
-export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, gameState }: Props) {
+export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, onOpenDuels, onOpenVillage, onOpenSkins, gameState }: Props) {
   const spawner = useSpawner(gameState);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [cooldownSecs, setCooldownSecs] = useState(0);
@@ -84,8 +88,10 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, game
     (q) => q.completed && !q.rewardClaimed
   ).length;
 
+  const activeSkin = TERRAIN_SKINS.find(s => s.id === (gameState.state.skins?.activeTerrain ?? 'foret')) ?? TERRAIN_SKINS[0];
+
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className={`relative w-full h-screen overflow-hidden bg-gradient-to-b ${activeSkin.gradient}`}>
       {/* Background */}
       <StarField />
 
@@ -139,6 +145,9 @@ export function HuntingField({ onOpenCollection, onOpenLures, onOpenQuests, game
         onOpenCollection={onOpenCollection}
         onOpenLures={onOpenLures}
         onOpenQuests={onOpenQuests}
+        onOpenDuels={onOpenDuels}
+        onOpenVillage={onOpenVillage}
+        onOpenSkins={onOpenSkins}
         capturedCount={capturedCount}
         totalPokemon={151}
         questsCompleted={questsCompleted}

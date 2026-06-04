@@ -31,9 +31,25 @@ export const DEFAULT_STATE: GameState = {
   activeLure: null,
   globalCooldownUntil: null,
   shinyDepleted: [],
-  evolvedPokemon: [],
   badges: [],
   dailyQuests: buildDailyQuests(),
+  duels: {
+    wins: 0,
+    losses: 0,
+    streak: 0,
+    rankingPoints: 0,
+    history: [],
+  },
+  village: {
+    level: 1,
+    name: 'Mon Village',
+    showcase: [],
+    favoritePokemon: null,
+  },
+  skins: {
+    unlockedTerrains: ['foret'],
+    activeTerrain: 'foret',
+  },
 };
 
 export function loadState(): GameState {
@@ -57,9 +73,25 @@ export function loadState(): GameState {
       activeLure: parsed.activeLure ?? null,
       globalCooldownUntil: parsed.globalCooldownUntil ?? null,
       shinyDepleted: parsed.shinyDepleted ?? [],
-      evolvedPokemon: parsed.evolvedPokemon ?? [],
       badges: parsed.badges ?? [],
       dailyQuests,
+      duels: parsed.duels ?? {
+        wins: 0,
+        losses: 0,
+        streak: 0,
+        rankingPoints: 0,
+        history: [],
+      },
+      village: parsed.village ?? {
+        level: 1,
+        name: 'Mon Village',
+        showcase: [],
+        favoritePokemon: null,
+      },
+      skins: parsed.skins ?? {
+        unlockedTerrains: ['foret'],
+        activeTerrain: 'foret',
+      },
     };
   } catch {
     return { ...DEFAULT_STATE };

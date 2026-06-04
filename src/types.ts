@@ -1,13 +1,23 @@
 export type Rarity = 'commun' | 'peu_commun' | 'rare' | 'elite' | 'legendaire';
 export type LureType = 'rare' | 'epique' | 'legendaire' | 'shiny';
-export type View = 'hunt' | 'collection' | 'lures' | 'quests';
+export type View = 'hunt' | 'collection' | 'lures' | 'quests' | 'duels' | 'village' | 'skins';
 
 export type QuestType =
   | 'capture_n'
   | 'capture_rarity'
   | 'capture_shiny'
-  | 'evolve_n'
   | 'activate_lure';
+
+export interface DuelEntry {
+  id: string;
+  won: boolean;
+  opponentName: string;
+  opponentTeam: Array<{ pokemonId: number; isShiny: boolean }>;
+  myTeam: Array<{ pokemonId: number; isShiny: boolean }>;
+  myScore: number;
+  opponentScore: number;
+  date: string;
+}
 
 export interface DailyQuest {
   id: string;
@@ -48,11 +58,27 @@ export interface GameState {
   activeLure: { type: LureType; expiresAt: number } | null;
   globalCooldownUntil: number | null;       // timestamp ms
   shinyDepleted: number[];                  // pokemonIds caught as shiny
-  evolvedPokemon: number[];                 // pokemonIds obtained via evolution
   badges: string[];                         // earned badge IDs
   dailyQuests: {
     date: string;
     quests: DailyQuest[];
+  };
+  duels: {
+    wins: number;
+    losses: number;
+    streak: number;
+    rankingPoints: number;
+    history: DuelEntry[];
+  };
+  village: {
+    level: 1 | 2 | 3 | 4 | 5;
+    name: string;
+    showcase: Array<{ pokemonId: number; isShiny: boolean }>;
+    favoritePokemon: { pokemonId: number; isShiny: boolean } | null;
+  };
+  skins: {
+    unlockedTerrains: string[];
+    activeTerrain: string;
   };
 }
 
