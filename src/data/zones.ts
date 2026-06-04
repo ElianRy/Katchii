@@ -4,6 +4,8 @@ export interface Zone {
   description: string;
   background: string;
   pokemonIds: number[];
+  /** IDs that appear in the zone but are extremely rare (1/15 weight vs normal pool members) */
+  specialIds?: number[];
   completionThreshold: number;
   boss: {
     name: string;
@@ -36,6 +38,7 @@ export const ZONES: Zone[] = [
     background: 'linear-gradient(180deg, #0a1a0a 0%, #1a3a1a 50%, #0f2a0f 100%)',
     // + 23 Abo (peu_commun), 63 Abra (peu_commun), 25 Pikachu (rare) — rencontres rares
     pokemonIds: [10,11,13,14,16,17,19,20,21,22,27,29,32,39,41,43,46,48,50,72,74,84,96,98,100,102,104,109,111,116,118,120,129, 23,63,25],
+    specialIds: [23, 63, 25],
     completionThreshold: 0.70,
     boss: {
       name: 'Maître Pierre',
@@ -58,6 +61,7 @@ export const ZONES: Zone[] = [
     background: 'linear-gradient(180deg, #0a1a2e 0%, #0d2a4a 50%, #0a1a3a 100%)',
     // + 7 Carapuce (peu_commun zone bonus), 115 Kangourex (rare), 121 Staross (rare) — déjà dans la liste pour 121
     pokemonIds: [54,55,60,61,62,72,73,79,80,86,87,90,91,98,99,116,117,118,119,120,121,129,130,131, 7,115],
+    specialIds: [7, 115],
     completionThreshold: 0.70,
     boss: {
       name: 'Maître Ondine',
@@ -80,6 +84,7 @@ export const ZONES: Zone[] = [
     background: 'linear-gradient(180deg, #1a1a0a 0%, #2a2a00 50%, #1a1800 100%)',
     // + 83 Canarticho (peu_commun), 125 Élektek (rare) — rencontres rares
     pokemonIds: [25,26,41,42,81,82,84,85,96,97,100,101,109,110,137, 83,125],
+    specialIds: [83, 125],
     completionThreshold: 0.70,
     boss: {
       name: 'Maître Roguele',
@@ -102,6 +107,7 @@ export const ZONES: Zone[] = [
     background: 'linear-gradient(180deg, #0a1a10 0%, #1a3a20 50%, #0a2010 100%)',
     // + 114 Saquedeneu (peu_commun — déjà là), 123 Insécateur (rare), 133 Évoli (rare)
     pokemonIds: [1,2,3,10,11,12,13,14,15,43,44,45,46,47,48,49,69,70,71,102,103,114, 123,133],
+    specialIds: [123, 133],
     completionThreshold: 0.70,
     boss: {
       name: 'Maître Erika',
@@ -124,6 +130,7 @@ export const ZONES: Zone[] = [
     background: 'linear-gradient(180deg, #0a0a1a 0%, #1a0a2a 50%, #0f0a1a 100%)',
     // + 93 Spectrum (peu_commun — déjà là), 132 Métamorph (rare), 124 Lippoutou (rare)
     pokemonIds: [23,24,41,42,63,64,88,89,92,93,94,96,97,109,110, 132,124],
+    specialIds: [132, 124],
     completionThreshold: 0.70,
     boss: {
       name: 'Maître Koga',
@@ -146,6 +153,7 @@ export const ZONES: Zone[] = [
     background: 'linear-gradient(180deg, #1a0a1a 0%, #2a1a3a 50%, #1a0a2a 100%)',
     // + 53 Persian (peu_commun — déjà là), 113 Leveinard (rare — déjà là), 38 Feunard (rare)
     pokemonIds: [35,36,39,40,52,53,63,64,65,79,80,96,97,103,113,122,132,137, 38],
+    specialIds: [38],
     completionThreshold: 0.70,
     boss: {
       name: 'Maître Sabrina',
@@ -168,6 +176,7 @@ export const ZONES: Zone[] = [
     background: 'linear-gradient(180deg, #1a0a0a 0%, #3a1a0a 50%, #2a0a0a 100%)',
     // + 77/78 Ponyta/Galopa (peu_commun — déjà là), 147/148 Minidraco/Draco (rare — déjà là), 141 Kabutops (rare)
     pokemonIds: [4,5,6,37,38,58,59,77,78,126,128,129,130,133,134,135,136,147,148,149, 141],
+    specialIds: [141],
     completionThreshold: 0.70,
     boss: {
       name: 'Maître Blaine',
@@ -190,6 +199,7 @@ export const ZONES: Zone[] = [
     background: 'linear-gradient(180deg, #0a0808 0%, #1a1210 50%, #0f0a08 100%)',
     // + 28 Sablaireau (peu_commun — déjà là), 142 Ptéra (rare — déjà là), 139 Amonistar (rare)
     pokemonIds: [27,28,50,51,56,57,66,67,68,74,75,76,83,95,98,99,104,105,106,107,108,111,112,115,123,124,125,127,128,142,143, 139],
+    specialIds: [139],
     completionThreshold: 0.70,
     boss: {
       name: 'Maître Giovanni',

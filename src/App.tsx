@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { View, DuelEntry } from './types';
+import { BottomNav } from './components/BottomNav';
 import { HuntingField } from './components/HuntingField';
 import { Collection } from './components/Collection';
 import { LurePanel } from './components/LurePanel';
@@ -27,12 +28,22 @@ export function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const gameState = useGameState();
 
+  // Persist & restore last view
+  const persistView = useCallback((v: View) => {
+    setView(v);
+    if (v !== 'auth' && v !== 'home' && v !== 'universe') {
+      localStorage.setItem('katchii_last_view', v);
+    }
+  }, []);
+
   // Check auth state on mount
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         setUsername(getUsername(user));
-        setView('home');
+        const saved = localStorage.getItem('katchii_last_view') as View | null;
+        const validViews: View[] = ['hunt','collection','team','lures','quests','duels','village','skins','fusion','raid','wrapped'];
+        setView(saved && validViews.includes(saved) ? saved : 'hunt');
       } else {
         setView('auth');
       }
@@ -43,14 +54,16 @@ export function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUsername(getUsername(session.user));
-        setView('home');
+        const saved = localStorage.getItem('katchii_last_view') as View | null;
+        const validViews: View[] = ['hunt','collection','team','lures','quests','duels','village','skins','fusion','raid','wrapped'];
+        setView(saved && validViews.includes(saved) ? saved : 'hunt');
       } else {
         setView('auth');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [persistView]);
 
   // Play time tracking
   useEffect(() => {
@@ -84,6 +97,12 @@ export function App() {
     );
   }
 
+  const questsCompleted = gameState.state.dailyQuests.quests.filter(
+    (q) => q.completed && !q.rewardClaimed
+  ).length;
+
+  const showBottomNav = !['auth', 'home', 'universe', 'profile', 'admin'].includes(view);
+
   return (
     <div className="w-full h-screen bg-slate-900 text-white overflow-hidden">
       {/* Auth screen */}
@@ -93,7 +112,7 @@ export function App() {
             supabase.auth.getUser().then(({ data: { user } }) => {
               if (user) setUsername(getUsername(user));
             });
-            setView('home');
+            persistView('hunt');
           }}
         />
       )}
@@ -103,7 +122,7 @@ export function App() {
         <HomeScreen
           username={username}
           onPlay={() => setView('universe')}
-          onCollection={() => setView('collection')}
+          onCollection={() => persistView('collection')}
           onProfile={() => setView('profile')}
           onLogout={handleLogout}
         />
@@ -114,7 +133,7 @@ export function App() {
         <UniverseSelector
           onSelect={(universe) => {
             gameState.setActiveUniverse(universe);
-            setView('hunt');
+            persistView('hunt');
           }}
           narutoLocked={!gameState.state.zoneProgress?.bossDefeated?.['ligue']}
           onBack={() => setView('home')}
@@ -124,18 +143,18 @@ export function App() {
       {/* Always render HuntingField so spawns continue */}
       <div className={view === 'hunt' ? 'block' : 'hidden'}>
         <HuntingField
-          onOpenCollection={() => setView('collection')}
-          onOpenTeam={() => setView('team')}
+          onOpenCollection={() => persistView('collection')}
+          onOpenTeam={() => persistView('team')}
           onOpenAdmin={() => setView('admin')}
           isAdmin={username === 'admin'}
-          onOpenLures={() => setView('lures')}
-          onOpenQuests={() => setView('quests')}
-          onOpenDuels={() => setView('duels')}
-          onOpenVillage={() => setView('village')}
-          onOpenSkins={() => setView('skins')}
-          onOpenFusion={() => setView('fusion')}
-          onOpenRaid={() => setView('raid')}
-          onOpenWrapped={() => setView('wrapped')}
+          onOpenLures={() => persistView('lures')}
+          onOpenQuests={() => persistView('quests')}
+          onOpenDuels={() => persistView('duels')}
+          onOpenVillage={() => persistView('village')}
+          onOpenSkins={() => persistView('skins')}
+          onOpenFusion={() => persistView('fusion')}
+          onOpenRaid={() => persistView('raid')}
+          onOpenWrapped={() => persistView('wrapped')}
           onChangeUniverse={() => setView('home')}
           gameState={gameState}
         />
@@ -144,14 +163,14 @@ export function App() {
       {view === 'collection' && (
         <Collection
           state={gameState.state}
-          onClose={() => setView('hunt')}
+          onClose={() => persistView('hunt')}
         />
       )}
 
       {view === 'admin' && username === 'admin' && (
         <AdminPanel
           gameState={gameState}
-          onClose={() => setView('hunt')}
+          onClose={() => persistView('hunt')}
         />
       )}
 
@@ -160,7 +179,7 @@ export function App() {
           state={gameState.state}
           getPokemonLevel={gameState.getPokemonLevel}
           onAddXp={gameState.addPokemonXp}
-          onClose={() => setView('hunt')}
+          onClose={() => persistView('hunt')}
         />
       )}
 
@@ -169,7 +188,7 @@ export function App() {
           state={gameState.state}
           onBuy={gameState.buyLure}
           onActivate={gameState.activateLure}
-          onClose={() => setView('hunt')}
+          onClose={() => persistView('hunt')}
         />
       )}
 
@@ -177,14 +196,14 @@ export function App() {
         <QuestPanel
           state={gameState.state}
           onClaim={gameState.claimQuestReward}
-          onClose={() => setView('hunt')}
+          onClose={() => persistView('hunt')}
         />
       )}
 
       {view === 'duels' && (
         <DuelPanel
           state={gameState.state}
-          onClose={() => setView('hunt')}
+          onClose={() => persistView('hunt')}
           onDuelResult={handleDuelResult}
         />
       )}
@@ -192,7 +211,7 @@ export function App() {
       {view === 'village' && (
         <VillagePanel
           state={gameState.state}
-          onClose={() => setView('hunt')}
+          onClose={() => persistView('hunt')}
           onUpdateVillage={gameState.updateVillage}
           onSpendPoints={gameState.spendPoints}
         />
@@ -201,7 +220,7 @@ export function App() {
       {view === 'skins' && (
         <SkinsPanel
           state={gameState.state}
-          onClose={() => setView('hunt')}
+          onClose={() => persistView('hunt')}
           onUpdateSkins={gameState.updateSkins}
           onSpendPoints={gameState.spendPoints}
         />
@@ -211,7 +230,7 @@ export function App() {
         <FusionPanel
           state={gameState.state}
           onFuse={gameState.performFusion}
-          onClose={() => setView('hunt')}
+          onClose={() => persistView('hunt')}
         />
       )}
 
@@ -221,14 +240,14 @@ export function App() {
           onAttack={gameState.attackRaid}
           onClaimReward={gameState.claimRaidReward}
           onStartRaid={gameState.startRaid}
-          onClose={() => setView('hunt')}
+          onClose={() => persistView('hunt')}
         />
       )}
 
       {view === 'wrapped' && (
         <WrappedPanel
           state={gameState.state}
-          onClose={() => setView('hunt')}
+          onClose={() => persistView('hunt')}
         />
       )}
 
@@ -238,6 +257,15 @@ export function App() {
           state={gameState.state}
           onClose={() => setView('home')}
           onLogout={handleLogout}
+        />
+      )}
+
+      {/* Persistent bottom navbar (not on auth/home/universe/profile/admin) */}
+      {showBottomNav && (
+        <BottomNav
+          currentView={view}
+          onNavigate={persistView}
+          questsCompleted={questsCompleted}
         />
       )}
 

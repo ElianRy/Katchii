@@ -35,13 +35,6 @@ interface Notification {
 
 let notifCounter = 0;
 
-const BUSHES = [
-  { left: '2%', width: 120, height: 70, delay: 0, duration: 3.2 },
-  { left: '18%', width: 90, height: 55, delay: 0.5, duration: 2.8 },
-  { left: '38%', width: 140, height: 80, delay: 1.1, duration: 3.5 },
-  { left: '58%', width: 100, height: 60, delay: 0.3, duration: 2.6 },
-  { left: '78%', width: 110, height: 65, delay: 0.9, duration: 3.1 },
-];
 
 interface Props {
   onOpenCollection: () => void;
@@ -175,23 +168,6 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           background: zoneGround.ground,
         }}
       />
-
-      {/* Bushes */}
-      {BUSHES.map((bush, i) => (
-        <div
-          key={i}
-          className="absolute bottom-0 animate-bush rounded-t-full"
-          style={{
-            left: bush.left,
-            width: bush.width,
-            height: bush.height,
-            background: zoneGround.bush,
-            '--bush-delay': `${bush.delay}s`,
-            '--bush-duration': `${bush.duration}s`,
-            boxShadow: '0 -4px 12px rgba(0,0,0,0.3)',
-          } as React.CSSProperties}
-        />
-      ))}
 
       {/* Spawned Characters */}
       {spawner.spawned.map((s) => {

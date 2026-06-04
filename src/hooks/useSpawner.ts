@@ -31,11 +31,21 @@ function weightedRarity(weights: Record<Rarity, number>): Rarity {
   return 'commun';
 }
 
-function pickPokemon(rarity: Rarity, zoneIds: number[]): number {
+const SPECIAL_WEIGHT = 1 / 15; // special zone pokemon are 15x rarer than normal pool members
+
+function pickPokemon(rarity: Rarity, zoneIds: number[], specialIds: Set<number>): number {
   const allPool = POKEMON_BY_RARITY[rarity] ?? [];
   const zonePool = zoneIds.length > 0 ? allPool.filter(p => zoneIds.includes(p.id)) : allPool;
   if (zonePool.length === 0) return zoneIds[Math.floor(Math.random() * zoneIds.length)] ?? GEN1_POKEMON[0].id;
-  return zonePool[Math.floor(Math.random() * zonePool.length)].id;
+  // Weighted selection: special IDs get SPECIAL_WEIGHT, others get 1.0
+  const weights = zonePool.map(p => specialIds.has(p.id) ? SPECIAL_WEIGHT : 1);
+  const total = weights.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < zonePool.length; i++) {
+    r -= weights[i];
+    if (r <= 0) return zonePool[i].id;
+  }
+  return zonePool[zonePool.length - 1].id;
 }
 
 function getZoneRarities(zoneIds: number[]): Set<Rarity> {
@@ -127,6 +137,7 @@ export function useSpawner(
         const zoneId = gs.state.zoneProgress?.currentZoneId ?? 'zone1';
         const currentZone = ZONE_BY_ID[zoneId];
         const zoneIds = currentZone?.pokemonIds ?? [];
+        const specialIds = new Set<number>(currentZone?.specialIds ?? []);
         const zoneRarities = universe === 'naruto' ? null : getZoneRarities(zoneIds);
 
         // Zero out rarities not present in this zone
@@ -150,7 +161,7 @@ export function useSpawner(
           const shinyRate = baseShinyRate * mult.shinyRate;
           isShiny = !shinyDepleted.includes(nId) && Math.random() < shinyRate;
         } else {
-          pokemonId = pickPokemon(rarity, zoneIds);
+          pokemonId = pickPokemon(rarity, zoneIds, specialIds);
           const shinyDepleted = gs.state.shinyDepleted;
           const baseShinyRate = (1 / 250) * (151 / Math.max(1, 151 - shinyDepleted.length));
           const shinyRate = baseShinyRate * mult.shinyRate;
