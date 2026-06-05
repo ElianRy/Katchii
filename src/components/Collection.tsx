@@ -177,7 +177,7 @@ export function Collection({ state, onClose }: Props) {
                       className="text-center leading-tight"
                       style={{ color: caught ? '#e2e8f0' : '#4b5563', fontSize: '0.6rem' }}
                     >
-                      #{pokemon.id} {caught ? pokemon.name : '???'}
+                      {caught ? pokemon.name : '???'}
                     </div>
                     {caught && (
                       <div className="flex gap-1" style={{ fontSize: '0.55rem' }}>
