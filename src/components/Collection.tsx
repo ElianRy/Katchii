@@ -141,7 +141,7 @@ export function Collection({ state, onClose }: Props) {
 
                 return (
                   <div key={pokemon.id} className="flex flex-col items-center gap-1 relative">
-                    <div className="relative">
+                    <div className={`relative${shinyCaught ? ' shiny-rainbow' : ''}`} style={{ display: 'inline-block' }}>
                       <img
                         src={
                           caught
@@ -153,15 +153,18 @@ export function Collection({ state, onClose }: Props) {
                         height={48}
                         style={{
                           imageRendering: 'pixelated',
-                          filter: caught
+                          filter: caught && !shinyCaught
                             ? `drop-shadow(0 0 5px ${rarityColor}) drop-shadow(0 0 2px ${rarityColor}88)`
-                            : 'grayscale(1) opacity(0.35)',
-                          animation: shinyCaught ? 'pokedex-shiny-pulse 2s ease-in-out infinite' : undefined,
+                            : caught ? undefined : 'grayscale(1) opacity(0.35)',
                         }}
                         draggable={false}
                       />
                       {shinyCaught && (
-                        <span className="absolute -top-1 -right-1 text-xs">✨</span>
+                        <>
+                          <span className="absolute -top-2 -right-1 text-xs" style={{ animation: 'pokedex-star-orbit-a 2s linear infinite' }}>⭐</span>
+                          <span className="absolute -bottom-1 -left-1 text-xs" style={{ animation: 'pokedex-star-orbit-b 2.5s linear infinite' }}>✦</span>
+                          <span className="absolute top-0 -right-2" style={{ fontSize: 8, animation: 'pokedex-star-orbit-c 1.8s linear infinite' }}>★</span>
+                        </>
                       )}
                     </div>
                     <div

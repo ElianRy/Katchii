@@ -242,7 +242,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       {!showBossFight && (
         <button
           onClick={onOpenQuests}
-          className="fixed z-[195] flex flex-col items-center gap-1 px-3 py-2 rounded-xl pointer-events-auto"
+          className="fixed z-[45] flex flex-col items-center gap-1 px-3 py-2 rounded-xl pointer-events-auto"
           style={{
             bottom: 80,
             right: 8,
@@ -311,13 +311,10 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           onVictory={(zoneId, nextZoneId) => {
             gameState.defeatZoneBoss(zoneId, nextZoneId);
             gameState.spendPoints(-100);
-            if (nextZoneId) {
-              const nz = ZONE_BY_ID[nextZoneId];
-              if (nz) {
-                setDiscoveryZoneName(nz.name);
-                setTimeout(() => setDiscoveryZoneName(null), 3500);
-              }
-            }
+          }}
+          onZoneDiscovered={() => {
+            const nz = fightZone && ZONE_BY_ID[ZONE_ORDER[ZONE_ORDER.indexOf(fightZone.id) + 1]];
+            if (nz) { setDiscoveryZoneName(nz.name); setTimeout(() => setDiscoveryZoneName(null), 3500); }
           }}
         />
       )}

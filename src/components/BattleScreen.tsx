@@ -3,10 +3,10 @@ import { RARITY_COLORS, Rarity } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
 
-function spriteFilter(pokemonId: number, isShiny: boolean, size = 10): string {
+function spriteFilter(pokemonId: number, _isShiny: boolean, _size = 4): string {
   const rarity = (POKEMON_BY_ID[pokemonId]?.rarity ?? 'commun') as Rarity;
-  const rCol = `drop-shadow(0 0 ${size}px ${RARITY_COLORS[rarity]})`;
-  return isShiny ? `${rCol} drop-shadow(0 0 8px #fde047) drop-shadow(0 0 14px #f472b688)` : rCol;
+  if (rarity === 'legendaire') return 'drop-shadow(0 0 6px #f59e0b) drop-shadow(0 0 12px #fde04799)';
+  return `drop-shadow(0 0 4px ${RARITY_COLORS[rarity]})`;
 }
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
 import { calcDamage, xpGainedFromBattle } from '../data/combatEngine';

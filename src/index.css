@@ -378,17 +378,17 @@
 
 /* ── Battle stream animations (start at attacker, fly to target) ── */
 /* ltr = player attacks → top-right enemy  |  rtl = enemy attacks → bottom-left player */
-@keyframes stream-ltr { 0%{opacity:0;transform:translate(0,0) scale(var(--s,1))} 10%{opacity:1} 90%{opacity:1} 100%{opacity:0;transform:translate(210px,-165px) scale(calc(var(--s,1)*0.5))} }
-@keyframes stream-rtl { 0%{opacity:0;transform:translate(0,0) scale(var(--s,1))} 10%{opacity:1} 90%{opacity:1} 100%{opacity:0;transform:translate(-210px,165px) scale(calc(var(--s,1)*0.5))} }
+@keyframes stream-ltr { 0%{opacity:0;transform:translate(0,0) scale(var(--s,1))} 10%{opacity:1} 90%{opacity:1} 100%{opacity:0;transform:translate(195px,-200px) scale(calc(var(--s,1)*0.5))} }
+@keyframes stream-rtl { 0%{opacity:0;transform:translate(0,0) scale(var(--s,1))} 10%{opacity:1} 90%{opacity:1} 100%{opacity:0;transform:translate(-195px,200px) scale(calc(var(--s,1)*0.5))} }
 /* special: grass rises from below then streams */
-@keyframes grass-up-ltr { 0%{opacity:0;transform:translate(0,40px) scale(0.4)} 25%{opacity:1;transform:translate(10px,-5px) scale(var(--s,1))} 90%{opacity:1} 100%{opacity:0;transform:translate(210px,-165px) scale(0.4)} }
-@keyframes grass-up-rtl { 0%{opacity:0;transform:translate(0,40px) scale(0.4)} 25%{opacity:1;transform:translate(-10px,-5px) scale(var(--s,1))} 90%{opacity:1} 100%{opacity:0;transform:translate(-210px,165px) scale(0.4)} }
+@keyframes grass-up-ltr { 0%{opacity:0;transform:translate(0,40px) scale(0.4)} 25%{opacity:1;transform:translate(10px,-5px) scale(var(--s,1))} 90%{opacity:1} 100%{opacity:0;transform:translate(195px,-200px) scale(0.4)} }
+@keyframes grass-up-rtl { 0%{opacity:0;transform:translate(0,40px) scale(0.4)} 25%{opacity:1;transform:translate(-10px,-5px) scale(var(--s,1))} 90%{opacity:1} 100%{opacity:0;transform:translate(-195px,200px) scale(0.4)} }
 /* ghost: slow wavy drift */
-@keyframes ghost-ltr { 0%{opacity:0;transform:translate(0,0) scale(0.6)} 20%{opacity:0.7} 60%{transform:translate(110px,-80px) scale(1)} 100%{opacity:0;transform:translate(210px,-165px) scale(0.5)} }
-@keyframes ghost-rtl { 0%{opacity:0;transform:translate(0,0) scale(0.6)} 20%{opacity:0.7} 60%{transform:translate(-110px,80px) scale(1)} 100%{opacity:0;transform:translate(-210px,165px) scale(0.5)} }
+@keyframes ghost-ltr { 0%{opacity:0;transform:translate(0,0) scale(0.6)} 20%{opacity:0.7} 60%{transform:translate(110px,-80px) scale(1)} 100%{opacity:0;transform:translate(195px,-200px) scale(0.5)} }
+@keyframes ghost-rtl { 0%{opacity:0;transform:translate(0,0) scale(0.6)} 20%{opacity:0.7} 60%{transform:translate(-110px,80px) scale(1)} 100%{opacity:0;transform:translate(-195px,200px) scale(0.5)} }
 /* psychic: rings expand outward toward target */
-@keyframes psyring-ltr { 0%{opacity:0.9;transform:translate(0,0) scale(0.2)} 100%{opacity:0;transform:translate(210px,-165px) scale(1.8)} }
-@keyframes psyring-rtl { 0%{opacity:0.9;transform:translate(0,0) scale(0.2)} 100%{opacity:0;transform:translate(-210px,165px) scale(1.8)} }
+@keyframes psyring-ltr { 0%{opacity:0.9;transform:translate(0,0) scale(0.2)} 100%{opacity:0;transform:translate(195px,-200px) scale(1.8)} }
+@keyframes psyring-rtl { 0%{opacity:0.9;transform:translate(0,0) scale(0.2)} 100%{opacity:0;transform:translate(-195px,200px) scale(1.8)} }
 
 /* ── Type-specific attack animations ── */
 
@@ -479,61 +479,61 @@
 .battle-lunge-left  { animation: lunge-left  0.45s ease-in-out; }
 
 /* ── Per-type custom attack trajectories ── */
-/* ltr: player (bottom-left) → enemy (top-right)   endpoint ≈ translate(185px,-160px) */
-/* rtl: enemy  (top-right)  → player (bottom-left) endpoint ≈ translate(-185px,160px) */
+/* ltr: player (bottom-left) → enemy (top-right)   endpoint ≈ translate(190px,-200px) */
+/* rtl: enemy  (top-right)  → player (bottom-left) endpoint ≈ translate(-190px,200px) */
 /* rtl paths are NOT mirrors — each has its own character */
 
 /* FIRE: ltr = parabolic up-arc / rtl = dragon-breath downward swoop */
-@keyframes fire-arc-ltr{0%{transform:translate(0,0) scale(.4);opacity:0}12%{opacity:1;transform:translate(18px,-55px) scale(.9)}48%{transform:translate(88px,-200px) scale(1.6)}100%{transform:translate(185px,-160px) scale(.3);opacity:0}}
-@keyframes fire-arc-rtl{0%{transform:translate(0,0) scale(.4);opacity:0}12%{opacity:1;transform:translate(-14px,28px) scale(.9)}50%{transform:translate(-82px,88px) scale(1.6)}100%{transform:translate(-185px,160px) scale(.3);opacity:0}}
+@keyframes fire-arc-ltr{0%{transform:translate(0,0) scale(.4);opacity:0}12%{opacity:1;transform:translate(18px,-55px) scale(.9)}48%{transform:translate(88px,-200px) scale(1.6)}100%{transform:translate(190px,-200px) scale(.3);opacity:0}}
+@keyframes fire-arc-rtl{0%{transform:translate(0,0) scale(.4);opacity:0}12%{opacity:1;transform:translate(-14px,28px) scale(.9)}50%{transform:translate(-82px,88px) scale(1.6)}100%{transform:translate(-190px,200px) scale(.3);opacity:0}}
 
 /* WATER: ltr = very high up-arc / rtl = sideways waterfall then drops */
-@keyframes water-arc-ltr{0%{transform:translate(0,0) scale(.5);opacity:0}10%{opacity:1}42%{transform:translate(74px,-248px) scale(1.1)}100%{transform:translate(185px,-160px) scale(.3);opacity:0}}
-@keyframes water-arc-rtl{0%{transform:translate(0,0) scale(.5);opacity:0}10%{opacity:1}40%{transform:translate(-118px,32px) scale(1.1)}100%{transform:translate(-185px,160px) scale(.3);opacity:0}}
+@keyframes water-arc-ltr{0%{transform:translate(0,0) scale(.5);opacity:0}10%{opacity:1}42%{transform:translate(74px,-248px) scale(1.1)}100%{transform:translate(190px,-200px) scale(.3);opacity:0}}
+@keyframes water-arc-rtl{0%{transform:translate(0,0) scale(.5);opacity:0}10%{opacity:1}40%{transform:translate(-118px,32px) scale(1.1)}100%{transform:translate(-190px,200px) scale(.3);opacity:0}}
 
 /* GRASS: ltr = rises from below then spirals / rtl = falls from above spinning */
-@keyframes grass-fly-ltr{0%{transform:translate(0,55px) scale(.3) rotate(-20deg);opacity:0}25%{opacity:1;transform:translate(14px,-8px) scale(1.1) rotate(10deg)}65%{transform:translate(105px,-110px) scale(1) rotate(30deg)}100%{transform:translate(185px,-160px) scale(.4) rotate(15deg);opacity:0}}
-@keyframes grass-fly-rtl{0%{transform:translate(0,-35px) scale(.3) rotate(22deg);opacity:0}25%{opacity:1;transform:translate(-12px,6px) scale(1.1) rotate(-8deg)}65%{transform:translate(-94px,76px) scale(1) rotate(-28deg)}100%{transform:translate(-185px,160px) scale(.4) rotate(-14deg);opacity:0}}
+@keyframes grass-fly-ltr{0%{transform:translate(0,55px) scale(.3) rotate(-20deg);opacity:0}25%{opacity:1;transform:translate(14px,-8px) scale(1.1) rotate(10deg)}65%{transform:translate(105px,-110px) scale(1) rotate(30deg)}100%{transform:translate(190px,-200px) scale(.4) rotate(15deg);opacity:0}}
+@keyframes grass-fly-rtl{0%{transform:translate(0,-35px) scale(.3) rotate(22deg);opacity:0}25%{opacity:1;transform:translate(-12px,6px) scale(1.1) rotate(-8deg)}65%{transform:translate(-94px,76px) scale(1) rotate(-28deg)}100%{transform:translate(-190px,200px) scale(.4) rotate(-14deg);opacity:0}}
 
 /* ICE: ultra-fast straight beam (direction differs, style same) */
-@keyframes ice-beam-ltr{0%{transform:translate(0,0) scale(.15);opacity:1}100%{transform:translate(185px,-160px) scale(.6);opacity:0}}
-@keyframes ice-beam-rtl{0%{transform:translate(0,0) scale(.15);opacity:1}100%{transform:translate(-185px,160px) scale(.6);opacity:0}}
+@keyframes ice-beam-ltr{0%{transform:translate(0,0) scale(.15);opacity:1}100%{transform:translate(190px,-200px) scale(.6);opacity:0}}
+@keyframes ice-beam-rtl{0%{transform:translate(0,0) scale(.15);opacity:1}100%{transform:translate(-190px,200px) scale(.6);opacity:0}}
 
 /* FIGHTING: fast punch */
-@keyframes fight-dash-ltr{0%{transform:translate(0,0) scale(.4);opacity:1}65%{transform:translate(172px,-148px) scale(2.2);opacity:1}82%{transform:translate(196px,-168px) scale(1.4)}100%{transform:translate(185px,-160px) scale(.1);opacity:0}}
-@keyframes fight-dash-rtl{0%{transform:translate(0,0) scale(.4);opacity:1}65%{transform:translate(-172px,148px) scale(2.2);opacity:1}82%{transform:translate(-196px,168px) scale(1.4)}100%{transform:translate(-185px,160px) scale(.1);opacity:0}}
+@keyframes fight-dash-ltr{0%{transform:translate(0,0) scale(.4);opacity:1}65%{transform:translate(172px,-148px) scale(2.2);opacity:1}82%{transform:translate(196px,-168px) scale(1.4)}100%{transform:translate(190px,-200px) scale(.1);opacity:0}}
+@keyframes fight-dash-rtl{0%{transform:translate(0,0) scale(.4);opacity:1}65%{transform:translate(-172px,148px) scale(2.2);opacity:1}82%{transform:translate(-196px,168px) scale(1.4)}100%{transform:translate(-190px,200px) scale(.1);opacity:0}}
 
 /* GHOST: ltr = oscillates Y (up-down) / rtl = oscillates X (side-to-side) */
-@keyframes ghost-wave2-ltr{0%{transform:translate(0,0);opacity:0}15%{opacity:.65}30%{transform:translate(52px,-42px) translateY(-22px)}60%{transform:translate(115px,-92px) translateY(22px)}90%{transform:translate(173px,-142px) translateY(-10px);opacity:.65}100%{transform:translate(185px,-160px) translateY(0);opacity:0}}
-@keyframes ghost-wave2-rtl{0%{transform:translate(0,0);opacity:0}15%{opacity:.65}30%{transform:translate(-52px,42px) translateX(-20px)}60%{transform:translate(-115px,92px) translateX(20px)}90%{transform:translate(-173px,142px) translateX(-8px);opacity:.65}100%{transform:translate(-185px,160px) translateX(0);opacity:0}}
+@keyframes ghost-wave2-ltr{0%{transform:translate(0,0);opacity:0}15%{opacity:.65}30%{transform:translate(52px,-42px) translateY(-22px)}60%{transform:translate(115px,-92px) translateY(22px)}90%{transform:translate(173px,-142px) translateY(-10px);opacity:.65}100%{transform:translate(190px,-200px) translateY(0);opacity:0}}
+@keyframes ghost-wave2-rtl{0%{transform:translate(0,0);opacity:0}15%{opacity:.65}30%{transform:translate(-52px,42px) translateX(-20px)}60%{transform:translate(-115px,92px) translateX(20px)}90%{transform:translate(-173px,142px) translateX(-8px);opacity:.65}100%{transform:translate(-190px,200px) translateX(0);opacity:0}}
 
 /* POISON: ltr = float up-right / rtl = fall down-left */
-@keyframes poison-drift-ltr{0%{transform:translate(0,20px) scale(.5);opacity:0}18%{opacity:.9;transform:translate(32px,-12px) scale(1)}55%{transform:translate(108px,-108px) scale(1.05)}100%{transform:translate(185px,-160px) scale(.3);opacity:0}}
-@keyframes poison-drift-rtl{0%{transform:translate(0,-15px) scale(.5);opacity:0}18%{opacity:.9;transform:translate(-30px,14px) scale(1)}55%{transform:translate(-103px,90px) scale(1.05)}100%{transform:translate(-185px,160px) scale(.3);opacity:0}}
+@keyframes poison-drift-ltr{0%{transform:translate(0,20px) scale(.5);opacity:0}18%{opacity:.9;transform:translate(32px,-12px) scale(1)}55%{transform:translate(108px,-108px) scale(1.05)}100%{transform:translate(190px,-200px) scale(.3);opacity:0}}
+@keyframes poison-drift-rtl{0%{transform:translate(0,-15px) scale(.5);opacity:0}18%{opacity:.9;transform:translate(-30px,14px) scale(1)}55%{transform:translate(-103px,90px) scale(1.05)}100%{transform:translate(-190px,200px) scale(.3);opacity:0}}
 
 /* GROUND: ltr = rolls LOW then rises / rtl = falls from HIGH then curves */
-@keyframes ground-roll-ltr{0%{transform:translate(0,85px) scale(.7) rotate(0deg);opacity:0}15%{opacity:1;transform:translate(25px,65px) scale(1) rotate(70deg)}50%{transform:translate(105px,14px) scale(1.1) rotate(210deg)}80%{transform:translate(170px,-105px) scale(.9) rotate(325deg)}100%{transform:translate(185px,-160px) scale(.3) rotate(360deg);opacity:0}}
-@keyframes ground-roll-rtl{0%{transform:translate(0,-68px) scale(.7) rotate(0deg);opacity:0}15%{opacity:1;transform:translate(-22px,-46px) scale(1) rotate(-60deg)}50%{transform:translate(-88px,28px) scale(1.1) rotate(-200deg)}80%{transform:translate(-156px,108px) scale(.9) rotate(-325deg)}100%{transform:translate(-185px,160px) scale(.3) rotate(-360deg);opacity:0}}
+@keyframes ground-roll-ltr{0%{transform:translate(0,85px) scale(.7) rotate(0deg);opacity:0}15%{opacity:1;transform:translate(25px,65px) scale(1) rotate(70deg)}50%{transform:translate(105px,14px) scale(1.1) rotate(210deg)}80%{transform:translate(170px,-105px) scale(.9) rotate(325deg)}100%{transform:translate(190px,-200px) scale(.3) rotate(360deg);opacity:0}}
+@keyframes ground-roll-rtl{0%{transform:translate(0,-68px) scale(.7) rotate(0deg);opacity:0}15%{opacity:1;transform:translate(-22px,-46px) scale(1) rotate(-60deg)}50%{transform:translate(-88px,28px) scale(1.1) rotate(-200deg)}80%{transform:translate(-156px,108px) scale(.9) rotate(-325deg)}100%{transform:translate(-190px,200px) scale(.3) rotate(-360deg);opacity:0}}
 
 /* FLYING: ltr = upward-angled slashes / rtl = downward-angled slashes */
 @keyframes wind-slash-ltr{0%{opacity:0;transform:translateX(0) scaleX(.05) rotate(-13deg)}12%{opacity:.9;transform:translateX(8px) scaleX(1) rotate(-13deg)}100%{opacity:0;transform:translateX(235px) scaleX(1.4) rotate(-13deg)}}
 @keyframes wind-slash-rtl{0%{opacity:0;transform:translateX(0) scaleX(.05) rotate(13deg)}12%{opacity:.9;transform:translateX(-8px) scaleX(1) rotate(13deg)}100%{opacity:0;transform:translateX(-235px) scaleX(1.4) rotate(13deg)}}
 
 /* DRAGON: ltr = majestic up-right sweep / rtl = hawk dive straight down */
-@keyframes dragon-arc-ltr{0%{transform:translate(-38px,10px) scale(.6) rotate(-15deg);opacity:0}18%{opacity:1;transform:translate(0,0) scale(1.3) rotate(-5deg)}68%{transform:translate(138px,-112px) scale(1.6) rotate(8deg)}100%{transform:translate(185px,-160px) scale(.5) rotate(0deg);opacity:0}}
-@keyframes dragon-arc-rtl{0%{transform:translate(0,-18px) scale(.5) rotate(28deg);opacity:0}18%{opacity:1;transform:translate(0,0) scale(1.3) rotate(16deg)}68%{transform:translate(-138px,96px) scale(1.6) rotate(-6deg)}100%{transform:translate(-185px,160px) scale(.5) rotate(0deg);opacity:0}}
+@keyframes dragon-arc-ltr{0%{transform:translate(-38px,10px) scale(.6) rotate(-15deg);opacity:0}18%{opacity:1;transform:translate(0,0) scale(1.3) rotate(-5deg)}68%{transform:translate(138px,-112px) scale(1.6) rotate(8deg)}100%{transform:translate(190px,-200px) scale(.5) rotate(0deg);opacity:0}}
+@keyframes dragon-arc-rtl{0%{transform:translate(0,-18px) scale(.5) rotate(28deg);opacity:0}18%{opacity:1;transform:translate(0,0) scale(1.3) rotate(16deg)}68%{transform:translate(-138px,96px) scale(1.6) rotate(-6deg)}100%{transform:translate(-190px,200px) scale(.5) rotate(0deg);opacity:0}}
 
 /* ROCK: ltr = tumbles up-right / rtl = tumbles down-left (gravity feel) */
-@keyframes rock-throw-ltr{0%{transform:translate(0,0) rotate(0deg) scale(.8);opacity:1}30%{transform:translate(52px,-76px) rotate(130deg) scale(1.2)}70%{transform:translate(142px,-134px) rotate(265deg) scale(1)}100%{transform:translate(185px,-160px) rotate(360deg) scale(.3);opacity:0}}
-@keyframes rock-throw-rtl{0%{transform:translate(0,0) rotate(0deg) scale(.8);opacity:1}30%{transform:translate(-52px,74px) rotate(-130deg) scale(1.2)}70%{transform:translate(-142px,132px) rotate(-265deg) scale(1)}100%{transform:translate(-185px,160px) rotate(-360deg) scale(.3);opacity:0}}
+@keyframes rock-throw-ltr{0%{transform:translate(0,0) rotate(0deg) scale(.8);opacity:1}30%{transform:translate(52px,-76px) rotate(130deg) scale(1.2)}70%{transform:translate(142px,-134px) rotate(265deg) scale(1)}100%{transform:translate(190px,-200px) rotate(360deg) scale(.3);opacity:0}}
+@keyframes rock-throw-rtl{0%{transform:translate(0,0) rotate(0deg) scale(.8);opacity:1}30%{transform:translate(-52px,74px) rotate(-130deg) scale(1.2)}70%{transform:translate(-142px,132px) rotate(-265deg) scale(1)}100%{transform:translate(-190px,200px) rotate(-360deg) scale(.3);opacity:0}}
 
 /* BUG: different erratic patterns ltr vs rtl */
-@keyframes bug-swarm-ltr{0%{transform:translate(0,0);opacity:0}10%{opacity:1}25%{transform:translate(48px,-12px)}42%{transform:translate(76px,-70px)}60%{transform:translate(142px,-52px)}80%{transform:translate(165px,-133px)}100%{transform:translate(185px,-160px);opacity:0}}
-@keyframes bug-swarm-rtl{0%{transform:translate(0,0);opacity:0}10%{opacity:1}25%{transform:translate(-35px,6px)}42%{transform:translate(-62px,64px)}60%{transform:translate(-125px,48px)}80%{transform:translate(-152px,126px)}100%{transform:translate(-185px,160px);opacity:0}}
+@keyframes bug-swarm-ltr{0%{transform:translate(0,0);opacity:0}10%{opacity:1}25%{transform:translate(48px,-12px)}42%{transform:translate(76px,-70px)}60%{transform:translate(142px,-52px)}80%{transform:translate(165px,-133px)}100%{transform:translate(190px,-200px);opacity:0}}
+@keyframes bug-swarm-rtl{0%{transform:translate(0,0);opacity:0}10%{opacity:1}25%{transform:translate(-35px,6px)}42%{transform:translate(-62px,64px)}60%{transform:translate(-125px,48px)}80%{transform:translate(-152px,126px)}100%{transform:translate(-190px,200px);opacity:0}}
 
 /* Stream (used for psychic gem + normal): updated endpoints */
-@keyframes stream-ltr{0%{opacity:0;transform:translate(0,0) scale(var(--s,1))}10%{opacity:1}90%{opacity:1}100%{opacity:0;transform:translate(185px,-160px) scale(calc(var(--s,1)*0.5))}}
-@keyframes stream-rtl{0%{opacity:0;transform:translate(0,0) scale(var(--s,1))}10%{opacity:1}90%{opacity:1}100%{opacity:0;transform:translate(-185px,160px) scale(calc(var(--s,1)*0.5))}}
+@keyframes stream-ltr{0%{opacity:0;transform:translate(0,0) scale(var(--s,1))}10%{opacity:1}90%{opacity:1}100%{opacity:0;transform:translate(190px,-200px) scale(calc(var(--s,1)*0.5))}}
+@keyframes stream-rtl{0%{opacity:0;transform:translate(0,0) scale(var(--s,1))}10%{opacity:1}90%{opacity:1}100%{opacity:0;transform:translate(-190px,200px) scale(calc(var(--s,1)*0.5))}}
 
 /* PSYCHIC: ring expands at target position */
 @keyframes psyring-expand{0%{transform:scale(.15);opacity:.9}100%{transform:scale(2.8);opacity:0}}
@@ -559,3 +559,20 @@ button:active{transform:scale(.93);transition:transform .08s ease}
 @keyframes zone-discover-fade { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
 @keyframes zone-discover-title { 0%{opacity:0;transform:translateY(20px) scale(0.8)} 20%{opacity:1;transform:translateY(0) scale(1.05)} 30%{transform:scale(1)} 85%{opacity:1} 100%{opacity:0} }
 @keyframes zone-discover-sub   { 0%,15%{opacity:0;transform:translateY(12px)} 35%{opacity:1;transform:translateY(0)} 85%{opacity:1} 100%{opacity:0} }
+
+/* Shiny rainbow aura — cycles through 6 colors */
+.shiny-rainbow { animation: shiny-rainbow-aura 2.5s linear infinite; }
+@keyframes shiny-rainbow-aura {
+  0%   { filter: drop-shadow(0 0 5px #fde047); }
+  16%  { filter: drop-shadow(0 0 5px #f472b6); }
+  33%  { filter: drop-shadow(0 0 5px #60a5fa); }
+  50%  { filter: drop-shadow(0 0 5px #4ade80); }
+  66%  { filter: drop-shadow(0 0 5px #fb923c); }
+  83%  { filter: drop-shadow(0 0 5px #c084fc); }
+  100% { filter: drop-shadow(0 0 5px #fde047); }
+}
+
+/* Pokédex shiny rotating stars */
+@keyframes pokedex-star-orbit-a { 0%{transform:rotate(0deg) translate(10px) rotate(0deg)} 100%{transform:rotate(360deg) translate(10px) rotate(-360deg)} }
+@keyframes pokedex-star-orbit-b { 0%{transform:rotate(180deg) translate(10px) rotate(-180deg)} 100%{transform:rotate(540deg) translate(10px) rotate(-540deg)} }
+@keyframes pokedex-star-orbit-c { 0%{transform:rotate(90deg) translate(8px) rotate(-90deg)} 100%{transform:rotate(450deg) translate(8px) rotate(-450deg)} }

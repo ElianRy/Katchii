@@ -14,6 +14,7 @@ interface Props {
   onClose: () => void;
   onVictory: (zoneId: string, nextZoneId: string | null) => void;
   onAddXp: (pokemonId: number, xp: number) => void;
+  onZoneDiscovered?: () => void;
 }
 
 type Phase = 'intro' | 'select' | 'battle' | 'result';
@@ -25,7 +26,7 @@ function getBossLevel(zoneId: string): number {
   return Math.min(100, 15 + idx * 10);
 }
 
-export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp }: Props) {
+export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZoneDiscovered }: Props) {
   const [phase, setPhase] = useState<Phase>('intro');
   const [playerTeam, setPlayerTeam] = useState<TeamMember[]>([]);
   const [won, setWon] = useState(false);
@@ -243,7 +244,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp }: Pro
             )}
 
             <button
-              onClick={onClose}
+              onClick={() => { onZoneDiscovered?.(); onClose(); }}
               className="w-full max-w-sm py-4 rounded-2xl font-black text-lg text-black relative z-10"
               style={{
                 background: 'linear-gradient(90deg, #fbbf24, #22c55e)',

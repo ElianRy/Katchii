@@ -38,7 +38,7 @@ export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, class
     : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width, height, transform: flip ? 'scaleX(-1)' : undefined }}>
+    <div className={`relative inline-flex items-center justify-center${isShiny && !compact ? ' shiny-rainbow' : ''}`} style={{ width, height, transform: flip ? 'scaleX(-1)' : undefined }}>
       {/* Full sparkles only in non-compact mode */}
       {isShiny && !compact && SPARKLE_POSITIONS.map((sp, i) => (
         <div
@@ -80,11 +80,6 @@ export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, class
         style={{
           imageRendering: 'pixelated',
           ...style,
-          // Shiny glow always appended AFTER style so it's never overridden
-          filter: [
-            style?.filter,
-            isShiny ? 'drop-shadow(0 0 8px #fde047) drop-shadow(0 0 14px #f472b6)' : '',
-          ].filter(Boolean).join(' ') || undefined,
         }}
       />
       {isShiny && (
