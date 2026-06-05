@@ -18,6 +18,7 @@ import { HomeScreen } from './components/HomeScreen';
 import { ProfileScreen } from './components/ProfileScreen';
 import { TeamBuilder } from './components/TeamBuilder';
 import { AdminPanel } from './components/AdminPanel';
+import { PokeParc } from './components/PokeParc';
 import { useGameState } from './hooks/useGameState';
 import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
@@ -42,7 +43,7 @@ export function App() {
       if (user) {
         setUsername(getUsername(user));
         const saved = localStorage.getItem('katchii_last_view') as View | null;
-        const validViews: View[] = ['hunt','collection','team','lures','quests','duels','village','skins','fusion','raid','wrapped'];
+        const validViews: View[] = ['hunt','collection','team','lures','quests','duels','village','skins','fusion','raid','wrapped','pokepark'];
         setView(saved && validViews.includes(saved) ? saved : 'hunt');
       } else {
         setView('auth');
@@ -55,7 +56,7 @@ export function App() {
       if (session?.user) {
         setUsername(getUsername(session.user));
         const saved = localStorage.getItem('katchii_last_view') as View | null;
-        const validViews: View[] = ['hunt','collection','team','lures','quests','duels','village','skins','fusion','raid','wrapped'];
+        const validViews: View[] = ['hunt','collection','team','lures','quests','duels','village','skins','fusion','raid','wrapped','pokepark'];
         setView(saved && validViews.includes(saved) ? saved : 'hunt');
       } else {
         setView('auth');
@@ -248,6 +249,15 @@ export function App() {
         <WrappedPanel
           state={gameState.state}
           onClose={() => persistView('hunt')}
+        />
+      )}
+
+      {view === 'pokepark' && (
+        <PokeParc
+          state={gameState.state}
+          username={username}
+          onClose={() => persistView('hunt')}
+          onUpdateVillage={gameState.updateVillage}
         />
       )}
 

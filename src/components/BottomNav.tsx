@@ -18,6 +18,7 @@ const NAV_ITEMS: Array<{ view: View; icon: string; label: string; color: string;
   { view: 'fusion',     icon: '⚗️', label: 'Fusion',     color: 'text-purple-300',  hoverBg: 'hover:bg-purple-900/30' },
   { view: 'raid',       icon: '🐉', label: 'Raid',       color: 'text-red-300',     hoverBg: 'hover:bg-red-900/30' },
   { view: 'wrapped',    icon: '🎁', label: 'Wrapped',    color: 'text-yellow-300',  hoverBg: 'hover:bg-yellow-900/30' },
+  { view: 'pokepark',   icon: '🌿', label: 'PokéParc',   color: 'text-green-300',   hoverBg: 'hover:bg-green-900/30' },
 ];
 
 export const BOTTOM_NAV_HEIGHT = 72; // px — used to offset content above

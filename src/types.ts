@@ -1,6 +1,6 @@
 export type Rarity = 'commun' | 'peu_commun' | 'rare' | 'elite' | 'legendaire';
 export type LureType = 'rare' | 'epique' | 'legendaire' | 'shiny';
-export type View = 'auth' | 'home' | 'universe' | 'hunt' | 'collection' | 'team' | 'admin' | 'lures' | 'quests' | 'duels' | 'village' | 'skins' | 'fusion' | 'raid' | 'wrapped' | 'profile' | 'zones';
+export type View = 'auth' | 'home' | 'universe' | 'hunt' | 'collection' | 'team' | 'admin' | 'lures' | 'quests' | 'duels' | 'village' | 'skins' | 'fusion' | 'raid' | 'wrapped' | 'profile' | 'zones' | 'pokepark';
 
 export type QuestType =
   | 'capture_n'
