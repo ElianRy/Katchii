@@ -92,10 +92,10 @@ export function ProfileScreen({ username, state, onClose, onLogout }: Props) {
               </div>
             </div>
 
-            {/* Badges section */}
+            {/* Succès section */}
             {earnedBadges.length > 0 && (
               <div className="w-full max-w-sm">
-                <h3 className="text-slate-300 font-bold text-sm mb-3">Badges obtenus ({badgesEarned}/{totalBadges})</h3>
+                <h3 className="text-slate-300 font-bold text-sm mb-3">Succès obtenus ({badgesEarned}/{totalBadges})</h3>
                 <div className="flex flex-wrap gap-2">
                   {earnedBadges.map(badge => (
                     <div
@@ -129,7 +129,7 @@ export function ProfileScreen({ username, state, onClose, onLogout }: Props) {
               { label: 'Duels gagnés', value: state.duels.wins, icon: '⚔️' },
               { label: 'Duels perdus', value: state.duels.losses, icon: '💔' },
               { label: 'Meilleure streak', value: state.duels.streak, icon: '🔥' },
-              { label: 'Badges débloqués', value: `${badgesEarned}/${totalBadges}`, icon: '🏅' },
+              { label: 'Succès débloqués', value: `${badgesEarned}/${totalBadges}`, icon: '🏅' },
               { label: 'Points totaux', value: state.points, icon: '⭐' },
               { label: 'Fusions réalisées', value: totalFusions, icon: '⚗️' },
               { label: 'Temps total de jeu', value: formatPlayTime(totalPlayTime), icon: '⏰' },

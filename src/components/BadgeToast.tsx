@@ -24,7 +24,7 @@ export function BadgeToast({ badgeId, onDismiss }: Props) {
       <div className="flex items-center gap-3 bg-yellow-900/90 border border-yellow-400/60 rounded-2xl px-5 py-3 shadow-2xl backdrop-blur-sm">
         <span className="text-3xl">{badge.icon}</span>
         <div>
-          <div className="text-yellow-300 font-bold text-sm">🏅 Badge débloqué !</div>
+          <div className="text-yellow-300 font-bold text-sm">🏅 Succès débloqué !</div>
           <div className="text-white font-bold">{badge.label}</div>
           <div className="text-yellow-200/70 text-xs">{badge.secret ? badge.desc : badge.desc}</div>
         </div>

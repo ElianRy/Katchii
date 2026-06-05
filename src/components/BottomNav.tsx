@@ -63,10 +63,10 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
     return () => clearInterval(id);
   }, []);
 
-  // Change mood every 12-20s
+  // Change mood every 25-45s
   useEffect(() => {
     const schedule = (): ReturnType<typeof setTimeout> => {
-      const delay = 12000 + Math.random() * 8000;
+      const delay = 25000 + Math.random() * 20000;
       return setTimeout(() => {
         const moods: NavMood[] = ['happy', 'happy', 'sleep', 'attack', 'dance', 'excited'];
         setMood(moods[Math.floor(Math.random() * moods.length)]);
@@ -125,7 +125,8 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
 
   const badge = MOOD_BADGE[mood];
   const spriteAnim = MOOD_ANIM[mood];
-  const flipTransform = facingRight ? 'scaleX(1)' : 'scaleX(-1)';
+  // Gen1 sprites face LEFT by default → scaleX(-1) to face right
+  const flipTransform = facingRight ? 'scaleX(-1)' : 'scaleX(1)';
 
   return (
     <div
@@ -179,10 +180,10 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
         }}>{badge}</div>
       )}
 
-      {/* Shiny aura — same sparkles as ShinySprite */}
+      {/* Shiny aura — fewer sparkles so animation stays visible */}
       {isShiny && (
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          {SPARKLE_POSITIONS.map((sp, i) => (
+          {SPARKLE_POSITIONS.filter((_, i) => i % 2 === 0).map((sp, i) => (
             <div
               key={i}
               className="shiny-sparkle"
@@ -198,7 +199,7 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
               } as React.CSSProperties}
             />
           ))}
-          {ORBIT_POSITIONS.map((sp, i) => (
+          {ORBIT_POSITIONS.filter((_, i) => i === 0).map((sp, i) => (
             <div
               key={`o${i}`}
               className="shiny-sparkle-orbit"
@@ -353,9 +354,6 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
               display: 'inline-block',
             }}>···</span>
             <span className="text-[0.6rem] font-bold leading-none">Menu</span>
-            {questsCompleted > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-500" />
-            )}
             {inMenu && (
               <span className="absolute" style={{
                 bottom: 2, left: '50%', transform: 'translateX(-50%)',

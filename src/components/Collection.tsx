@@ -9,13 +9,14 @@ interface Props {
 }
 
 type FilterTab = 'tous' | 'captures' | 'shinies' | Rarity;
-type MainTab = 'collection' | 'badges';
+type MainTab = 'collection' | 'succes';
 
 const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
 
 export function Collection({ state, onClose }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('collection');
   const [filter, setFilter] = useState<FilterTab>('tous');
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const totalCaught = GEN1_POKEMON.filter(p => (state.normalCollection[p.id] ?? 0) > 0).length;
   const totalShinyCaught = GEN1_POKEMON.filter(p => (state.shinyCollection[p.id] ?? 0) > 0).length;
@@ -56,7 +57,7 @@ export function Collection({ state, onClose }: Props) {
       <div className="flex gap-2 px-4 pt-2 border-b border-slate-700 shrink-0">
         {([
           { id: 'collection' as MainTab, label: '📚 Collection' },
-          { id: 'badges' as MainTab, label: '🏅 Badges' },
+          { id: 'succes' as MainTab, label: '🏅 Succès' },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -74,27 +75,48 @@ export function Collection({ state, onClose }: Props) {
 
       {mainTab === 'collection' && (
         <>
-          {/* Filter tabs */}
-          <div className="flex gap-2 px-4 py-2 border-b border-slate-700 overflow-x-auto shrink-0">
-            {filterTabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setFilter(tab.id)}
-                className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
-                  filter === tab.id
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                }`}
-                style={
-                  RARITY_ORDER.includes(tab.id as Rarity) && filter === tab.id
-                    ? { backgroundColor: RARITY_COLORS[tab.id as Rarity] + 'cc' }
-                    : undefined
-                }
-              >
-                {tab.label}
-              </button>
-            ))}
+          {/* Filter button */}
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-slate-700 shrink-0">
+            <button
+              onClick={() => setFilterOpen(o => !o)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-700 text-slate-200 hover:bg-slate-600"
+            >
+              <span>🔍</span>
+              <span>Filtrer</span>
+              {filter !== 'tous' && (
+                <span className="ml-1 px-1.5 py-0.5 rounded-full text-white font-black text-[0.55rem]"
+                  style={{ background: RARITY_ORDER.includes(filter as Rarity) ? RARITY_COLORS[filter as Rarity] : '#3b82f6' }}>
+                  {filterTabs.find(t => t.id === filter)?.label}
+                </span>
+              )}
+              <span style={{ transform: filterOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>▾</span>
+            </button>
+            {filter !== 'tous' && (
+              <button onClick={() => setFilter('tous')} className="text-slate-400 hover:text-white text-xs">✕ Réinitialiser</button>
+            )}
           </div>
+
+          {/* Filter dropdown */}
+          {filterOpen && (
+            <div className="flex flex-wrap gap-1.5 px-4 py-2 border-b border-slate-700 bg-slate-900/80 shrink-0">
+              {filterTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => { setFilter(tab.id); setFilterOpen(false); }}
+                  className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                    filter === tab.id ? 'text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                  style={
+                    filter === tab.id
+                      ? { background: RARITY_ORDER.includes(tab.id as Rarity) ? RARITY_COLORS[tab.id as Rarity] + 'dd' : '#3b82f6' }
+                      : undefined
+                  }
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Grid */}
           <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
@@ -111,9 +133,8 @@ export function Collection({ state, onClose }: Props) {
                     <div
                       className="relative rounded-lg p-1 w-16 h-16 flex items-center justify-center"
                       style={{
-                        border: caught ? `2px solid ${rarityColor}` : '2px solid transparent',
-                        background: caught ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.5)',
-                        boxShadow: caught ? `0 0 8px 2px ${rarityColor}44` : 'none',
+                        background: 'rgba(0,0,0,0.4)',
+                        boxShadow: caught ? `0 0 12px 4px ${rarityColor}55, 0 0 4px 1px ${rarityColor}33` : 'none',
                       }}
                     >
                       <img
@@ -171,7 +192,7 @@ export function Collection({ state, onClose }: Props) {
         </>
       )}
 
-      {mainTab === 'badges' && (
+      {mainTab === 'succes' && (
         <div className="flex-1 overflow-y-auto px-4 py-4">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {BADGES.map((badge) => {
