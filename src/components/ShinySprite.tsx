@@ -79,8 +79,12 @@ export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, class
         className={className}
         style={{
           imageRendering: 'pixelated',
-          ...(isShiny ? { filter: 'drop-shadow(0 0 8px #fde047) drop-shadow(0 0 14px #f472b6)' } : {}),
           ...style,
+          // Shiny glow always appended AFTER style so it's never overridden
+          filter: [
+            style?.filter,
+            isShiny ? 'drop-shadow(0 0 8px #fde047) drop-shadow(0 0 14px #f472b6)' : '',
+          ].filter(Boolean).join(' ') || undefined,
         }}
       />
       {isShiny && (

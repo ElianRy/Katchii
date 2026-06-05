@@ -144,7 +144,6 @@ export function Collection({ state, onClose }: Props) {
                     <div
                       className="relative rounded-lg p-1 w-16 h-16 flex items-center justify-center"
                       style={{
-                        background: caught ? 'rgba(0,0,0,0.3)' : 'transparent',
                         boxShadow: caught ? `0 0 12px 4px ${rarityColor}55, 0 0 4px 1px ${rarityColor}33` : 'none',
                       }}
                     >
@@ -204,7 +203,7 @@ export function Collection({ state, onClose }: Props) {
       )}
 
       {mainTab === 'badges' && (
-        <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
           <p className="text-slate-400 text-xs mb-4 text-center">Bats les maîtres d'arène pour débloquer leurs badges</p>
           <div className="flex flex-col gap-3">
             {ARENA_BADGES.map(({ zoneId, badge, bossName, bossTitle, zoneName }) => {
