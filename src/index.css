@@ -548,3 +548,14 @@
 
 /* ── Button click feedback (all buttons) ── */
 button:active{transform:scale(.93);transition:transform .08s ease}
+
+/* Pokédex shiny pulse */
+@keyframes pokedex-shiny-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px #fde047) drop-shadow(0 0 2px #f0abfc); }
+  50%       { filter: drop-shadow(0 0 10px #fde047) drop-shadow(0 0 6px #f0abfc) drop-shadow(0 0 14px #fde04788); }
+}
+
+/* Zone discovery overlay */
+@keyframes zone-discover-fade { 0%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
+@keyframes zone-discover-title { 0%{opacity:0;transform:translateY(20px) scale(0.8)} 20%{opacity:1;transform:translateY(0) scale(1.05)} 30%{transform:scale(1)} 85%{opacity:1} 100%{opacity:0} }
+@keyframes zone-discover-sub   { 0%,15%{opacity:0;transform:translateY(12px)} 35%{opacity:1;transform:translateY(0)} 85%{opacity:1} 100%{opacity:0} }

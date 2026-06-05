@@ -69,6 +69,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const [showZoneInfo, setShowZoneInfo] = useState(false);
   const [showBossFight, setShowBossFight] = useState(false);
   const [fightZone, setFightZone] = useState<Zone | null>(null);
+  const [discoveryZoneName, setDiscoveryZoneName] = useState<string | null>(null);
   const processingRef = useRef<Set<string>>(new Set());
   const capturingRef = useRef(false);
 
@@ -237,22 +238,25 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         onFightBoss={() => { setFightZone(currentZone ?? null); setShowBossFight(true); }}
       />
 
-      {/* Quêtes pill — seulement sur l'écran de chasse, pas pendant un combat */}
+      {/* Quêtes pill — au-dessus du bouton Menu (bottom-right), style nav */}
       {!showBossFight && (
         <button
           onClick={onOpenQuests}
-          className="fixed z-[195] flex items-center gap-1.5 font-black pointer-events-auto"
+          className="fixed z-[195] flex flex-col items-center gap-1 px-3 py-2 rounded-xl pointer-events-auto"
           style={{
-            top: 52, right: 10,
-            fontSize: '0.65rem', padding: '4px 10px', borderRadius: 999,
-            background: questsCompleted > 0 ? 'rgba(234,179,8,0.22)' : 'rgba(30,41,59,0.75)',
-            color: questsCompleted > 0 ? '#fbbf24' : '#64748b',
-            border: `1px solid ${questsCompleted > 0 ? 'rgba(234,179,8,0.5)' : 'rgba(100,116,139,0.3)'}`,
-            boxShadow: questsCompleted > 0 ? '0 2px 10px rgba(234,179,8,0.3)' : 'none',
-            backdropFilter: 'blur(8px)',
+            bottom: 80,
+            right: 8,
+            background: questsCompleted > 0 ? 'rgba(234,179,8,0.18)' : 'rgba(15,23,42,0.85)',
+            border: `1px solid ${questsCompleted > 0 ? 'rgba(234,179,8,0.5)' : 'rgba(100,116,139,0.25)'}`,
+            backdropFilter: 'blur(10px)',
+            boxShadow: questsCompleted > 0 ? '0 2px 12px rgba(234,179,8,0.3)' : 'none',
           }}
         >
-          📋 Quêtes{questsCompleted > 0 ? ` (${questsCompleted})` : ''}
+          <span className="text-2xl leading-none">📋</span>
+          <span className="font-bold leading-none"
+            style={{ fontSize: '0.6rem', color: questsCompleted > 0 ? '#fbbf24' : '#64748b' }}>
+            Quêtes{questsCompleted > 0 ? ` (${questsCompleted})` : ''}
+          </span>
         </button>
       )}
 
@@ -307,8 +311,37 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           onVictory={(zoneId, nextZoneId) => {
             gameState.defeatZoneBoss(zoneId, nextZoneId);
             gameState.spendPoints(-100);
+            if (nextZoneId) {
+              const nz = ZONE_BY_ID[nextZoneId];
+              if (nz) {
+                setDiscoveryZoneName(nz.name);
+                setTimeout(() => setDiscoveryZoneName(null), 3500);
+              }
+            }
           }}
         />
+      )}
+
+      {/* Zone discovery overlay */}
+      {discoveryZoneName && (
+        <div className="fixed inset-0 z-[300] flex flex-col items-center justify-center pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.35) 0%, rgba(2,6,23,0.85) 100%)',
+            animation: 'zone-discover-fade 3.5s ease-out forwards' }}>
+          <div style={{ animation: 'zone-discover-title 3.5s ease-out forwards', textAlign: 'center' }}>
+            <div style={{ fontSize: '3rem', marginBottom: 8 }}>🗺️</div>
+            <div className="font-black text-white" style={{ fontSize: '1.4rem', letterSpacing: 2,
+              textShadow: '0 0 30px rgba(99,102,241,0.9), 0 0 60px rgba(99,102,241,0.5)' }}>
+              NOUVELLE ZONE
+            </div>
+          </div>
+          <div style={{ animation: 'zone-discover-sub 3.5s ease-out forwards', textAlign: 'center', marginTop: 12 }}>
+            <div className="font-black text-indigo-300" style={{ fontSize: '1.8rem',
+              textShadow: '0 0 20px rgba(165,180,252,0.8)' }}>
+              {discoveryZoneName}
+            </div>
+            <div className="text-slate-400 text-sm mt-1">débloquée !</div>
+          </div>
+        </div>
       )}
 
       {/* New capture modal */}

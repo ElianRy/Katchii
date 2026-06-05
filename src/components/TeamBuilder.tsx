@@ -119,7 +119,8 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon Ã
     const team: TeamMember[] = selected.map(id => {
       const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
       const maxHp = calcMaxHp(id, lvData.level);
-      return { pokemonId: id, level: lvData.level, xp: lvData.xp, currentHp: maxHp, maxHp };
+      const isShiny = (state.shinyCollection[id] ?? 0) > 0;
+      return { pokemonId: id, isShiny, level: lvData.level, xp: lvData.xp, currentHp: maxHp, maxHp };
     });
     onConfirm?.(team);
   };

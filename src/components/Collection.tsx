@@ -156,6 +156,7 @@ export function Collection({ state, onClose }: Props) {
                           filter: caught
                             ? `drop-shadow(0 0 5px ${rarityColor}) drop-shadow(0 0 2px ${rarityColor}88)`
                             : 'grayscale(1) opacity(0.35)',
+                          animation: shinyCaught ? 'pokedex-shiny-pulse 2s ease-in-out infinite' : undefined,
                         }}
                         draggable={false}
                       />
