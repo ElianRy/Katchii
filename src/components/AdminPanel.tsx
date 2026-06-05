@@ -50,11 +50,6 @@ export function AdminPanel({ gameState, onClose }: Props) {
     flash(`📍 Zone "${ZONE_BY_ID[zoneId]?.name}" débloquée !`);
   };
 
-  const unlockNaruto = () => {
-    // Mark ligue boss as defeated to unlock Naruto
-    gameState.defeatZoneBoss('ligue', null);
-    flash('🍥 Monde Naruto débloqué !');
-  };
 
   const addPoints = (amount: number) => {
     gameState.spendPoints(-amount);
@@ -180,7 +175,7 @@ export function AdminPanel({ gameState, onClose }: Props) {
         {tab === 'zones' && (
           <div className="p-4 flex flex-col gap-3">
             <p className="text-slate-400 text-xs">Téléporte et débloque instantanément n'importe quelle zone.</p>
-            {ZONE_ORDER.map(zoneId => {
+            {ZONE_ORDER.filter(z => z !== 'ligue').map(zoneId => {
               const zone = ZONE_BY_ID[zoneId];
               if (!zone) return null;
               const isCurrent = (gameState.state.zoneProgress?.currentZoneId ?? 'zone1') === zoneId;
@@ -205,16 +200,6 @@ export function AdminPanel({ gameState, onClose }: Props) {
               );
             })}
 
-            <button
-              onClick={unlockNaruto}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl border border-orange-700 bg-orange-900/30 hover:border-orange-500 text-left"
-            >
-              <span className="text-xl">🍥</span>
-              <div>
-                <div className="text-white font-bold text-sm">Débloquer Naruto</div>
-                <div className="text-slate-400 text-xs">Marque la Ligue comme terminée</div>
-              </div>
-            </button>
           </div>
         )}
 
