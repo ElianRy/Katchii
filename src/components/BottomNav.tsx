@@ -217,20 +217,22 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
         </div>
       )}
 
-      <img
-        src={spriteUrl}
-        width={52}
-        height={52}
-        style={{
-          imageRendering: 'pixelated',
-          transform: flipTransform,
-          animation: spriteAnim,
-          display: 'block',
-          filter: isShiny ? 'drop-shadow(0 0 5px #fde047) drop-shadow(0 0 10px #f0abfc88)' : 'drop-shadow(0 0 3px rgba(255,255,255,0.3))',
-        }}
-        draggable={false}
-        alt=""
-      />
+      {/* Flip wrapper — direction; inner img handles bounce/wiggle animation */}
+      <div style={{ transform: flipTransform, transition: 'transform 0.3s ease', display: 'inline-block' }}>
+        <img
+          src={spriteUrl}
+          width={52}
+          height={52}
+          style={{
+            imageRendering: 'pixelated',
+            animation: spriteAnim,
+            display: 'block',
+            filter: isShiny ? 'drop-shadow(0 0 5px #fde047) drop-shadow(0 0 10px #f0abfc88)' : 'drop-shadow(0 0 3px rgba(255,255,255,0.3))',
+          }}
+          draggable={false}
+          alt=""
+        />
+      </div>
     </div>
   );
 }
@@ -248,29 +250,27 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
 
   return (
     <>
-      {/* Quêtes pill — fixed top-right, below HUD */}
-      <button
-        onClick={() => handleNavigate('quests')}
-        className="fixed z-[195] flex items-center gap-1.5 font-black"
-        style={{
-          top: 52,
-          right: 10,
-          fontSize: '0.65rem',
-          padding: '4px 10px',
-          borderRadius: 999,
-          background: currentView === 'quests'
-            ? 'rgba(234,179,8,0.95)'
-            : questsCompleted > 0
-              ? 'rgba(234,179,8,0.22)'
-              : 'rgba(30,41,59,0.75)',
-          color: currentView === 'quests' ? '#000' : questsCompleted > 0 ? '#fbbf24' : '#64748b',
-          border: `1px solid ${questsCompleted > 0 ? 'rgba(234,179,8,0.5)' : 'rgba(100,116,139,0.3)'}`,
-          boxShadow: questsCompleted > 0 ? '0 2px 10px rgba(234,179,8,0.3)' : 'none',
-          backdropFilter: 'blur(8px)',
-        }}
-      >
-        📋 Quêtes{questsCompleted > 0 ? ` (${questsCompleted})` : ''}
-      </button>
+      {/* Quêtes pill — fixed top-right, only on hunt screen */}
+      {currentView === 'hunt' && (
+        <button
+          onClick={() => handleNavigate('quests')}
+          className="fixed z-[195] flex items-center gap-1.5 font-black"
+          style={{
+            top: 52,
+            right: 10,
+            fontSize: '0.65rem',
+            padding: '4px 10px',
+            borderRadius: 999,
+            background: questsCompleted > 0 ? 'rgba(234,179,8,0.22)' : 'rgba(30,41,59,0.75)',
+            color: questsCompleted > 0 ? '#fbbf24' : '#64748b',
+            border: `1px solid ${questsCompleted > 0 ? 'rgba(234,179,8,0.5)' : 'rgba(100,116,139,0.3)'}`,
+            boxShadow: questsCompleted > 0 ? '0 2px 10px rgba(234,179,8,0.3)' : 'none',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          📋 Quêtes{questsCompleted > 0 ? ` (${questsCompleted})` : ''}
+        </button>
+      )}
 
       {/* Overflow menu sheet with slide-up animation */}
       <div

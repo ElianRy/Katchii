@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
+import { SPARKLE_POSITIONS, ORBIT_POSITIONS } from './ShinySprite';
 
 type Mood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited' | 'scared' | 'proud' | 'hungry' | 'curious';
 
@@ -183,34 +184,41 @@ function ParkSprite({
         <ParkAttackVfx pokemonId={pokemonId} facingRight={!isMine} />
       )}
 
-      {/* Shiny aura — subtle tight ring + 4 orbiting stars */}
+      {/* Shiny aura — same sparkles as ShinySprite */}
       {isShiny && (
-        <div className="absolute pointer-events-none" style={{ inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {/* Thin spinning rainbow ring */}
-          <div style={{
-            position: 'absolute',
-            width: 64, height: 64,
-            borderRadius: '50%',
-            background: 'conic-gradient(from 0deg, #f87171, #fde047, #4ade80, #60a5fa, #c084fc, #f87171)',
-            animation: 'rainbow-spin 2.5s linear infinite',
-            opacity: 0.5,
-            filter: 'blur(1.5px)',
-            mask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))',
-            WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))',
-          }} />
-          {/* 4 orbiting stars */}
-          {[0, 1, 2, 3].map(i => (
-            <div key={i} style={{
-              position: 'absolute',
-              width: 6, height: 6,
-              top: '50%', left: '50%',
-              marginTop: -3, marginLeft: -3,
-              fontSize: 8, lineHeight: 1,
-              color: '#fde047',
-              textShadow: '0 0 4px #fde047',
-              animation: `park-star-orbit-${i} 2.4s linear infinite`,
-            }}>✦</div>
+        <div className="absolute pointer-events-none" style={{ inset: 0 }}>
+          {SPARKLE_POSITIONS.map((sp, i) => (
+            <div
+              key={i}
+              className="shiny-sparkle"
+              style={{
+                top: sp.top,
+                left: sp.left,
+                right: (sp as { right?: string }).right,
+                bottom: (sp as { bottom?: string }).bottom,
+                transform: sp.left === '50%' ? 'translateX(-50%)' : undefined,
+                '--sp-color': sp.color,
+                '--sp-duration': sp.duration,
+                '--sp-delay': sp.delay,
+              } as React.CSSProperties}
+            />
           ))}
+          {ORBIT_POSITIONS.map((sp, i) => (
+            <div
+              key={`o${i}`}
+              className="shiny-sparkle-orbit"
+              style={{
+                top: sp.top,
+                left: sp.left,
+                right: (sp as { right?: string }).right,
+                bottom: (sp as { bottom?: string }).bottom,
+                '--sp-color': sp.color,
+                '--sp-duration': sp.duration,
+                '--sp-delay': sp.delay,
+              } as React.CSSProperties}
+            />
+          ))}
+          <span className="absolute -top-1 -right-1 text-xs" style={{ filter: 'drop-shadow(0 0 3px #fde047)' }}>✨</span>
         </div>
       )}
 
@@ -659,7 +667,17 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
 
     const chan = supabase.channel('pokepark_chat_changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pokepark_chat' }, payload => {
-        setChat(prev => [...prev.slice(-99), payload.new as ChatMessage]);
+        const incoming = payload.new as ChatMessage;
+        setChat(prev => {
+          // Replace optimistic entry (same user + message) if present, else append
+          const optIdx = prev.findIndex(m => m.id.startsWith('opt-') && m.user_id === incoming.user_id && m.message === incoming.message);
+          if (optIdx >= 0) {
+            const next = [...prev];
+            next[optIdx] = incoming;
+            return next;
+          }
+          return [...prev.slice(-99), incoming];
+        });
       }).subscribe();
 
     return () => { supabase.removeChannel(chan); };

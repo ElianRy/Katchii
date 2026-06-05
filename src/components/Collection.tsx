@@ -127,7 +127,7 @@ export function Collection({ state, onClose }: Props) {
                         height={48}
                         style={{
                           imageRendering: 'pixelated',
-                          filter: caught ? 'none' : 'brightness(0) opacity(0.45)',
+                        filter: caught ? 'none' : 'grayscale(1) opacity(0.35)',
                         }}
                         draggable={false}
                       />

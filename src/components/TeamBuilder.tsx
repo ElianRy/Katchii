@@ -597,8 +597,8 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
         )}
 
         <div className="flex gap-2">
-          {/* Big Enregistrer button — opens name input */}
-          {onSaveTeam && (
+          {/* Big Enregistrer button — opens name input (not shown when onConfirm is set) */}
+          {onSaveTeam && !onConfirm && (
             <button
               onClick={() => { if (selected.length > 0) setShowNameInput(v => !v); }}
               disabled={selected.length === 0}
