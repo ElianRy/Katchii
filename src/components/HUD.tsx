@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { GameState } from '../types';
 import type { SaveStatus } from '../lib/cloudSync';
 import { lastSaveError } from '../lib/cloudSync';
@@ -86,6 +87,18 @@ export function HUD({
   onFightBoss,
   saveStatus = 'idle',
 }: Props) {
+  // Impact animation when cooldown just finishes
+  const [showImpact, setShowImpact] = useState(false);
+  const prevCooldown = useRef(cooldownRemaining);
+  useEffect(() => {
+    if (prevCooldown.current > 0 && cooldownRemaining === 0 && !isOnCooldown) {
+      setShowImpact(true);
+      const t = setTimeout(() => setShowImpact(false), 750);
+      return () => clearTimeout(t);
+    }
+    prevCooldown.current = cooldownRemaining;
+  }, [cooldownRemaining, isOnCooldown]);
+
   return (
     <>
       {/* Top-left info */}
@@ -285,6 +298,21 @@ export function HUD({
           </div>
         );
       })()}
+
+      {/* Impact animation after cooldown ends */}
+      {showImpact && (
+        <div className="absolute right-3 z-20 animate-pokeball-impact" style={{ bottom: '84px' }}>
+          <svg width="64" height="82" viewBox="0 0 64 82"
+            style={{ filter: 'drop-shadow(0 0 12px #fbbf24cc)' }}>
+            <path d="M 32 8 A 26 26 0 0 1 58 34 L 38 34 A 6 6 0 0 0 26 34 L 6 34 A 26 26 0 0 1 32 8 Z" fill="#dc2626" />
+            <path d="M 6 34 A 26 26 0 0 0 58 34 L 38 34 A 6 6 0 0 1 26 34 Z" fill="white" />
+            <circle cx="32" cy="34" r="26" fill="none" stroke="#000" strokeWidth="2.5" />
+            <line x1="6" y1="34" x2="58" y2="34" stroke="#000" strokeWidth="2.5" />
+            <circle cx="32" cy="34" r="7" fill="white" stroke="#000" strokeWidth="2" />
+            <circle cx="32" cy="34" r="3" fill="#9ca3af" />
+          </svg>
+        </div>
+      )}
 
       {/* Bottom navigation bar — kept for hunt view, BottomNav in App overlays this */}
       <div className="absolute bottom-0 left-0 right-0 z-20 pointer-events-none" style={{ display: 'none' }}>

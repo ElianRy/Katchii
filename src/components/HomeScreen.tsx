@@ -8,9 +8,10 @@ interface Props {
   onCollection: () => void;
   onProfile: () => void;
   onLogout: () => void;
+  onWrapped: () => void;
 }
 
-export function HomeScreen({ username, onPlay, onCollection, onProfile, onLogout }: Props) {
+export function HomeScreen({ username, onPlay, onCollection, onProfile, onLogout, onWrapped }: Props) {
   const [showPlayers, setShowPlayers] = useState(false);
 
   const handleLogout = async () => {
@@ -90,8 +91,14 @@ export function HomeScreen({ username, onPlay, onCollection, onProfile, onLogout
         </div>
       </div>
 
-      {/* Logout button */}
-      <div className="relative z-10 flex justify-center pb-8">
+      {/* Bottom row: Wrapped + Logout */}
+      <div className="relative z-10 flex items-center justify-between px-6 pb-8">
+        <button
+          onClick={onWrapped}
+          className="text-slate-500 hover:text-yellow-400 text-xs transition-colors flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-yellow-900/20 border border-transparent hover:border-yellow-900/40"
+        >
+          🎁 <span>Récap annuel</span>
+        </button>
         <button
           onClick={handleLogout}
           className="text-slate-500 hover:text-slate-300 text-sm transition-colors px-4 py-2"

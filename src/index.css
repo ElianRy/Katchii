@@ -105,8 +105,11 @@
 }
 
 @keyframes appear {
-  from { transform: translate(-50%, -50%) scale(0) translateY(20px); opacity: 0; }
-  to   { transform: translate(-50%, -50%) scale(1) translateY(0);    opacity: 1; }
+  0%   { transform: translate(-50%, -30%) scale(0.3); opacity: 0; }
+  55%  { transform: translate(-50%, -55%) scale(1.08); opacity: 1; }
+  75%  { transform: translate(-50%, -48%) scale(0.96); }
+  90%  { transform: translate(-50%, -52%) scale(1.02); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
 @keyframes pokeball-wobble {
@@ -118,8 +121,19 @@
 }
 
 @keyframes leave {
-  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -80%) scale(0.7); }
+  0%   { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  30%  { opacity: 0.9; transform: translate(-35%, -60%) scale(0.9) rotate(8deg); }
+  70%  { opacity: 0.4; transform: translate(-20%, -75%) scale(0.65) rotate(18deg); }
+  100% { opacity: 0;   transform: translate(-10%, -95%) scale(0.3) rotate(28deg); }
+}
+
+@keyframes pokeball-impact {
+  0%   { transform: scale(1) translateY(0); }
+  20%  { transform: scale(1.18) translateY(-6px); }
+  45%  { transform: scale(0.88) translateY(4px); }
+  65%  { transform: scale(1.06) translateY(-2px); }
+  80%  { transform: scale(0.97) translateY(1px); }
+  100% { transform: scale(1) translateY(0); opacity: 0; }
 }
 
 @keyframes aura-pulse {
@@ -235,11 +249,15 @@
 }
 
 .animate-appear {
-  animation: appear 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: appear 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .animate-leave {
-  animation: leave 0.8s ease-in forwards;
+  animation: leave 0.65s ease-in forwards;
+}
+
+.animate-pokeball-impact {
+  animation: pokeball-impact 0.7s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
 }
 
 .animate-bush {

@@ -126,6 +126,7 @@ export function App() {
           onCollection={() => persistView('collection')}
           onProfile={() => setView('profile')}
           onLogout={handleLogout}
+          onWrapped={() => persistView('wrapped')}
         />
       )}
 
