@@ -179,6 +179,12 @@
   100% { opacity: 0; transform: translateX(-50%) translateY(-40px); }
 }
 
+/* Park shiny aura — orbiting stars */
+@keyframes park-star-orbit-0 { 0%{transform:rotate(0deg) translateX(24px)} 100%{transform:rotate(360deg) translateX(24px)} }
+@keyframes park-star-orbit-1 { 0%{transform:rotate(90deg) translateX(24px)} 100%{transform:rotate(450deg) translateX(24px)} }
+@keyframes park-star-orbit-2 { 0%{transform:rotate(180deg) translateX(24px)} 100%{transform:rotate(540deg) translateX(24px)} }
+@keyframes park-star-orbit-3 { 0%{transform:rotate(270deg) translateX(24px)} 100%{transform:rotate(630deg) translateX(24px)} }
+
 @keyframes rainbow-pulse {
   0%, 100% { opacity: 0.55; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.08); }

@@ -27,7 +27,7 @@ const MENU_ITEMS = [
   { view: 'raid'   as View, icon: '🐉', label: 'Raid',     color: '#f87171' },
 ];
 
-type Mood = 'happy' | 'sleep' | 'attack';
+type NavMood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited';
 
 const TYPE_ATTACK_EMOJI: Record<string, string> = {
   fire: '🔥', water: '💧', grass: '🌿', electric: '⚡', ice: '❄️',
@@ -35,46 +35,73 @@ const TYPE_ATTACK_EMOJI: Record<string, string> = {
   bug: '🐛', rock: '🪨', ghost: '👻', dragon: '🐉', normal: '⭐',
 };
 
-interface FloatingHeart {
-  id: number;
-  x: number;
-}
+interface FloatingHeart { id: number; x: number }
+interface AttackEmoji { id: number; emoji: string }
 
-interface AttackEmoji {
-  id: number;
-  emoji: string;
+function ShinyAura() {
+  return (
+    <>
+      {/* Tight rotating rainbow ring */}
+      <div className="absolute pointer-events-none" style={{
+        inset: -3,
+        borderRadius: '50%',
+        background: 'conic-gradient(from 0deg, #f87171, #fb923c, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
+        animation: 'rainbow-spin 2s linear infinite',
+        opacity: 0.7,
+        filter: 'blur(2px)',
+      }} />
+      {/* 4 orbiting stars */}
+      {[0, 1, 2, 3].map(i => (
+        <div key={i} className="absolute pointer-events-none" style={{
+          width: 6,
+          height: 6,
+          top: '50%',
+          left: '50%',
+          marginTop: -3,
+          marginLeft: -3,
+          animation: `nav-star-orbit-${i} 2.4s linear infinite`,
+          fontSize: 8,
+          lineHeight: 1,
+          color: '#fde047',
+        }}>✦</div>
+      ))}
+    </>
+  );
 }
 
 function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: boolean }) {
   const [posX, setPosX] = useState(50);
-  const [mood, setMood] = useState<Mood>('happy');
+  const [mood, setMood] = useState<NavMood>('happy');
   const [facingRight, setFacingRight] = useState(true);
   const [hearts, setHearts] = useState<FloatingHeart[]>([]);
   const [attacks, setAttacks] = useState<AttackEmoji[]>([]);
-  const lastClickRef = useRef<number>(0);
+  const lastTapRef = useRef<number>(0);
   const heartCounterRef = useRef(0);
   const attackCounterRef = useRef(0);
+  const posXRef = useRef(50);
 
   const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${isShiny ? 'shiny/' : ''}${pokemonId}.png`;
 
-  // Change position every 3s
+  // Move every 6s (slower)
   useEffect(() => {
     const id = setInterval(() => {
       setPosX(prev => {
-        const next = 10 + Math.random() * 80;
-        setFacingRight(next > prev);
+        const next = 8 + Math.random() * 82;
+        const goRight = next > prev;
+        setFacingRight(goRight);
+        posXRef.current = next;
         return next;
       });
-    }, 3000);
+    }, 6000);
     return () => clearInterval(id);
   }, []);
 
-  // Change mood every 15-25s
+  // Change mood every 12-20s
   useEffect(() => {
-    const schedule = () => {
-      const delay = 15000 + Math.random() * 10000;
+    const schedule = (): ReturnType<typeof setTimeout> => {
+      const delay = 12000 + Math.random() * 8000;
       return setTimeout(() => {
-        const moods: Mood[] = ['happy', 'sleep', 'attack'];
+        const moods: NavMood[] = ['happy', 'happy', 'sleep', 'attack', 'dance', 'excited'];
         setMood(moods[Math.floor(Math.random() * moods.length)]);
         timeoutRef.current = schedule();
       }, delay);
@@ -83,7 +110,7 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
     return () => clearTimeout(timeoutRef.current);
   }, []);
 
-  // Attack emojis every 2.5s when in attack mood
+  // Attack emojis when in attack mood
   useEffect(() => {
     if (mood !== 'attack') return;
     const id = setInterval(() => {
@@ -92,109 +119,116 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
       const emoji = TYPE_ATTACK_EMOJI[type] ?? '⭐';
       const newId = attackCounterRef.current++;
       setAttacks(prev => [...prev, { id: newId, emoji }]);
-      setTimeout(() => {
-        setAttacks(prev => prev.filter(a => a.id !== newId));
-      }, 1200);
-    }, 2500);
+      setTimeout(() => setAttacks(prev => prev.filter(a => a.id !== newId)), 1000);
+    }, 2000);
     return () => clearInterval(id);
   }, [mood, pokemonId]);
 
   const handleClick = useCallback(() => {
     const now = Date.now();
-    if (now - lastClickRef.current < 400) {
-      // Double tap — spawn 3 hearts
-      const newHearts: FloatingHeart[] = Array.from({ length: 3 }, () => {
-        const id = heartCounterRef.current++;
-        return { id, x: (Math.random() - 0.5) * 30 };
-      });
+    const delta = now - lastTapRef.current;
+    lastTapRef.current = now;
+    if (delta < 500) {
+      const newHearts: FloatingHeart[] = Array.from({ length: 5 }, () => ({
+        id: heartCounterRef.current++,
+        x: (Math.random() - 0.5) * 40,
+      }));
       setHearts(prev => [...prev, ...newHearts]);
       setTimeout(() => {
         setHearts(prev => prev.filter(h => !newHearts.some(nh => nh.id === h.id)));
-      }, 1200);
+      }, 1400);
     }
-    lastClickRef.current = now;
   }, []);
 
-  let spriteAnim = 'bounce-pokemon 1.8s ease-in-out infinite';
-  if (mood === 'sleep') spriteAnim = 'none';
-  if (mood === 'attack') spriteAnim = 'wiggle 0.4s ease-in-out infinite';
+  const MOOD_ANIM: Record<NavMood, string> = {
+    happy:   'bounce-pokemon 1.8s ease-in-out infinite',
+    excited: 'bounce-pokemon 0.6s ease-in-out infinite',
+    dance:   'sway 1.0s ease-in-out infinite',
+    attack:  'wiggle 0.4s ease-in-out infinite',
+    sleep:   'none',
+  };
+
+  const MOOD_BADGE: Record<NavMood, string | null> = {
+    happy:   null,
+    excited: '✨',
+    dance:   '🎵',
+    attack:  null,
+    sleep:   '💤',
+  };
+
+  const badge = MOOD_BADGE[mood];
+  const spriteAnim = MOOD_ANIM[mood];
+  const flipTransform = facingRight ? 'scaleX(1)' : 'scaleX(-1)';
 
   return (
     <div
       style={{
         position: 'absolute',
-        bottom: 64,
+        bottom: 68,
         left: `${posX}%`,
         transform: 'translateX(-50%)',
-        transition: 'left 1.2s ease-in-out',
+        transition: 'left 3s ease-in-out',
         zIndex: 10,
         cursor: 'pointer',
         userSelect: 'none',
+        touchAction: 'manipulation',
       }}
       onClick={handleClick}
     >
       {/* Floating hearts */}
       {hearts.map(h => (
-        <div
-          key={h.id}
-          style={{
-            position: 'absolute',
-            bottom: 36,
-            left: `calc(50% + ${h.x}px)`,
-            transform: 'translateX(-50%)',
-            fontSize: 14,
-            animation: 'float-heart 1.2s ease-out forwards',
-            pointerEvents: 'none',
-          }}
-        >
-          ❤️
-        </div>
+        <div key={h.id} style={{
+          position: 'absolute',
+          bottom: 54,
+          left: `calc(50% + ${h.x}px)`,
+          transform: 'translateX(-50%)',
+          fontSize: 14,
+          animation: 'float-heart 1.4s ease-out forwards',
+          pointerEvents: 'none',
+        }}>❤️</div>
       ))}
 
       {/* Attack emojis */}
       {attacks.map(a => (
-        <div
-          key={a.id}
-          style={{
-            position: 'absolute',
-            bottom: 36,
-            left: facingRight ? '100%' : '-40%',
-            fontSize: 16,
-            animation: 'float-heart 1.2s ease-out forwards',
-            pointerEvents: 'none',
-          }}
-        >
-          {a.emoji}
-        </div>
+        <div key={a.id} style={{
+          position: 'absolute',
+          bottom: 30,
+          left: facingRight ? '110%' : '-30%',
+          fontSize: 18,
+          animation: `nav-attack-${facingRight ? 'r' : 'l'} 1s ease-out forwards`,
+          pointerEvents: 'none',
+        }}>{a.emoji}</div>
       ))}
 
-      {/* Zzz for sleep */}
-      {mood === 'sleep' && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 32,
-            left: '60%',
-            fontSize: 12,
-            animation: 'float-heart 2s ease-out infinite',
-            pointerEvents: 'none',
-            opacity: 0.85,
-          }}
-        >
-          💤
+      {/* Mood badge */}
+      {badge && (
+        <div style={{
+          position: 'absolute',
+          bottom: 52,
+          left: '60%',
+          fontSize: 13,
+          animation: 'zzz-float 2s ease-in-out infinite',
+          pointerEvents: 'none',
+        }}>{badge}</div>
+      )}
+
+      {/* Shiny aura */}
+      {isShiny && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ShinyAura />
         </div>
       )}
 
       <img
         src={spriteUrl}
-        width={32}
-        height={32}
+        width={52}
+        height={52}
         style={{
           imageRendering: 'pixelated',
-          transform: facingRight ? undefined : 'scaleX(-1)',
+          transform: flipTransform,
           animation: spriteAnim,
           display: 'block',
-          filter: isShiny ? 'drop-shadow(0 0 4px #fde047)' : undefined,
+          filter: isShiny ? 'drop-shadow(0 0 5px #fde047) drop-shadow(0 0 10px #f0abfc88)' : 'drop-shadow(0 0 3px rgba(255,255,255,0.3))',
         }}
         draggable={false}
         alt=""
@@ -207,6 +241,7 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
   const [menuOpen, setMenuOpen] = useState(false);
 
   const inMenu = MENU_ITEMS.some(i => i.view === currentView);
+  const hideCompanion = currentView === 'pokepark';
 
   const handleNavigate = (view: View) => {
     setMenuOpen(false);
@@ -215,56 +250,62 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
 
   return (
     <>
-      {/* Overflow menu sheet */}
-      {menuOpen && (
+      {/* Overflow menu sheet with slide-up animation */}
+      <div
+        className="fixed inset-0 z-[190]"
+        style={{ pointerEvents: menuOpen ? 'auto' : 'none' }}
+        onClick={() => setMenuOpen(false)}
+      >
         <div
-          className="fixed inset-0 z-[190]"
-          onClick={() => setMenuOpen(false)}
+          className="absolute bottom-[72px] left-0 right-0 bg-black/95 border-t border-slate-700/60 backdrop-blur-sm px-4 py-3"
+          style={{
+            transform: menuOpen ? 'translateY(0)' : 'translateY(100%)',
+            opacity: menuOpen ? 1 : 0,
+            transition: 'transform 0.28s cubic-bezier(0.32,0.72,0,1), opacity 0.2s ease',
+          }}
+          onClick={e => e.stopPropagation()}
         >
-          <div
-            className="absolute bottom-[72px] left-0 right-0 bg-black/95 border-t border-slate-700/60 backdrop-blur-sm px-4 py-3"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="grid grid-cols-3 gap-2">
-              {MENU_ITEMS.map(item => (
-                <button
-                  key={item.view}
-                  onClick={() => handleNavigate(item.view)}
-                  className={`flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all ${
-                    currentView === item.view ? 'bg-white/10 ring-1 ring-white/20' : 'bg-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <span className="text-2xl leading-none">{item.icon}</span>
-                  <span className="text-xs font-bold" style={{ color: item.color }}>{item.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Quests inside menu */}
-            <div className="mt-2 pt-2 border-t border-slate-700/40 flex justify-center">
+          <div className="grid grid-cols-3 gap-2">
+            {MENU_ITEMS.map(item => (
               <button
-                onClick={() => handleNavigate('quests')}
-                className={`relative flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-                  currentView === 'quests' ? 'bg-green-900/40 text-green-300' : 'text-slate-400 hover:text-green-300'
+                key={item.view}
+                onClick={() => handleNavigate(item.view)}
+                className={`flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all ${
+                  currentView === item.view ? 'bg-white/10 ring-1 ring-white/20' : 'bg-white/5 active:bg-white/10'
                 }`}
               >
-                <span>📋</span>
-                <span>Quêtes</span>
-                {questsCompleted > 0 && (
-                  <span className="bg-yellow-500 text-black text-[0.5rem] font-black rounded-full w-4 h-4 flex items-center justify-center">
-                    {questsCompleted}
-                  </span>
-                )}
+                <span className="text-2xl leading-none">{item.icon}</span>
+                <span className="text-xs font-bold" style={{ color: item.color }}>{item.label}</span>
               </button>
-            </div>
+            ))}
           </div>
+        </div>
+      </div>
+
+      {/* Quests pill — always visible above menu button, outside menu sheet */}
+      {(questsCompleted > 0 || currentView === 'quests') && (
+        <div
+          className="fixed z-[195]"
+          style={{ bottom: 72 + 4, right: 8 }}
+        >
+          <button
+            onClick={() => { setMenuOpen(false); onNavigate('quests'); }}
+            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.55rem] font-black"
+            style={{
+              background: 'rgba(234,179,8,0.9)',
+              color: '#000',
+              boxShadow: '0 2px 8px rgba(234,179,8,0.5)',
+            }}
+          >
+            📋 {questsCompleted > 0 ? questsCompleted : ''}
+          </button>
         </div>
       )}
 
       {/* Main nav bar */}
       <div className="fixed bottom-0 left-0 right-0 z-[200] pointer-events-none" style={{ height: BOTTOM_NAV_HEIGHT }}>
         {/* Favorite pokemon wandering above the nav */}
-        {favoritePokemon && (
+        {favoritePokemon && !hideCompanion && (
           <FavoritePokemon
             pokemonId={favoritePokemon.pokemonId}
             isShiny={favoritePokemon.isShiny}
@@ -284,71 +325,63 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
             <button
               key={item.view}
               onClick={() => handleNavigate(item.view)}
-              className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${item.color} ${
-                currentView === item.view ? 'hover:bg-white/5' : 'hover:bg-white/5'
-              }`}
+              className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${item.color} hover:bg-white/5`}
             >
               <span className="text-2xl leading-none">{item.icon}</span>
               <span className="text-[0.6rem] font-bold leading-none">{item.label}</span>
-              {/* Active dot indicator */}
               {currentView === item.view && (
-                <span
-                  className="absolute"
-                  style={{
-                    bottom: 2,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 4,
-                    height: 4,
-                    borderRadius: '50%',
-                    background: 'white',
-                    opacity: 0.9,
-                  }}
-                />
+                <span className="absolute" style={{
+                  bottom: 2, left: '50%', transform: 'translateX(-50%)',
+                  width: 4, height: 4, borderRadius: '50%', background: 'white', opacity: 0.9,
+                }} />
               )}
             </button>
           ))}
 
           {/* Menu "···" button */}
-          <div className="flex flex-col items-center gap-0.5">
-            <button
-              onClick={() => setMenuOpen(o => !o)}
-              className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${
-                menuOpen || inMenu ? 'text-white' : 'text-slate-400 hover:bg-white/5'
-              }`}
-            >
-              <span className="text-2xl leading-none font-black tracking-widest">···</span>
-              <span className="text-[0.6rem] font-bold leading-none">Menu</span>
-              {(questsCompleted > 0 || inMenu) && (
-                <span className={`absolute top-1 right-1 w-2 h-2 rounded-full ${questsCompleted > 0 ? 'bg-yellow-500' : 'bg-slate-500'}`} />
-              )}
-              {/* Active dot for menu */}
-              {inMenu && (
-                <span
-                  className="absolute"
-                  style={{
-                    bottom: 2,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 4,
-                    height: 4,
-                    borderRadius: '50%',
-                    background: 'white',
-                    opacity: 0.9,
-                  }}
-                />
-              )}
-            </button>
-          </div>
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${
+              menuOpen || inMenu ? 'text-white' : 'text-slate-400 hover:bg-white/5'
+            }`}
+          >
+            <span className="text-2xl leading-none font-black tracking-widest" style={{
+              transform: menuOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+              transition: 'transform 0.25s ease',
+              display: 'inline-block',
+            }}>···</span>
+            <span className="text-[0.6rem] font-bold leading-none">Menu</span>
+            {questsCompleted > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-500" />
+            )}
+            {inMenu && (
+              <span className="absolute" style={{
+                bottom: 2, left: '50%', transform: 'translateX(-50%)',
+                width: 4, height: 4, borderRadius: '50%', background: 'white', opacity: 0.9,
+              }} />
+            )}
+          </button>
         </div>
       </div>
 
-      {/* Keyframes for floating hearts */}
       <style>{`
         @keyframes float-heart {
           0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
-          100% { opacity: 0; transform: translateX(-50%) translateY(-40px); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(-50px); }
         }
+        @keyframes nav-attack-r {
+          0%   { opacity: 1; transform: translate(0, 0) scale(1); }
+          100% { opacity: 0; transform: translate(40px, -20px) scale(0.4); }
+        }
+        @keyframes nav-attack-l {
+          0%   { opacity: 1; transform: translate(0, 0) scale(1); }
+          100% { opacity: 0; transform: translate(-40px, -20px) scale(0.4); }
+        }
+        /* Orbiting stars for shiny aura */
+        @keyframes nav-star-orbit-0 { 0%{transform:rotate(0deg) translateX(18px)} 100%{transform:rotate(360deg) translateX(18px)} }
+        @keyframes nav-star-orbit-1 { 0%{transform:rotate(90deg) translateX(18px)} 100%{transform:rotate(450deg) translateX(18px)} }
+        @keyframes nav-star-orbit-2 { 0%{transform:rotate(180deg) translateX(18px)} 100%{transform:rotate(540deg) translateX(18px)} }
+        @keyframes nav-star-orbit-3 { 0%{transform:rotate(270deg) translateX(18px)} 100%{transform:rotate(630deg) translateX(18px)} }
       `}</style>
     </>
   );

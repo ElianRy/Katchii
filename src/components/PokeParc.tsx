@@ -183,28 +183,35 @@ function ParkSprite({
         <ParkAttackVfx pokemonId={pokemonId} facingRight={!isMine} />
       )}
 
-      {/* Shiny aura — small tight glow */}
+      {/* Shiny aura — subtle tight ring + 4 orbiting stars */}
       {isShiny && (
-        <>
-          <div className="absolute pointer-events-none" style={{
-            inset: -4, borderRadius: '50%',
-            background: 'conic-gradient(from 0deg, #f87171, #fb923c, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
-            animation: 'rainbow-spin 2s linear infinite',
-            opacity: 0.55, filter: 'blur(3px)',
+        <div className="absolute pointer-events-none" style={{ inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Thin spinning rainbow ring */}
+          <div style={{
+            position: 'absolute',
+            width: 64, height: 64,
+            borderRadius: '50%',
+            background: 'conic-gradient(from 0deg, #f87171, #fde047, #4ade80, #60a5fa, #c084fc, #f87171)',
+            animation: 'rainbow-spin 2.5s linear infinite',
+            opacity: 0.5,
+            filter: 'blur(1.5px)',
+            mask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))',
+            WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 3px), black calc(100% - 3px))',
           }} />
-          {/* Sparkle stars */}
-          {[
-            { top: '-10px', left: '50%', delay: '0s' },
-            { top: '10%',  right: '-10px', delay: '0.4s' },
-            { bottom: '-8px', left: '50%', delay: '0.8s' },
-            { top: '10%',  left: '-10px', delay: '1.2s' },
-          ].map((pos, i) => (
-            <div key={i} className="absolute pointer-events-none text-yellow-300 leading-none"
-              style={{ ...pos, fontSize: '0.65rem', animation: `zzz-float 1.2s ${pos.delay} ease-in-out infinite` }}>
-              ✦
-            </div>
+          {/* 4 orbiting stars */}
+          {[0, 1, 2, 3].map(i => (
+            <div key={i} style={{
+              position: 'absolute',
+              width: 6, height: 6,
+              top: '50%', left: '50%',
+              marginTop: -3, marginLeft: -3,
+              fontSize: 8, lineHeight: 1,
+              color: '#fde047',
+              textShadow: '0 0 4px #fde047',
+              animation: `park-star-orbit-${i} 2.4s linear infinite`,
+            }}>✦</div>
           ))}
-        </>
+        </div>
       )}
 
       {/* Sprite */}
@@ -720,7 +727,6 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
   const sendChat = async () => {
     const msg = chatInput.trim();
     if (!msg) return;
-    // Resolve userId now in case state hasn't loaded yet
     let uid = myUserId;
     if (!uid) {
       const { data: { user } } = await supabase.auth.getUser();
@@ -729,12 +735,25 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
       setMyUserId(uid);
     }
     setChatInput('');
+    // Optimistic update — show immediately without waiting for realtime
+    const optimistic: ChatMessage = {
+      id: `opt-${Date.now()}`,
+      user_id: uid,
+      username,
+      message: msg,
+      created_at: new Date().toISOString(),
+    };
+    setChat(prev => [...prev.slice(-99), optimistic]);
     const { error } = await supabase.from('pokepark_chat').insert({
       user_id: uid,
       username,
       message: msg,
     });
-    if (error) console.error('[chat] insert error:', error.message);
+    if (error) {
+      console.error('[chat] insert error:', error.message, error.code, error.details);
+      // Revert optimistic on error
+      setChat(prev => prev.filter(m => m.id !== optimistic.id));
+    }
   };
 
   const handleWave = () => {
