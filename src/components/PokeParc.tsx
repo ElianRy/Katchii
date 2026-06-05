@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 
-type Mood = 'happy' | 'sleep' | 'attack';
+type Mood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited' | 'scared' | 'proud' | 'hungry' | 'curious';
 
 interface PresenceRow {
   user_id: string;
@@ -69,10 +69,18 @@ function ParkSprite({
   const rarityColor = data ? RARITY_COLORS[data.rarity] : '#6b7280';
   const [err, setErr] = useState(false);
 
-  let spriteAnim = '';
-  if (mood === 'happy') spriteAnim = 'bounce-pokemon 1.4s ease-in-out infinite';
-  else if (mood === 'attack') spriteAnim = 'wiggle 0.6s ease-in-out infinite';
-  // sleep: no anim
+  const MOOD_ANIM: Record<Mood, string> = {
+    happy:   'bounce-pokemon 1.4s ease-in-out infinite',
+    excited: 'bounce-pokemon 0.6s ease-in-out infinite',
+    dance:   'sway 1.0s ease-in-out infinite',
+    attack:  'wiggle 0.5s ease-in-out infinite',
+    scared:  'wiggle 0.3s ease-in-out infinite',
+    proud:   'float 3s ease-in-out infinite',
+    hungry:  'hop 2s ease-in-out infinite',
+    curious: 'sway 2.5s ease-in-out infinite',
+    sleep:   '',
+  };
+  const spriteAnim = MOOD_ANIM[mood] ?? '';
 
   const filter = isShiny
     ? 'drop-shadow(0 0 8px #fde047) drop-shadow(0 0 16px #f0abfc88)'
@@ -91,11 +99,24 @@ function ParkSprite({
         </div>
       )}
 
-      {/* Sleep Zzz */}
+      {/* Mood overlay badges */}
       {mood === 'sleep' && (
-        <div className="absolute -top-5 -right-2 text-xs font-black text-blue-300" style={{ animation: 'zzz-float 2s ease-in-out infinite' }}>
-          Zzz
-        </div>
+        <div className="absolute -top-5 -right-2 text-xs font-black text-blue-300" style={{ animation: 'zzz-float 2s ease-in-out infinite' }}>Zzz</div>
+      )}
+      {mood === 'hungry' && (
+        <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-sm" style={{ animation: 'zzz-float 1.5s ease-in-out infinite' }}>🍖</div>
+      )}
+      {mood === 'excited' && (
+        <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-sm" style={{ animation: 'zzz-float 0.8s ease-in-out infinite' }}>✨</div>
+      )}
+      {mood === 'scared' && (
+        <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-sm" style={{ animation: 'zzz-float 0.5s ease-in-out infinite' }}>😰</div>
+      )}
+      {mood === 'dance' && (
+        <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-sm" style={{ animation: 'zzz-float 1s ease-in-out infinite' }}>🎵</div>
+      )}
+      {mood === 'proud' && (
+        <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-sm" style={{ animation: 'zzz-float 3s ease-in-out infinite' }}>👑</div>
       )}
 
       {/* Shiny rainbow aura */}
@@ -298,9 +319,9 @@ function RaceModal({
 
 // ---- Interaction Modal ----
 function InteractionModal({
-  target, onWave, onRace, onClose,
+  target, onWave, onRace, onDuel, onClose,
 }: {
-  target: InteractionTarget; onWave: () => void; onRace: () => void; onClose: () => void;
+  target: InteractionTarget; onWave: () => void; onRace: () => void; onDuel: () => void; onClose: () => void;
 }) {
   const data = POKEMON_BY_ID[target.pokemonId];
   return (
@@ -318,14 +339,142 @@ function InteractionModal({
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <button onClick={onWave} className="py-3 rounded-xl bg-blue-600/80 text-white font-bold text-sm flex flex-col items-center gap-1">
             <span className="text-2xl">👋</span>Saluer
+          </button>
+          <button onClick={onDuel} className="py-3 rounded-xl bg-red-600/80 text-white font-bold text-sm flex flex-col items-center gap-1">
+            <span className="text-2xl">⚔️</span>Duel
           </button>
           <button onClick={onRace} className="py-3 rounded-xl bg-yellow-500/80 text-black font-bold text-sm flex flex-col items-center gap-1">
             <span className="text-2xl">🏁</span>Course
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- Duel Modal ----
+function DuelModal({
+  myPokemonId, myIsShiny, myLevel, myRarity,
+  opponentPokemonId, opponentIsShiny, opponentLevel, opponentRarity, opponentName,
+  onClose,
+}: {
+  myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity: string;
+  opponentPokemonId: number; opponentIsShiny: boolean; opponentLevel: number; opponentRarity: string;
+  opponentName: string; onClose: () => void;
+}) {
+  const myData = POKEMON_BY_ID[myPokemonId];
+  const oppData = POKEMON_BY_ID[opponentPokemonId];
+  const myScore = myLevel * (RARITY_SCORE[myRarity] ?? 1);
+  const oppScore = opponentLevel * (RARITY_SCORE[opponentRarity] ?? 1);
+  const myWinPct = myScore / (myScore + oppScore);
+
+  // Simulate battle: alternate hits, higher score = more damage per hit
+  const MAX_HP = 100;
+  const [myHp, setMyHp] = useState(MAX_HP);
+  const [oppHp, setOppHp] = useState(MAX_HP);
+  const [log, setLog] = useState<Array<{ text: string; color: string }>>([]);
+  const [phase, setPhase] = useState<'battle' | 'result'>('battle');
+  const [winner, setWinner] = useState<'me' | 'opponent' | null>(null);
+  const turnRef = useRef(0);
+  const myHpRef = useRef(MAX_HP);
+  const oppHpRef = useRef(MAX_HP);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (myHpRef.current <= 0 || oppHpRef.current <= 0) return;
+      turnRef.current += 1;
+      const isMyTurn = turnRef.current % 2 === 1;
+
+      const baseDmg = isMyTurn
+        ? Math.max(5, Math.round(8 + myWinPct * 12 + Math.random() * 8))
+        : Math.max(5, Math.round(8 + (1 - myWinPct) * 12 + Math.random() * 8));
+
+      if (isMyTurn) {
+        oppHpRef.current = Math.max(0, oppHpRef.current - baseDmg);
+        setOppHp(oppHpRef.current);
+        setLog(prev => [...prev.slice(-6), { text: `${myData?.name ?? 'Toi'} inflige ${baseDmg} dégâts !`, color: '#4ade80' }]);
+      } else {
+        myHpRef.current = Math.max(0, myHpRef.current - baseDmg);
+        setMyHp(myHpRef.current);
+        setLog(prev => [...prev.slice(-6), { text: `${oppData?.name ?? opponentName} inflige ${baseDmg} dégâts !`, color: '#f87171' }]);
+      }
+
+      if (myHpRef.current <= 0 || oppHpRef.current <= 0) {
+        clearInterval(interval);
+        const w = oppHpRef.current <= 0 ? 'me' : 'opponent';
+        setWinner(w);
+        setPhase('result');
+      }
+    }, 600);
+    return () => clearInterval(interval);
+  }, []);
+
+  const hpColor = (pct: number) => pct > 0.5 ? '#4ade80' : pct > 0.25 ? '#facc15' : '#ef4444';
+
+  return (
+    <div className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80">
+      <div className="bg-slate-800 rounded-2xl border border-red-500/40 shadow-2xl p-5 w-80 max-w-[95vw]">
+        <div className="text-center font-black text-red-400 text-lg mb-3">⚔️ Duel Pokémon !</div>
+
+        {/* HP bars */}
+        <div className="space-y-2 mb-3">
+          <div>
+            <div className="flex justify-between text-xs mb-0.5">
+              <span className="text-yellow-400 font-bold">Toi — {myData?.name}</span>
+              <span className="text-slate-300">{myHp}/100</span>
+            </div>
+            <div className="w-full bg-slate-700 rounded-full h-2.5">
+              <div className="h-2.5 rounded-full transition-all duration-300" style={{ width: `${myHp}%`, background: hpColor(myHp / 100) }} />
+            </div>
+          </div>
+          <div>
+            <div className="flex justify-between text-xs mb-0.5">
+              <span className="text-slate-300 font-bold">{opponentName} — {oppData?.name}</span>
+              <span className="text-slate-300">{oppHp}/100</span>
+            </div>
+            <div className="w-full bg-slate-700 rounded-full h-2.5">
+              <div className="h-2.5 rounded-full transition-all duration-300" style={{ width: `${oppHp}%`, background: hpColor(oppHp / 100) }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Sprites */}
+        <div className="flex justify-around items-center mb-3">
+          <div className="flex flex-col items-center gap-1">
+            <img src={getSpriteUrl(myPokemonId, myIsShiny)} width={52} height={52}
+              style={{ imageRendering: 'pixelated', opacity: myHp <= 0 ? 0.3 : 1 }} alt="" />
+          </div>
+          <div className="text-2xl font-black text-slate-500">VS</div>
+          <div className="flex flex-col items-center gap-1">
+            <img src={getSpriteUrl(opponentPokemonId, opponentIsShiny)} width={52} height={52}
+              style={{ imageRendering: 'pixelated', transform: 'scaleX(-1)', opacity: oppHp <= 0 ? 0.3 : 1 }} alt="" />
+          </div>
+        </div>
+
+        {/* Battle log */}
+        <div className="bg-black/40 rounded-lg px-3 py-2 mb-3 min-h-[60px]">
+          {log.slice(-3).map((l, i) => (
+            <div key={i} className="text-xs" style={{ color: l.color }}>{l.text}</div>
+          ))}
+        </div>
+
+        {phase === 'result' && (
+          <div className="text-center">
+            <div className="text-4xl mb-1">{winner === 'me' ? '🏆' : '💀'}</div>
+            <div className="font-black text-lg mb-3" style={{ color: winner === 'me' ? '#fbbf24' : '#ef4444' }}>
+              {winner === 'me' ? 'VICTOIRE !' : 'Défaite…'}
+            </div>
+            <button onClick={onClose} className="px-6 py-2 rounded-xl bg-slate-600 text-white font-bold text-sm">
+              Fermer
+            </button>
+          </div>
+        )}
+        {phase === 'battle' && (
+          <div className="text-center text-xs text-slate-500 animate-pulse">Combat en cours…</div>
+        )}
       </div>
     </div>
   );
@@ -378,6 +527,7 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
   const [interactionTarget, setInteractionTarget] = useState<InteractionTarget | null>(null);
   const [waveTarget, setWaveTarget] = useState<string | null>(null);
   const [showRace, setShowRace] = useState(false);
+  const [showDuel, setShowDuel] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const wanderRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -438,9 +588,14 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
       if (wanderRef.current) clearInterval(wanderRef.current);
       return;
     }
+    const MOOD_SPEED: Record<Mood, number> = {
+      attack: 10, excited: 9, scared: 11, dance: 5,
+      happy: 4, hungry: 6, curious: 3, proud: 2, sleep: 0,
+    };
+    const speed = MOOD_SPEED[mood] ?? 4;
+    const interval = mood === 'dance' ? 1500 : mood === 'proud' ? 4000 : 2500;
     wanderRef.current = setInterval(() => {
       setMyPos(prev => {
-        const speed = mood === 'attack' ? 8 : 4;
         const dx = (Math.random() - 0.5) * speed;
         const dy = (Math.random() - 0.5) * speed;
         return {
@@ -448,7 +603,7 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
           y: Math.max(10, Math.min(70, prev.y + dy)),
         };
       });
-    }, 2500);
+    }, interval);
     return () => { if (wanderRef.current) clearInterval(wanderRef.current); };
   }, [mood]);
 
@@ -504,31 +659,50 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
     setShowRace(true);
   };
 
+  const handleDuel = () => {
+    if (!interactionTarget) return;
+    setShowDuel(true);
+  };
+
   const others = presence.filter(p => p.user_id !== myUserId);
   const mySpriteData = myFav ? POKEMON_BY_ID[myFav.pokemonId] : null;
 
   return (
     <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col" style={{ height: '100dvh' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-black/60 border-b border-slate-700/60 shrink-0">
-        <div className="font-black text-yellow-400 text-base">🌿 PokéParc</div>
-        <div className="flex items-center gap-2">
-          {/* Mood selector */}
-          {(['happy', 'sleep', 'attack'] as Mood[]).map(m => (
-            <button
-              key={m}
-              onClick={() => setMood(m)}
-              className="text-xs px-2 py-1 rounded-lg font-bold transition-all"
-              style={{
-                background: mood === m ? '#fbbf24' : 'rgba(255,255,255,0.08)',
-                color: mood === m ? '#000' : '#94a3b8',
-              }}
-            >
-              {m === 'happy' ? '😄' : m === 'sleep' ? '😴' : '⚔️'}
-            </button>
-          ))}
-        </div>
+      <div className="flex items-center justify-between px-3 py-2 bg-black/60 border-b border-slate-700/60 shrink-0">
+        <div className="font-black text-yellow-400 text-sm">🌿 PokéParc</div>
         <button onClick={onClose} className="text-slate-400 text-xl font-black px-2">✕</button>
+      </div>
+
+      {/* Mood bar */}
+      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 border-b border-slate-700/30 shrink-0 overflow-x-auto">
+        <span className="text-xs text-slate-500 shrink-0 mr-1">Humeur :</span>
+        {([
+          ['happy',   '😄', 'Joyeux'],
+          ['sleep',   '😴', 'Dors'],
+          ['attack',  '⚔️', 'Agressif'],
+          ['dance',   '💃', 'Danse'],
+          ['excited', '🤩', 'Excité'],
+          ['scared',  '😰', 'Effrayé'],
+          ['proud',   '👑', 'Fier'],
+          ['hungry',  '🍖', 'Affamé'],
+          ['curious', '🔍', 'Curieux'],
+        ] as [Mood, string, string][]).map(([m, icon, label]) => (
+          <button
+            key={m}
+            onClick={() => setMood(m)}
+            className="shrink-0 flex flex-col items-center px-2 py-0.5 rounded-lg transition-all"
+            style={{
+              background: mood === m ? '#fbbf24' : 'rgba(255,255,255,0.07)',
+              color: mood === m ? '#000' : '#94a3b8',
+              minWidth: 44,
+            }}
+          >
+            <span className="text-base leading-none">{icon}</span>
+            <span className="text-[0.48rem] font-bold mt-0.5">{label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Main content: field + chat */}
@@ -692,11 +866,12 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
         />
       )}
 
-      {interactionTarget && !showRace && (
+      {interactionTarget && !showRace && !showDuel && (
         <InteractionModal
           target={interactionTarget}
           onWave={handleWave}
           onRace={handleRace}
+          onDuel={handleDuel}
           onClose={() => setInteractionTarget(null)}
         />
       )}
@@ -713,6 +888,21 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
           opponentRarity={interactionTarget.rarity}
           opponentName={interactionTarget.username}
           onClose={() => { setShowRace(false); setInteractionTarget(null); }}
+        />
+      )}
+
+      {showDuel && interactionTarget && myFav && (
+        <DuelModal
+          myPokemonId={myFav.pokemonId}
+          myIsShiny={myFav.isShiny ?? false}
+          myLevel={getPokemonLevelFromState(state, myFav.pokemonId)}
+          myRarity={mySpriteData?.rarity ?? 'commun'}
+          opponentPokemonId={interactionTarget.pokemonId}
+          opponentIsShiny={interactionTarget.isShiny}
+          opponentLevel={interactionTarget.level}
+          opponentRarity={interactionTarget.rarity}
+          opponentName={interactionTarget.username}
+          onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
         />
       )}
     </div>

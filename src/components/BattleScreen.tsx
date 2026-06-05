@@ -59,13 +59,13 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
   const d = direction;
   type P = React.CSSProperties;
 
-  // Attacker origin: front edge of sprite
-  // Player (ltr): sprite at bottom-left, right edge ≈ left:33%, top:57%
-  // Enemy  (rtl): sprite at top-right,   left edge  ≈ left:70%, top:34%
+  // Attacker origin: corner of sprite facing the opponent
+  // Player (ltr): top-right corner of player sprite ≈ left:33%, top:50%
+  // Enemy  (rtl): bottom-left corner of enemy sprite ≈ left:70%, top:42%
   const origin: P = {
     position: 'absolute', pointerEvents: 'none', zIndex: 15,
     left: d === 'ltr' ? '33%' : '70%',
-    top:  d === 'ltr' ? '57%' : '34%',
+    top:  d === 'ltr' ? '50%' : '42%',
   };
 
   switch (type) {
@@ -92,8 +92,8 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
     case 'electric': {
       // Zigzag from attacker front to target center in % coordinates
       const pts = d === 'ltr'
-        ? '33,57 42,47 36,36 53,27 46,16 66,9 59,3 82,22'
-        : '70,34 61,44 67,55 50,63 57,73 38,80 44,87 20,64';
+        ? '33,50 42,40 36,30 53,22 46,13 66,7 59,2 80,25'
+        : '70,42 61,52 67,62 50,70 57,79 38,85 44,91 22,60';
       return (
         <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none', zIndex:15 }}
           viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -130,8 +130,8 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
     case 'psychic': {
       const tgt: P = {
         position:'absolute', pointerEvents:'none', zIndex:15,
-        left: d === 'ltr' ? '82%' : '20%',
-        top:  d === 'ltr' ? '22%' : '64%',
+        left: d === 'ltr' ? '80%' : '22%',
+        top:  d === 'ltr' ? '25%' : '60%',
       };
       return (
         <>
@@ -190,7 +190,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 
     // GROUND: rock rolls LOW along the ground, then rises to hit target
     case 'ground': return (
-      <div style={{ ...origin, top: d === 'ltr' ? '74%' : '34%' }}>
+      <div style={{ ...origin, top: d === 'ltr' ? '67%' : '42%' }}>
         <div style={{ position:'absolute', fontSize:'1.9rem', filter:'drop-shadow(0 0 5px #92400e)', animation:`ground-roll-${d} 0.82s ease-in-out forwards` } as P}>🪨</div>
         <div style={{ position:'absolute', fontSize:'1.3rem', animation:`ground-roll-${d} 0.82s 0.09s ease-in-out forwards` } as P}>🪨</div>
         <div style={{ position:'absolute', fontSize:'1rem', filter:'drop-shadow(0 0 5px #f97316)', animation:`ground-roll-${d} 0.82s 0.28s ease-out forwards` } as P}>💥</div>
@@ -227,7 +227,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 
     // DRAGON: slow powerful sweep with energy trail
     case 'dragon': return (
-      <div style={{ ...origin, top: d === 'ltr' ? '62%' : '28%' }}>
+      <div style={{ ...origin, top: d === 'ltr' ? '55%' : '35%' }}>
         <div style={{ position:'absolute', fontSize:'3rem', top:-24, left:-15,
           filter:'drop-shadow(0 0 14px #4f46e5) drop-shadow(0 0 28px #818cf8)',
           transform: d === 'rtl' ? 'scaleX(-1)' : undefined,
