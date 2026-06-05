@@ -23,6 +23,7 @@ const MENU_ITEMS = [
   { view: 'lures' as View, icon: '🎣', label: 'Leurres', color: '#c084fc' },
   { view: 'duels' as View, icon: '🥊', label: 'Duels',   color: '#f87171' },
   { view: 'raid'  as View, icon: '🐉', label: 'Raid',    color: '#f87171' },
+  { view: 'clan'  as View, icon: '🛡️', label: 'Clan',    color: '#fbbf24' },
 ];
 
 type NavMood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited';

@@ -60,6 +60,9 @@ function PokeballSVG({ spinning }: { spinning: boolean }) {
 export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, narutoSpriteUrl, leaving, facingRight = true }: Props) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showParticles, setShowParticles] = useState(false);
+  const [showFlash, setShowFlash] = useState(false);
+  const [showStars, setShowStars] = useState(false);
+  const [showSpecial, setShowSpecial] = useState(false);
   const [throwPhase, setThrowPhase] = useState<'idle' | 'throwing' | 'spinning'>('idle');
   const prevCapturing = useRef(false);
 
@@ -74,14 +77,22 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
 
   useEffect(() => {
     if (spawned.captured && !showParticles) {
-      const newParticles: Particle[] = Array.from({ length: 14 }, (_, i) => ({
+      const newParticles: Particle[] = Array.from({ length: 28 }, (_, i) => ({
         id: i,
-        angle: (i / 14) * 360,
+        angle: (i / 28) * 360,
         color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-        distance: 40 + Math.random() * 35,
+        distance: 60 + Math.random() * 40, // 60-100px
       }));
       setParticles(newParticles);
       setShowParticles(true);
+      setShowFlash(true);
+      setShowStars(true);
+      setTimeout(() => setShowFlash(false), 600);
+      setTimeout(() => setShowStars(false), 1200);
+      if (pokemonData.rarity === 'legendaire' || spawned.isShiny) {
+        setShowSpecial(true);
+        setTimeout(() => setShowSpecial(false), 1600);
+      }
     }
   }, [spawned.captured, showParticles]);
 
@@ -131,7 +142,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
   const moveAnim = MOVE_ANIMS[(spawned.pokemonId || 0) % MOVE_ANIMS.length];
   const moveDelay = `${(spawned.pokemonId % 7) * 0.3}s`;
 
-  const containerClass = `absolute select-none ${leaving ? 'animate-leave' : 'animate-appear'}`;
+  const containerClass = 'absolute select-none';
 
   return (
     <div
@@ -147,6 +158,56 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
         } : {}),
       }}
     >
+    <div className={leaving ? 'animate-leave-inner' : 'animate-appear-inner'}>
+      {/* Capture flash overlay */}
+      {showFlash && (
+        <div className="absolute pointer-events-none" style={{
+          inset: -30, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%)',
+          animation: 'capture-flash 0.5s ease-out forwards',
+          zIndex: 20,
+        }} />
+      )}
+
+      {/* Star emojis on capture */}
+      {showStars && Array.from({ length: 8 }, (_, i) => {
+        const angle = (i / 8) * 360;
+        const rad = (angle * Math.PI) / 180;
+        const dist = 50 + Math.random() * 30;
+        const dx = Math.cos(rad) * dist;
+        const dy = Math.sin(rad) * dist;
+        return (
+          <div
+            key={i}
+            className="absolute pointer-events-none"
+            style={{
+              top: '50%',
+              left: '50%',
+              marginTop: -8,
+              marginLeft: -8,
+              fontSize: 16,
+              '--dx': `${dx}px`,
+              '--dy': `${dy}px`,
+              animation: 'confetti-fly 1.0s ease-out forwards',
+              zIndex: 21,
+            } as React.CSSProperties}
+          >⭐</div>
+        );
+      })}
+
+      {/* Special overlay for legendary/shiny */}
+      {showSpecial && (
+        <div className="fixed inset-0 pointer-events-none flex items-center justify-center" style={{ zIndex: 50 }}>
+          <div style={{
+            fontSize: isLegendary ? '4rem' : '3rem',
+            animation: 'special-capture 1.5s ease-out forwards',
+            textShadow: isLegendary ? '0 0 30px #fbbf24, 0 0 60px #f59e0b' : '0 0 30px #f0abfc, 0 0 60px #c084fc',
+          }}>
+            {isLegendary ? '🌟 LÉGENDAIRE ! 🌟' : '✨ SHINY ! ✨'}
+          </div>
+        </div>
+      )}
+
       {/* Confetti particles on capture */}
       {showParticles && particles.map((p) => {
         const rad = (p.angle * Math.PI) / 180;
@@ -157,13 +218,13 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
             key={p.id}
             className="absolute rounded-full pointer-events-none"
             style={{
-              width: 8,
-              height: 8,
+              width: 12,
+              height: 12,
               background: p.color,
               top: '50%',
               left: '50%',
-              marginTop: -4,
-              marginLeft: -4,
+              marginTop: -6,
+              marginLeft: -6,
               '--dx': `${dx}px`,
               '--dy': `${dy}px`,
               animation: 'confetti-fly 0.9s ease-out forwards',
@@ -330,6 +391,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
           </div>
         </div>
       ) : null}
+    </div>
     </div>
   );
 }

@@ -17,6 +17,7 @@ import { TeamBuilder } from './components/TeamBuilder';
 import { AdminPanel } from './components/AdminPanel';
 import { PokeParc } from './components/PokeParc';
 import { SettingsPanel } from './components/SettingsPanel';
+import { ClanPanel } from './components/ClanPanel';
 import { useGameState } from './hooks/useGameState';
 import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
@@ -24,6 +25,7 @@ import { getUsername, logoutUser } from './lib/auth';
 export function App() {
   const [view, setView] = useState<View>('auth');
   const [username, setUsername] = useState<string>('Joueur');
+  const [userId, setUserId] = useState<string>('');
   const [authChecked, setAuthChecked] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const gameState = useGameState();
@@ -41,6 +43,7 @@ export function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUsername(getUsername(session.user));
+        setUserId(session.user.id);
         if (event === 'INITIAL_SESSION') {
           const saved = localStorage.getItem('katchii_last_view') as View | null;
           const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','wrapped','pokepark'];
@@ -222,6 +225,14 @@ export function App() {
 
       {view === 'settings' && (
         <SettingsPanel onClose={() => setView('home')} />
+      )}
+
+      {view === 'clan' && (
+        <ClanPanel
+          userId={userId}
+          username={username}
+          onClose={() => persistView('hunt')}
+        />
       )}
 
       {/* Persistent bottom navbar (not on auth/home/universe/profile/admin) */}

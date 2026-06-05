@@ -88,13 +88,21 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose }:
               { label: 'Shinies', value: shinyCount, color: '#fde047' },
               { label: 'Victoires', value: duels.wins ?? 0, color: '#22c55e' },
               { label: 'Défaites', value: duels.losses ?? 0, color: '#f87171' },
-              { label: 'ELO', value: duels.rankingPoints ?? 0, color: '#a855f7' },
             ].map(s => (
               <div key={s.label} className="bg-slate-800/60 rounded-xl p-3 text-center border border-slate-700/40">
                 <div className="font-black text-lg" style={{ color: s.color }}>{s.value}</div>
                 <div className="text-slate-400 text-xs">{s.label}</div>
               </div>
             ))}
+          </div>
+
+          {/* Last seen / online status */}
+          <div className="text-sm text-center">
+            {isOnline
+              ? <span className="text-green-400 font-semibold">🟢 Actif maintenant</span>
+              : lastSeen
+                ? <span className="text-slate-400">Actif il y a {formatLastSeen(lastSeen)}</span>
+                : null}
           </div>
 
           {/* Showcase */}

@@ -16,6 +16,9 @@ interface PlayerRow {
   rankingPoints: number;
   lastSeen?: string; // ISO string from presence
   isOnline?: boolean;
+  favoritePokemon?: { pokemonId: number; isShiny: boolean } | null;
+  showcase?: Array<{ pokemonId: number; isShiny: boolean }>;
+  badgeCount?: number;
 }
 
 interface Props {
@@ -78,6 +81,10 @@ export function PlayersPanel({ onClose }: Props) {
             return rb !== ra ? rb - ra : b - a;
           })[0] ?? null;
 
+        const favoritePokemon = (s.favoritePokemon as { pokemonId: number; isShiny: boolean } | null) ?? null;
+        const showcase = (s.showcase as Array<{ pokemonId: number; isShiny: boolean }>) ?? [];
+        const badgeCount = Array.isArray(s.badges) ? (s.badges as string[]).length : 0;
+
         const presence = presenceMap.get(row.user_id);
         return {
           user_id: row.user_id,
@@ -91,8 +98,11 @@ export function PlayersPanel({ onClose }: Props) {
           rankingPoints: duels?.rankingPoints ?? 0,
           lastSeen: presence?.lastSeen,
           isOnline: presence?.isOnline ?? false,
+          favoritePokemon,
+          showcase,
+          badgeCount,
         } as PlayerRow;
-      }).filter(Boolean) as PlayerRow[];
+      }).filter((r): r is PlayerRow => r !== null && !!r.username && r.username !== '?');
       setPlayers(rows);
       setLoading(false);
     });
@@ -151,15 +161,17 @@ export function PlayersPanel({ onClose }: Props) {
           </div>
         )}
         {!loading && sorted.map((p, i) => {
-          const topData = p.topPokemon ? POKEMON_BY_ID[p.topPokemon?.pokemonId] : null;
-          const spriteUrl = p.topPokemon
-            ? p.topPokemon.isShiny
-              ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${p.topPokemon.pokemonId}.png`
-              : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.topPokemon.pokemonId}.png`
+          const favData = p.favoritePokemon ? POKEMON_BY_ID[p.favoritePokemon.pokemonId] : null;
+          const favSpriteUrl = p.favoritePokemon
+            ? p.favoritePokemon.isShiny
+              ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${p.favoritePokemon.pokemonId}.png`
+              : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.favoritePokemon.pokemonId}.png`
             : null;
 
           const rankColor = i === 0 ? '#fbbf24' : i === 1 ? '#94a3b8' : i === 2 ? '#b45309' : '#475569';
           const isTopThree = i < 3;
+
+          const showcaseItems = (p.showcase ?? []).slice(0, 3);
 
           return (
             <div
@@ -176,15 +188,15 @@ export function PlayersPanel({ onClose }: Props) {
                 }
               </div>
 
-              {/* Top pokemon sprite */}
+              {/* Favorite pokemon sprite */}
               <div className="shrink-0 w-10 h-10 flex items-center justify-center">
-                {spriteUrl ? (
+                {favSpriteUrl ? (
                   <img
-                    src={spriteUrl}
+                    src={favSpriteUrl}
                     width={40} height={40}
                     style={{
                       imageRendering: 'pixelated',
-                      filter: topData ? `drop-shadow(0 0 4px ${RARITY_COLORS[topData.rarity]})` : undefined,
+                      filter: favData ? `drop-shadow(0 0 4px ${RARITY_COLORS[favData.rarity]})` : undefined,
                     }}
                     alt=""
                   />
@@ -203,16 +215,40 @@ export function PlayersPanel({ onClose }: Props) {
                   {p.isOnline ? (
                     <span className="text-green-400 font-semibold">En ligne</span>
                   ) : p.lastSeen ? (
-                    <span className="text-slate-500">Connecté il y a {formatLastSeen(p.lastSeen)}</span>
+                    <span className="text-slate-500">Actif il y a {formatLastSeen(p.lastSeen)}</span>
                   ) : null}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 flex-wrap">
                   <span>⭐ {p.points} pts</span>
                   <span>📚 {p.normalCount}/151</span>
                   {p.shinyCount > 0 && <span>✨ {p.shinyCount}</span>}
-                  {p.rankingPoints > 0 && <span>🥊 {p.rankingPoints} ELO</span>}
+                  <span>🥊 {p.duelWins}</span>
                 </div>
               </div>
+
+              {/* Showcase previews */}
+              {showcaseItems.length > 0 && (
+                <div className="shrink-0 flex items-center gap-0.5">
+                  {showcaseItems.map((s, si) => {
+                    const sUrl = s.isShiny
+                      ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${s.pokemonId}.png`
+                      : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.pokemonId}.png`;
+                    const sData = POKEMON_BY_ID[s.pokemonId];
+                    return (
+                      <img
+                        key={si}
+                        src={sUrl}
+                        width={24} height={24}
+                        style={{
+                          imageRendering: 'pixelated',
+                          filter: sData ? `drop-shadow(0 0 2px ${RARITY_COLORS[sData.rarity]})` : undefined,
+                        }}
+                        alt=""
+                      />
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Score highlight */}
               <div className="shrink-0 text-right">
