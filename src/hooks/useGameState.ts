@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_WEIGHTS } from '../types';
 import { TeamMember } from '../components/TeamBuilder';
-import { loadState, saveState, DEFAULT_STATE } from '../lib/storage';
+import { loadState, loadUserState, saveState, saveUserState, DEFAULT_STATE } from '../lib/storage';
 import { loadCloudState, saveCloudState, onSaveStatus, SaveStatus } from '../lib/cloudSync';
 import { supabase } from '../lib/supabase';
 import { getUsername } from '../lib/auth';
@@ -90,31 +90,40 @@ export function useGameState() {
       const username = user ? getUsername(user) : undefined;
       loadCloudState(userId).then(cloudState => {
         if (cloudState === 'error') {
-          // Cloud load failed — keep whatever localStorage has, don't reset
-          console.warn('[useGameState] cloud load failed, keeping local state');
-          const local = loadState();
+          // Cloud unreachable — fall back to this user's local save
+          console.warn('[useGameState] cloud load failed, using user-local state');
+          const local = loadUserState(userId) ?? { ...DEFAULT_STATE };
           const stamped = username ? { ...local, username } : local;
-          setState(() => { saveState(stamped); return stamped; });
+          setState(() => { saveUserState(userId, stamped); return stamped; });
           loadingForRef.current = null;
-          // Retry save in 5s in case it was a temporary issue
+          // Retry cloud save in 5s
           setTimeout(() => {
             if (userIdRef.current === userId) saveCloudState(userId, latestStateRef.current);
           }, 5000);
           return;
         }
         if (!cloudState) {
-          // No row in DB — new user, start fresh
-          const fresh = { ...DEFAULT_STATE, ...(username ? { username } : {}) };
-          saveState(fresh);
-          setState(() => fresh);
-          saveCloudState(userId, fresh);
+          // No cloud row — could be a new user OR cloud save was never written.
+          // Check if this user has local data before treating as fresh account.
+          const local = loadUserState(userId);
+          if (local) {
+            // Had local data — use it and push it to cloud now
+            const stamped = username ? { ...local, username } : local;
+            setState(() => { saveUserState(userId, stamped); return stamped; });
+            saveCloudState(userId, stamped);
+          } else {
+            // Truly new user — start fresh
+            const fresh = { ...DEFAULT_STATE, ...(username ? { username } : {}) };
+            saveUserState(userId, fresh);
+            setState(() => fresh);
+            saveCloudState(userId, fresh);
+          }
           loadingForRef.current = null;
           return;
         }
         // Cloud has the authoritative state — always use it.
-        // Local is only kept as emergency backup (used when cloud fails above).
         const stamped = username ? { ...cloudState, username } : cloudState;
-        setState(() => { saveState(stamped); return stamped; });
+        setState(() => { saveUserState(userId, stamped); return stamped; });
         loadingForRef.current = null;
       });
     };
@@ -137,7 +146,12 @@ export function useGameState() {
     setState(prev => {
       const next = updater(prev);
       latestStateRef.current = next;
-      saveState(next);
+      // Save locally — user-scoped if userId known, generic otherwise
+      if (userIdRef.current) {
+        saveUserState(userIdRef.current, next);
+      } else {
+        saveState(next);
+      }
       // Debounced cloud save — max 1 write per 8s instead of on every action
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(() => {
