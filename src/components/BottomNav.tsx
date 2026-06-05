@@ -248,6 +248,30 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
 
   return (
     <>
+      {/* Quêtes pill — fixed top-right, below HUD */}
+      <button
+        onClick={() => handleNavigate('quests')}
+        className="fixed z-[195] flex items-center gap-1.5 font-black"
+        style={{
+          top: 52,
+          right: 10,
+          fontSize: '0.65rem',
+          padding: '4px 10px',
+          borderRadius: 999,
+          background: currentView === 'quests'
+            ? 'rgba(234,179,8,0.95)'
+            : questsCompleted > 0
+              ? 'rgba(234,179,8,0.22)'
+              : 'rgba(30,41,59,0.75)',
+          color: currentView === 'quests' ? '#000' : questsCompleted > 0 ? '#fbbf24' : '#64748b',
+          border: `1px solid ${questsCompleted > 0 ? 'rgba(234,179,8,0.5)' : 'rgba(100,116,139,0.3)'}`,
+          boxShadow: questsCompleted > 0 ? '0 2px 10px rgba(234,179,8,0.3)' : 'none',
+          backdropFilter: 'blur(8px)',
+        }}
+      >
+        📋 Quêtes{questsCompleted > 0 ? ` (${questsCompleted})` : ''}
+      </button>
+
       {/* Overflow menu sheet with slide-up animation */}
       <div
         className="fixed inset-0 z-[190]"
@@ -316,47 +340,29 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
             </button>
           ))}
 
-          {/* Menu "···" button + Quêtes below */}
-          <div className="relative flex flex-col items-center">
-            <button
-              onClick={() => setMenuOpen(o => !o)}
-              className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${
-                menuOpen || inMenu ? 'text-white' : 'text-slate-400 hover:bg-white/5'
-              }`}
-            >
-              <span className="text-2xl leading-none font-black tracking-widest" style={{
-                transform: menuOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                transition: 'transform 0.25s ease',
-                display: 'inline-block',
-              }}>···</span>
-              <span className="text-[0.6rem] font-bold leading-none">Menu</span>
-              {questsCompleted > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-500" />
-              )}
-              {inMenu && (
-                <span className="absolute" style={{
-                  bottom: 2, left: '50%', transform: 'translateX(-50%)',
-                  width: 4, height: 4, borderRadius: '50%', background: 'white', opacity: 0.9,
-                }} />
-              )}
-            </button>
-
-            {/* Quêtes — small pill below Menu button */}
-            <button
-              onClick={() => handleNavigate('quests')}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full font-black"
-              style={{
-                fontSize: '0.6rem',
-                background: currentView === 'quests' ? 'rgba(234,179,8,0.9)' : 'rgba(234,179,8,0.18)',
-                color: currentView === 'quests' ? '#000' : '#fbbf24',
-                border: '1px solid rgba(234,179,8,0.35)',
-                marginTop: -2,
-                lineHeight: 1.2,
-              }}
-            >
-              📋 Quêtes{questsCompleted > 0 ? ` (${questsCompleted})` : ''}
-            </button>
-          </div>
+          {/* Menu "···" button */}
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${
+              menuOpen || inMenu ? 'text-white' : 'text-slate-400 hover:bg-white/5'
+            }`}
+          >
+            <span className="text-2xl leading-none font-black tracking-widest" style={{
+              transform: menuOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+              transition: 'transform 0.25s ease',
+              display: 'inline-block',
+            }}>···</span>
+            <span className="text-[0.6rem] font-bold leading-none">Menu</span>
+            {questsCompleted > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-500" />
+            )}
+            {inMenu && (
+              <span className="absolute" style={{
+                bottom: 2, left: '50%', transform: 'translateX(-50%)',
+                width: 4, height: 4, borderRadius: '50%', background: 'white', opacity: 0.9,
+              }} />
+            )}
+          </button>
         </div>
       </div>
 
