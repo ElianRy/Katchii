@@ -97,7 +97,7 @@ export function Collection({ state, onClose }: Props) {
           </div>
 
           {/* Grid */}
-          <div className="flex-1 overflow-y-auto px-4 py-4">
+          <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
               {filteredPokemon.map((pokemon) => {
                 const caught = (state.normalCollection[pokemon.id] ?? 0) > 0;

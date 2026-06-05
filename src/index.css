@@ -137,6 +137,18 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes park-attack-r {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  60%  { transform: translate(55px, -30px) scale(1.15); opacity: 0.9; }
+  100% { transform: translate(110px, -10px) scale(0.5); opacity: 0; }
+}
+
+@keyframes park-attack-l {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  60%  { transform: translate(-55px, -30px) scale(1.15); opacity: 0.9; }
+  100% { transform: translate(-110px, -10px) scale(0.5); opacity: 0; }
+}
+
 @keyframes zzz-float {
   0%, 100% { transform: translateY(0px) scale(1); opacity: 0.8; }
   50% { transform: translateY(-8px) scale(1.2); opacity: 1; }

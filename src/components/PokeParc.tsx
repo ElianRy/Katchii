@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
+import { POKEMON_TYPE } from '../data/pokemonTypes';
 
 type Mood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited' | 'scared' | 'proud' | 'hungry' | 'curious';
 
@@ -57,6 +58,64 @@ function getPokemonLevelFromState(state: GameState, pokemonId: number): number {
 function getSpriteUrl(pokemonId: number, isShiny: boolean) {
   const base = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon';
   return isShiny ? `${base}/shiny/${pokemonId}.png` : `${base}/${pokemonId}.png`;
+}
+
+// ---- Park Attack VFX ----
+// Minimal inline attack animations that don't need the full BattleScreen keyframes.
+// Each type shows a distinct emoji stream flying rightward (park POV: always ltr-ish).
+const TYPE_EMOJI: Record<string, string[]> = {
+  fire:    ['🔥', '🔥'],
+  water:   ['💧', '🌊'],
+  grass:   ['🍃', '🌿'],
+  electric:['⚡', '✨'],
+  ice:     ['❄️', '🌨'],
+  psychic: ['🔮', '💜'],
+  fighting:['💥', '👊'],
+  ghost:   ['👻', '🌀'],
+  poison:  ['☠️', '💜'],
+  ground:  ['💨', '🪨'],
+  rock:    ['🪨', '💥'],
+  flying:  ['🌪', '💨'],
+  dragon:  ['🐉', '🔥'],
+  bug:     ['🦋', '🍃'],
+  normal:  ['⭐', '💫'],
+  dark:    ['🌑', '💀'],
+  steel:   ['⚙️', '🔩'],
+};
+
+function ParkAttackVfx({ pokemonId, facingRight }: { pokemonId: number; facingRight: boolean }) {
+  const [shots, setShots] = useState<number[]>([]);
+  const type = (POKEMON_TYPE[pokemonId] ?? ['normal'])[0];
+  const emojis = TYPE_EMOJI[type] ?? ['⭐', '💫'];
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const id = Date.now();
+      setShots(prev => [...prev.slice(-3), id]);
+      setTimeout(() => setShots(prev => prev.filter(s => s !== id)), 800);
+    }, 2200);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <>
+      {shots.map((id, i) => (
+        <div key={id} className="absolute pointer-events-none" style={{
+          top: '20%',
+          left: facingRight ? '80%' : '20%',
+          zIndex: 20,
+        }}>
+          <div style={{
+            fontSize: '1.1rem',
+            animation: `park-attack-${facingRight ? 'r' : 'l'} 0.75s ease-out forwards`,
+            animationDelay: `${i * 0.08}s`,
+            filter: `drop-shadow(0 0 6px ${type === 'fire' ? '#f97316' : type === 'electric' ? '#facc15' : type === 'water' ? '#38bdf8' : type === 'grass' ? '#4ade80' : type === 'psychic' ? '#e879f9' : '#fff'})`,
+          }}>
+            {emojis[i % emojis.length]}
+          </div>
+        </div>
+      ))}
+    </>
+  );
 }
 
 function ParkSprite({
@@ -117,6 +176,11 @@ function ParkSprite({
       )}
       {mood === 'proud' && (
         <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-sm" style={{ animation: 'zzz-float 3s ease-in-out infinite' }}>👑</div>
+      )}
+
+      {/* Attack VFX for aggressive mood */}
+      {mood === 'attack' && (
+        <ParkAttackVfx pokemonId={pokemonId} facingRight={!isMine} />
       )}
 
       {/* Shiny aura — small tight glow */}
