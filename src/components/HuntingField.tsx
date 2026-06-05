@@ -70,6 +70,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const [showBossFight, setShowBossFight] = useState(false);
   const [fightZone, setFightZone] = useState<Zone | null>(null);
   const [discoveryZoneName, setDiscoveryZoneName] = useState<string | null>(null);
+  const [zoneTransition, setZoneTransition] = useState<'left' | 'right' | null>(null);
   const processingRef = useRef<Set<string>>(new Set());
   const capturingRef = useRef(false);
 
@@ -281,10 +282,21 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       {/* Zone info panel */}
       {showZoneInfo && <ZoneInfoPanel state={gameState.state} onClose={() => setShowZoneInfo(false)} />}
 
+      {/* Zone transition flash */}
+      {zoneTransition && (
+        <div className="absolute inset-0 z-50 pointer-events-none"
+          style={{ animation: 'zone-swipe-flash 0.4s ease-out forwards' }} />
+      )}
+
       {/* Zone nav arrows */}
       {canGoPrev && (
         <button
-          onClick={() => { spawner.clearSpawned(); gameState.setCurrentZone(prevZoneId!); }}
+          onClick={() => {
+            setZoneTransition('left');
+            spawner.clearSpawned();
+            gameState.setCurrentZone(prevZoneId!);
+            setTimeout(() => setZoneTransition(null), 400);
+          }}
           className="absolute left-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl"
           title={ZONE_BY_ID[prevZoneId!]?.name}
         >
@@ -293,7 +305,12 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       )}
       {canGoNext && (
         <button
-          onClick={() => { spawner.clearSpawned(); gameState.setCurrentZone(nextZoneId!); }}
+          onClick={() => {
+            setZoneTransition('right');
+            spawner.clearSpawned();
+            gameState.setCurrentZone(nextZoneId!);
+            setTimeout(() => setZoneTransition(null), 400);
+          }}
           className="absolute right-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl"
           title={ZONE_BY_ID[nextZoneId!]?.name}
         >

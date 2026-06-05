@@ -7,6 +7,7 @@ interface Props {
   onNavigate: (view: View) => void;
   questsCompleted: number;
   favoritePokemon?: { pokemonId: number; isShiny?: boolean } | null;
+  onOpenQuests?: () => void;
 }
 
 export const BOTTOM_NAV_HEIGHT = 72;
@@ -71,10 +72,6 @@ function NavShinySparkles() {
           } as React.CSSProperties}
         />
       ))}
-      <span style={{
-        position: 'absolute', top: -4, right: -4, fontSize: 10,
-        filter: 'drop-shadow(0 0 3px #fde047)',
-      }}>✨</span>
     </div>
   );
 }
@@ -200,11 +197,12 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
       {attacks.map(a => (
         <div key={a.id} style={{
           position: 'absolute',
-          bottom: 30,
-          left: facingRight ? '110%' : '-30%',
-          fontSize: 18,
-          animation: `nav-attack-${facingRight ? 'r' : 'l'} 1s ease-out forwards`,
+          bottom: 20,
+          left: facingRight ? '100%' : '-10%',
+          fontSize: 32,
+          animation: `nav-attack-${facingRight ? 'r' : 'l'} 1.2s ease-out forwards`,
           pointerEvents: 'none',
+          filter: 'drop-shadow(0 0 6px currentColor)',
         }}>{a.emoji}</div>
       ))}
 
@@ -243,7 +241,7 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
   );
 }
 
-export function BottomNav({ currentView, onNavigate, favoritePokemon }: Props) {
+export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePokemon, onOpenQuests }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const inMenu = MENU_ITEMS.some(i => i.view === currentView);
@@ -325,6 +323,25 @@ export function BottomNav({ currentView, onNavigate, favoritePokemon }: Props) {
             </button>
           ))}
 
+          {/* Quêtes button — same style as Menu */}
+          {onOpenQuests && (
+            <button
+              onClick={onOpenQuests}
+              className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${
+                currentView === 'quests' ? 'text-yellow-400' : 'text-slate-400 hover:bg-white/5'
+              }`}
+            >
+              <span className="text-2xl leading-none">📋</span>
+              <span className="text-[0.6rem] font-bold leading-none">Quêtes{questsCompleted > 0 ? ` (${questsCompleted})` : ''}</span>
+              {currentView === 'quests' && (
+                <span className="absolute" style={{ bottom: 2, left: '50%', transform: 'translateX(-50%)', width: 4, height: 4, borderRadius: '50%', background: '#fbbf24', opacity: 0.9 }} />
+              )}
+              {questsCompleted > 0 && currentView !== 'quests' && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-500" />
+              )}
+            </button>
+          )}
+
           {/* Menu "···" button */}
           <button
             onClick={() => setMenuOpen(o => !o)}
@@ -354,12 +371,14 @@ export function BottomNav({ currentView, onNavigate, favoritePokemon }: Props) {
           100% { opacity: 0; transform: translateX(-50%) translateY(-50px); }
         }
         @keyframes nav-attack-r {
-          0%   { opacity: 1; transform: translate(0, 0) scale(1); }
-          100% { opacity: 0; transform: translate(40px, -20px) scale(0.4); }
+          0%   { opacity: 1; transform: translate(0, 0) scale(1.4); }
+          60%  { opacity: 1; transform: translate(55px, -25px) scale(1.1); }
+          100% { opacity: 0; transform: translate(90px, -35px) scale(0.5); }
         }
         @keyframes nav-attack-l {
-          0%   { opacity: 1; transform: translate(0, 0) scale(1); }
-          100% { opacity: 0; transform: translate(-40px, -20px) scale(0.4); }
+          0%   { opacity: 1; transform: translate(0, 0) scale(1.4); }
+          60%  { opacity: 1; transform: translate(-55px, -25px) scale(1.1); }
+          100% { opacity: 0; transform: translate(-90px, -35px) scale(0.5); }
         }
       `}</style>
     </>

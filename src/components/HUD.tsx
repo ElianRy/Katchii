@@ -93,7 +93,7 @@ export function HUD({
               {activeUniverse === 'naruto' ? '🍥 Konoha' : `🌲 ${currentZoneName ?? 'Zone 1'}`}
             </span>
             {onOpenZoneInfo && (
-              <button onClick={onOpenZoneInfo} className="text-slate-500 hover:text-white text-xs ml-1 shrink-0">ℹ️</button>
+              <button onClick={onOpenZoneInfo} className="bg-slate-700/80 hover:bg-slate-600 border border-slate-500/50 rounded-lg px-2 py-1 text-slate-200 hover:text-white text-sm font-bold ml-1 shrink-0">ℹ️ Zone</button>
             )}
           </div>
 

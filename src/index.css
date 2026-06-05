@@ -576,3 +576,9 @@ button:active{transform:scale(.93);transition:transform .08s ease}
 @keyframes pokedex-star-orbit-a { 0%{transform:rotate(0deg) translate(10px) rotate(0deg)} 100%{transform:rotate(360deg) translate(10px) rotate(-360deg)} }
 @keyframes pokedex-star-orbit-b { 0%{transform:rotate(180deg) translate(10px) rotate(-180deg)} 100%{transform:rotate(540deg) translate(10px) rotate(-540deg)} }
 @keyframes pokedex-star-orbit-c { 0%{transform:rotate(90deg) translate(8px) rotate(-90deg)} 100%{transform:rotate(450deg) translate(8px) rotate(-450deg)} }
+
+/* Zone transition flash */
+@keyframes zone-swipe-flash {
+  0%   { background: rgba(255,255,255,0.35); }
+  100% { background: transparent; }
+}

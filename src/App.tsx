@@ -281,6 +281,7 @@ export function App() {
           onNavigate={persistView}
           questsCompleted={questsCompleted}
           favoritePokemon={gameState.state.village.favoritePokemon}
+          onOpenQuests={() => persistView('quests')}
         />
       )}
 
