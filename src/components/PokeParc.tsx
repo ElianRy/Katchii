@@ -1159,13 +1159,11 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                   }}>
                     {msg.username}
                   </span>
-                  {(isAdmin || canMute) && msg.user_id !== myUserId && (
+                  {canMute && msg.user_id !== myUserId && (
                     <span className="ml-auto flex items-center gap-1 shrink-0">
-                      {/* Delete — admin only */}
-                      {isAdmin && (
-                        <button onClick={() => deleteMessage(msg.id)}
-                          className="text-red-500 hover:text-red-400 px-1 rounded text-xs" title="Supprimer">🗑️</button>
-                      )}
+                      {/* Delete — admin + pokelian */}
+                      <button onClick={() => deleteMessage(msg.id)}
+                        className="text-red-500 hover:text-red-400 px-1 rounded text-xs" title="Supprimer">🗑️</button>
                       {/* Mute / unmute — admin + pokelian */}
                       <div className="relative">
                         {isMuted(msg.user_id) ? (
@@ -1253,12 +1251,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           opponentLevel={interactionTarget.level}
           opponentRarity={interactionTarget.rarity}
           opponentName={interactionTarget.username}
-          onResult={(won) => {
-            const opp = interactionTarget.username;
-            sendSystemMessage(won
-              ? `🏁 ${username} a battu ${opp} à la course !`
-              : `🏁 ${opp} a gagné la course contre ${username} !`);
-          }}
+          onResult={() => {}}
           onClose={() => { setShowRace(false); setInteractionTarget(null); }}
         />
       )}
@@ -1274,11 +1267,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           opponentLevel={interactionTarget.level}
           opponentRarity={interactionTarget.rarity}
           opponentName={interactionTarget.username}
-          onResult={(won) => {
-            const opp = interactionTarget.username;
-            sendSystemMessage(won
-              ? `⚔️ ${username} a battu ${opp} en duel !`
-              : `⚔️ ${opp} a gagné le duel contre ${username} !`);
+          onResult={(_won) => {
+            // result no longer broadcast to chat
           }}
           onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
         />
