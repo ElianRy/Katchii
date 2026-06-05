@@ -327,12 +327,12 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
   return (
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col pb-[72px]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
+        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div>
           <h2 className="text-white font-black text-xl">⚔️ {title}</h2>
           <p className="text-slate-400 text-sm">{selected.length}/3 Pokémon sélectionnés</p>
         </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-2">✕</button>
       </div>
 
       {/* Level-up notifications */}

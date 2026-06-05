@@ -8,6 +8,7 @@ interface Props {
   onProfile: () => void;
   onLogout: () => void;
   onWrapped: () => void;
+  onSettings: () => void;
 }
 
 const WANDER_POKEMON = [1, 4, 7, 12, 16, 25, 35, 39, 52, 54, 58, 79, 81, 92, 113, 131, 133, 137, 143, 147];
@@ -54,7 +55,7 @@ function useWanderers(count = 8) {
   return list;
 }
 
-export function HomeScreen({ username, onPlay, onProfile, onLogout, onWrapped }: Props) {
+export function HomeScreen({ username, onPlay, onProfile, onLogout, onWrapped, onSettings }: Props) {
   const [showPlayers, setShowPlayers] = useState(false);
   const wanderers = useWanderers(10);
 
@@ -137,92 +138,111 @@ export function HomeScreen({ username, onPlay, onProfile, onLogout, onWrapped }:
             className="text-6xl font-black tracking-wider mb-1"
             style={{
               color: '#fff',
-              textShadow: '0 3px 0 rgba(0,0,0,0.18), 0 0 30px rgba(255,255,255,0.4)',
+              textShadow: '0 4px 0 rgba(0,0,0,0.25), 0 0 40px rgba(255,255,255,0.5), 0 2px 8px rgba(0,0,0,0.3)',
               letterSpacing: '0.06em',
             }}
           >
             KATCHII
           </h1>
-          <p className="text-base font-semibold" style={{ color: 'rgba(255,255,255,0.85)' }}>
+          <p
+            className="text-base font-semibold"
+            style={{ color: 'rgba(255,255,255,0.95)', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
+          >
             Bonjour,{' '}
-            <span className="font-black" style={{ color: isPokelian ? '#ff6b6b' : '#ffe566' }}>
+            <span
+              className="font-black"
+              style={{
+                color: isPokelian ? '#ff6b6b' : '#ffe566',
+                textShadow: '0 2px 6px rgba(0,0,0,0.4)',
+              }}
+            >
               {username}
             </span>{' '}!
           </p>
         </div>
 
-        {/* Big JOUER button */}
-        <button
-          onClick={onPlay}
-          className="w-full rounded-2xl py-5 font-black text-2xl tracking-wide transition-all active:scale-95 flex items-center justify-center gap-3"
-          style={{
-            background: 'linear-gradient(135deg, #f59e0b 0%, #ef7c00 100%)',
-            color: '#fff',
-            boxShadow: '0 6px 24px rgba(245,158,11,0.5), 0 2px 0 rgba(0,0,0,0.12)',
-          }}
-        >
-          <span style={{ fontSize: '1.6rem' }}>🎮</span> Jouer
-        </button>
-
-        {/* Half-size: Profil + Joueurs */}
-        <div className="grid grid-cols-2 gap-3 w-full">
+        {/* Buttons — capped width so they don't span the full screen */}
+        <div className="w-full flex flex-col items-center gap-5" style={{ maxWidth: 360 }}>
+          {/* Big JOUER button */}
           <button
-            onClick={onProfile}
-            className="rounded-2xl py-4 font-bold text-base transition-all active:scale-95 flex flex-col items-center gap-1.5"
+            onClick={onPlay}
+            className="w-full rounded-2xl py-5 font-black text-2xl tracking-wide transition-all active:scale-95 flex items-center justify-center gap-3"
             style={{
-              background: 'rgba(255,255,255,0.25)',
+              background: 'linear-gradient(135deg, #f59e0b 0%, #ef7c00 100%)',
               color: '#fff',
-              border: '2px solid rgba(255,255,255,0.45)',
-              backdropFilter: 'blur(4px)',
-              boxShadow: '0 3px 12px rgba(0,0,0,0.1)',
+              boxShadow: '0 6px 24px rgba(245,158,11,0.5), 0 2px 0 rgba(0,0,0,0.18)',
+              textShadow: '0 1px 4px rgba(0,0,0,0.25)',
             }}
           >
-            <span className="text-2xl">👤</span>
-            <span>Profil</span>
+            <span style={{ fontSize: '1.6rem' }}>🎮</span> Jouer
           </button>
+
+          {/* Half-size: Profil + Joueurs */}
+          <div className="grid grid-cols-2 gap-3 w-full">
+            <button
+              onClick={onProfile}
+              className="rounded-2xl py-4 font-bold text-base transition-all active:scale-95 flex flex-col items-center gap-1.5"
+              style={{
+                background: 'rgba(255,255,255,0.28)',
+                color: '#fff',
+                border: '2px solid rgba(255,255,255,0.55)',
+                backdropFilter: 'blur(6px)',
+                boxShadow: '0 3px 12px rgba(0,0,0,0.15)',
+                textShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              }}
+            >
+              <span className="text-2xl">👤</span>
+              <span>Profil</span>
+            </button>
+            <button
+              onClick={() => setShowPlayers(true)}
+              className="rounded-2xl py-4 font-bold text-base transition-all active:scale-95 flex flex-col items-center gap-1.5"
+              style={{
+                background: 'rgba(255,255,255,0.28)',
+                color: '#fff',
+                border: '2px solid rgba(255,255,255,0.55)',
+                backdropFilter: 'blur(6px)',
+                boxShadow: '0 3px 12px rgba(0,0,0,0.15)',
+                textShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              }}
+            >
+              <span className="text-2xl">👥</span>
+              <span>Joueurs</span>
+            </button>
+          </div>
+
+          {/* Paramètres — same size as Jouer */}
           <button
-            onClick={() => setShowPlayers(true)}
-            className="rounded-2xl py-4 font-bold text-base transition-all active:scale-95 flex flex-col items-center gap-1.5"
+            onClick={onSettings}
+            className="w-full rounded-2xl py-5 font-bold text-xl transition-all active:scale-95 flex items-center justify-center gap-3"
             style={{
-              background: 'rgba(255,255,255,0.25)',
+              background: 'rgba(255,255,255,0.28)',
               color: '#fff',
-              border: '2px solid rgba(255,255,255,0.45)',
-              backdropFilter: 'blur(4px)',
-              boxShadow: '0 3px 12px rgba(0,0,0,0.1)',
+              border: '2px solid rgba(255,255,255,0.55)',
+              backdropFilter: 'blur(6px)',
+              boxShadow: '0 3px 14px rgba(0,0,0,0.15)',
+              textShadow: '0 1px 3px rgba(0,0,0,0.3)',
             }}
           >
-            <span className="text-2xl">👥</span>
-            <span>Joueurs</span>
+            <span style={{ fontSize: '1.4rem' }}>⚙️</span> Paramètres
+          </button>
+
+          {/* Se déconnecter */}
+          <button
+            onClick={handleLogout}
+            className="w-full rounded-2xl py-3 font-bold text-base transition-all active:scale-95 flex items-center justify-center gap-2"
+            style={{
+              background: 'rgba(239,68,68,0.25)',
+              color: '#fff',
+              border: '2px solid rgba(239,68,68,0.6)',
+              backdropFilter: 'blur(4px)',
+              boxShadow: '0 3px 12px rgba(239,68,68,0.2)',
+              textShadow: '0 1px 3px rgba(0,0,0,0.3)',
+            }}
+          >
+            🚪 Se déconnecter
           </button>
         </div>
-
-        {/* Paramètres — same size as Jouer */}
-        <button
-          className="w-full rounded-2xl py-5 font-bold text-xl transition-all active:scale-95 flex items-center justify-center gap-3"
-          style={{
-            background: 'rgba(255,255,255,0.22)',
-            color: '#fff',
-            border: '2px solid rgba(255,255,255,0.4)',
-            backdropFilter: 'blur(4px)',
-            boxShadow: '0 3px 14px rgba(0,0,0,0.1)',
-          }}
-        >
-          <span style={{ fontSize: '1.4rem' }}>⚙️</span> Paramètres
-        </button>
-
-        {/* Se déconnecter */}
-        <button
-          onClick={handleLogout}
-          className="w-full rounded-2xl py-3 font-bold text-base transition-all active:scale-95"
-          style={{
-            background: 'rgba(239,68,68,0.15)',
-            color: 'rgba(255,120,120,1)',
-            border: '2px solid rgba(239,68,68,0.3)',
-            backdropFilter: 'blur(4px)',
-          }}
-        >
-          Se déconnecter
-        </button>
       </div>
 
       {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} />}

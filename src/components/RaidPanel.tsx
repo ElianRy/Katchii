@@ -59,17 +59,12 @@ export function RaidPanel({ state, onAttack, onClaimReward, onStartRaid, onClose
   return (
     <div className="fixed inset-0 bg-slate-900 text-white z-50 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-slate-700 bg-black/40">
+      <div className="flex items-center gap-3 px-4 py-4 border-b border-slate-700 bg-black/40">
+        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div>
           <h2 className="text-xl font-bold text-red-400">⚔️ Raid Boss</h2>
           <p className="text-xs text-slate-400 mt-0.5">Boss légendaire hebdomadaire</p>
         </div>
-        <button
-          onClick={onClose}
-          className="bg-slate-700 hover:bg-slate-600 rounded-full w-8 h-8 flex items-center justify-center font-bold"
-        >
-          ✕
-        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">

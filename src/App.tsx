@@ -16,6 +16,7 @@ import { ProfileScreen } from './components/ProfileScreen';
 import { TeamBuilder } from './components/TeamBuilder';
 import { AdminPanel } from './components/AdminPanel';
 import { PokeParc } from './components/PokeParc';
+import { SettingsPanel } from './components/SettingsPanel';
 import { useGameState } from './hooks/useGameState';
 import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
@@ -37,32 +38,24 @@ export function App() {
 
   // Check auth state on mount
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setUsername(getUsername(user));
-        const saved = localStorage.getItem('katchii_last_view') as View | null;
-        const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','wrapped','pokepark'];
-        setView(saved && validViews.includes(saved) ? saved : 'home');
-      } else {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        setUsername(getUsername(session.user));
+        if (event === 'INITIAL_SESSION') {
+          const saved = localStorage.getItem('katchii_last_view') as View | null;
+          const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','wrapped','pokepark'];
+          setView(saved && validViews.includes(saved) ? saved : 'home');
+        } else if (event === 'SIGNED_IN') {
+          setView('home');
+        }
+      } else if (event === 'INITIAL_SESSION' || event === 'SIGNED_OUT') {
         setView('auth');
       }
       setAuthChecked(true);
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUsername(getUsername(session.user));
-        const saved = localStorage.getItem('katchii_last_view') as View | null;
-        const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','wrapped','pokepark'];
-        setView(saved && validViews.includes(saved) ? saved : 'home');
-      } else {
-        setView('auth');
-      }
-    });
-
     return () => subscription.unsubscribe();
-  }, [persistView]);
+  }, []);
 
   // Play time tracking
   useEffect(() => {
@@ -100,35 +93,31 @@ export function App() {
     (q) => q.completed && !q.rewardClaimed
   ).length;
 
-  const showBottomNav = !['auth', 'home', 'profile', 'admin', 'wrapped'].includes(view);
+  const showBottomNav = !['auth', 'home', 'profile', 'admin', 'wrapped', 'settings'].includes(view);
 
   return (
     <div className="w-full bg-slate-900 text-white overflow-hidden" style={{ height: '100dvh', maxHeight: '100dvh' }}>
       {/* Auth screen */}
       {view === 'auth' && (
-        <AuthScreen
-          onSuccess={() => {
-            supabase.auth.getUser().then(({ data: { user } }) => {
-              if (user) setUsername(getUsername(user));
-            });
-            if (!sessionStorage.getItem('katchii_welcomed')) {
-              sessionStorage.setItem('katchii_welcomed', '1');
-              setShowWelcome(true);
-            } else {
-              setView('home');
-            }
-          }}
-        />
+        <AuthScreen onSuccess={() => {}} />
       )}
 
       {/* Home screen */}
       {view === 'home' && (
         <HomeScreen
           username={username}
-          onPlay={() => persistView('hunt')}
+          onPlay={() => {
+            if (!sessionStorage.getItem('katchii_welcomed')) {
+              sessionStorage.setItem('katchii_welcomed', '1');
+              setShowWelcome(true);
+            } else {
+              persistView('hunt');
+            }
+          }}
           onProfile={() => setView('profile')}
           onLogout={handleLogout}
           onWrapped={() => persistView('wrapped')}
+          onSettings={() => setView('settings')}
         />
       )}
 
@@ -236,6 +225,10 @@ export function App() {
           onClose={() => setView('home')}
           onLogout={handleLogout}
         />
+      )}
+
+      {view === 'settings' && (
+        <SettingsPanel onClose={() => setView('home')} />
       )}
 
       {/* Persistent bottom navbar (not on auth/home/universe/profile/admin) */}

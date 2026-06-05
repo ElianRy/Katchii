@@ -44,17 +44,12 @@ export function LurePanel({ state, onBuy, onActivate, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700">
+        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div>
           <h2 className="text-white font-bold text-xl">🎣 Leurres</h2>
           <p className="text-slate-400 text-sm">{state.points} pts disponibles</p>
         </div>
-        <button
-          onClick={onClose}
-          className="text-slate-400 hover:text-white text-2xl leading-none px-2"
-        >
-          ✕
-        </button>
       </div>
 
       {/* Active lure banner */}

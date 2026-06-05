@@ -113,12 +113,12 @@ export function PlayersPanel({ onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[80] flex flex-col bg-slate-950" style={{ height: '100dvh' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
+        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div>
           <h2 className="text-white font-black text-xl">👥 Joueurs</h2>
           <p className="text-slate-400 text-xs">{players.length} dresseurs actifs</p>
         </div>
-        <button onClick={onClose} className="text-slate-400 text-2xl px-2">✕</button>
       </div>
 
       {/* Sort tabs */}
