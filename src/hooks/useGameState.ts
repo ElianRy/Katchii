@@ -3,6 +3,7 @@ import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_W
 import { CAPTURE_XP } from '../lib/playerLevel';
 import { TeamMember } from '../components/TeamBuilder';
 import { loadState, loadUserState, saveState, saveUserState, DEFAULT_STATE } from '../lib/storage';
+import { pickDailyQuests, QuestDefinition } from '../data/quests';
 import { loadCloudState, saveCloudState, onSaveStatus, SaveStatus } from '../lib/cloudSync';
 import { supabase } from '../lib/supabase';
 import { getUsername } from '../lib/auth';
@@ -554,13 +555,27 @@ export function useGameState() {
       if (nextZoneId && !newUnlocked.includes(nextZoneId)) {
         newUnlocked.push(nextZoneId);
       }
+      const newZoneId = nextZoneId ?? prev.zoneProgress.currentZoneId;
+      // Refresh quests for the new zone
+      const date = todayDate();
+      const defs = pickDailyQuests(date, newZoneId);
+      const newDailyQuests = {
+        date,
+        zoneId: newZoneId,
+        quests: defs.map((d: QuestDefinition) => ({
+          id: d.id, label: d.label, type: d.type, rarity: d.rarity,
+          target: d.target, progress: 0, completed: false,
+          reward: d.reward, rewardClaimed: false,
+        })),
+      };
       return {
         ...prev,
+        dailyQuests: newDailyQuests,
         zoneProgress: {
           ...prev.zoneProgress,
           bossDefeated: newBossDefeated,
           unlockedZones: newUnlocked,
-          currentZoneId: nextZoneId ?? prev.zoneProgress.currentZoneId,
+          currentZoneId: newZoneId,
         },
       };
     });

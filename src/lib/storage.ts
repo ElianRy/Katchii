@@ -4,11 +4,12 @@ import { pickDailyQuests, todayDate } from '../data/quests';
 const STORAGE_KEY = 'katchii_state';
 const userKey = (userId: string) => `katchii_state_u_${userId}`;
 
-function buildDailyQuests() {
+function buildDailyQuests(zoneId = 'zone1') {
   const date = todayDate();
-  const defs = pickDailyQuests(date);
+  const defs = pickDailyQuests(date, zoneId);
   return {
     date,
+    zoneId,
     quests: defs.map((d) => ({
       id: d.id,
       label: d.label,
@@ -64,9 +65,10 @@ export const DEFAULT_STATE: GameState = {
 function parseState(raw: string): GameState {
   const parsed = JSON.parse(raw) as Partial<GameState>;
   const today = todayDate();
+  const currentZoneId = parsed.zoneProgress?.currentZoneId ?? 'zone1';
   let dailyQuests = parsed.dailyQuests ?? null;
-  if (!dailyQuests || dailyQuests.date !== today) {
-    dailyQuests = buildDailyQuests();
+  if (!dailyQuests || dailyQuests.date !== today || (dailyQuests as typeof dailyQuests & { zoneId?: string }).zoneId !== currentZoneId) {
+    dailyQuests = buildDailyQuests(currentZoneId);
   }
   return {
     points: parsed.points ?? 0,
