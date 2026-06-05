@@ -111,19 +111,10 @@ export function useGameState() {
           loadingForRef.current = null;
           return;
         }
-        const score = (s: GameState) => {
-          const count = Object.keys(s.normalCollection ?? {}).length + Object.keys(s.narutoCollection ?? {}).length;
-          const levels = Object.values(s.pokemonLevels ?? {}).reduce((sum, l) => sum + (l.level ?? 1), 0);
-          return count * 1000 + levels;
-        };
-        const localState = loadState();
-        const localIsRicher = score(localState) > score(cloudState);
-        const best = localIsRicher ? localState : cloudState;
-        // Always stamp username
-        const stamped = username ? { ...best, username } : best;
+        // Cloud has the authoritative state — always use it.
+        // Local is only kept as emergency backup (used when cloud fails above).
+        const stamped = username ? { ...cloudState, username } : cloudState;
         setState(() => { saveState(stamped); return stamped; });
-        // Only sync to cloud if local was richer (otherwise cloud is already up to date)
-        if (localIsRicher) saveCloudState(userId, stamped);
         loadingForRef.current = null;
       });
     };

@@ -80,18 +80,18 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
     // FIRE: parabolic arc — big fireball rises high then comes down at target
     case 'fire': return (
       <div style={origin}>
-        <div style={{ position:'absolute', fontSize:'2.2rem', filter:'drop-shadow(0 0 14px #f97316) drop-shadow(0 0 24px #ef4444)', animation:`fire-arc-${d} 0.75s ease-in-out forwards` } as P}>🔥</div>
-        <div style={{ position:'absolute', fontSize:'1.3rem', filter:'drop-shadow(0 0 8px #fb923c)', animation:`fire-arc-${d} 0.75s 0.09s ease-in-out forwards` } as P}>🔥</div>
-        <div style={{ position:'absolute', fontSize:'0.9rem', animation:`fire-arc-${d} 0.75s 0.17s ease-in-out forwards` } as P}>🔥</div>
+        <div style={{ position:'absolute', fontSize:'3rem', filter:'drop-shadow(0 0 18px #f97316) drop-shadow(0 0 32px #ef4444)', animation:`fire-arc-${d} 1.05s ease-in-out forwards` } as P}>🔥</div>
+        <div style={{ position:'absolute', fontSize:'1.8rem', filter:'drop-shadow(0 0 10px #fb923c)', animation:`fire-arc-${d} 1.05s 0.1s ease-in-out forwards` } as P}>🔥</div>
+        <div style={{ position:'absolute', fontSize:'1.2rem', animation:`fire-arc-${d} 1.05s 0.2s ease-in-out forwards` } as P}>🔥</div>
       </div>
     );
 
     // WATER: very high arc (different peak height from fire)
     case 'water': return (
       <div style={origin}>
-        <div style={{ position:'absolute', fontSize:'1.9rem', filter:'drop-shadow(0 0 12px #38bdf8) drop-shadow(0 0 20px #0ea5e9)', animation:`water-arc-${d} 0.78s ease-in-out forwards` } as P}>💧</div>
-        <div style={{ position:'absolute', fontSize:'1.2rem', filter:'drop-shadow(0 0 6px #7dd3fc)', animation:`water-arc-${d} 0.78s 0.08s ease-in-out forwards` } as P}>💧</div>
-        <div style={{ position:'absolute', fontSize:'1.4rem', filter:'drop-shadow(0 0 8px #0ea5e9)', animation:`water-arc-${d} 0.78s 0.15s ease-in-out forwards` } as P}>🌊</div>
+        <div style={{ position:'absolute', fontSize:'2.6rem', filter:'drop-shadow(0 0 16px #38bdf8) drop-shadow(0 0 26px #0ea5e9)', animation:`water-arc-${d} 1.1s ease-in-out forwards` } as P}>💧</div>
+        <div style={{ position:'absolute', fontSize:'1.7rem', filter:'drop-shadow(0 0 8px #7dd3fc)', animation:`water-arc-${d} 1.1s 0.1s ease-in-out forwards` } as P}>💧</div>
+        <div style={{ position:'absolute', fontSize:'2rem', filter:'drop-shadow(0 0 10px #0ea5e9)', animation:`water-arc-${d} 1.1s 0.18s ease-in-out forwards` } as P}>🌊</div>
       </div>
     );
 
@@ -118,18 +118,18 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
     // GRASS: leaves rise from below, then spiral to target
     case 'grass': return (
       <div style={origin}>
-        <div style={{ position:'absolute', fontSize:'1.7rem', filter:'drop-shadow(0 0 6px #4ade80)', animation:`grass-fly-${d} 0.78s ease-in-out forwards` } as P}>🍃</div>
-        <div style={{ position:'absolute', fontSize:'1.2rem', filter:'drop-shadow(0 0 5px #22c55e)', animation:`grass-fly-${d} 0.78s 0.08s ease-in-out forwards` } as P}>🌿</div>
-        <div style={{ position:'absolute', fontSize:'0.95rem', animation:`grass-fly-${d} 0.78s 0.15s ease-in-out forwards` } as P}>🍃</div>
+        <div style={{ position:'absolute', fontSize:'2.4rem', filter:'drop-shadow(0 0 8px #4ade80)', animation:`grass-fly-${d} 1.1s ease-in-out forwards` } as P}>🍃</div>
+        <div style={{ position:'absolute', fontSize:'1.7rem', filter:'drop-shadow(0 0 6px #22c55e)', animation:`grass-fly-${d} 1.1s 0.1s ease-in-out forwards` } as P}>🌿</div>
+        <div style={{ position:'absolute', fontSize:'1.3rem', animation:`grass-fly-${d} 1.1s 0.18s ease-in-out forwards` } as P}>🍃</div>
       </div>
     );
 
-    // ICE: ultra-fast straight beam (very different from fire's slow arc)
+    // ICE: fast straight beam (very different from fire's slow arc)
     case 'ice': return (
       <div style={origin}>
-        <div style={{ position:'absolute', fontSize:'2rem', filter:'drop-shadow(0 0 16px #bae6fd) drop-shadow(0 0 28px #38bdf8)', animation:`ice-beam-${d} 0.22s ease-out forwards` } as P}>❄️</div>
-        <div style={{ position:'absolute', fontSize:'1.3rem', filter:'drop-shadow(0 0 10px #93c5fd)', animation:`ice-beam-${d} 0.22s 0.05s ease-out forwards` } as P}>🔷</div>
-        <div style={{ position:'absolute', fontSize:'1rem', animation:`ice-beam-${d} 0.22s 0.09s ease-out forwards` } as P}>❄️</div>
+        <div style={{ position:'absolute', fontSize:'2.8rem', filter:'drop-shadow(0 0 20px #bae6fd) drop-shadow(0 0 36px #38bdf8)', animation:`ice-beam-${d} 0.35s ease-out forwards` } as P}>❄️</div>
+        <div style={{ position:'absolute', fontSize:'1.8rem', filter:'drop-shadow(0 0 12px #93c5fd)', animation:`ice-beam-${d} 0.35s 0.06s ease-out forwards` } as P}>🔷</div>
+        <div style={{ position:'absolute', fontSize:'1.4rem', animation:`ice-beam-${d} 0.35s 0.11s ease-out forwards` } as P}>❄️</div>
       </div>
     );
 
@@ -143,8 +143,8 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
       return (
         <>
           <div style={origin}>
-            <div style={{ position:'absolute', fontSize:'1.6rem', filter:'drop-shadow(0 0 12px #d946ef)',
-              '--s': 1, animation:`stream-${d} 0.58s ease-in-out forwards` } as P}>🔮</div>
+            <div style={{ position:'absolute', fontSize:'2.2rem', filter:'drop-shadow(0 0 16px #d946ef)',
+              '--s': 1, animation:`stream-${d} 0.8s ease-in-out forwards` } as P}>🔮</div>
           </div>
           <div style={tgt}>
             {([0,1,2] as number[]).map(i => (
@@ -158,20 +158,20 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
       );
     }
 
-    // FIGHTING: very fast direct punch (shortest animation)
+    // FIGHTING: fast direct punch (shorter than other animations)
     case 'fighting': return (
       <div style={origin}>
-        <div style={{ position:'absolute', fontSize:'2.2rem', filter:'drop-shadow(0 0 12px #f97316)', animation:`fight-dash-${d} 0.3s ease-in forwards` } as P}>👊</div>
-        <div style={{ position:'absolute', fontSize:'1.7rem', filter:'drop-shadow(0 0 12px #fbbf24)', animation:`fight-dash-${d} 0.3s 0.18s ease-out forwards` } as P}>💥</div>
+        <div style={{ position:'absolute', fontSize:'3rem', filter:'drop-shadow(0 0 16px #f97316)', animation:`fight-dash-${d} 0.5s ease-in forwards` } as P}>👊</div>
+        <div style={{ position:'absolute', fontSize:'2.4rem', filter:'drop-shadow(0 0 16px #fbbf24)', animation:`fight-dash-${d} 0.5s 0.22s ease-out forwards` } as P}>💥</div>
       </div>
     );
 
     // GHOST: slow, undulating wave (longest animation — opposite of fighting)
     case 'ghost': return (
       <div style={origin}>
-        <div style={{ position:'absolute', fontSize:'2.6rem', top:-20, left:-13,
-          filter:'drop-shadow(0 0 16px #7c3aed) blur(0.5px)', opacity:0,
-          animation:`ghost-wave2-${d} 1.2s ease-in-out forwards` } as P}>👻</div>
+        <div style={{ position:'absolute', fontSize:'3.5rem', top:-26, left:-18,
+          filter:'drop-shadow(0 0 20px #7c3aed) blur(0.5px)', opacity:0,
+          animation:`ghost-wave2-${d} 1.6s ease-in-out forwards` } as P}>👻</div>
       </div>
     );
 
@@ -179,28 +179,28 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
     case 'poison': return (
       <div style={origin}>
         {([
-          {t:0,  l:0,  s:15, delay:'0s'   },
-          {t:9,  l:-6, s:11, delay:'0.1s' },
-          {t:-5, l:7,  s:12, delay:'0.17s'},
+          {t:0,  l:0,  s:22, delay:'0s'   },
+          {t:9,  l:-8, s:16, delay:'0.1s' },
+          {t:-5, l:9,  s:18, delay:'0.17s'},
         ] as Array<{t:number,l:number,s:number,delay:string}>).map((b,i) => (
           <div key={i} style={{ position:'absolute', width:b.s, height:b.s, borderRadius:'50%',
             background:'radial-gradient(circle at 35% 35%, #d946ef, #7e22ce)',
             border:'1px solid #e879f9', top:b.t, left:b.l,
             filter:'drop-shadow(0 0 4px #a855f7)',
-            animation:`poison-drift-${d} 0.9s ${b.delay} ease-in-out forwards` } as P} />
+            animation:`poison-drift-${d} 1.2s ${b.delay} ease-in-out forwards` } as P} />
         ))}
-        <div style={{ position:'absolute', fontSize:'1.1rem', top:-4, left:-4,
-          filter:'drop-shadow(0 0 6px #a855f7)',
-          animation:`poison-drift-${d} 0.9s 0.06s ease-in-out forwards` } as P}>☠️</div>
+        <div style={{ position:'absolute', fontSize:'1.6rem', top:-6, left:-6,
+          filter:'drop-shadow(0 0 8px #a855f7)',
+          animation:`poison-drift-${d} 1.2s 0.08s ease-in-out forwards` } as P}>☠️</div>
       </div>
     );
 
     // GROUND: rock rolls LOW along the ground, then rises to hit target
     case 'ground': return (
       <div style={{ ...origin, top: d === 'ltr' ? '67%' : '42%' }}>
-        <div style={{ position:'absolute', fontSize:'1.9rem', filter:'drop-shadow(0 0 5px #92400e)', animation:`ground-roll-${d} 0.82s ease-in-out forwards` } as P}>🪨</div>
-        <div style={{ position:'absolute', fontSize:'1.3rem', animation:`ground-roll-${d} 0.82s 0.09s ease-in-out forwards` } as P}>🪨</div>
-        <div style={{ position:'absolute', fontSize:'1rem', filter:'drop-shadow(0 0 5px #f97316)', animation:`ground-roll-${d} 0.82s 0.28s ease-out forwards` } as P}>💥</div>
+        <div style={{ position:'absolute', fontSize:'2.6rem', filter:'drop-shadow(0 0 7px #92400e)', animation:`ground-roll-${d} 1.1s ease-in-out forwards` } as P}>🪨</div>
+        <div style={{ position:'absolute', fontSize:'1.8rem', animation:`ground-roll-${d} 1.1s 0.1s ease-in-out forwards` } as P}>🪨</div>
+        <div style={{ position:'absolute', fontSize:'1.4rem', filter:'drop-shadow(0 0 7px #f97316)', animation:`ground-roll-${d} 1.1s 0.32s ease-out forwards` } as P}>💥</div>
       </div>
     );
 
@@ -218,16 +218,16 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
           left: d === 'ltr' ? '8%' : 'auto', right: d === 'ltr' ? 'auto' : '8%',
           top:0, bottom:0, width:'100%' }}>
           {([
-            {w:54, h:3, delay:'0s'   },
-            {w:40, h:2, delay:'0.06s'},
-            {w:31, h:2, delay:'0.1s' },
+            {w:76, h:4, delay:'0s'   },
+            {w:56, h:3, delay:'0.07s'},
+            {w:44, h:3, delay:'0.13s' },
           ] as Array<{w:number,h:number,delay:string}>).map((s,i) => (
             <div key={i} style={{ ...slashBase, top:tops[i], width:s.w, height:s.h,
-              animation:`wind-slash-${d} 0.62s ${s.delay} ease-in-out forwards` } as P} />
+              animation:`wind-slash-${d} 0.85s ${s.delay} ease-in-out forwards` } as P} />
           ))}
-          <div style={{ position:'absolute', top: d === 'ltr' ? '49%' : '17%', fontSize:'1.4rem',
-            filter:'drop-shadow(0 0 6px #bae6fd)',
-            animation:`wind-slash-${d} 0.62s ease-in-out forwards` } as P}>💨</div>
+          <div style={{ position:'absolute', top: d === 'ltr' ? '49%' : '17%', fontSize:'2rem',
+            filter:'drop-shadow(0 0 8px #bae6fd)',
+            animation:`wind-slash-${d} 0.85s ease-in-out forwards` } as P}>💨</div>
         </div>
       );
     }
@@ -235,23 +235,23 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
     // DRAGON: slow powerful sweep with energy trail
     case 'dragon': return (
       <div style={{ ...origin, top: d === 'ltr' ? '55%' : '35%' }}>
-        <div style={{ position:'absolute', fontSize:'3rem', top:-24, left:-15,
-          filter:'drop-shadow(0 0 14px #4f46e5) drop-shadow(0 0 28px #818cf8)',
+        <div style={{ position:'absolute', fontSize:'4rem', top:-30, left:-20,
+          filter:'drop-shadow(0 0 18px #4f46e5) drop-shadow(0 0 36px #818cf8)',
           transform: d === 'rtl' ? 'scaleX(-1)' : undefined,
-          animation:`dragon-arc-${d} 0.9s ease-in-out forwards` } as P}>🐉</div>
-        <div style={{ position:'absolute', fontSize:'1rem', filter:'drop-shadow(0 0 6px #818cf8)',
-          animation:`dragon-arc-${d} 0.9s 0.13s ease-in-out forwards` } as P}>✨</div>
-        <div style={{ position:'absolute', fontSize:'0.8rem', filter:'drop-shadow(0 0 4px #a5b4fc)',
-          animation:`dragon-arc-${d} 0.9s 0.23s ease-in-out forwards` } as P}>✨</div>
+          animation:`dragon-arc-${d} 1.2s ease-in-out forwards` } as P}>🐉</div>
+        <div style={{ position:'absolute', fontSize:'1.4rem', filter:'drop-shadow(0 0 8px #818cf8)',
+          animation:`dragon-arc-${d} 1.2s 0.15s ease-in-out forwards` } as P}>✨</div>
+        <div style={{ position:'absolute', fontSize:'1.1rem', filter:'drop-shadow(0 0 5px #a5b4fc)',
+          animation:`dragon-arc-${d} 1.2s 0.28s ease-in-out forwards` } as P}>✨</div>
       </div>
     );
 
     // ROCK: tumbling rocks with rotation
     case 'rock': return (
       <div style={origin}>
-        <div style={{ position:'absolute', fontSize:'1.9rem', filter:'drop-shadow(0 0 4px #a8a29e)', animation:`rock-throw-${d} 0.65s ease-in-out forwards` } as P}>🪨</div>
-        <div style={{ position:'absolute', fontSize:'1.2rem', animation:`rock-throw-${d} 0.65s 0.1s ease-in-out forwards` } as P}>🪨</div>
-        <div style={{ position:'absolute', fontSize:'1.1rem', filter:'drop-shadow(0 0 5px #fbbf24)', animation:`rock-throw-${d} 0.65s 0.19s ease-out forwards` } as P}>💥</div>
+        <div style={{ position:'absolute', fontSize:'2.6rem', filter:'drop-shadow(0 0 5px #a8a29e)', animation:`rock-throw-${d} 0.9s ease-in-out forwards` } as P}>🪨</div>
+        <div style={{ position:'absolute', fontSize:'1.7rem', animation:`rock-throw-${d} 0.9s 0.12s ease-in-out forwards` } as P}>🪨</div>
+        <div style={{ position:'absolute', fontSize:'1.5rem', filter:'drop-shadow(0 0 7px #fbbf24)', animation:`rock-throw-${d} 0.9s 0.22s ease-out forwards` } as P}>💥</div>
       </div>
     );
 
@@ -259,9 +259,9 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
     case 'bug': return (
       <div style={origin}>
         {([0,1,2,3] as number[]).map(i => (
-          <div key={i} style={{ position:'absolute', fontSize:'1rem',
-            top:(i%2)*10-5, left:(Math.floor(i/2))*8-4,
-            animation:`bug-swarm-${d} 0.8s ${(i*0.07).toFixed(2)}s ease-in-out forwards` } as P}>🐛</div>
+          <div key={i} style={{ position:'absolute', fontSize:'1.6rem',
+            top:(i%2)*12-6, left:(Math.floor(i/2))*10-5,
+            animation:`bug-swarm-${d} 1.1s ${(i*0.09).toFixed(2)}s ease-in-out forwards` } as P}>🐛</div>
         ))}
       </div>
     );
@@ -269,14 +269,14 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
     // NORMAL: star stream
     default: return (
       <div style={origin}>
-        {([{s:2,d2:'0s'},{s:1.5,d2:'0.07s'},{s:1.1,d2:'0.13s'},{s:.8,d2:'0.18s'}] as Array<{s:number,d2:string}>).map((p,i)=>(
-          <div key={i} style={{ position:'absolute', fontSize:'1rem',
-            filter:'drop-shadow(0 0 6px #fde047)', '--s':p.s,
-            animation:`stream-${d} 0.65s ${p.d2} ease-out forwards` } as P}>⭐</div>
+        {([{s:2,d2:'0s'},{s:1.5,d2:'0.08s'},{s:1.1,d2:'0.15s'},{s:.8,d2:'0.22s'}] as Array<{s:number,d2:string}>).map((p,i)=>(
+          <div key={i} style={{ position:'absolute', fontSize:'1.5rem',
+            filter:'drop-shadow(0 0 8px #fde047)', '--s':p.s,
+            animation:`stream-${d} 0.9s ${p.d2} ease-out forwards` } as P}>⭐</div>
         ))}
-        <div style={{ position:'absolute', fontSize:'1rem', '--s':2.2,
-          animation:`stream-${d} 0.6s 0.02s ease-out forwards`,
-          filter:'drop-shadow(0 0 8px #fbbf24)' } as P}>💥</div>
+        <div style={{ position:'absolute', fontSize:'1.5rem', '--s':2.2,
+          animation:`stream-${d} 0.85s 0.02s ease-out forwards`,
+          filter:'drop-shadow(0 0 10px #fbbf24)' } as P}>💥</div>
       </div>
     );
   }
