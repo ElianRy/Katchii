@@ -122,10 +122,10 @@ export const RARITY_LABELS: Record<Rarity, string> = {
 
 export const RARITY_WEIGHTS: Record<Rarity, number> = {
   commun: 50,
-  peu_commun: 28,
-  rare: 14,
-  elite: 6,
-  legendaire: 1,
+  peu_commun: 8,
+  rare: 2,
+  elite: 1,
+  legendaire: 0.3,
 };
 
 export const FIRST_CAPTURE_POINTS: Record<Rarity, number> = {

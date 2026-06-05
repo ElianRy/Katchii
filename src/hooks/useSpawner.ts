@@ -30,10 +30,6 @@ function weightedRarity(weights: Record<Rarity, number>): Rarity {
   return 'commun';
 }
 
-// Flat per-spawn-check probabilities for special pokemon
-// These bypass the rarity pool entirely so being alone in a rarity tier doesn't inflate rate
-const LEGENDARY_SPECIAL_RATE = 1 / 400; // ~1 per 10 min
-const ELITE_SPECIAL_RATE = 1 / 40;      // ~1 per 1 min
 
 function pickPokemon(rarity: Rarity, zoneIds: number[], excludeIds: Set<number>): number {
   const allPool = POKEMON_BY_RARITY[rarity] ?? [];
@@ -133,9 +129,6 @@ export function useSpawner(
         const zoneId = gs.state.zoneProgress?.currentZoneId ?? 'zone1';
         const currentZone = ZONE_BY_ID[zoneId];
         const zoneIds = currentZone?.pokemonIds ?? [];
-        const specialIds = new Set<number>(currentZone?.specialIds ?? []);
-        const legendarySpecialIds = new Set<number>(currentZone?.legendarySpecialIds ?? []);
-        const allExcluded = new Set<number>([...specialIds, ...legendarySpecialIds]);
         const zoneRarities = getZoneRarities(zoneIds);
 
         // Zero out rarities not present in this zone
@@ -148,17 +141,7 @@ export function useSpawner(
         };
 
         const rarity = weightedRarity(zoneWeights);
-
-        // Check legendary/elite specials first via flat absolute rates
-        const legendaryPool = [...legendarySpecialIds].filter(id => zoneIds.includes(id));
-        const elitePool = [...specialIds].filter(id => zoneIds.includes(id));
-        if (legendaryPool.length > 0 && Math.random() < LEGENDARY_SPECIAL_RATE) {
-          pokemonId = legendaryPool[Math.floor(Math.random() * legendaryPool.length)];
-        } else if (elitePool.length > 0 && Math.random() < ELITE_SPECIAL_RATE) {
-          pokemonId = elitePool[Math.floor(Math.random() * elitePool.length)];
-        } else {
-          pokemonId = pickPokemon(rarity, zoneIds, allExcluded);
-        }
+        pokemonId = pickPokemon(rarity, zoneIds, new Set());
         const shinyDepleted = gs.state.shinyDepleted;
         const baseShinyRate = (1 / 250) * (151 / Math.max(1, 151 - shinyDepleted.length));
         const shinyRate = baseShinyRate * mult.shinyRate;
