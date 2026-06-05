@@ -103,7 +103,7 @@ export function App() {
       )}
 
       {/* Home screen */}
-      {view === 'home' && (
+      {view === 'home' && !showWelcome && (
         <HomeScreen
           username={username}
           onPlay={() => {

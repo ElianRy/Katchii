@@ -220,6 +220,22 @@
   0% { transform: translateX(-120px); }
   100% { transform: translateX(110vw); }
 }
+@keyframes cloud-drift-1 {
+  0%   { transform: translateX(-200px); }
+  100% { transform: translateX(110vw); }
+}
+@keyframes cloud-drift-2 {
+  0%   { transform: translateX(20vw); }
+  100% { transform: translateX(110vw); }
+}
+@keyframes cloud-drift-3 {
+  0%   { transform: translateX(55vw); }
+  100% { transform: translateX(110vw); }
+}
+@keyframes cloud-drift-4 {
+  0%   { transform: translateX(-10vw); }
+  100% { transform: translateX(110vw); }
+}
 
 /* Water ripple for ocean zone */
 @keyframes ripple {

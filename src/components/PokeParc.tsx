@@ -676,7 +676,13 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pokepark_chat' }, payload => {
         const incoming = payload.new as ChatMessage;
         setChat(prev => {
-          // Replace optimistic entry (same user + message) if present, else append
+          // If this user is muted by this admin client, delete from DB immediately
+          const exp = mutedUsers.get(incoming.user_id);
+          const muted = exp !== undefined && (exp === null || Date.now() < exp);
+          if (muted) {
+            supabase.from('pokepark_chat').delete().eq('id', incoming.id);
+            return prev;
+          }
           const optIdx = prev.findIndex(m => m.id.startsWith('opt-') && m.user_id === incoming.user_id && m.message === incoming.message);
           if (optIdx >= 0) {
             const next = [...prev];
@@ -685,6 +691,10 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           }
           return [...prev.slice(-99), incoming];
         });
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pokepark_chat' }, payload => {
+        const deleted = payload.old as { id: string };
+        setChat(prev => prev.filter(m => m.id !== deleted.id));
       }).subscribe();
 
     return () => { supabase.removeChannel(chan); };
@@ -806,10 +816,16 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     await supabase.from('pokepark_chat').delete().eq('id', msgId);
   };
 
-  const muteUser = (userId: string, durationMs: number | null) => {
+  const muteUser = async (userId: string, durationMs: number | null) => {
     const expiry = durationMs === null ? null : Date.now() + durationMs;
     setMutedUsers(prev => new Map(prev).set(userId, expiry));
     setMuteMenuFor(null);
+    // Remove all messages from this user so they disappear for everyone
+    const ids = chat.filter(m => m.user_id === userId).map(m => m.id);
+    if (ids.length > 0) {
+      setChat(prev => prev.filter(m => m.user_id !== userId));
+      await supabase.from('pokepark_chat').delete().in('id', ids);
+    }
   };
 
   const unmuteUser = (userId: string) => {

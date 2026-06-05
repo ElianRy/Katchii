@@ -119,7 +119,7 @@ export function WelcomeAnimation({ username, onDone }: Props) {
           letterSpacing: '0.05em',
           marginBottom: 8,
         }}>
-          Bienvenu(e) !
+          Bienvenue !
         </div>
         <div style={{
           fontSize: '1.4rem',

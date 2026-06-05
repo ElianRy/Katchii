@@ -30,26 +30,34 @@ function useWanderers(count = 8) {
     Array.from({ length: count }, (_, i) => {
       const x = 5 + Math.random() * 88;
       const y = 10 + Math.random() * 78;
+      // stagger initial targets so they start moving immediately
+      const tx = 5 + Math.random() * 88;
+      const ty = 10 + Math.random() * 78;
       return {
         id: i,
         pokemonId: WANDER_POKEMON[Math.floor(Math.random() * WANDER_POKEMON.length)],
-        x, y, targetX: x, targetY: y,
-        facingRight: Math.random() > 0.5,
+        x, y, targetX: tx, targetY: ty,
+        facingRight: tx > x,
         size: 40 + Math.floor(Math.random() * 24),
-        speed: 3 + Math.random() * 4,
+        speed: 3 + Math.random() * 3,
       };
     })
   );
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setList(prev => prev.map(p => {
-        const nx = 5 + Math.random() * 88;
-        const ny = 10 + Math.random() * 78;
-        return { ...p, x: p.targetX, y: p.targetY, targetX: nx, targetY: ny, facingRight: nx > p.x };
-      }));
-    }, 5000);
-    return () => clearInterval(id);
+    // Each pokemon gets its own interval so they never pause together
+    const ids = list.map(p =>
+      setInterval(() => {
+        setList(prev => prev.map(w => {
+          if (w.id !== p.id) return w;
+          const nx = 5 + Math.random() * 88;
+          const ny = 10 + Math.random() * 78;
+          return { ...w, x: w.targetX, y: w.targetY, targetX: nx, targetY: ny, facingRight: nx > w.targetX };
+        }));
+      }, 2500 + p.id * 400 + Math.random() * 1500)
+    );
+    return () => ids.forEach(clearInterval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return list;
@@ -70,18 +78,48 @@ export function HomeScreen({ username, onPlay, onProfile, onLogout, onWrapped, o
     <div
       className="fixed inset-0 flex flex-col overflow-hidden"
       style={{
-        background: 'linear-gradient(160deg, #1a6b3c 0%, #2d9b5a 25%, #4ab86b 45%, #7dd87a 65%, #a8e88a 80%, #d4f5a0 100%)',
+        background: 'linear-gradient(180deg, #1a78c2 0%, #3a9fd8 30%, #6ec6f0 60%, #b8e4f8 85%, #dff2fc 100%)',
       }}
     >
-      {/* Decorative clouds */}
+      {/* Sky decorations */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div style={{ position: 'absolute', top: '3%', left: '5%', fontSize: '5rem', opacity: 0.18, animation: 'sway 8s ease-in-out infinite' }}>☁️</div>
-        <div style={{ position: 'absolute', top: '6%', right: '8%', fontSize: '7rem', opacity: 0.15, animation: 'sway 11s ease-in-out infinite reverse' }}>☁️</div>
-        <div style={{ position: 'absolute', top: '1%', left: '40%', fontSize: '4rem', opacity: 0.12, animation: 'sway 9s ease-in-out infinite' }}>☁️</div>
-        {/* Grass patches bottom */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 80, background: 'linear-gradient(to top, rgba(26,107,60,0.4) 0%, transparent 100%)', borderRadius: '60% 60% 0 0' }} />
         {/* Sun */}
-        <div style={{ position: 'absolute', top: '5%', right: '12%', width: 60, height: 60, borderRadius: '50%', background: 'radial-gradient(circle, #ffe566 0%, #ffcc00 60%, transparent 100%)', boxShadow: '0 0 40px 15px rgba(255,220,0,0.35)', animation: 'aura-pulse 3s ease-in-out infinite' }} />
+        <div style={{
+          position: 'absolute', top: '6%', right: '10%',
+          width: 80, height: 80, borderRadius: '50%',
+          background: 'radial-gradient(circle, #fff7a0 0%, #ffe234 50%, #ffaa00 100%)',
+          boxShadow: '0 0 60px 25px rgba(255,220,0,0.55), 0 0 120px 60px rgba(255,180,0,0.2)',
+          animation: 'aura-pulse 4s ease-in-out infinite',
+        }} />
+        {/* Cloud 1 — drifts left to right slowly */}
+        <div style={{
+          position: 'absolute', top: '8%', fontSize: '6rem', opacity: 0.9,
+          animation: 'cloud-drift-1 28s linear infinite',
+          whiteSpace: 'nowrap',
+        }}>☁️</div>
+        {/* Cloud 2 */}
+        <div style={{
+          position: 'absolute', top: '18%', fontSize: '8rem', opacity: 0.85,
+          animation: 'cloud-drift-2 38s linear infinite',
+          whiteSpace: 'nowrap',
+        }}>☁️</div>
+        {/* Cloud 3 */}
+        <div style={{
+          position: 'absolute', top: '5%', fontSize: '5rem', opacity: 0.75,
+          animation: 'cloud-drift-3 22s linear infinite',
+          whiteSpace: 'nowrap',
+        }}>☁️</div>
+        {/* Cloud 4 */}
+        <div style={{
+          position: 'absolute', top: '28%', fontSize: '9rem', opacity: 0.8,
+          animation: 'cloud-drift-4 45s linear infinite',
+          whiteSpace: 'nowrap',
+        }}>☁️</div>
+        {/* Horizon glow */}
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: 120,
+          background: 'linear-gradient(to top, rgba(255,200,80,0.25) 0%, transparent 100%)',
+        }} />
       </div>
 
       {/* Wandering pokemon — all over the screen */}
