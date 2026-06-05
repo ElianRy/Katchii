@@ -95,15 +95,22 @@ export function HUD({
       {/* HUD strip — zone, boss progress, lure */}
       <div className="absolute top-0 left-0 right-0 z-20 pointer-events-none">
         <div className="flex items-center gap-2 px-3 pt-2 pb-1 pointer-events-auto">
-          {/* Zone name + info */}
+          {/* Zone name */}
           <div className="flex items-center gap-1 flex-1 min-w-0 bg-black/60 rounded-xl px-3 py-1.5 border border-slate-700/50">
             <span className="text-slate-300 text-xs truncate">
               {`${zoneEmoji(currentZoneName ?? '')} ${currentZoneName ?? 'Zone 1'}`}
             </span>
-            {onOpenZoneInfo && (
-              <button onClick={onOpenZoneInfo} className="bg-slate-700/80 hover:bg-slate-600 border border-slate-500/50 rounded-lg px-2 py-1 text-slate-200 hover:text-white text-sm font-bold ml-1 shrink-0">ℹ️ Zone</button>
-            )}
           </div>
+
+          {/* Zone info button — standalone so it's always visible */}
+          {onOpenZoneInfo && (
+            <button
+              onClick={onOpenZoneInfo}
+              className="shrink-0 rounded-xl px-2.5 py-1.5 text-sm font-black border border-blue-500/60 bg-blue-900/70 hover:bg-blue-800 text-blue-200 hover:text-white"
+            >
+              ℹ️
+            </button>
+          )}
 
           {/* Lure indicator */}
           {activeLure && Date.now() < activeLure.expiresAt && (

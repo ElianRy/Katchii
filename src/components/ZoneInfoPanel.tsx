@@ -1,4 +1,4 @@
-import { GameState, RARITY_COLORS, RARITY_LABELS, Rarity } from '../types';
+import { GameState, RARITY_COLORS, RARITY_LABELS, RARITY_WEIGHTS, Rarity } from '../types';
 import { ZONE_BY_ID } from '../data/zones';
 import { POKEMON_BY_ID } from '../data/gen1';
 
@@ -15,10 +15,23 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
   if (!zone) return null;
 
   const caughtInZone = zone.pokemonIds.filter(id => (state.normalCollection[id] ?? 0) > 0);
-  const needed = Math.ceil(zone.pokemonIds.length * zone.completionThreshold);
   const progress = zone.pokemonIds.length > 0 ? caughtInZone.length / zone.pokemonIds.length : 0;
-  const progressTowardBoss = Math.min(1, needed > 0 ? caughtInZone.length / needed : 1);
   const bossDefeated = state.zoneProgress?.bossDefeated?.[zoneId];
+
+  function getBossConditionDisplay() {
+    const cond = zone.unlockCondition;
+    if (!cond) return null;
+    const totalDiff = Object.keys(state.normalCollection).filter(id => (state.normalCollection[Number(id)] ?? 0) > 0).length;
+    switch (cond.type) {
+      case 'total_pokemon': return { label: `${totalDiff} / ${cond.count} pokémon différents`, progress: Math.min(1, totalDiff / cond.count) };
+      case 'daily_quests_completed': { const done = state.dailyQuests.quests.filter(q => q.completed).length; return { label: `${done} / ${cond.count} quêtes complétées`, progress: Math.min(1, done / cond.count) }; }
+      case 'capture_n_times': { const n = (state.pokemonCaptureCount ?? {})[cond.pokemonId] ?? 0; const name = POKEMON_BY_ID[cond.pokemonId]?.name ?? `#${cond.pokemonId}`; return { label: `${n} / ${cond.count} ${name} capturé(s)`, progress: Math.min(1, n / cond.count) }; }
+      case 'duel_wins': return { label: `${state.duels.wins} / ${cond.count} victoires en duel`, progress: Math.min(1, state.duels.wins / cond.count) };
+      case 'pokemon_level_in_team': { const maxLvl = Math.max(0, ...Object.values(state.pokemonLevels ?? {}).map(l => l.level)); return { label: `Niv. max : ${maxLvl} / ${cond.level}`, progress: Math.min(1, maxLvl / cond.level) }; }
+      case 'shiny_captures': { const n = state.shinyCapturesTotal ?? 0; return { label: `${n} / ${cond.count} shiny capturé(s)`, progress: Math.min(1, n / cond.count) }; }
+    }
+  }
+  const bossCondition = getBossConditionDisplay();
 
   const byRarity: Partial<Record<Rarity, number[]>> = {};
   for (const id of zone.pokemonIds) {
@@ -27,6 +40,15 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
     if (!byRarity[p.rarity]) byRarity[p.rarity] = [];
     byRarity[p.rarity]!.push(id);
   }
+
+  // Compute spawn % per rarity tier (only tiers present in zone)
+  const presentRarities = Object.keys(byRarity) as Rarity[];
+  const totalWeight = presentRarities.reduce((s, r) => s + RARITY_WEIGHTS[r], 0);
+  const rarityChance = (r: Rarity) => totalWeight > 0 ? (RARITY_WEIGHTS[r] / totalWeight) * 100 : 0;
+  const pokemonChance = (r: Rarity) => {
+    const count = byRarity[r]?.length ?? 1;
+    return rarityChance(r) / count;
+  };
 
   return (
     <div
@@ -62,22 +84,20 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
             </div>
           </div>
 
-          {zone.boss && !bossDefeated && (
+          {zone.boss && !bossDefeated && bossCondition && (
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-yellow-400 font-bold">🏆 Débloquer {zone.boss.name}</span>
-                <span className="text-slate-400">{caughtInZone.length} / {needed}</span>
+                <span className="text-yellow-400 font-bold">⚔️ {zone.boss.name}</span>
+                <span className="text-slate-400">{bossCondition.label}</span>
               </div>
               <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
                 <div
                   className="h-3 rounded-full transition-all"
-                  style={{ width: `${progressTowardBoss * 100}%`, background: 'linear-gradient(90deg, #f59e0b, #ef4444)' }}
+                  style={{ width: `${bossCondition.progress * 100}%`, background: 'linear-gradient(90deg, #f59e0b, #ef4444)' }}
                 />
               </div>
-              {caughtInZone.length < needed ? (
-                <p className="text-xs text-slate-500 mt-1">
-                  Encore <span className="text-yellow-400 font-bold">{needed - caughtInZone.length}</span> Pokémon à capturer pour affronter {zone.boss.name}
-                </p>
+              {bossCondition.progress < 1 ? (
+                <p className="text-xs text-slate-500 mt-1">Condition pas encore remplie pour affronter {zone.boss.name}</p>
               ) : (
                 <p className="text-xs text-green-400 font-bold mt-1">✅ Tu peux affronter {zone.boss.name} !</p>
               )}
@@ -105,7 +125,7 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
                     className="text-xs font-bold px-2 py-0.5 rounded-full"
                     style={{ color, background: color + '22', border: `1px solid ${color}44` }}
                   >
-                    {RARITY_LABELS[rarity]} — {caughtCount}/{ids.length}
+                    {RARITY_LABELS[rarity]} — {rarityChance(rarity).toFixed(1)}% spawn — {caughtCount}/{ids.length}
                   </span>
                   <div className="h-px flex-1" style={{ background: color + '44' }} />
                 </div>
@@ -139,6 +159,9 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
                           }}
                         >
                           {caught ? p.name : '???'}
+                        </span>
+                        <span style={{ fontSize: '0.45rem', color: color + 'cc', textAlign: 'center' }}>
+                          {pokemonChance(rarity).toFixed(1)}%
                         </span>
                       </div>
                     );
