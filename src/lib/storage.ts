@@ -126,8 +126,15 @@ export function loadState(): GameState {
 export function loadUserState(userId: string): GameState | null {
   try {
     const raw = localStorage.getItem(userKey(userId));
-    if (!raw) return null;
-    return parseState(raw);
+    if (raw) return parseState(raw);
+    // Last-resort migration: use generic key only if it has real data (>0 pokemon)
+    const legacy = localStorage.getItem(STORAGE_KEY);
+    if (legacy) {
+      const parsed = JSON.parse(legacy) as Partial<GameState>;
+      const hasPokemon = Object.values(parsed.normalCollection ?? {}).some(v => v > 0);
+      if (hasPokemon) return parseState(legacy);
+    }
+    return null;
   } catch {
     return null;
   }

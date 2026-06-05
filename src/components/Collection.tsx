@@ -171,7 +171,7 @@ export function Collection({ state, onClose }: Props) {
                       className="text-xs px-1 rounded font-bold"
                       style={{ color: caught ? rarityColor : '#374151', fontSize: '0.6rem' }}
                     >
-                      {RARITY_LABELS[pokemon.rarity].slice(0, 3)}
+                      {RARITY_LABELS[pokemon.rarity].split('—')[1]?.trim().slice(0, 4) ?? ''}
                     </div>
                     <div
                       className="text-center leading-tight"

@@ -41,6 +41,7 @@ interface InteractionTarget {
 interface Props {
   state: GameState;
   username: string;
+  isAdmin?: boolean;
   onClose: () => void;
   onUpdateVillage: (updater: (prev: GameState['village']) => GameState['village']) => void;
   onAddPlayerXp: (xp: number) => void;
@@ -613,7 +614,7 @@ function PokemonPicker({ state, onPick, onClose }: {
 }
 
 // ---- Main Component ----
-export function PokeParc({ state, username, onClose, onUpdateVillage, onAddPlayerXp, onAddPokemonXp }: Props) {
+export function PokeParc({ state, username, isAdmin = false, onClose, onUpdateVillage, onAddPlayerXp, onAddPokemonXp }: Props) {
   const [presence, setPresence] = useState<PresenceRow[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -625,6 +626,7 @@ export function PokeParc({ state, username, onClose, onUpdateVillage, onAddPlaye
   const [showRace, setShowRace] = useState(false);
   const [showDuel, setShowDuel] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [mutedUsers, setMutedUsers] = useState<Set<string>>(new Set());
   const chatEndRef = useRef<HTMLDivElement>(null);
   const wanderRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -782,19 +784,32 @@ export function PokeParc({ state, username, onClose, onUpdateVillage, onAddPlaye
       grade_color: myGrade.color,
     };
     setChat(prev => [...prev.slice(-99), optimistic]);
-    const { error } = await supabase.from('pokepark_chat').insert({
-      user_id: uid,
-      username,
-      message: msg,
-      grade: myGrade.grade,
-      grade_icon: myGrade.icon,
-      grade_color: myGrade.color,
+    let { error } = await supabase.from('pokepark_chat').insert({
+      user_id: uid, username, message: msg,
+      grade: myGrade.grade, grade_icon: myGrade.icon, grade_color: myGrade.color,
     });
+    // Fallback: retry without grade columns if they don't exist yet in DB
+    if (error && (error.code === '42703' || error.message.includes('grade'))) {
+      const res = await supabase.from('pokepark_chat').insert({ user_id: uid, username, message: msg });
+      error = res.error;
+    }
     if (error) {
-      console.error('[chat] insert error:', error.message, error.code, error.details);
-      // Revert optimistic on error
+      console.error('[chat] insert error:', error.message, error.code);
       setChat(prev => prev.filter(m => m.id !== optimistic.id));
     }
+  };
+
+  const deleteMessage = async (msgId: string) => {
+    setChat(prev => prev.filter(m => m.id !== msgId));
+    await supabase.from('pokepark_chat').delete().eq('id', msgId);
+  };
+
+  const toggleMute = (userId: string) => {
+    setMutedUsers(prev => {
+      const next = new Set(prev);
+      next.has(userId) ? next.delete(userId) : next.add(userId);
+      return next;
+    });
   };
 
   const handleWave = () => {
@@ -975,8 +990,8 @@ export function PokeParc({ state, username, onClose, onUpdateVillage, onAddPlaye
             {chat.length === 0 && (
               <div className="text-xs text-slate-600 text-center py-4">Soyez le premier à écrire !</div>
             )}
-            {chat.map(msg => (
-              <div key={msg.id} className="flex flex-col gap-0.5 text-xs">
+            {chat.filter(m => !mutedUsers.has(m.user_id)).map(msg => (
+              <div key={msg.id} className="flex flex-col gap-0.5 text-xs group">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-slate-500 shrink-0" style={{ fontSize: '0.55rem' }}>
                     {formatChatTime(msg.created_at)}
@@ -989,6 +1004,14 @@ export function PokeParc({ state, username, onClose, onUpdateVillage, onAddPlaye
                   <span className="font-bold shrink-0" style={{ color: msg.user_id === myUserId ? '#fbbf24' : '#60a5fa' }}>
                     {msg.username}
                   </span>
+                  {isAdmin && msg.user_id !== myUserId && (
+                    <span className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <button onClick={() => deleteMessage(msg.id)}
+                        className="text-red-500 hover:text-red-400 px-1 rounded text-xs" title="Supprimer">🗑️</button>
+                      <button onClick={() => toggleMute(msg.user_id)}
+                        className="text-orange-500 hover:text-orange-400 px-1 rounded text-xs" title="Mute">🔇</button>
+                    </span>
+                  )}
                 </div>
                 <span className="text-slate-300 break-all pl-1">{msg.message}</span>
               </div>

@@ -412,8 +412,17 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
   useEffect(() => {
     if (phase === 'end') {
-      const snap = { ...xpGains };
       const wonSnap = won.current;
+      // Give bench pokemon 25% of the average XP earned by active fighters
+      const snap = { ...xpGains };
+      const earned = Object.values(snap);
+      if (earned.length > 0) {
+        const avgXp = earned.reduce((a, b) => a + b, 0) / earned.length;
+        const benchXp = Math.max(1, Math.floor(avgXp * 0.25));
+        playerTeam.forEach(m => {
+          if (!snap[m.pokemonId]) snap[m.pokemonId] = benchXp;
+        });
+      }
       setTimeout(() => onBattleEnd(wonSnap, snap), 1800);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

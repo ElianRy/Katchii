@@ -260,6 +260,7 @@ export function App() {
         <PokeParc
           state={gameState.state}
           username={username}
+          isAdmin={['admin', 'elian'].includes(username.toLowerCase())}
           onClose={() => persistView('hunt')}
           onUpdateVillage={gameState.updateVillage}
           onAddPlayerXp={gameState.addPlayerXp}
