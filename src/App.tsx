@@ -106,14 +106,7 @@ export function App() {
       {view === 'home' && !showWelcome && (
         <HomeScreen
           username={username}
-          onPlay={() => {
-            if (!sessionStorage.getItem('katchii_welcomed')) {
-              sessionStorage.setItem('katchii_welcomed', '1');
-              setShowWelcome(true);
-            } else {
-              persistView('hunt');
-            }
-          }}
+          onPlay={() => setShowWelcome(true)}
           onProfile={() => setView('profile')}
           onLogout={handleLogout}
           onWrapped={() => persistView('wrapped')}

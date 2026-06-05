@@ -667,10 +667,13 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   // Fetch and subscribe to chat (last 24h only)
   useEffect(() => {
     const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const deletedIds = new Set(JSON.parse(localStorage.getItem('katchii_deleted_msgs') ?? '[]') as string[]);
     supabase.from('pokepark_chat').select('*')
       .gte('created_at', since)
       .order('created_at', { ascending: true }).limit(100)
-      .then(({ data }) => { if (data) setChat(data as ChatMessage[]); });
+      .then(({ data }) => {
+        if (data) setChat((data as ChatMessage[]).filter(m => !deletedIds.has(m.id)));
+      });
 
     const chan = supabase.channel('pokepark_chat_changes')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pokepark_chat' }, payload => {
@@ -811,9 +814,23 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     }
   };
 
+  const DELETED_KEY = 'katchii_deleted_msgs';
+  const getDeletedIds = (): Set<string> => {
+    try { return new Set(JSON.parse(localStorage.getItem(DELETED_KEY) ?? '[]')); } catch { return new Set(); }
+  };
+  const persistDeletedId = (id: string) => {
+    const ids = getDeletedIds();
+    ids.add(id);
+    // keep only last 200 to avoid bloat
+    const arr = [...ids].slice(-200);
+    localStorage.setItem(DELETED_KEY, JSON.stringify(arr));
+  };
+
   const deleteMessage = async (msgId: string) => {
     setChat(prev => prev.filter(m => m.id !== msgId));
-    await supabase.from('pokepark_chat').delete().eq('id', msgId);
+    persistDeletedId(msgId);
+    const { error } = await supabase.from('pokepark_chat').delete().eq('id', msgId);
+    if (error) console.error('[chat] delete error:', error.message, error.code);
   };
 
   const muteUser = async (userId: string, durationMs: number | null) => {
@@ -824,6 +841,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     const ids = chat.filter(m => m.user_id === userId).map(m => m.id);
     if (ids.length > 0) {
       setChat(prev => prev.filter(m => m.user_id !== userId));
+      ids.forEach(persistDeletedId);
       await supabase.from('pokepark_chat').delete().in('id', ids);
     }
   };
@@ -1046,10 +1064,10 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                             <button onClick={() => unmuteUser(msg.user_id)}
                               className="text-green-500 hover:text-green-400 px-1 rounded text-xs" title="Démuter">🔊</button>
                           ) : (
-                            <button onClick={() => setMuteMenuFor(muteMenuFor === msg.user_id ? null : msg.user_id)}
+                            <button onClick={() => setMuteMenuFor(muteMenuFor === msg.id ? null : msg.id)}
                               className="text-orange-500 hover:text-orange-400 px-1 rounded text-xs" title="Muter">🔇</button>
                           )}
-                          {muteMenuFor === msg.user_id && (
+                          {muteMenuFor === msg.id && (
                             <div className="absolute right-0 bottom-6 z-50 bg-slate-800 border border-slate-600 rounded-xl shadow-xl flex flex-col overflow-hidden" style={{ minWidth: 100 }}>
                               {[
                                 { label: '5 min', ms: 5 * 60 * 1000 },
