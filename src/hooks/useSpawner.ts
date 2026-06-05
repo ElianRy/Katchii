@@ -275,5 +275,7 @@ export function useSpawner(
     return () => clearInterval(id);
   }, []);
 
-  return { spawned, capture, leavingUids };
+  const clearSpawned = useCallback(() => setSpawned([]), []);
+
+  return { spawned, capture, leavingUids, clearSpawned };
 }

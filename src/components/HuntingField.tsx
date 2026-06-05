@@ -164,7 +164,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   return (
     <div className="relative w-full overflow-hidden" style={{ height: 'calc(100dvh - 72px)', maxHeight: 'calc(100dvh - 72px)' }}>
       {/* Zone-specific background */}
-      <ZoneBackground zoneId={currentZoneId} />
+      <ZoneBackground key={currentZoneId} zoneId={currentZoneId} />
 
       {/* Ground gradient */}
       <div
@@ -260,8 +260,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       {/* Zone nav arrows */}
       {canGoPrev && (
         <button
-          onClick={() => gameState.setCurrentZone(prevZoneId!)}
-          className="absolute left-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl transition-all"
+          onClick={() => { spawner.clearSpawned(); gameState.setCurrentZone(prevZoneId!); }}
+          className="absolute left-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl"
           title={ZONE_BY_ID[prevZoneId!]?.name}
         >
           ‹
@@ -269,8 +269,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       )}
       {canGoNext && (
         <button
-          onClick={() => gameState.setCurrentZone(nextZoneId!)}
-          className="absolute right-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl transition-all"
+          onClick={() => { spawner.clearSpawned(); gameState.setCurrentZone(nextZoneId!); }}
+          className="absolute right-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl"
           title={ZONE_BY_ID[nextZoneId!]?.name}
         >
           ›
