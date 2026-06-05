@@ -207,7 +207,6 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         activeLure={gameState.state.activeLure}
         cooldownRemaining={cooldownSecs}
         isOnCooldown={onCooldown}
-        saveStatus={gameState.saveStatus}
         onOpenCollection={onOpenCollection}
         onOpenTeam={onOpenTeam}
         onOpenAdmin={onOpenAdmin}

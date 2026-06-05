@@ -102,7 +102,7 @@ export function App() {
     (q) => q.completed && !q.rewardClaimed
   ).length;
 
-  const showBottomNav = !['auth', 'home', 'universe', 'profile', 'admin'].includes(view);
+  const showBottomNav = !['auth', 'home', 'universe', 'profile', 'admin', 'wrapped'].includes(view);
 
   return (
     <div className="w-full bg-slate-900 text-white overflow-hidden" style={{ height: '100dvh', maxHeight: '100dvh' }}>
@@ -182,6 +182,9 @@ export function App() {
           getPokemonLevel={gameState.getPokemonLevel}
           onAddXp={gameState.addPokemonXp}
           onClose={() => persistView('hunt')}
+          savedTeams={gameState.state.savedTeams}
+          onSaveTeam={gameState.saveTeam}
+          onDeleteTeam={gameState.deleteTeam}
         />
       )}
 
@@ -277,6 +280,7 @@ export function App() {
           currentView={view}
           onNavigate={persistView}
           questsCompleted={questsCompleted}
+          favoritePokemon={gameState.state.village.favoritePokemon}
         />
       )}
 

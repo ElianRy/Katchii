@@ -61,9 +61,12 @@ interface Props {
   onAddXp?: (pokemonId: number, xp: number) => void;
   onClose: () => void;
   title?: string;
+  savedTeams?: Array<{ id: string; name: string; members: TeamMember[] }>;
+  onSaveTeam?: (name: string, members: TeamMember[]) => void;
+  onDeleteTeam?: (id: string) => void;
 }
 
-export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon équipe' }: Props) {
+export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon équipe', savedTeams, onSaveTeam, onDeleteTeam }: Props) {
   const [selected, setSelected] = useState<number[]>([]);
   const [sort, setSort] = useState<'level' | 'rarity'>('level');
   const [mode, setMode] = useState<'team' | 'difficulty' | 'battle' | 'result'>('team');
@@ -72,6 +75,8 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
   const [levelUps, setLevelUps] = useState<LevelUpNotif[]>([]);
   const [savedTeam, setSavedTeam] = useState(false);
+  const [showNameInput, setShowNameInput] = useState(false);
+  const [teamName, setTeamName] = useState('');
 
   const owned = GEN1_POKEMON.filter(p =>
     (state.normalCollection[p.id] ?? 0) > 0 || (state.shinyCollection[p.id] ?? 0) > 0
@@ -361,6 +366,42 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
         )}
       </div>
 
+      {/* Saved teams section */}
+      {savedTeams && savedTeams.length > 0 && (
+        <div className="shrink-0 px-4 py-2 border-t border-slate-700/50 bg-slate-900/60">
+          <p className="text-slate-400 text-xs font-bold mb-2">Équipes sauvegardées</p>
+          <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
+            {savedTeams.map(t => (
+              <div key={t.id} className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-2">
+                <div className="flex gap-1 flex-1">
+                  {t.members.slice(0, 3).map(m => (
+                    <img
+                      key={m.pokemonId}
+                      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${m.pokemonId}.png`}
+                      width={32} height={32}
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                  ))}
+                  <span className="text-white text-xs font-bold self-center ml-1">{t.name}</span>
+                </div>
+                <button
+                  onClick={() => setSelected(t.members.map(m => m.pokemonId).slice(0, 3))}
+                  className="text-xs font-bold px-2 py-1 rounded-lg bg-blue-700 text-white"
+                >
+                  Charger
+                </button>
+                <button
+                  onClick={() => onDeleteTeam?.(t.id)}
+                  className="text-xs font-bold px-2 py-1 rounded-lg bg-red-700 text-white"
+                >
+                  Supprimer
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Bottom bar */}
       <div className="shrink-0 px-4 py-3 border-t border-slate-700 bg-slate-900/80">
         {/* Selected preview */}
@@ -383,8 +424,44 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
           })}
         </div>
 
+        {/* Name input for saving a named team */}
+        {showNameInput && (
+          <div className="flex gap-2 mb-2">
+            <input
+              className="flex-1 rounded-xl bg-slate-800 text-white px-3 py-2 text-sm border border-slate-600 outline-none"
+              placeholder="Nom de l'équipe…"
+              value={teamName}
+              onChange={e => setTeamName(e.target.value)}
+              autoFocus
+            />
+            <button
+              onClick={() => {
+                if (!teamName.trim() || selected.length === 0) return;
+                const members: TeamMember[] = selected.map(id => {
+                  const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
+                  const maxHp = calcMaxHp(id, lvData.level);
+                  const isShiny = (state.shinyCollection[id] ?? 0) > 0;
+                  return { pokemonId: id, isShiny, level: lvData.level, xp: lvData.xp, currentHp: maxHp, maxHp };
+                });
+                onSaveTeam?.(teamName.trim(), members);
+                setTeamName('');
+                setShowNameInput(false);
+              }}
+              className="px-3 py-2 rounded-xl bg-green-600 text-white text-sm font-bold"
+            >
+              OK
+            </button>
+            <button
+              onClick={() => { setShowNameInput(false); setTeamName(''); }}
+              className="px-3 py-2 rounded-xl bg-slate-700 text-white text-sm"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <div className="flex gap-2">
-          {/* Save team */}
+          {/* Save team (to raid/duel) */}
           <button
             onClick={handleSave}
             disabled={selected.length === 0}
@@ -393,6 +470,19 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
           >
             {savedTeam ? '✅ Enregistré !' : '💾 Enregistrer'}
           </button>
+
+          {/* Save named team composition */}
+          {onSaveTeam && (
+            <button
+              onClick={() => setShowNameInput(v => !v)}
+              disabled={selected.length === 0}
+              className="px-3 py-3 rounded-2xl font-black text-sm text-black disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: selected.length > 0 ? 'linear-gradient(90deg, #6366f1, #8b5cf6)' : '#374151' }}
+              title="Sauvegarder cette composition"
+            >
+              📋
+            </button>
+          )}
 
           {/* Trainer battle */}
           <button

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_WEIGHTS } from '../types';
+import { TeamMember } from '../components/TeamBuilder';
 import { loadState, saveState, DEFAULT_STATE } from '../lib/storage';
 import { loadCloudState, saveCloudState, onSaveStatus, SaveStatus } from '../lib/cloudSync';
 import { supabase } from '../lib/supabase';
@@ -70,6 +71,7 @@ export function useGameState() {
   // Badge toast queue
   const [badgeToasts, setBadgeToasts] = useState<string[]>([]);
   const userIdRef = useRef<string | null>(null);
+  const loadingForRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestStateRef = useRef<GameState>(state);
 
@@ -82,6 +84,8 @@ export function useGameState() {
   // Load cloud state whenever auth changes (login, new account, re-login)
   useEffect(() => {
     const loadForUser = (userId: string, user?: { user_metadata?: { username?: string } }) => {
+      if (loadingForRef.current === userId) return;
+      loadingForRef.current = userId;
       userIdRef.current = userId;
       const username = user ? getUsername(user) : undefined;
       loadCloudState(userId).then(cloudState => {
@@ -90,6 +94,7 @@ export function useGameState() {
           saveState(fresh);
           setState(() => fresh);
           saveCloudState(userId, fresh);
+          loadingForRef.current = null;
           return;
         }
         const score = (s: GameState) => {
@@ -98,29 +103,26 @@ export function useGameState() {
           return count * 1000 + levels;
         };
         const localState = loadState();
-        const best = score(cloudState) >= score(localState) ? cloudState : localState;
+        const localIsRicher = score(localState) > score(cloudState);
+        const best = localIsRicher ? localState : cloudState;
         // Always stamp username
         const stamped = username ? { ...best, username } : best;
         setState(() => { saveState(stamped); return stamped; });
-        saveCloudState(userId, stamped);
+        // Only sync to cloud if local was richer (otherwise cloud is already up to date)
+        if (localIsRicher) saveCloudState(userId, stamped);
+        loadingForRef.current = null;
       });
     };
 
-    // Check current session first
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) loadForUser(user.id, user);
-    });
-
-    // Then listen for future logins (covers logout→new account flow)
+    // onAuthStateChange fires INITIAL_SESSION on subscribe — handles initial load
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         loadForUser(session.user.id, session.user);
       } else {
-        // Logged out — clear state
+        // Logged out — reset in-memory state only, preserve localStorage as backup
         userIdRef.current = null;
-        const fresh = { ...DEFAULT_STATE };
-        saveState(fresh);
-        setState(() => fresh);
+        loadingForRef.current = null;
+        setState(() => ({ ...DEFAULT_STATE }));
       }
     });
     return () => subscription.unsubscribe();
@@ -643,6 +645,20 @@ export function useGameState() {
     });
   }, [update]);
 
+  const saveTeam = useCallback((name: string, members: TeamMember[]) => {
+    update(prev => ({
+      ...prev,
+      savedTeams: [
+        ...(prev.savedTeams ?? []),
+        { id: `team_${Date.now()}`, name, members }
+      ]
+    }));
+  }, [update]);
+
+  const deleteTeam = useCallback((id: string) => {
+    update(prev => ({ ...prev, savedTeams: (prev.savedTeams ?? []).filter(t => t.id !== id) }));
+  }, [update]);
+
   const adminGiveAllMax = useCallback(() => {
     update(prev => {
       const normalCollection = { ...prev.normalCollection };
@@ -690,6 +706,8 @@ export function useGameState() {
     initPokemonLevel,
     addPokemonXp,
     adminGiveAllMax,
+    saveTeam,
+    deleteTeam,
   };
 }
 

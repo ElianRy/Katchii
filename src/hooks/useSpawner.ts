@@ -66,15 +66,15 @@ function pickNaruto(rarity: Rarity): string {
   return pool[Math.floor(Math.random() * pool.length)].id;
 }
 
-function isInHudZone(x: number, y: number): boolean {
-  // HUD info block: top-left area, roughly x < 58% and y < 68% on mobile
-  return x < 58 && y < 68;
+function isInHudZone(_x: number, y: number): boolean {
+  // HUD info block: top strip only
+  return y < 22;
 }
 
 function getValidPosition(existing: SpawnedPokemon[]): { x: number; y: number } | null {
   for (let attempt = 0; attempt < 20; attempt++) {
     const x = 5 + Math.random() * 88;
-    const y = 10 + Math.random() * 75;
+    const y = 24 + Math.random() * 58;
     if (isInHudZone(x, y)) continue;
     if (y > 88) continue;
     const tooClose = existing.some(s =>
@@ -221,13 +221,8 @@ export function useSpawner(
         // Bounce off edges, stay out of HUD zone (top-left)
         if (x < 5)  { x = 5;  vx = Math.abs(vx); }
         if (x > 90) { x = 90; vx = -Math.abs(vx); }
-        if (y < 10) { y = 10; vy = Math.abs(vy); }
+        if (y < 24) { y = 24; vy = Math.abs(vy); }
         if (y > 88) { y = 88; vy = -Math.abs(vy); }
-        // Push out of HUD zone
-        if (isInHudZone(x, y)) {
-          if (x < 58) { x = 58; vx = Math.abs(vx); }
-          if (y < 68) { y = 68; vy = Math.abs(vy); }
-        }
         // Random direction change
         if (Math.random() < 0.005) {
           const angle = Math.random() * Math.PI * 2;

@@ -1,14 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState } from '../types';
-import type { SaveStatus } from '../lib/cloudSync';
-import { lastSaveError } from '../lib/cloudSync';
-
 interface Props {
   points: number;
   activeLure: GameState['activeLure'];
   cooldownRemaining: number;
   isOnCooldown: boolean;
-  saveStatus?: SaveStatus;
   onOpenCollection: () => void;
   onOpenTeam: () => void;
   onOpenLures: () => void;
@@ -85,7 +81,6 @@ export function HUD({
   bossUnlocked = false,
   bossDefeated = false,
   onFightBoss,
-  saveStatus = 'idle',
 }: Props) {
   // Impact animation when cooldown just finishes
   const [showImpact, setShowImpact] = useState(false);
@@ -114,9 +109,6 @@ export function HUD({
             </svg>
             <span className="text-yellow-400 font-bold text-lg">{points}</span>
             <span className="text-gray-400 text-sm">pts</span>
-            {saveStatus === 'error' && (
-              <span title={`Erreur: ${lastSaveError}`} style={{ fontSize: '0.65rem', marginLeft: 2 }}>⚠️</span>
-            )}
           </div>
           <div className="flex items-center gap-1">
             <div

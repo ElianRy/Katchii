@@ -183,6 +183,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
+              gap: 0,
             }}
           >
             {/* Shiny — rotating rainbow aura */}
@@ -306,6 +307,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                 padding: '2px 6px',
                 lineHeight: 1.3,
                 whiteSpace: 'nowrap',
+                margin: 0,
               }}
             >
               {pokemonData.name}
