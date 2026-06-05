@@ -190,6 +190,10 @@ export function useGameState() {
     update(prev => {
       let next = { ...prev };
 
+      // Track total capture count and shiny events
+      next.pokemonCaptureCount = { ...(prev.pokemonCaptureCount ?? {}), [pokemonId]: ((prev.pokemonCaptureCount ?? {})[pokemonId] ?? 0) + 1 };
+      if (isShiny) next.shinyCapturesTotal = (prev.shinyCapturesTotal ?? 0) + 1;
+
       if (isShiny) {
         const alreadyCaughtShiny = (prev.shinyCollection[pokemonId] ?? 0) > 0;
         next.shinyCollection = { ...prev.shinyCollection, [pokemonId]: (prev.shinyCollection[pokemonId] ?? 0) + 1 };
@@ -515,6 +519,13 @@ export function useGameState() {
     return success;
   }, [update]);
 
+  const addTrainingWin = useCallback(() => {
+    update(prev => ({
+      ...prev,
+      duels: { ...prev.duels, wins: prev.duels.wins + 1 },
+    }));
+  }, [update]);
+
   const addPlayTime = useCallback((ms: number) => {
     update(prev => ({
       ...prev,
@@ -631,6 +642,7 @@ export function useGameState() {
     attackRaid,
     claimRaidReward,
     spendPoints,
+    addTrainingWin,
     addPlayTime,
     defeatZoneBoss,
     setCurrentZone,

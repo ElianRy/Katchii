@@ -214,6 +214,7 @@ export function App() {
           onSetFavoritePokemon={gameState.setFavoritePokemon}
           onAddPlayerXp={gameState.addPlayerXp}
           onAddPokemonXp={gameState.addPokemonXp}
+          onTrainingWin={gameState.addTrainingWin}
         />
       )}
 

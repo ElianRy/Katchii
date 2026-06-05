@@ -1,3 +1,5 @@
+import { ZoneUnlockCondition } from '../types';
+
 export interface Zone {
   id: string;
   name: string;
@@ -11,6 +13,7 @@ export interface Zone {
   /** Natural level cap for pokemon caught in this zone (can be trained past this) */
   maxLevel: number;
   completionThreshold: number;
+  unlockCondition: ZoneUnlockCondition | null;
   boss: {
     name: string;
     title: string;
@@ -44,6 +47,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [10,11,13,14,16,17,19,20,23,29,32,46, 1,63, 25],
     maxLevel: 25,
     completionThreshold: 0.70,
+    unlockCondition: { type: 'total_pokemon', count: 26 },
     boss: {
       name: 'Maître Pierre',
       title: 'Gym Leader Roche',
@@ -67,6 +71,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [30,33,54,55,60,61,72,98,116,118, 7,18,79,90, 115,121],
     maxLevel: 35,
     completionThreshold: 0.70,
+    unlockCondition: { type: 'daily_quests_completed', count: 3 },
     boss: {
       name: 'Maître Ondine',
       title: 'Gym Leader Eau',
@@ -90,6 +95,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [41,42,84,85,96,97,100,101,109, 8,81,82, 26,125],
     maxLevel: 45,
     completionThreshold: 0.70,
+    unlockCondition: { type: 'capture_n_times', pokemonId: 82, count: 10 },
     boss: {
       name: 'Maître Roguele',
       title: 'Gym Leader Électrik',
@@ -113,6 +119,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [43,44,45,46,47,48,69,70, 2,12,15,114, 103,123,133, 3],
     maxLevel: 55,
     completionThreshold: 0.70,
+    unlockCondition: { type: 'capture_n_times', pokemonId: 3, count: 3 },
     boss: {
       name: 'Maître Erika',
       title: 'Gym Leader Plante',
@@ -136,6 +143,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [41,88,96,97,109,110, 24,89,92,93, 105,124,132, 94],
     maxLevel: 65,
     completionThreshold: 0.70,
+    unlockCondition: { type: 'duel_wins', count: 30 },
     boss: {
       name: 'Maître Koga',
       title: 'Gym Leader Poison',
@@ -159,6 +167,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [35,64,122,138,140, 36,40,63,79, 38,51,113,137, 9,31,65],
     maxLevel: 72,
     completionThreshold: 0.70,
+    unlockCondition: { type: 'pokemon_level_in_team', level: 60 },
     boss: {
       name: 'Maître Sabrina',
       title: 'Gym Leader Psy',
@@ -182,6 +191,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [37,58,129, 4,5,78, 126,128,133,147,148, 6,34,59,134,135],
     maxLevel: 80,
     completionThreshold: 0.70,
+    unlockCondition: { type: 'total_pokemon', count: 120 },
     boss: {
       name: 'Maître Blaine',
       title: 'Gym Leader Feu',
@@ -205,6 +215,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [27,66, 28,67, 76,105,106,107,127,142, 68,130,131,136,143,149],
     maxLevel: 88,
     completionThreshold: 0.70,
+    unlockCondition: { type: 'shiny_captures', count: 1 },
     boss: {
       name: 'Maître Giovanni',
       title: 'Gym Leader Sol',
@@ -227,6 +238,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [],
     maxLevel: 100,
     completionThreshold: 1.0,
+    unlockCondition: null,
     boss: {
       name: 'La Ligue',
       title: 'Champions de la Ligue',
@@ -251,6 +263,7 @@ export const ZONES: Zone[] = [
     pokemonIds: NON_LEGENDARY_IDS.concat([144, 145, 146, 150, 151]),
     maxLevel: 100,
     completionThreshold: 1.0,
+    unlockCondition: null,
     boss: null,
     unlockRequirement: 'ligue',
     includesLegendaries: true,

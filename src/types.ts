@@ -102,7 +102,17 @@ export interface GameState {
   pokemonLevels: Record<number, { level: number; xp: number }>;
   savedTeams?: Array<{ id: string; name: string; members: Array<{ pokemonId: number; isShiny?: boolean; level: number; xp: number; currentHp: number; maxHp: number }> }>;
   playerXp: number;
+  pokemonCaptureCount: Record<number, number>;
+  shinyCapturesTotal: number;
 }
+
+export type ZoneUnlockCondition =
+  | { type: 'total_pokemon'; count: number }
+  | { type: 'daily_quests_completed'; count: number }
+  | { type: 'capture_n_times'; pokemonId: number; count: number }
+  | { type: 'duel_wins'; count: number }
+  | { type: 'pokemon_level_in_team'; level: number }
+  | { type: 'shiny_captures'; count: number };
 
 export const RARITY_COLORS: Record<Rarity, string> = {
   commun: '#6b7280',

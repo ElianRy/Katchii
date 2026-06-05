@@ -27,6 +27,8 @@ interface Props {
   bossName?: string;
   bossUnlocked?: boolean;
   bossDefeated?: boolean;
+  conditionLabel?: string;
+  conditionProgress?: number;
   onFightBoss?: () => void;
 }
 
@@ -69,12 +71,11 @@ export function HUD({
   onOpenAdmin,
   isAdmin = false,
   currentZoneName,
-  zoneCaughtCount = 0,
-  zoneTotal = 0,
-  zoneNeeded = 0,
   bossName,
   bossUnlocked = false,
   bossDefeated = false,
+  conditionLabel,
+  conditionProgress = 0,
   onFightBoss,
 }: Props) {
   // Impact animation when cooldown just finishes
@@ -123,16 +124,16 @@ export function HUD({
         </div>
 
         {/* Boss progress bar — only when relevant */}
-        {bossName && zoneTotal > 0 && !bossDefeated && (
+        {bossName && conditionLabel && !bossDefeated && (
           <div className="px-3 pb-1 pointer-events-auto">
             <div className="bg-black/60 rounded-xl px-3 py-1.5 border border-slate-700/50 flex flex-col gap-1">
               <div className="flex justify-between items-center">
                 <span className="text-yellow-400 text-xs font-bold">⚔️ {bossName}</span>
-                <span className="text-slate-500 text-xs">{zoneCaughtCount}/{zoneNeeded}</span>
+                <span className="text-slate-500 text-xs">{conditionLabel}</span>
               </div>
               <div className="w-full bg-slate-700/60 rounded-full h-1.5 overflow-hidden">
                 <div className="h-1.5 rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(1, zoneNeeded > 0 ? zoneCaughtCount / zoneNeeded : 0) * 100}%`, background: 'linear-gradient(90deg,#f59e0b,#ef4444)' }} />
+                  style={{ width: `${Math.min(1, conditionProgress) * 100}%`, background: 'linear-gradient(90deg,#f59e0b,#ef4444)' }} />
               </div>
               {bossUnlocked && onFightBoss && (
                 <button onClick={onFightBoss} className="w-full text-xs font-black py-1 rounded-lg animate-pulse" style={{ background: 'linear-gradient(90deg,#f59e0b,#ef4444)', color: '#000' }}>

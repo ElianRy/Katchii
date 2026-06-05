@@ -46,6 +46,7 @@ interface Props {
   onSetFavoritePokemon: (fav: GameState['favoritePokemon']) => void;
   onAddPlayerXp: (xp: number) => void;
   onAddPokemonXp: (pokemonId: number, xp: number) => void;
+  onTrainingWin?: () => void;
 }
 
 function formatChatTime(iso: string): string {
@@ -687,7 +688,7 @@ function PokemonPicker({ state, onPick, onClose }: {
 }
 
 // ---- Main Component ----
-export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp }: Props) {
+export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onTrainingWin }: Props) {
   const [presence, setPresence] = useState<PresenceRow[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -1251,7 +1252,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           opponentLevel={interactionTarget.level}
           opponentRarity={interactionTarget.rarity}
           opponentName={interactionTarget.username}
-          onResult={() => {}}
+          onResult={(won) => { if (won) onTrainingWin?.(); }}
           onClose={() => { setShowRace(false); setInteractionTarget(null); }}
         />
       )}
@@ -1267,9 +1268,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           opponentLevel={interactionTarget.level}
           opponentRarity={interactionTarget.rarity}
           opponentName={interactionTarget.username}
-          onResult={(_won) => {
-            // result no longer broadcast to chat
-          }}
+          onResult={(won) => { if (won) onTrainingWin?.(); }}
           onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
         />
       )}

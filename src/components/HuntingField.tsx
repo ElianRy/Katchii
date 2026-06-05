@@ -6,6 +6,7 @@ import { useGameState } from '../hooks/useGameState';
 import { useSpawner } from '../hooks/useSpawner';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { Zone, ZONE_BY_ID, ZONE_ORDER } from '../data/zones';
+import { ZoneUnlockCondition } from '../types';
 
 const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
   zone1: { ground: 'linear-gradient(to top, #14532d 0%, #166534 40%, transparent 100%)', bush: 'linear-gradient(to top, #15803d, #22c55e)' },
@@ -136,8 +137,58 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const missingInZone = zoneIds.filter(id => (gameState.state.normalCollection[id] ?? 0) === 0);
   const zoneCaughtCount = zoneIds.filter(id => (gameState.state.normalCollection[id] ?? 0) > 0).length;
   const zoneNeeded = currentZone ? Math.ceil(zoneIds.length * currentZone.completionThreshold) : 0;
-  const bossDefeated = !!gameState.state.zoneProgress?.bossDefeated?.[gameState.state.zoneProgress?.currentZoneId ?? 'zone1'];
-  const bossUnlocked = !bossDefeated && zoneCaughtCount >= zoneNeeded && zoneNeeded > 0;
+  const bossDefeated = !!gameState.state.zoneProgress?.bossDefeated?.[currentZoneId];
+
+  function checkUnlockCondition(cond: ZoneUnlockCondition | null | undefined): boolean {
+    if (!cond) return false;
+    const s = gameState.state;
+    const totalDiff = Object.keys(s.normalCollection).filter(id => (s.normalCollection[Number(id)] ?? 0) > 0).length;
+    switch (cond.type) {
+      case 'total_pokemon':
+        return totalDiff >= cond.count;
+      case 'daily_quests_completed':
+        return s.dailyQuests.quests.filter(q => q.completed).length >= cond.count;
+      case 'capture_n_times':
+        return ((s.pokemonCaptureCount ?? {})[cond.pokemonId] ?? 0) >= cond.count;
+      case 'duel_wins':
+        return s.duels.wins >= cond.count;
+      case 'pokemon_level_in_team':
+        return Object.values(s.pokemonLevels ?? {}).some(l => l.level >= cond.level);
+      case 'shiny_captures':
+        return (s.shinyCapturesTotal ?? 0) >= cond.count;
+    }
+  }
+
+  const bossUnlocked = !bossDefeated && !!currentZone?.boss && checkUnlockCondition(currentZone.unlockCondition);
+
+  function getConditionDisplay(cond: ZoneUnlockCondition | null | undefined): { label: string; progress: number } {
+    if (!cond) return { label: '', progress: 0 };
+    const s = gameState.state;
+    const totalDiff = Object.keys(s.normalCollection).filter(id => (s.normalCollection[Number(id)] ?? 0) > 0).length;
+    switch (cond.type) {
+      case 'total_pokemon': return { label: `${totalDiff}/${cond.count} pokémon`, progress: totalDiff / cond.count };
+      case 'daily_quests_completed': {
+        const done = s.dailyQuests.quests.filter(q => q.completed).length;
+        return { label: `${done}/${cond.count} quêtes`, progress: done / cond.count };
+      }
+      case 'capture_n_times': {
+        const n = ((s.pokemonCaptureCount ?? {})[cond.pokemonId] ?? 0);
+        const name = POKEMON_BY_ID[cond.pokemonId]?.name ?? `#${cond.pokemonId}`;
+        return { label: `${n}/${cond.count} ${name}`, progress: n / cond.count };
+      }
+      case 'duel_wins': return { label: `${s.duels.wins}/${cond.count} victoires`, progress: s.duels.wins / cond.count };
+      case 'pokemon_level_in_team': {
+        const maxLvl = Math.max(0, ...Object.values(s.pokemonLevels ?? {}).map(l => l.level));
+        return { label: `Niv. max: ${maxLvl}/${cond.level}`, progress: maxLvl / cond.level };
+      }
+      case 'shiny_captures': {
+        const n = s.shinyCapturesTotal ?? 0;
+        return { label: `${n}/${cond.count} shiny`, progress: n / cond.count };
+      }
+    }
+  }
+
+  const { label: conditionLabel, progress: conditionProgress } = getConditionDisplay(currentZone?.unlockCondition);
 
   const zoneGround = ZONE_GROUND[currentZoneId] ?? ZONE_GROUND['zone1'];
 
@@ -200,6 +251,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         bossName={currentZone?.boss?.name}
         bossUnlocked={bossUnlocked}
         bossDefeated={bossDefeated}
+        conditionLabel={conditionLabel}
+        conditionProgress={conditionProgress}
         onFightBoss={() => { setFightZone(currentZone ?? null); setShowBossFight(true); }}
       />
 
