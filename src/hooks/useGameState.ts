@@ -3,6 +3,7 @@ import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_W
 import { loadState, saveState, DEFAULT_STATE } from '../lib/storage';
 import { loadCloudState, saveCloudState, onSaveStatus, SaveStatus } from '../lib/cloudSync';
 import { supabase } from '../lib/supabase';
+import { getUsername } from '../lib/auth';
 import { ZONE_BY_ID } from '../data/zones';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { FUSION_BY_ID, FUSIONS } from '../data/fusions';
@@ -78,33 +79,51 @@ export function useGameState() {
     setBadgeToasts((prev) => prev.slice(1));
   }, []);
 
-  // Load cloud state on auth
+  // Load cloud state whenever auth changes (login, new account, re-login)
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      userIdRef.current = user.id;
-      loadCloudState(user.id).then(cloudState => {
-        const localState = loadState();
+    const loadForUser = (userId: string, user?: { user_metadata?: { username?: string } }) => {
+      userIdRef.current = userId;
+      const username = user ? getUsername(user) : undefined;
+      loadCloudState(userId).then(cloudState => {
         if (!cloudState) {
-          // New account — local data belongs to a different user, start fresh
-          const fresh = { ...DEFAULT_STATE };
+          const fresh = { ...DEFAULT_STATE, ...(username ? { username } : {}) };
           saveState(fresh);
           setState(() => fresh);
-          saveCloudState(user.id, fresh);
+          saveCloudState(userId, fresh);
           return;
         }
-        // Keep whichever has the best score: pokemon count (×1000) + total level sum
         const score = (s: GameState) => {
           const count = Object.keys(s.normalCollection ?? {}).length + Object.keys(s.narutoCollection ?? {}).length;
           const levels = Object.values(s.pokemonLevels ?? {}).reduce((sum, l) => sum + (l.level ?? 1), 0);
           return count * 1000 + levels;
         };
+        const localState = loadState();
         const best = score(cloudState) >= score(localState) ? cloudState : localState;
-        setState(() => { saveState(best); return best; });
-        // If local was richer, re-upload it so cloud catches up
-        if (score(localState) > score(cloudState)) saveCloudState(user.id, localState);
+        // Always stamp username
+        const stamped = username ? { ...best, username } : best;
+        setState(() => { saveState(stamped); return stamped; });
+        saveCloudState(userId, stamped);
       });
+    };
+
+    // Check current session first
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) loadForUser(user.id, user);
     });
+
+    // Then listen for future logins (covers logout→new account flow)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadForUser(session.user.id, session.user);
+      } else {
+        // Logged out — clear state
+        userIdRef.current = null;
+        const fresh = { ...DEFAULT_STATE };
+        saveState(fresh);
+        setState(() => fresh);
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   const update = useCallback((updater: (prev: GameState) => GameState) => {

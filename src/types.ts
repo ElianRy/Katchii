@@ -53,6 +53,7 @@ export interface SpawnedPokemon {
 }
 
 export interface GameState {
+  username?: string; // stored in cloud for leaderboard
   points: number;
   normalCollection: Record<number, number>; // pokemonId -> times caught
   shinyCollection: Record<number, number>;  // pokemonId -> times caught shiny

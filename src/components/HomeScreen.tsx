@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { logoutUser } from '../lib/auth';
+import { PlayersPanel } from './PlayersPanel';
 
 interface Props {
   username: string;
@@ -9,9 +11,7 @@ interface Props {
 }
 
 export function HomeScreen({ username, onPlay, onCollection, onProfile, onLogout }: Props) {
-  const handleFriends = () => {
-    alert('Bientôt disponible !');
-  };
+  const [showPlayers, setShowPlayers] = useState(false);
 
   const handleLogout = async () => {
     await logoutUser();
@@ -22,7 +22,7 @@ export function HomeScreen({ username, onPlay, onCollection, onProfile, onLogout
     { icon: '🎮', label: 'Jouer', onClick: onPlay, color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)' },
     { icon: '📚', label: 'Collection', onClick: onCollection, color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.4)' },
     { icon: '👤', label: 'Profil', onClick: onProfile, color: '#a855f7', bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.4)' },
-    { icon: '👥', label: 'Amis', onClick: handleFriends, color: '#22c55e', bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.4)' },
+    { icon: '👥', label: 'Joueurs', onClick: () => setShowPlayers(true), color: '#22c55e', bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.4)' },
   ];
 
   return (
@@ -99,6 +99,8 @@ export function HomeScreen({ username, onPlay, onCollection, onProfile, onLogout
           Se déconnecter
         </button>
       </div>
+
+      {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} />}
     </div>
   );
 }

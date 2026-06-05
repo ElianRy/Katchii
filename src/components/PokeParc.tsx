@@ -642,9 +642,12 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
     return () => { supabase.removeChannel(chan); };
   }, []);
 
-  // Fetch and subscribe to chat
+  // Fetch and subscribe to chat (last 24h only)
   useEffect(() => {
-    supabase.from('pokepark_chat').select('*').order('created_at', { ascending: true }).limit(50)
+    const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    supabase.from('pokepark_chat').select('*')
+      .gte('created_at', since)
+      .order('created_at', { ascending: true }).limit(100)
       .then(({ data }) => { if (data) setChat(data as ChatMessage[]); });
 
     const chan = supabase.channel('pokepark_chat_changes')
@@ -716,13 +719,22 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
 
   const sendChat = async () => {
     const msg = chatInput.trim();
-    if (!msg || !myUserId) return;
+    if (!msg) return;
+    // Resolve userId now in case state hasn't loaded yet
+    let uid = myUserId;
+    if (!uid) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      uid = user.id;
+      setMyUserId(uid);
+    }
     setChatInput('');
-    await supabase.from('pokepark_chat').insert({
-      user_id: myUserId,
+    const { error } = await supabase.from('pokepark_chat').insert({
+      user_id: uid,
       username,
       message: msg,
     });
+    if (error) console.error('[chat] insert error:', error.message);
   };
 
   const handleWave = () => {
@@ -913,7 +925,7 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
             ))}
             <div ref={chatEndRef} />
           </div>
-          <div className="flex gap-2 px-3 py-2 border-t border-slate-700/40 shrink-0" style={{ background: '#0f172a' }}>
+          <div className="flex gap-2 px-3 py-2 border-t border-slate-700/40 shrink-0" style={{ background: '#0f172a', paddingBottom: 'calc(0.5rem + 72px)' }}>
             <input
               className="flex-1 rounded-lg px-3 py-2 text-sm text-white outline-none border border-slate-600 focus:border-blue-500"
               style={{ background: '#1e293b', minHeight: 40 }}
