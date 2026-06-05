@@ -49,7 +49,10 @@ export function App() {
           const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','pokepark','clan'];
           setView(saved && validViews.includes(saved) ? saved : 'home');
         } else if (event === 'SIGNED_IN') {
-          setView('home');
+          // Restore last view if available (SIGNED_IN can also fire on token refresh)
+          const saved = localStorage.getItem('katchii_last_view') as View | null;
+          const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','pokepark','clan'];
+          setView(saved && validViews.includes(saved) ? saved : 'home');
         }
       } else if (event === 'INITIAL_SESSION' || event === 'SIGNED_OUT') {
         setView('auth');

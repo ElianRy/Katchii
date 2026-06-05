@@ -120,7 +120,7 @@ export function WelcomeAnimation({ username, onDone }: Props) {
           marginBottom: 8,
           whiteSpace: 'nowrap',
         }}>
-          Bienvenue !
+          Bon jeu !
         </div>
         <div style={{
           fontSize: '1.4rem',
