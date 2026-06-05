@@ -28,15 +28,17 @@ interface Props {
   alt?: string;
   /** compact=true skips animated sparkle divs (use in grids with many pokemon) */
   compact?: boolean;
+  /** flip=true mirrors the whole sprite + aura horizontally */
+  flip?: boolean;
 }
 
-export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, className, style, alt, compact = false }: Props) {
+export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, className, style, alt, compact = false, flip = false }: Props) {
   const src = isShiny
     ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${pokemonId}.png`
     : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
 
   return (
-    <div className="relative inline-flex items-center justify-center" style={{ width, height }}>
+    <div className="relative inline-flex items-center justify-center" style={{ width, height, transform: flip ? 'scaleX(-1)' : undefined }}>
       {/* Full sparkles only in non-compact mode */}
       {isShiny && !compact && SPARKLE_POSITIONS.map((sp, i) => (
         <div

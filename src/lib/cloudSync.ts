@@ -7,17 +7,25 @@ const listeners = new Set<StatusListener>();
 export function onSaveStatus(fn: StatusListener): () => void { listeners.add(fn); return () => { listeners.delete(fn); }; }
 function emit(s: SaveStatus) { listeners.forEach(fn => fn(s)); }
 
-export async function loadCloudState(userId: string): Promise<GameState | null> {
+/** Returns: GameState if found, null if no row exists, 'error' if load failed */
+export async function loadCloudState(userId: string): Promise<GameState | null | 'error'> {
   try {
     const { data, error } = await supabase
       .from('game_saves')
       .select('state')
       .eq('user_id', userId)
       .single();
-    if (error || !data) return null;
+    if (error) {
+      // PGRST116 = no rows found (new user), anything else = real error
+      if (error.code === 'PGRST116') return null;
+      console.error('[cloudSync] load error:', error.message, error.code);
+      return 'error';
+    }
+    if (!data) return null;
     return data.state as GameState;
-  } catch {
-    return null;
+  } catch (e) {
+    console.error('[cloudSync] load exception:', e);
+    return 'error';
   }
 }
 

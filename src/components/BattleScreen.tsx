@@ -445,8 +445,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
               </div>
             </div>
             <div className="flex justify-end">
-              {enemyFighters[0] && <ShinySprite pokemonId={enemyFighters[0].pokemonId} isShiny={enemyFighters[0].isShiny ?? false} width={88} height={88}
-                style={{ filter:`drop-shadow(0 0 10px ${RARITY_COLORS[POKEMON_BY_ID[enemyFighters[0].pokemonId]?.rarity ?? 'commun']})`, transform:'scaleX(-1)' }} />}
+              {enemyFighters[0] && <ShinySprite pokemonId={enemyFighters[0].pokemonId} isShiny={enemyFighters[0].isShiny ?? false} width={88} height={88} flip
+                style={{ filter:`drop-shadow(0 0 10px ${RARITY_COLORS[POKEMON_BY_ID[enemyFighters[0].pokemonId]?.rarity ?? 'commun']})` }} />}
             </div>
           </div>
 
@@ -589,8 +589,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             </div>
           </div>
           <div className={`flex justify-end ${attackEvt?.attacker === 'enemy' ? 'battle-lunge-left' : ''} ${activeEF?.currentHp === 0 ? 'opacity-30' : ''}`}>
-            {activeEF && <ShinySprite pokemonId={activeEF.pokemonId} isShiny={activeEF.isShiny ?? false} width={88} height={88}
-              style={{ filter: `drop-shadow(0 0 10px ${RARITY_COLORS[POKEMON_BY_ID[activeEF.pokemonId]?.rarity ?? 'commun']})`, transform: 'scaleX(-1)' }} />}
+            {activeEF && <ShinySprite pokemonId={activeEF.pokemonId} isShiny={activeEF.isShiny ?? false} width={88} height={88} flip
+              style={{ filter: `drop-shadow(0 0 10px ${RARITY_COLORS[POKEMON_BY_ID[activeEF.pokemonId]?.rarity ?? 'commun']})` }} />}
           </div>
           <div className="flex gap-1.5 justify-end mt-1">
             {enemyFighters.map((f, i) => (

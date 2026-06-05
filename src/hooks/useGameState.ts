@@ -89,7 +89,21 @@ export function useGameState() {
       userIdRef.current = userId;
       const username = user ? getUsername(user) : undefined;
       loadCloudState(userId).then(cloudState => {
+        if (cloudState === 'error') {
+          // Cloud load failed — keep whatever localStorage has, don't reset
+          console.warn('[useGameState] cloud load failed, keeping local state');
+          const local = loadState();
+          const stamped = username ? { ...local, username } : local;
+          setState(() => { saveState(stamped); return stamped; });
+          loadingForRef.current = null;
+          // Retry save in 5s in case it was a temporary issue
+          setTimeout(() => {
+            if (userIdRef.current === userId) saveCloudState(userId, latestStateRef.current);
+          }, 5000);
+          return;
+        }
         if (!cloudState) {
+          // No row in DB — new user, start fresh
           const fresh = { ...DEFAULT_STATE, ...(username ? { username } : {}) };
           saveState(fresh);
           setState(() => fresh);
