@@ -10,9 +10,6 @@ interface Props {
   onOpenLures: () => void;
   onOpenQuests: () => void;
   onOpenDuels: () => void;
-  onOpenVillage: () => void;
-  onOpenSkins: () => void;
-  onOpenFusion: () => void;
   onOpenRaid: () => void;
   onOpenWrapped: () => void;
   onChangeUniverse: () => void;
@@ -22,7 +19,6 @@ interface Props {
   capturedCount: number;
   totalPokemon: number;
   questsCompleted: number;
-  activeUniverse: 'pokemon' | 'naruto';
   currentZoneName?: string;
   missingInZone?: number[];
   zoneCaughtCount?: number;
@@ -66,16 +62,12 @@ export function HUD({
   onOpenLures,
   onOpenQuests,
   onOpenDuels,
-  onOpenVillage,
-  onOpenSkins,
-  onOpenFusion,
   onOpenRaid,
   onOpenWrapped,
   onChangeUniverse,
   onOpenZoneInfo,
   onOpenAdmin,
   isAdmin = false,
-  activeUniverse,
   currentZoneName,
   zoneCaughtCount = 0,
   zoneTotal = 0,
@@ -105,7 +97,7 @@ export function HUD({
           {/* Zone name + info */}
           <div className="flex items-center gap-1 flex-1 min-w-0 bg-black/60 rounded-xl px-3 py-1.5 border border-slate-700/50">
             <span className="text-slate-300 text-xs truncate">
-              {activeUniverse === 'naruto' ? '🍥 Konoha' : `${zoneEmoji(currentZoneName ?? '')} ${currentZoneName ?? 'Zone 1'}`}
+              {`${zoneEmoji(currentZoneName ?? '')} ${currentZoneName ?? 'Zone 1'}`}
             </span>
             {onOpenZoneInfo && (
               <button onClick={onOpenZoneInfo} className="bg-slate-700/80 hover:bg-slate-600 border border-slate-500/50 rounded-lg px-2 py-1 text-slate-200 hover:text-white text-sm font-bold ml-1 shrink-0">ℹ️ Zone</button>
@@ -131,7 +123,7 @@ export function HUD({
         </div>
 
         {/* Boss progress bar — only when relevant */}
-        {activeUniverse === 'pokemon' && bossName && zoneTotal > 0 && !bossDefeated && (
+        {bossName && zoneTotal > 0 && !bossDefeated && (
           <div className="px-3 pb-1 pointer-events-auto">
             <div className="bg-black/60 rounded-xl px-3 py-1.5 border border-slate-700/50 flex flex-col gap-1">
               <div className="flex justify-between items-center">
@@ -280,27 +272,6 @@ export function HUD({
           >
             <span className="text-xl">⚔️</span>
             <span className="text-xs font-bold">Duels</span>
-          </button>
-          <button
-            onClick={onOpenVillage}
-            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-yellow-400 hover:bg-yellow-900/30 transition-colors"
-          >
-            <span className="text-xl">🏘️</span>
-            <span className="text-xs font-bold">Village</span>
-          </button>
-          <button
-            onClick={onOpenSkins}
-            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-pink-400 hover:bg-pink-900/30 transition-colors"
-          >
-            <span className="text-xl">🎨</span>
-            <span className="text-xs font-bold">Skins</span>
-          </button>
-          <button
-            onClick={onOpenFusion}
-            className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl text-purple-300 hover:bg-purple-900/30 transition-colors"
-          >
-            <span className="text-xl">⚗️</span>
-            <span className="text-xs font-bold">Fusion</span>
           </button>
           <button
             onClick={onOpenRaid}

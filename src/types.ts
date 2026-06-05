@@ -1,6 +1,6 @@
 export type Rarity = 'commun' | 'peu_commun' | 'rare' | 'elite' | 'legendaire';
 export type LureType = 'rare' | 'epique' | 'legendaire' | 'shiny';
-export type View = 'auth' | 'home' | 'universe' | 'hunt' | 'collection' | 'team' | 'admin' | 'lures' | 'quests' | 'duels' | 'village' | 'skins' | 'fusion' | 'raid' | 'wrapped' | 'profile' | 'zones' | 'pokepark';
+export type View = 'auth' | 'home' | 'hunt' | 'collection' | 'team' | 'admin' | 'lures' | 'quests' | 'duels' | 'raid' | 'wrapped' | 'profile' | 'zones' | 'pokepark';
 
 export type QuestType =
   | 'capture_n'
@@ -74,17 +74,8 @@ export interface GameState {
     rankingPoints: number;
     history: DuelEntry[];
   };
-  village: {
-    level: 1 | 2 | 3 | 4 | 5;
-    name: string;
-    showcase: Array<{ pokemonId: number; isShiny: boolean }>;
-    favoritePokemon: { pokemonId: number; isShiny: boolean } | null;
-  };
-  skins: {
-    unlockedTerrains: string[];
-    activeTerrain: string;
-  };
-  fusions: Array<{ fusionId: string; obtainedAt: number }>;
+  showcase: Array<{ pokemonId: number; isShiny: boolean }>;
+  favoritePokemon: { pokemonId: number; isShiny: boolean } | null;
   raid: {
     bossId: number;
     bossMaxHp: number;
@@ -97,10 +88,6 @@ export interface GameState {
     rewardClaimed: boolean;
     simulatedParticipants: number;
   } | null;
-  activeUniverse: 'pokemon' | 'naruto';
-  narutoCollection: Record<string, number>;
-  narutoShinyCollection: Record<string, number>;
-  narutoShinyDepleted: string[];
   zoneProgress: {
     currentZoneId: string;
     unlockedZones: string[];

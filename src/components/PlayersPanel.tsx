@@ -13,10 +13,21 @@ interface PlayerRow {
   duelWins: number;
   duelLosses: number;
   rankingPoints: number;
+  lastSeen?: string; // ISO string from presence
+  isOnline?: boolean;
 }
 
 interface Props {
   onClose: () => void;
+}
+
+function formatLastSeen(iso: string): string {
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (diff < 1) return 'moins d\'1 min';
+  if (diff < 60) return `${diff} min`;
+  const h = Math.floor(diff / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}j`;
 }
 
 export function PlayersPanel({ onClose }: Props) {
@@ -25,14 +36,31 @@ export function PlayersPanel({ onClose }: Props) {
   const [sort, setSort] = useState<'points' | 'collection' | 'shiny' | 'rank'>('points');
 
   useEffect(() => {
-    supabase.from('game_saves').select('state, user_id').then(({ data, error }) => {
+    Promise.all([
+      supabase.from('game_saves').select('state, user_id'),
+      supabase.from('pokepark_presence').select('user_id, last_seen'),
+    ]).then(([savesRes, presenceRes]) => {
+      const { data, error } = savesRes;
       if (error || !data) { setLoading(false); return; }
+
+      // Build presence map: user_id -> last_seen
+      const nowMs = Date.now();
+      const presenceMap = new Map<string, { lastSeen: string; isOnline: boolean }>();
+      if (presenceRes.data) {
+        for (const p of presenceRes.data) {
+          const ms = new Date(p.last_seen).getTime();
+          presenceMap.set(p.user_id, {
+            lastSeen: p.last_seen,
+            isOnline: nowMs - ms < 3 * 60 * 1000, // online if seen <3min ago
+          });
+        }
+      }
+
       const rows: PlayerRow[] = data.map(row => {
         const s = row.state as Record<string, unknown> | null;
         if (!s) return null;
         const normal = s.normalCollection as Record<number, number> ?? {};
         const shiny  = s.shinyCollection  as Record<number, number> ?? {};
-        const village = s.village as { favoritePokemon?: { pokemonId: number; isShiny: boolean } | null } | null;
         const duels   = s.duels   as { wins?: number; losses?: number; rankingPoints?: number } | null;
         const normalCount = Object.values(normal).filter(v => v > 0).length;
         const shinyCount  = Object.values(shiny).filter(v  => v > 0).length;
@@ -48,16 +76,19 @@ export function PlayersPanel({ onClose }: Props) {
             return rb !== ra ? rb - ra : b - a;
           })[0] ?? null;
 
+        const presence = presenceMap.get(row.user_id);
         return {
           user_id: row.user_id,
           username: (s.username as string) ?? '?',
           points: (s.points as number) ?? 0,
           normalCount,
           shinyCount,
-          topPokemon: bestId ? { pokemonId: bestId, isShiny: (shiny[bestId] ?? 0) > 0 } : (village?.favoritePokemon ?? null),
+          topPokemon: bestId ? { pokemonId: bestId, isShiny: (shiny[bestId] ?? 0) > 0 } : null,
           duelWins:   duels?.wins ?? 0,
           duelLosses: duels?.losses ?? 0,
           rankingPoints: duels?.rankingPoints ?? 0,
+          lastSeen: presence?.lastSeen,
+          isOnline: presence?.isOnline ?? false,
         } as PlayerRow;
       }).filter(Boolean) as PlayerRow[];
       setPlayers(rows);
@@ -66,6 +97,9 @@ export function PlayersPanel({ onClose }: Props) {
   }, []);
 
   const sorted = [...players].sort((a, b) => {
+    // Online players always first
+    if (a.isOnline && !b.isOnline) return -1;
+    if (!a.isOnline && b.isOnline) return 1;
     if (sort === 'points') return b.points - a.points;
     if (sort === 'collection') return b.normalCount - a.normalCount;
     if (sort === 'shiny') return b.shinyCount - a.shinyCount;
@@ -160,7 +194,17 @@ export function PlayersPanel({ onClose }: Props) {
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="font-black text-white text-sm truncate">{p.username}</div>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-black text-sm truncate" style={{ color: p.username?.toLowerCase() === 'pokelian' ? '#ef4444' : 'white' }}>{p.username}</span>
+                  {p.isOnline && <span className="shrink-0 w-2 h-2 rounded-full bg-green-400" title="En ligne" />}
+                </div>
+                <div className="flex items-center gap-1 text-xs mt-0.5">
+                  {p.isOnline ? (
+                    <span className="text-green-400 font-semibold">En ligne</span>
+                  ) : p.lastSeen ? (
+                    <span className="text-slate-500">Connecté il y a {formatLastSeen(p.lastSeen)}</span>
+                  ) : null}
+                </div>
                 <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 flex-wrap">
                   <span>⭐ {p.points} pts</span>
                   <span>📚 {p.normalCount}/151</span>

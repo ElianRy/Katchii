@@ -243,7 +243,7 @@ export function AdminPanel({ gameState, onClose }: Props) {
                 <div>Pokémon normaux : <span className="text-white">{Object.keys(gameState.state.normalCollection).length}</span></div>
                 <div>Pokémon shiny : <span className="text-yellow-400">{Object.keys(gameState.state.shinyCollection).length}</span></div>
                 <div>Zone actuelle : <span className="text-green-400">{gameState.state.zoneProgress?.currentZoneId ?? 'zone1'}</span></div>
-                <div>Univers : <span className="text-blue-400">{gameState.state.activeUniverse}</span></div>
+
               </div>
             </div>
           </div>

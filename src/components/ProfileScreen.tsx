@@ -24,11 +24,9 @@ export function ProfileScreen({ username, state, onClose, onLogout }: Props) {
 
   const totalCaught = Object.keys(state.normalCollection).filter(id => (state.normalCollection[Number(id)] ?? 0) > 0).length;
   const totalShinyCaught = Object.keys(state.shinyCollection).filter(id => (state.shinyCollection[Number(id)] ?? 0) > 0).length;
-  const totalFusions = state.fusions.length;
   const badgesEarned = state.badges.length;
   const totalBadges = BADGES.length;
   const totalPlayTime = state.stats?.totalPlayTimeMs ?? 0;
-  const villageLevel = state.village?.level ?? 1;
 
   const earnedBadges = BADGES.filter(b => state.badges.includes(b.id));
 
@@ -87,8 +85,8 @@ export function ProfileScreen({ username, state, onClose, onLogout }: Props) {
                 <div className="text-slate-400 text-xs">Capturés</div>
               </div>
               <div className="bg-slate-800/60 rounded-xl p-3 text-center border border-slate-700/40">
-                <div className="text-purple-400 font-black text-xl">Niv.{villageLevel}</div>
-                <div className="text-slate-400 text-xs">Village</div>
+                <div className="text-purple-400 font-black text-xl">{totalShinyCaught}</div>
+                <div className="text-slate-400 text-xs">Shinies</div>
               </div>
             </div>
 
@@ -131,7 +129,6 @@ export function ProfileScreen({ username, state, onClose, onLogout }: Props) {
               { label: 'Meilleure streak', value: state.duels.streak, icon: '🔥' },
               { label: 'Succès débloqués', value: `${badgesEarned}/${totalBadges}`, icon: '🏅' },
               { label: 'Points totaux', value: state.points, icon: '⭐' },
-              { label: 'Fusions réalisées', value: totalFusions, icon: '⚗️' },
               { label: 'Temps total de jeu', value: formatPlayTime(totalPlayTime), icon: '⏰' },
             ].map(({ label, value, icon }) => (
               <div

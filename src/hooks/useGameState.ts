@@ -8,7 +8,6 @@ import { supabase } from '../lib/supabase';
 import { getUsername } from '../lib/auth';
 import { ZONE_BY_ID } from '../data/zones';
 import { POKEMON_BY_ID } from '../data/gen1';
-import { FUSION_BY_ID, FUSIONS } from '../data/fusions';
 import { getWeekId, todayDate, getTeamDamage } from '../components/RaidPanel';
 import { naturalLevel, xpToNextLevel } from '../data/combatEngine';
 
@@ -415,101 +414,12 @@ export function useGameState() {
     });
   }, [update]);
 
-  const updateVillage = useCallback((updater: (prev: GameState['village']) => GameState['village']) => {
-    update(prev => ({ ...prev, village: updater(prev.village) }));
+  const updateShowcase = useCallback((showcase: GameState['showcase']) => {
+    update(prev => ({ ...prev, showcase }));
   }, [update]);
 
-  const updateSkins = useCallback((updater: (prev: GameState['skins']) => GameState['skins']) => {
-    update(prev => ({ ...prev, skins: updater(prev.skins) }));
-  }, [update]);
-
-  const setActiveUniverse = useCallback((universe: 'pokemon' | 'naruto') => {
-    update(prev => ({ ...prev, activeUniverse: universe }));
-  }, [update]);
-
-  const addNarutoCapture = useCallback((characterId: string, isShiny: boolean, rarity: Rarity): number => {
-    let pointsEarned = 0;
-    update(prev => {
-      let next = { ...prev };
-      if (isShiny) {
-        const alreadyCaughtShiny = (prev.narutoShinyCollection[characterId] ?? 0) > 0;
-        next.narutoShinyCollection = { ...prev.narutoShinyCollection, [characterId]: (prev.narutoShinyCollection[characterId] ?? 0) + 1 };
-        if (!alreadyCaughtShiny) {
-          pointsEarned = rarity === 'legendaire' ? 50 : 20;
-          next.points = prev.points + pointsEarned;
-          next.globalCooldownUntil = Date.now() + 60_000;
-          if (!prev.narutoShinyDepleted.includes(characterId)) {
-            next.narutoShinyDepleted = [...prev.narutoShinyDepleted, characterId];
-          }
-        }
-      } else {
-        const alreadyCaught = (prev.narutoCollection[characterId] ?? 0) > 0;
-        next.narutoCollection = { ...prev.narutoCollection, [characterId]: (prev.narutoCollection[characterId] ?? 0) + 1 };
-        if (!alreadyCaught) {
-          pointsEarned = FIRST_CAPTURE_POINTS[rarity];
-          next.points = prev.points + pointsEarned;
-          next.globalCooldownUntil = Date.now() + 60_000;
-        }
-      }
-
-      const quests = next.dailyQuests.quests.map((q) => {
-        if (q.completed) return q;
-        let progress = q.progress;
-        if (q.type === 'capture_n') progress += 1;
-        else if (q.type === 'capture_rarity' && q.rarity === rarity) progress += 1;
-        else if (q.type === 'capture_shiny' && isShiny) progress += 1;
-        const completed = progress >= q.target;
-        return { ...q, progress, completed };
-      });
-      next.dailyQuests = { ...next.dailyQuests, quests };
-      return next;
-    });
-    return pointsEarned;
-  }, [update]);
-
-  const performFusion = useCallback((fusionId: string): boolean => {
-    let success = false;
-    update(prev => {
-      const fusion = FUSION_BY_ID[fusionId];
-      if (!fusion) return prev;
-      if (prev.fusions.some((f) => f.fusionId === fusionId)) return prev;
-      const countA = prev.normalCollection[fusion.a] ?? 0;
-      const countB = prev.normalCollection[fusion.b] ?? 0;
-      if (countA < 1 || countB < 1) return prev;
-      success = true;
-
-      const newNormalA = countA - 1;
-      const newNormalB = countB - 1;
-      const normalCollection = { ...prev.normalCollection };
-      if (newNormalA === 0) delete normalCollection[fusion.a];
-      else normalCollection[fusion.a] = newNormalA;
-      if (fusion.a !== fusion.b) {
-        if (newNormalB === 0) delete normalCollection[fusion.b];
-        else normalCollection[fusion.b] = newNormalB;
-      }
-
-      const newFusions = [...prev.fusions, { fusionId, obtainedAt: Date.now() }];
-
-      // Badge checks
-      const newBadges: string[] = [];
-      if (!prev.badges.includes('first_fusion')) {
-        newBadges.push('first_fusion');
-      }
-      if (newFusions.length >= FUSIONS.length && !prev.badges.includes('all_fusions')) {
-        newBadges.push('all_fusions');
-      }
-      if (newBadges.length > 0) {
-        setBadgeToasts((b) => [...b, ...newBadges]);
-      }
-
-      return {
-        ...prev,
-        normalCollection,
-        fusions: newFusions,
-        badges: newBadges.length > 0 ? [...prev.badges, ...newBadges] : prev.badges,
-      };
-    });
-    return success;
+  const setFavoritePokemon = useCallback((fav: GameState['favoritePokemon']) => {
+    update(prev => ({ ...prev, favoritePokemon: fav }));
   }, [update]);
 
   const startRaid = useCallback(() => {
@@ -704,16 +614,13 @@ export function useGameState() {
   return {
     state,
     addCapture,
-    addNarutoCapture,
     buyLure,
     activateLure,
     claimQuestReward,
     updateDuels,
     addDuelResult,
-    updateVillage,
-    updateSkins,
-    setActiveUniverse,
-    performFusion,
+    updateShowcase,
+    setFavoritePokemon,
     startRaid,
     attackRaid,
     claimRaidReward,

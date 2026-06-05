@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { SpawnedPokemon, Rarity, RARITY_WEIGHTS } from '../types';
 import { GEN1_POKEMON, POKEMON_BY_RARITY, POKEMON_BY_ID } from '../data/gen1';
-import { NARUTO_ZONE1, NARUTO_BY_RARITY } from '../data/naruto';
 import { ZONE_BY_ID } from '../data/zones';
 import { useGameState } from './useGameState';
 
@@ -60,11 +59,6 @@ function getZoneRarities(zoneIds: number[]): Set<Rarity> {
   return rarities;
 }
 
-function pickNaruto(rarity: Rarity): string {
-  const pool = (NARUTO_BY_RARITY as Record<string, typeof NARUTO_ZONE1>)[rarity];
-  if (!pool || pool.length === 0) return NARUTO_ZONE1[0].id;
-  return pool[Math.floor(Math.random() * pool.length)].id;
-}
 
 function isInHudZone(_x: number, y: number): boolean {
   // HUD info block: top strip only
@@ -133,10 +127,7 @@ export function useSpawner(
           legendaire: RARITY_WEIGHTS.legendaire * mult.legendaire,
         };
 
-        const universe = gs.state.activeUniverse;
-
         let pokemonId: number;
-        let characterId: string | undefined;
         let isShiny: boolean;
 
         const zoneId = gs.state.zoneProgress?.currentZoneId ?? 'zone1';
@@ -145,44 +136,33 @@ export function useSpawner(
         const specialIds = new Set<number>(currentZone?.specialIds ?? []);
         const legendarySpecialIds = new Set<number>(currentZone?.legendarySpecialIds ?? []);
         const allExcluded = new Set<number>([...specialIds, ...legendarySpecialIds]);
-        const zoneRarities = universe === 'naruto' ? null : getZoneRarities(zoneIds);
+        const zoneRarities = getZoneRarities(zoneIds);
 
         // Zero out rarities not present in this zone
         const zoneWeights: Record<Rarity, number> = {
-          commun: (!zoneRarities || zoneRarities.has('commun')) ? baseWeights.commun : 0,
-          peu_commun: (!zoneRarities || zoneRarities.has('peu_commun')) ? baseWeights.peu_commun : 0,
-          rare: (!zoneRarities || zoneRarities.has('rare')) ? baseWeights.rare : 0,
-          elite: (!zoneRarities || zoneRarities.has('elite')) ? baseWeights.elite : 0,
-          legendaire: (!zoneRarities || zoneRarities.has('legendaire')) ? baseWeights.legendaire : 0,
+          commun: zoneRarities.has('commun') ? baseWeights.commun : 0,
+          peu_commun: zoneRarities.has('peu_commun') ? baseWeights.peu_commun : 0,
+          rare: zoneRarities.has('rare') ? baseWeights.rare : 0,
+          elite: zoneRarities.has('elite') ? baseWeights.elite : 0,
+          legendaire: zoneRarities.has('legendaire') ? baseWeights.legendaire : 0,
         };
 
         const rarity = weightedRarity(zoneWeights);
 
-        if (universe === 'naruto') {
-          const nId = pickNaruto(rarity);
-          characterId = nId;
-          pokemonId = 0;
-          const shinyDepleted = gs.state.narutoShinyDepleted;
-          const total = NARUTO_ZONE1.length;
-          const baseShinyRate = (1 / 250) * (total / Math.max(1, total - shinyDepleted.length));
-          const shinyRate = baseShinyRate * mult.shinyRate;
-          isShiny = !shinyDepleted.includes(nId) && Math.random() < shinyRate;
+        // Check legendary/elite specials first via flat absolute rates
+        const legendaryPool = [...legendarySpecialIds].filter(id => zoneIds.includes(id));
+        const elitePool = [...specialIds].filter(id => zoneIds.includes(id));
+        if (legendaryPool.length > 0 && Math.random() < LEGENDARY_SPECIAL_RATE) {
+          pokemonId = legendaryPool[Math.floor(Math.random() * legendaryPool.length)];
+        } else if (elitePool.length > 0 && Math.random() < ELITE_SPECIAL_RATE) {
+          pokemonId = elitePool[Math.floor(Math.random() * elitePool.length)];
         } else {
-          // Check legendary/elite specials first via flat absolute rates
-          const legendaryPool = [...legendarySpecialIds].filter(id => zoneIds.includes(id));
-          const elitePool = [...specialIds].filter(id => zoneIds.includes(id));
-          if (legendaryPool.length > 0 && Math.random() < LEGENDARY_SPECIAL_RATE) {
-            pokemonId = legendaryPool[Math.floor(Math.random() * legendaryPool.length)];
-          } else if (elitePool.length > 0 && Math.random() < ELITE_SPECIAL_RATE) {
-            pokemonId = elitePool[Math.floor(Math.random() * elitePool.length)];
-          } else {
-            pokemonId = pickPokemon(rarity, zoneIds, allExcluded);
-          }
-          const shinyDepleted = gs.state.shinyDepleted;
-          const baseShinyRate = (1 / 250) * (151 / Math.max(1, 151 - shinyDepleted.length));
-          const shinyRate = baseShinyRate * mult.shinyRate;
-          isShiny = !shinyDepleted.includes(pokemonId) && Math.random() < shinyRate;
+          pokemonId = pickPokemon(rarity, zoneIds, allExcluded);
         }
+        const shinyDepleted = gs.state.shinyDepleted;
+        const baseShinyRate = (1 / 250) * (151 / Math.max(1, 151 - shinyDepleted.length));
+        const shinyRate = baseShinyRate * mult.shinyRate;
+        isShiny = !shinyDepleted.includes(pokemonId) && Math.random() < shinyRate;
 
         const pos = getValidPosition(active);
         if (!pos) return prev; // skip if no valid position found
@@ -191,7 +171,6 @@ export function useSpawner(
         const newSpawn: SpawnedPokemon = {
           uid: nextUid(),
           pokemonId,
-          characterId,
           isShiny,
           spawnedAt: Date.now(),
           lifetime: randomBetween(MIN_LIFETIME, MAX_LIFETIME),

@@ -20,12 +20,9 @@ const MAIN_ITEMS = [
 ];
 
 const MENU_ITEMS = [
-  { view: 'lures'  as View, icon: '🎣', label: 'Leurres',  color: '#c084fc' },
-  { view: 'duels'  as View, icon: '🥊', label: 'Duels',    color: '#f87171' },
-  { view: 'village'as View, icon: '🏘️', label: 'Village',  color: '#fbbf24' },
-  { view: 'skins'  as View, icon: '🎨', label: 'Skins',    color: '#f472b6' },
-  { view: 'fusion' as View, icon: '⚗️', label: 'Fusion',   color: '#c084fc' },
-  { view: 'raid'   as View, icon: '🐉', label: 'Raid',     color: '#f87171' },
+  { view: 'lures' as View, icon: '🎣', label: 'Leurres', color: '#c084fc' },
+  { view: 'duels' as View, icon: '🥊', label: 'Duels',   color: '#f87171' },
+  { view: 'raid'  as View, icon: '🐉', label: 'Raid',    color: '#f87171' },
 ];
 
 type NavMood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited';

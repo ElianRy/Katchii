@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SpawnedPokemon, PokemonData, RARITY_COLORS } from '../types';
 
 interface Props {
@@ -60,6 +60,17 @@ function PokeballSVG({ spinning }: { spinning: boolean }) {
 export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, narutoSpriteUrl, leaving, facingRight = true }: Props) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showParticles, setShowParticles] = useState(false);
+  const [throwPhase, setThrowPhase] = useState<'idle' | 'throwing' | 'spinning'>('idle');
+  const prevCapturing = useRef(false);
+
+  useEffect(() => {
+    if (!prevCapturing.current && spawned.capturing) {
+      setThrowPhase('throwing');
+      const t = setTimeout(() => setThrowPhase('spinning'), 550);
+      return () => clearTimeout(t);
+    }
+    prevCapturing.current = spawned.capturing;
+  }, [spawned.capturing]);
 
   useEffect(() => {
     if (spawned.captured && !showParticles) {
@@ -162,8 +173,12 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
       })}
 
       {spawned.capturing ? (
-        <div className="flex items-center justify-center w-16 h-16">
-          <PokeballSVG spinning />
+        <div className="flex items-center justify-center w-16 h-16" style={{ position: 'relative' }}>
+          <div style={{
+            animation: throwPhase === 'throwing' ? 'pokeball-throw 0.55s cubic-bezier(0.25,0.46,0.45,0.94) forwards' : 'pokeball-land 0.3s ease-out forwards',
+          }}>
+            <PokeballSVG spinning={throwPhase === 'spinning'} />
+          </div>
         </div>
       ) : !spawned.captured ? (
         <div

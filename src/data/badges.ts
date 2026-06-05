@@ -21,8 +21,6 @@ export const BADGES: BadgeDefinition[] = [
   { id: 'first_lure', label: 'Stratège', desc: 'Active ton premier leurre', icon: '🎣', secret: false },
   { id: 'magicarpe', label: '...', desc: '???', icon: '❓', secret: true },
   { id: 'full_starter', label: 'Starter complet', desc: 'Capture les 3 starters', icon: '🌿', secret: false },
-  { id: 'first_fusion', label: 'Alchimiste', desc: 'Réalise ta première fusion', icon: '⚗️', secret: false },
-  { id: 'all_fusions', label: 'Maître Fusionneur', desc: 'Réalise toutes les fusions', icon: '🌀', secret: false },
 ];
 
 export const BADGE_BY_ID: Record<string, BadgeDefinition> = Object.fromEntries(

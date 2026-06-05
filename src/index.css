@@ -127,6 +127,19 @@
   100% { opacity: 0;   transform: translate(-10%, -95%) scale(0.3) rotate(28deg); }
 }
 
+@keyframes pokeball-throw {
+  0%   { transform: translateY(120px) scale(0.6) rotate(0deg); opacity: 0.8; }
+  40%  { transform: translateY(40px) scale(0.9) rotate(-120deg); opacity: 1; }
+  75%  { transform: translateY(-10px) scale(1.05) rotate(-200deg); opacity: 1; }
+  100% { transform: translateY(0px) scale(1) rotate(-260deg); opacity: 1; }
+}
+@keyframes pokeball-land {
+  0%   { transform: translateY(0) scale(1); }
+  30%  { transform: translateY(-8px) scale(1.1); }
+  60%  { transform: translateY(2px) scale(0.95); }
+  100% { transform: translateY(0) scale(1); }
+}
+
 @keyframes pokeball-impact {
   0%   { transform: scale(1) translateY(0); }
   20%  { transform: scale(1.18) translateY(-6px); }

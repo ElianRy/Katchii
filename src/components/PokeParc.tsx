@@ -43,7 +43,7 @@ interface Props {
   username: string;
   isAdmin?: boolean;
   onClose: () => void;
-  onUpdateVillage: (updater: (prev: GameState['village']) => GameState['village']) => void;
+  onSetFavoritePokemon: (fav: GameState['favoritePokemon']) => void;
   onAddPlayerXp: (xp: number) => void;
   onAddPokemonXp: (pokemonId: number, xp: number) => void;
 }
@@ -254,7 +254,7 @@ function ParkSprite({
         fontWeight: 'bold',
         whiteSpace: 'nowrap',
       }}>
-        {isMine ? '★ ' : ''}{username}
+        {isMine ? '★ ' : ''}<span style={username?.toLowerCase() === 'pokelian' && !isMine ? { color: '#ef4444' } : {}}>{username}</span>
       </div>
     </div>
   );
@@ -614,7 +614,7 @@ function PokemonPicker({ state, onPick, onClose }: {
 }
 
 // ---- Main Component ----
-export function PokeParc({ state, username, isAdmin = false, onClose, onUpdateVillage, onAddPlayerXp, onAddPokemonXp }: Props) {
+export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp }: Props) {
   const [presence, setPresence] = useState<PresenceRow[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -630,7 +630,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onUpdateVi
   const chatEndRef = useRef<HTMLDivElement>(null);
   const wanderRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const myFav = state.village.favoritePokemon;
+  const myFav = state.favoritePokemon;
 
   // Get current user ID
   useEffect(() => {
@@ -1001,11 +1001,13 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onUpdateVi
                       {msg.grade_icon} {msg.grade}
                     </span>
                   )}
-                  <span className="font-bold shrink-0" style={{ color: msg.user_id === myUserId ? '#fbbf24' : '#60a5fa' }}>
+                  <span className="font-bold shrink-0" style={{
+                    color: msg.username?.toLowerCase() === 'pokelian' ? '#ef4444' : msg.user_id === myUserId ? '#fbbf24' : '#60a5fa'
+                  }}>
                     {msg.username}
                   </span>
                   {isAdmin && msg.user_id !== myUserId && (
-                    <span className="ml-auto flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <span className="ml-auto flex gap-1 shrink-0">
                       <button onClick={() => deleteMessage(msg.id)}
                         className="text-red-500 hover:text-red-400 px-1 rounded text-xs" title="Supprimer">🗑️</button>
                       <button onClick={() => toggleMute(msg.user_id)}
@@ -1044,7 +1046,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onUpdateVi
         <PokemonPicker
           state={state}
           onPick={(pokemonId, isShiny) => {
-            onUpdateVillage(prev => ({ ...prev, favoritePokemon: { pokemonId, isShiny } }));
+            onSetFavoritePokemon({ pokemonId, isShiny });
           }}
           onClose={() => setShowPicker(false)}
         />
