@@ -626,7 +626,9 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [showRace, setShowRace] = useState(false);
   const [showDuel, setShowDuel] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
-  const [mutedUsers, setMutedUsers] = useState<Set<string>>(new Set());
+  // mutedUsers: userId -> expiryMs (null = permanent)
+  const [mutedUsers, setMutedUsers] = useState<Map<string, number | null>>(new Map());
+  const [muteMenuFor, setMuteMenuFor] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const wanderRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -804,12 +806,24 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     await supabase.from('pokepark_chat').delete().eq('id', msgId);
   };
 
-  const toggleMute = (userId: string) => {
-    setMutedUsers(prev => {
-      const next = new Set(prev);
-      next.has(userId) ? next.delete(userId) : next.add(userId);
-      return next;
-    });
+  const muteUser = (userId: string, durationMs: number | null) => {
+    const expiry = durationMs === null ? null : Date.now() + durationMs;
+    setMutedUsers(prev => new Map(prev).set(userId, expiry));
+    setMuteMenuFor(null);
+  };
+
+  const unmuteUser = (userId: string) => {
+    setMutedUsers(prev => { const m = new Map(prev); m.delete(userId); return m; });
+  };
+
+  const isMuted = (userId: string) => {
+    const exp = mutedUsers.get(userId);
+    if (exp === undefined) return false;
+    if (exp === null) return true; // permanent
+    if (Date.now() < exp) return true;
+    // expired — clean up
+    setMutedUsers(prev => { const m = new Map(prev); m.delete(userId); return m; });
+    return false;
   };
 
   const handleWave = () => {
@@ -990,8 +1004,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
             {chat.length === 0 && (
               <div className="text-xs text-slate-600 text-center py-4">Soyez le premier à écrire !</div>
             )}
-            {chat.filter(m => !mutedUsers.has(m.user_id)).map(msg => (
-              <div key={msg.id} className="flex flex-col gap-0.5 text-xs group">
+            {chat.filter(m => !isMuted(m.user_id)).map(msg => (
+              <div key={msg.id} className="flex flex-col gap-0.5 text-xs group relative">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-slate-500 shrink-0" style={{ fontSize: '0.55rem' }}>
                     {formatChatTime(msg.created_at)}
@@ -1006,12 +1020,35 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                   }}>
                     {msg.username}
                   </span>
-                  {isAdmin && msg.user_id !== myUserId && (
-                    <span className="ml-auto flex gap-1 shrink-0">
+                  {isAdmin && (
+                    <span className="ml-auto flex items-center gap-1 shrink-0">
                       <button onClick={() => deleteMessage(msg.id)}
                         className="text-red-500 hover:text-red-400 px-1 rounded text-xs" title="Supprimer">🗑️</button>
-                      <button onClick={() => toggleMute(msg.user_id)}
-                        className="text-orange-500 hover:text-orange-400 px-1 rounded text-xs" title="Mute">🔇</button>
+                      {msg.user_id !== myUserId && (
+                        <div className="relative">
+                          {isMuted(msg.user_id) ? (
+                            <button onClick={() => unmuteUser(msg.user_id)}
+                              className="text-green-500 hover:text-green-400 px-1 rounded text-xs" title="Démuter">🔊</button>
+                          ) : (
+                            <button onClick={() => setMuteMenuFor(muteMenuFor === msg.user_id ? null : msg.user_id)}
+                              className="text-orange-500 hover:text-orange-400 px-1 rounded text-xs" title="Muter">🔇</button>
+                          )}
+                          {muteMenuFor === msg.user_id && (
+                            <div className="absolute right-0 bottom-6 z-50 bg-slate-800 border border-slate-600 rounded-xl shadow-xl flex flex-col overflow-hidden" style={{ minWidth: 100 }}>
+                              {[
+                                { label: '5 min', ms: 5 * 60 * 1000 },
+                                { label: '1 heure', ms: 60 * 60 * 1000 },
+                                { label: 'Permanent', ms: null },
+                              ].map(opt => (
+                                <button key={opt.label} onClick={() => muteUser(msg.user_id, opt.ms)}
+                                  className="px-3 py-2 text-xs font-bold text-left hover:bg-slate-700 text-orange-300 whitespace-nowrap">
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </span>
                   )}
                 </div>

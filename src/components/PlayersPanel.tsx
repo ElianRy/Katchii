@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { RARITY_COLORS } from '../types';
+import { PlayerProfile } from './PlayerProfile';
 
 interface PlayerRow {
   user_id: string;
@@ -34,6 +35,7 @@ export function PlayersPanel({ onClose }: Props) {
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<'points' | 'collection' | 'shiny' | 'rank'>('points');
+  const [selectedPlayer, setSelectedPlayer] = useState<PlayerRow | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -149,7 +151,7 @@ export function PlayersPanel({ onClose }: Props) {
           </div>
         )}
         {!loading && sorted.map((p, i) => {
-          const topData = p.topPokemon ? POKEMON_BY_ID[p.topPokemon.pokemonId] : null;
+          const topData = p.topPokemon ? POKEMON_BY_ID[p.topPokemon?.pokemonId] : null;
           const spriteUrl = p.topPokemon
             ? p.topPokemon.isShiny
               ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${p.topPokemon.pokemonId}.png`
@@ -162,10 +164,9 @@ export function PlayersPanel({ onClose }: Props) {
           return (
             <div
               key={p.user_id}
-              className="flex items-center gap-3 px-4 py-3 border-b border-slate-800/60"
-              style={{
-                background: isTopThree ? `${rankColor}08` : undefined,
-              }}
+              className="flex items-center gap-3 px-4 py-3 border-b border-slate-800/60 active:bg-white/5 cursor-pointer"
+              style={{ background: isTopThree ? `${rankColor}08` : undefined }}
+              onClick={() => setSelectedPlayer(p)}
             >
               {/* Rank */}
               <div className="shrink-0 w-8 text-center">
@@ -238,6 +239,16 @@ export function PlayersPanel({ onClose }: Props) {
           </div>
         )}
       </div>
+
+      {selectedPlayer && (
+        <PlayerProfile
+          userId={selectedPlayer.user_id}
+          username={selectedPlayer.username}
+          isOnline={selectedPlayer.isOnline}
+          lastSeen={selectedPlayer.lastSeen}
+          onClose={() => setSelectedPlayer(null)}
+        />
+      )}
     </div>
   );
 }

@@ -42,7 +42,7 @@ export function App() {
         setUsername(getUsername(user));
         const saved = localStorage.getItem('katchii_last_view') as View | null;
         const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','wrapped','pokepark'];
-        setView(saved && validViews.includes(saved) ? saved : 'hunt');
+        setView(saved && validViews.includes(saved) ? saved : 'home');
       } else {
         setView('auth');
       }
@@ -55,7 +55,7 @@ export function App() {
         setUsername(getUsername(session.user));
         const saved = localStorage.getItem('katchii_last_view') as View | null;
         const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','wrapped','pokepark'];
-        setView(saved && validViews.includes(saved) ? saved : 'hunt');
+        setView(saved && validViews.includes(saved) ? saved : 'home');
       } else {
         setView('auth');
       }
@@ -115,7 +115,7 @@ export function App() {
               sessionStorage.setItem('katchii_welcomed', '1');
               setShowWelcome(true);
             } else {
-              persistView('hunt');
+              setView('home');
             }
           }}
         />

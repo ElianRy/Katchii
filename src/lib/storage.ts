@@ -109,12 +109,16 @@ export function loadUserState(userId: string): GameState | null {
   try {
     const raw = localStorage.getItem(userKey(userId));
     if (raw) return parseState(raw);
-    // Last-resort migration: use generic key only if it has real data (>0 pokemon)
+    // One-time migration: use generic key only if it has real pokemon data,
+    // then clear it so a subsequent different user can't inherit it.
     const legacy = localStorage.getItem(STORAGE_KEY);
     if (legacy) {
       const parsed = JSON.parse(legacy) as Partial<GameState>;
       const hasPokemon = Object.values(parsed.normalCollection ?? {}).some(v => v > 0);
-      if (hasPokemon) return parseState(legacy);
+      if (hasPokemon) {
+        localStorage.removeItem(STORAGE_KEY); // consumed — prevent cross-user contamination
+        return parseState(legacy);
+      }
     }
     return null;
   } catch {
@@ -122,12 +126,10 @@ export function loadUserState(userId: string): GameState | null {
   }
 }
 
-/** Save state scoped to the current user (+ generic key for backwards compat) */
+/** Save state scoped to the current user only (no generic key to avoid cross-user contamination) */
 export function saveUserState(userId: string, state: GameState): void {
   try {
-    const json = JSON.stringify(state);
-    localStorage.setItem(userKey(userId), json);
-    localStorage.setItem(STORAGE_KEY, json); // keep generic in sync as legacy fallback
+    localStorage.setItem(userKey(userId), JSON.stringify(state));
   } catch {
     // Silently fail if localStorage not available
   }
