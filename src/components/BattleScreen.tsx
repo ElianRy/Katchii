@@ -11,6 +11,7 @@ interface Props {
   enemyTeam: TeamMember[];
   bossName?: string;
   onBattleEnd: (won: boolean, xpGains: Record<number, number>) => void;
+  onSkip?: () => void;
 }
 
 interface FighterState extends TeamMember { currentHp: number; }
@@ -276,7 +277,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, onSkip }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.maxHp }))
   );
@@ -720,17 +721,28 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             ))}
           </div>
           {phase === 'battle' && (
-            <button
-              onClick={() => setSpeedLevel(v => (v + 1) % 3)}
-              className="ml-3 px-3 py-1.5 rounded-xl font-black text-sm shrink-0"
-              style={{
-                background: speedLevel === 2 ? 'linear-gradient(90deg, #ef4444, #7c3aed)' : speedLevel === 1 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : '#1e293b',
-                border: speedLevel > 0 ? `2px solid ${speedLevel === 2 ? '#ef4444' : '#f59e0b'}` : '2px solid #475569',
-                color: speedLevel > 0 ? '#000' : '#94a3b8',
-              }}
-            >
-              {speedLevel === 2 ? '⚡ x4' : speedLevel === 1 ? '⚡ x2' : '▶ x1'}
-            </button>
+            <div className="flex gap-2 ml-2 shrink-0">
+              <button
+                onClick={() => setSpeedLevel(v => (v + 1) % 3)}
+                className="px-3 py-1.5 rounded-xl font-black text-sm"
+                style={{
+                  background: speedLevel === 2 ? 'linear-gradient(90deg, #ef4444, #7c3aed)' : speedLevel === 1 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : '#1e293b',
+                  border: speedLevel > 0 ? `2px solid ${speedLevel === 2 ? '#ef4444' : '#f59e0b'}` : '2px solid #475569',
+                  color: speedLevel > 0 ? '#000' : '#94a3b8',
+                }}
+              >
+                {speedLevel === 2 ? '⚡ x4' : speedLevel === 1 ? '⚡ x2' : '▶ x1'}
+              </button>
+              {onSkip && (
+                <button
+                  onClick={onSkip}
+                  className="px-3 py-1.5 rounded-xl font-black text-sm"
+                  style={{ background: '#1e293b', border: '2px solid #475569', color: '#94a3b8' }}
+                >
+                  ⏭ Skip
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>

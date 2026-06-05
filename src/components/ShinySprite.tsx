@@ -11,7 +11,7 @@ export const SPARKLE_POSITIONS = [
   { bottom: '-12px',right: '20%',  color: '#f87171', duration: '1.05s', delay: '1.05s' },
 ];
 
-const ORBIT_POSITIONS = [
+export const ORBIT_POSITIONS = [
   { top: '-8px',   left: '30%',   color: '#fde047', duration: '1.15s', delay: '0.5s' },
   { top: '20%',    right: '-10px',color: '#60a5fa', duration: '0.9s',  delay: '0.7s' },
   { bottom: '-6px',left: '70%',   color: '#f472b6', duration: '1.0s',  delay: '0.2s' },

@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View } from '../types';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
+import { SPARKLE_POSITIONS, ORBIT_POSITIONS } from './ShinySprite';
 
 interface Props {
   currentView: View;
@@ -38,37 +39,6 @@ const TYPE_ATTACK_EMOJI: Record<string, string> = {
 interface FloatingHeart { id: number; x: number }
 interface AttackEmoji { id: number; emoji: string }
 
-function ShinyAura() {
-  return (
-    <>
-      {/* Tight rotating rainbow ring */}
-      <div className="absolute pointer-events-none" style={{
-        inset: -3,
-        borderRadius: '50%',
-        background: 'conic-gradient(from 0deg, #f87171, #fb923c, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
-        animation: 'rainbow-spin 2s linear infinite',
-        opacity: 0.7,
-        filter: 'blur(2px)',
-      }} />
-      {/* 4 orbiting stars */}
-      {[0, 1, 2, 3].map(i => (
-        <div key={i} className="absolute pointer-events-none" style={{
-          width: 6,
-          height: 6,
-          top: '50%',
-          left: '50%',
-          marginTop: -3,
-          marginLeft: -3,
-          animation: `nav-star-orbit-${i} 2.4s linear infinite`,
-          fontSize: 8,
-          lineHeight: 1,
-          color: '#fde047',
-        }}>✦</div>
-      ))}
-    </>
-  );
-}
-
 function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: boolean }) {
   const [posX, setPosX] = useState(50);
   const [mood, setMood] = useState<NavMood>('happy');
@@ -78,7 +48,6 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
   const lastTapRef = useRef<number>(0);
   const heartCounterRef = useRef(0);
   const attackCounterRef = useRef(0);
-  const posXRef = useRef(50);
 
   const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${isShiny ? 'shiny/' : ''}${pokemonId}.png`;
 
@@ -87,9 +56,7 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
     const id = setInterval(() => {
       setPosX(prev => {
         const next = 8 + Math.random() * 82;
-        const goRight = next > prev;
-        setFacingRight(goRight);
-        posXRef.current = next;
+        setFacingRight(next > prev);
         return next;
       });
     }, 6000);
@@ -212,10 +179,41 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
         }}>{badge}</div>
       )}
 
-      {/* Shiny aura */}
+      {/* Shiny aura — same sparkles as ShinySprite */}
       {isShiny && (
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <ShinyAura />
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+          {SPARKLE_POSITIONS.map((sp, i) => (
+            <div
+              key={i}
+              className="shiny-sparkle"
+              style={{
+                top: sp.top,
+                left: sp.left,
+                right: (sp as { right?: string }).right,
+                bottom: (sp as { bottom?: string }).bottom,
+                transform: sp.left === '50%' ? 'translateX(-50%)' : undefined,
+                '--sp-color': sp.color,
+                '--sp-duration': sp.duration,
+                '--sp-delay': sp.delay,
+              } as React.CSSProperties}
+            />
+          ))}
+          {ORBIT_POSITIONS.map((sp, i) => (
+            <div
+              key={`o${i}`}
+              className="shiny-sparkle-orbit"
+              style={{
+                top: sp.top,
+                left: sp.left,
+                right: (sp as { right?: string }).right,
+                bottom: (sp as { bottom?: string }).bottom,
+                '--sp-color': sp.color,
+                '--sp-duration': sp.duration,
+                '--sp-delay': sp.delay,
+              } as React.CSSProperties}
+            />
+          ))}
+          <span className="absolute -top-1 -right-1 text-xs" style={{ filter: 'drop-shadow(0 0 3px #fde047)' }}>✨</span>
         </div>
       )}
 
@@ -282,26 +280,6 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
         </div>
       </div>
 
-      {/* Quests pill — always visible above menu button, outside menu sheet */}
-      {(questsCompleted > 0 || currentView === 'quests') && (
-        <div
-          className="fixed z-[195]"
-          style={{ bottom: 72 + 4, right: 8 }}
-        >
-          <button
-            onClick={() => { setMenuOpen(false); onNavigate('quests'); }}
-            className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.55rem] font-black"
-            style={{
-              background: 'rgba(234,179,8,0.9)',
-              color: '#000',
-              boxShadow: '0 2px 8px rgba(234,179,8,0.5)',
-            }}
-          >
-            📋 {questsCompleted > 0 ? questsCompleted : ''}
-          </button>
-        </div>
-      )}
-
       {/* Main nav bar */}
       <div className="fixed bottom-0 left-0 right-0 z-[200] pointer-events-none" style={{ height: BOTTOM_NAV_HEIGHT }}>
         {/* Favorite pokemon wandering above the nav */}
@@ -338,29 +316,47 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
             </button>
           ))}
 
-          {/* Menu "···" button */}
-          <button
-            onClick={() => setMenuOpen(o => !o)}
-            className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${
-              menuOpen || inMenu ? 'text-white' : 'text-slate-400 hover:bg-white/5'
-            }`}
-          >
-            <span className="text-2xl leading-none font-black tracking-widest" style={{
-              transform: menuOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-              transition: 'transform 0.25s ease',
-              display: 'inline-block',
-            }}>···</span>
-            <span className="text-[0.6rem] font-bold leading-none">Menu</span>
-            {questsCompleted > 0 && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-500" />
-            )}
-            {inMenu && (
-              <span className="absolute" style={{
-                bottom: 2, left: '50%', transform: 'translateX(-50%)',
-                width: 4, height: 4, borderRadius: '50%', background: 'white', opacity: 0.9,
-              }} />
-            )}
-          </button>
+          {/* Menu "···" button + Quêtes below */}
+          <div className="relative flex flex-col items-center">
+            <button
+              onClick={() => setMenuOpen(o => !o)}
+              className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${
+                menuOpen || inMenu ? 'text-white' : 'text-slate-400 hover:bg-white/5'
+              }`}
+            >
+              <span className="text-2xl leading-none font-black tracking-widest" style={{
+                transform: menuOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.25s ease',
+                display: 'inline-block',
+              }}>···</span>
+              <span className="text-[0.6rem] font-bold leading-none">Menu</span>
+              {questsCompleted > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-500" />
+              )}
+              {inMenu && (
+                <span className="absolute" style={{
+                  bottom: 2, left: '50%', transform: 'translateX(-50%)',
+                  width: 4, height: 4, borderRadius: '50%', background: 'white', opacity: 0.9,
+                }} />
+              )}
+            </button>
+
+            {/* Quêtes — small pill below Menu button */}
+            <button
+              onClick={() => handleNavigate('quests')}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-full font-black"
+              style={{
+                fontSize: '0.6rem',
+                background: currentView === 'quests' ? 'rgba(234,179,8,0.9)' : 'rgba(234,179,8,0.18)',
+                color: currentView === 'quests' ? '#000' : '#fbbf24',
+                border: '1px solid rgba(234,179,8,0.35)',
+                marginTop: -2,
+                lineHeight: 1.2,
+              }}
+            >
+              📋 Quêtes{questsCompleted > 0 ? ` (${questsCompleted})` : ''}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -377,12 +373,8 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
           0%   { opacity: 1; transform: translate(0, 0) scale(1); }
           100% { opacity: 0; transform: translate(-40px, -20px) scale(0.4); }
         }
-        /* Orbiting stars for shiny aura */
-        @keyframes nav-star-orbit-0 { 0%{transform:rotate(0deg) translateX(18px)} 100%{transform:rotate(360deg) translateX(18px)} }
-        @keyframes nav-star-orbit-1 { 0%{transform:rotate(90deg) translateX(18px)} 100%{transform:rotate(450deg) translateX(18px)} }
-        @keyframes nav-star-orbit-2 { 0%{transform:rotate(180deg) translateX(18px)} 100%{transform:rotate(540deg) translateX(18px)} }
-        @keyframes nav-star-orbit-3 { 0%{transform:rotate(270deg) translateX(18px)} 100%{transform:rotate(630deg) translateX(18px)} }
       `}</style>
     </>
   );
 }
+

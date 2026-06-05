@@ -33,15 +33,29 @@ const DIFFICULTIES: Difficulty[] = [
   { id: 'maitre',    label: 'Maître',    emoji: '🔴', enemyLevel: 85,  color: '#ef4444', xpMultiplier: 8,   description: 'Niv. ~85' },
 ];
 
-// Generate an enemy team for a given difficulty
+// Rarity pool by difficulty — harder = rarer pokemon
+const DIFFICULTY_RARITY_POOL: Record<string, string[]> = {
+  facile:    ['commun', 'commun', 'peu_commun'],
+  normal:    ['commun', 'peu_commun', 'peu_commun'],
+  difficile: ['peu_commun', 'peu_commun', 'rare'],
+  champion:  ['peu_commun', 'rare', 'rare'],
+  maitre:    ['rare', 'elite', 'legendaire'],
+};
+
 function buildEnemyTeam(difficulty: Difficulty): TeamMember[] {
-  const pool = GEN1_POKEMON.filter(p => p.rarity === 'commun' || p.rarity === 'peu_commun');
+  const rarities = DIFFICULTY_RARITY_POOL[difficulty.id] ?? ['commun', 'commun', 'peu_commun'];
   const picked: number[] = [];
+  for (const rarity of rarities) {
+    const pool = GEN1_POKEMON.filter(p => p.rarity === rarity && !picked.includes(p.id));
+    if (pool.length === 0) continue;
+    picked.push(pool[Math.floor(Math.random() * pool.length)].id);
+  }
+  // fallback if not enough
   while (picked.length < 3) {
-    const p = pool[Math.floor(Math.random() * pool.length)];
+    const p = GEN1_POKEMON[Math.floor(Math.random() * GEN1_POKEMON.length)];
     if (!picked.includes(p.id)) picked.push(p.id);
   }
-  const spread = 10;
+  const spread = 8;
   return picked.map(id => {
     const level = Math.max(1, difficulty.enemyLevel - spread + Math.floor(Math.random() * spread * 2));
     const maxHp = calcMaxHp(id, level);
@@ -69,14 +83,14 @@ interface Props {
 export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon équipe', savedTeams, onSaveTeam, onDeleteTeam }: Props) {
   const [selected, setSelected] = useState<number[]>([]);
   const [sort, setSort] = useState<'level' | 'rarity'>('level');
-  const [mode, setMode] = useState<'team' | 'difficulty' | 'battle' | 'result'>('team');
+  const [mode, setMode] = useState<'team' | 'difficulty' | 'battle' | 'result' | 'savedTeams'>('team');
   const [chosenDifficulty, setChosenDifficulty] = useState<Difficulty | null>(null);
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
   const [levelUps, setLevelUps] = useState<LevelUpNotif[]>([]);
-  const [savedTeam, setSavedTeam] = useState(false);
   const [showNameInput, setShowNameInput] = useState(false);
   const [teamName, setTeamName] = useState('');
+  const [viewTeam, setViewTeam] = useState<{ id: string; name: string; members: TeamMember[] } | null>(null);
 
   const owned = GEN1_POKEMON.filter(p =>
     (state.normalCollection[p.id] ?? 0) > 0 || (state.shinyCollection[p.id] ?? 0) > 0
@@ -108,8 +122,6 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
       return { pokemonId: id, level: lvData.level, xp: lvData.xp, currentHp: maxHp, maxHp };
     });
     onConfirm?.(team);
-    setSavedTeam(true);
-    setTimeout(() => setSavedTeam(false), 1500);
   };
 
   const startBattle = (diff: Difficulty) => {
@@ -117,6 +129,25 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
     setChosenDifficulty(diff);
     setEnemyTeam(buildEnemyTeam(diff));
     setMode('battle');
+  };
+
+  const skipBattle = () => {
+    if (!chosenDifficulty) return;
+    // Simulate outcome: compare total atk*level of both sides
+    const playerPower = selected.reduce((sum, id) => {
+      const lv = state.pokemonLevels?.[id]?.level ?? 1;
+      return sum + calcAttack(id, lv) + calcMaxHp(id, lv) / 10;
+    }, 0);
+    const enemyPower = enemyTeam.reduce((sum, m) => {
+      return sum + calcAttack(m.pokemonId, m.level) + calcMaxHp(m.pokemonId, m.level) / 10;
+    }, 0);
+    const winChance = Math.min(0.9, Math.max(0.1, playerPower / (playerPower + enemyPower)));
+    const won = Math.random() < winChance;
+    const xpGains: Record<number, number> = {};
+    selected.forEach(id => {
+      xpGains[id] = won ? Math.floor(50 + chosenDifficulty.enemyLevel * 2) : Math.floor(20 + chosenDifficulty.enemyLevel);
+    });
+    handleBattleEnd(won, xpGains);
   };
 
   const handleBattleEnd = (won: boolean, xpGains: Record<number, number>) => {
@@ -161,7 +192,134 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
         enemyTeam={enemyTeam}
         bossName={`Dresseur ${chosenDifficulty.label}`}
         onBattleEnd={handleBattleEnd}
+        onSkip={skipBattle}
       />
+    );
+  }
+
+  // Saved teams detail view
+  if (mode === 'savedTeams') {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col pb-[72px]">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
+          <button onClick={() => { setViewTeam(null); setMode('team'); }} className="text-slate-400 hover:text-white text-xl px-1">←</button>
+          <h2 className="text-white font-black text-xl flex-1">📋 Équipes sauvegardées</h2>
+        </div>
+        {!viewTeam ? (
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+            {(!savedTeams || savedTeams.length === 0) && (
+              <div className="text-center text-slate-500 py-16">
+                <div className="text-4xl mb-2">📋</div>
+                <p>Aucune équipe sauvegardée</p>
+              </div>
+            )}
+            {savedTeams?.map(t => (
+              <div key={t.id} className="bg-slate-800 rounded-2xl p-4 border border-slate-700">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-white font-black text-base">{t.name}</span>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setSelected(t.members.map(m => m.pokemonId).slice(0, 3)); setMode('team'); }}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-700 text-white"
+                    >Charger</button>
+                    <button
+                      onClick={() => onDeleteTeam?.(t.id)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg bg-red-700/80 text-white"
+                    >🗑</button>
+                  </div>
+                </div>
+                <button className="w-full" onClick={() => setViewTeam(t)}>
+                  <div className="flex gap-3 justify-center">
+                    {t.members.slice(0, 3).map(m => {
+                      const p = POKEMON_BY_ID[m.pokemonId];
+                      const color = p ? RARITY_COLORS[p.rarity] : '#6b7280';
+                      const types = POKEMON_TYPE[m.pokemonId] ?? ['normal'];
+                      return (
+                        <div key={m.pokemonId} className="flex flex-col items-center gap-1 bg-slate-700/60 rounded-xl p-2 flex-1">
+                          <ShinySprite pokemonId={m.pokemonId} isShiny={m.isShiny ?? false} width={48} height={48} compact />
+                          <span className="text-white font-bold text-center" style={{ fontSize: '0.6rem' }}>{p?.name ?? '???'}</span>
+                          <span className="font-black text-xs" style={{ color }}>Nv.{m.level}</span>
+                          <div className="flex gap-0.5 flex-wrap justify-center">
+                            {types.map(ty => (
+                              <span key={ty} className="text-white font-bold rounded px-1" style={{ background: TYPE_COLORS[ty] ?? '#888', fontSize: '0.42rem' }}>
+                                {ty.toUpperCase().slice(0, 4)}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex gap-1 text-slate-400" style={{ fontSize: '0.5rem' }}>
+                            <span>❤️{calcMaxHp(m.pokemonId, m.level)}</span>
+                            <span>⚔️{calcAttack(m.pokemonId, m.level)}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="text-slate-500 text-xs mt-2 text-center">Appuyer pour voir les stats détaillées →</div>
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          // Detail view for a single saved team
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+            <button onClick={() => setViewTeam(null)} className="text-slate-400 text-sm flex items-center gap-1">← Retour aux équipes</button>
+            <h3 className="text-yellow-400 font-black text-xl text-center">{viewTeam.name}</h3>
+            {viewTeam.members.slice(0, 3).map(m => {
+              const p = POKEMON_BY_ID[m.pokemonId];
+              const color = p ? RARITY_COLORS[p.rarity] : '#6b7280';
+              const types = POKEMON_TYPE[m.pokemonId] ?? ['normal'];
+              const xpPct = m.level >= 100 ? 100 : Math.min(100, Math.floor(m.xp / xpToNextLevel(m.level) * 100));
+              const hp = calcMaxHp(m.pokemonId, m.level);
+              const atk = calcAttack(m.pokemonId, m.level);
+              return (
+                <div key={m.pokemonId} className="bg-slate-800 rounded-2xl p-4 border border-slate-700 flex gap-4 items-start">
+                  <ShinySprite pokemonId={m.pokemonId} isShiny={m.isShiny ?? false} width={72} height={72} />
+                  <div className="flex-1 flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-black text-lg">{p?.name ?? '???'}</span>
+                      {m.isShiny && <span style={{ filter: 'drop-shadow(0 0 3px #fde047)', fontSize: 14 }}>✨</span>}
+                    </div>
+                    <div className="flex gap-1">
+                      {types.map(ty => (
+                        <span key={ty} className="text-white font-bold rounded px-1.5 py-0.5 text-xs" style={{ background: TYPE_COLORS[ty] ?? '#888' }}>
+                          {ty.toUpperCase()}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-sm" style={{ color }}>Niveau {m.level}</span>
+                    </div>
+                    {/* XP bar */}
+                    <div>
+                      <div className="flex justify-between text-xs text-slate-400 mb-0.5">
+                        <span>XP</span>
+                        <span>{m.level >= 100 ? 'MAX' : `${m.xp} / ${xpToNextLevel(m.level)}`}</span>
+                      </div>
+                      <div className="w-full bg-slate-700/60 rounded-full overflow-hidden" style={{ height: 6 }}>
+                        <div className="h-full rounded-full" style={{
+                          width: `${xpPct}%`,
+                          background: m.level >= 100 ? '#fbbf24' : 'linear-gradient(90deg, #60a5fa, #a78bfa)',
+                        }} />
+                      </div>
+                    </div>
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-2 mt-1">
+                      <div className="bg-slate-700/50 rounded-xl p-2 text-center">
+                        <div className="text-red-400 text-xs font-bold">❤️ PV</div>
+                        <div className="text-white font-black">{hp}</div>
+                      </div>
+                      <div className="bg-slate-700/50 rounded-xl p-2 text-center">
+                        <div className="text-orange-400 text-xs font-bold">⚔️ Attaque</div>
+                        <div className="text-white font-black">{atk}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -366,42 +524,6 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
         )}
       </div>
 
-      {/* Saved teams section */}
-      {savedTeams && savedTeams.length > 0 && (
-        <div className="shrink-0 px-4 py-2 border-t border-slate-700/50 bg-slate-900/60">
-          <p className="text-slate-400 text-xs font-bold mb-2">Équipes sauvegardées</p>
-          <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
-            {savedTeams.map(t => (
-              <div key={t.id} className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-2">
-                <div className="flex gap-1 flex-1">
-                  {t.members.slice(0, 3).map(m => (
-                    <img
-                      key={m.pokemonId}
-                      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${m.pokemonId}.png`}
-                      width={32} height={32}
-                      style={{ imageRendering: 'pixelated' }}
-                    />
-                  ))}
-                  <span className="text-white text-xs font-bold self-center ml-1">{t.name}</span>
-                </div>
-                <button
-                  onClick={() => setSelected(t.members.map(m => m.pokemonId).slice(0, 3))}
-                  className="text-xs font-bold px-2 py-1 rounded-lg bg-blue-700 text-white"
-                >
-                  Charger
-                </button>
-                <button
-                  onClick={() => onDeleteTeam?.(t.id)}
-                  className="text-xs font-bold px-2 py-1 rounded-lg bg-red-700 text-white"
-                >
-                  Supprimer
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Bottom bar */}
       <div className="shrink-0 px-4 py-3 border-t border-slate-700 bg-slate-900/80">
         {/* Selected preview */}
@@ -424,7 +546,7 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
           })}
         </div>
 
-        {/* Name input for saving a named team */}
+        {/* Name input — shown when saving a named team */}
         {showNameInput && (
           <div className="flex gap-2 mb-2">
             <input
@@ -432,6 +554,20 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
               placeholder="Nom de l'équipe…"
               value={teamName}
               onChange={e => setTeamName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  if (!teamName.trim() || selected.length === 0) return;
+                  const members: TeamMember[] = selected.map(id => {
+                    const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
+                    const maxHp = calcMaxHp(id, lvData.level);
+                    const isShiny = (state.shinyCollection[id] ?? 0) > 0;
+                    return { pokemonId: id, isShiny, level: lvData.level, xp: lvData.xp, currentHp: maxHp, maxHp };
+                  });
+                  onSaveTeam?.(teamName.trim(), members);
+                  setTeamName('');
+                  setShowNameInput(false);
+                }
+              }}
               autoFocus
             />
             <button
@@ -449,7 +585,7 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
               }}
               className="px-3 py-2 rounded-xl bg-green-600 text-white text-sm font-bold"
             >
-              OK
+              ✓
             </button>
             <button
               onClick={() => { setShowNameInput(false); setTeamName(''); }}
@@ -461,24 +597,25 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
         )}
 
         <div className="flex gap-2">
-          {/* Save team (to raid/duel) */}
-          <button
-            onClick={handleSave}
-            disabled={selected.length === 0}
-            className="flex-1 py-3 rounded-2xl font-black text-sm text-black disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            style={{ background: selected.length > 0 && !savedTeam ? 'linear-gradient(90deg, #22c55e, #16a34a)' : savedTeam ? '#fbbf24' : '#374151' }}
-          >
-            {savedTeam ? '✅ Enregistré !' : '💾 Enregistrer'}
-          </button>
-
-          {/* Save named team composition */}
+          {/* Big Enregistrer button — opens name input */}
           {onSaveTeam && (
             <button
-              onClick={() => setShowNameInput(v => !v)}
+              onClick={() => { if (selected.length > 0) setShowNameInput(v => !v); }}
               disabled={selected.length === 0}
-              className="px-3 py-3 rounded-2xl font-black text-sm text-black disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ background: selected.length > 0 ? 'linear-gradient(90deg, #6366f1, #8b5cf6)' : '#374151' }}
-              title="Sauvegarder cette composition"
+              className="flex-1 py-3 rounded-2xl font-black text-sm text-black disabled:opacity-40 disabled:cursor-not-allowed"
+              style={{ background: selected.length > 0 ? 'linear-gradient(90deg, #22c55e, #16a34a)' : '#374151' }}
+            >
+              💾 Enregistrer
+            </button>
+          )}
+
+          {/* Voir équipes button */}
+          {onSaveTeam && (
+            <button
+              onClick={() => setMode('savedTeams')}
+              className="px-3 py-3 rounded-2xl font-black text-sm"
+              style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', color: '#fff' }}
+              title="Voir les équipes sauvegardées"
             >
               📋
             </button>
