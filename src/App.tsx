@@ -262,6 +262,8 @@ export function App() {
           username={username}
           onClose={() => persistView('hunt')}
           onUpdateVillage={gameState.updateVillage}
+          onAddPlayerXp={gameState.addPlayerXp}
+          onAddPokemonXp={gameState.addPokemonXp}
         />
       )}
 

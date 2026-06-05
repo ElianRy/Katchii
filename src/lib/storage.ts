@@ -69,6 +69,7 @@ export const DEFAULT_STATE: GameState = {
     firstPlayedAt: Date.now(),
   },
   pokemonLevels: {},
+  playerXp: 0,
 };
 
 function parseState(raw: string): GameState {
@@ -106,6 +107,7 @@ function parseState(raw: string): GameState {
     },
     stats: parsed.stats ?? { totalPlayTimeMs: 0, sessionStartTime: null, firstPlayedAt: Date.now() },
     pokemonLevels: parsed.pokemonLevels ?? {},
+    playerXp: parsed.playerXp ?? 0,
   };
 }
 

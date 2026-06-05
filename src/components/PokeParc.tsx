@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
+import { getPlayerGrade, PARK_XP_PER_TICK } from '../lib/playerLevel';
 
 type Mood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited' | 'scared' | 'proud' | 'hungry' | 'curious';
 
@@ -23,6 +24,9 @@ interface ChatMessage {
   username: string;
   message: string;
   created_at: string;
+  grade?: string;
+  grade_icon?: string;
+  grade_color?: string;
 }
 
 interface InteractionTarget {
@@ -39,6 +43,13 @@ interface Props {
   username: string;
   onClose: () => void;
   onUpdateVillage: (updater: (prev: GameState['village']) => GameState['village']) => void;
+  onAddPlayerXp: (xp: number) => void;
+  onAddPokemonXp: (pokemonId: number, xp: number) => void;
+}
+
+function formatChatTime(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
 }
 
 const RARITY_SCORE: Record<string, number> = {
@@ -602,7 +613,7 @@ function PokemonPicker({ state, onPick, onClose }: {
 }
 
 // ---- Main Component ----
-export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
+export function PokeParc({ state, username, onClose, onUpdateVillage, onAddPlayerXp, onAddPokemonXp }: Props) {
   const [presence, setPresence] = useState<PresenceRow[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -705,6 +716,19 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
     return () => { if (wanderRef.current) clearInterval(wanderRef.current); };
   }, [mood]);
 
+  // Park XP tick — every 2 min, player + pokemon earn XP based on pokemon rarity/shiny
+  useEffect(() => {
+    if (!myFav) return;
+    const data = POKEMON_BY_ID[myFav.pokemonId];
+    const baseXp = PARK_XP_PER_TICK[data?.rarity ?? 'commun'] ?? 5;
+    const xp = myFav.isShiny ? baseXp * 2 : baseXp;
+    const id = setInterval(() => {
+      onAddPlayerXp(xp);
+      onAddPokemonXp(myFav.pokemonId, xp);
+    }, 2 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [myFav, onAddPlayerXp, onAddPokemonXp]);
+
   // Upsert my presence
   const upsertPresence = useCallback(async (pos: { x: number; y: number }, m: Mood) => {
     if (!myUserId || !myFav) return;
@@ -745,6 +769,7 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
       setMyUserId(uid);
     }
     setChatInput('');
+    const myGrade = getPlayerGrade(state.playerXp ?? 0);
     // Optimistic update — show immediately without waiting for realtime
     const optimistic: ChatMessage = {
       id: `opt-${Date.now()}`,
@@ -752,12 +777,18 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
       username,
       message: msg,
       created_at: new Date().toISOString(),
+      grade: myGrade.grade,
+      grade_icon: myGrade.icon,
+      grade_color: myGrade.color,
     };
     setChat(prev => [...prev.slice(-99), optimistic]);
     const { error } = await supabase.from('pokepark_chat').insert({
       user_id: uid,
       username,
       message: msg,
+      grade: myGrade.grade,
+      grade_icon: myGrade.icon,
+      grade_color: myGrade.color,
     });
     if (error) {
       console.error('[chat] insert error:', error.message, error.code, error.details);
@@ -859,9 +890,9 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
             </div>
           )}
 
-          {/* Player count */}
+          {/* Player count — others (already excludes me) + me if I have a pokemon */}
           <div className="absolute top-2 left-2 text-xs text-slate-400 bg-black/40 rounded px-2 py-0.5">
-            {presence.length + (myFav ? 1 : 0)} joueurs en ligne
+            {others.length + (myFav ? 1 : 0)} joueurs en ligne
           </div>
 
           {/* Other players */}
@@ -945,11 +976,21 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
               <div className="text-xs text-slate-600 text-center py-4">Soyez le premier à écrire !</div>
             )}
             {chat.map(msg => (
-              <div key={msg.id} className="flex gap-2 text-xs">
-                <span className="font-bold shrink-0" style={{ color: msg.user_id === myUserId ? '#fbbf24' : '#60a5fa' }}>
-                  {msg.username}
-                </span>
-                <span className="text-slate-300 break-all">{msg.message}</span>
+              <div key={msg.id} className="flex flex-col gap-0.5 text-xs">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-slate-500 shrink-0" style={{ fontSize: '0.55rem' }}>
+                    {formatChatTime(msg.created_at)}
+                  </span>
+                  {msg.grade_icon && (
+                    <span title={msg.grade} style={{ fontSize: '0.65rem', color: msg.grade_color ?? '#94a3b8' }}>
+                      {msg.grade_icon} {msg.grade}
+                    </span>
+                  )}
+                  <span className="font-bold shrink-0" style={{ color: msg.user_id === myUserId ? '#fbbf24' : '#60a5fa' }}>
+                    {msg.username}
+                  </span>
+                </div>
+                <span className="text-slate-300 break-all pl-1">{msg.message}</span>
               </div>
             ))}
             <div ref={chatEndRef} />

@@ -114,6 +114,7 @@ export interface GameState {
   };
   pokemonLevels: Record<number, { level: number; xp: number }>;
   savedTeams?: Array<{ id: string; name: string; members: Array<{ pokemonId: number; isShiny?: boolean; level: number; xp: number; currentHp: number; maxHp: number }> }>;
+  playerXp: number;
 }
 
 export const RARITY_COLORS: Record<Rarity, string> = {

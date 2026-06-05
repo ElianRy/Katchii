@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_WEIGHTS } from '../types';
+import { CAPTURE_XP } from '../lib/playerLevel';
 import { TeamMember } from '../components/TeamBuilder';
 import { loadState, loadUserState, saveState, saveUserState, DEFAULT_STATE } from '../lib/storage';
 import { loadCloudState, saveCloudState, onSaveStatus, SaveStatus } from '../lib/cloudSync';
@@ -245,6 +246,14 @@ export function useGameState() {
       });
       next.dailyQuests = { ...next.dailyQuests, quests };
 
+      // Player XP — only on first capture (normal or shiny)
+      const isFirstNormal = !isShiny && (prev.normalCollection[pokemonId] ?? 0) === 0;
+      const isFirstShiny  = isShiny  && (prev.shinyCollection[pokemonId]  ?? 0) === 0;
+      if (isFirstNormal || isFirstShiny) {
+        const baseXp = CAPTURE_XP[rarity] ?? 10;
+        next.playerXp = (prev.playerXp ?? 0) + (isFirstShiny ? baseXp * 3 : baseXp);
+      }
+
       // Badge check
       next = awardBadges(next);
 
@@ -398,6 +407,9 @@ export function useGameState() {
           lures: { ...next.lures, rare: next.lures.rare + 1 },
         };
       }
+
+      // Player XP for duel
+      next = { ...next, playerXp: (next.playerXp ?? 0) + (entry.won ? 100 : 30) };
 
       return next;
     });
@@ -659,6 +671,10 @@ export function useGameState() {
     });
   }, [update]);
 
+  const addPlayerXp = useCallback((xp: number) => {
+    update(prev => ({ ...prev, playerXp: (prev.playerXp ?? 0) + xp }));
+  }, [update]);
+
   const saveTeam = useCallback((name: string, members: TeamMember[]) => {
     update(prev => ({
       ...prev,
@@ -719,6 +735,7 @@ export function useGameState() {
     getPokemonLevel,
     initPokemonLevel,
     addPokemonXp,
+    addPlayerXp,
     adminGiveAllMax,
     saveTeam,
     deleteTeam,
