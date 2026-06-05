@@ -202,7 +202,7 @@ export function ClanPanel({ userId, username, onClose }: Props) {
         <div>
           <label className="text-slate-400 text-xs font-bold block mb-1">Nom du clan</label>
           <input
-            className="w-full bg-slate-800 text-white rounded-xl px-3 py-2 text-sm border border-slate-700 focus:border-yellow-500 outline-none"
+            className="w-full bg-slate-800 text-white rounded-xl px-3 py-2 border border-slate-700 focus:border-yellow-500 outline-none" style={{ fontSize: 16 }}
             placeholder="Ex: Les Maîtres Pokémon"
             value={clanName}
             onChange={e => setClanName(e.target.value)}
@@ -224,7 +224,7 @@ export function ClanPanel({ userId, username, onClose }: Props) {
         <div>
           <label className="text-slate-400 text-xs font-bold block mb-1">Description</label>
           <textarea
-            className="w-full bg-slate-800 text-white rounded-xl px-3 py-2 text-sm border border-slate-700 focus:border-yellow-500 outline-none resize-none"
+            className="w-full bg-slate-800 text-white rounded-xl px-3 py-2 border border-slate-700 focus:border-yellow-500 outline-none resize-none" style={{ fontSize: 16 }}
             rows={3}
             placeholder="Décris ton clan..."
             value={clanDesc}
@@ -369,7 +369,7 @@ export function ClanPanel({ userId, username, onClose }: Props) {
       {/* Input */}
       <div className="shrink-0 flex gap-2 px-4 py-3 border-t border-slate-700 pb-safe" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
         <input
-          className="flex-1 bg-slate-800 text-white rounded-2xl px-4 py-2 text-sm border border-slate-700 focus:border-yellow-500 outline-none"
+          className="flex-1 bg-slate-800 text-white rounded-2xl px-4 py-2 border border-slate-700 focus:border-yellow-500 outline-none" style={{ fontSize: 16 }}
           placeholder="Message…"
           value={msgText}
           onChange={e => setMsgText(e.target.value)}

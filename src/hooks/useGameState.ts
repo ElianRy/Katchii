@@ -429,7 +429,7 @@ export function useGameState() {
       }
 
       // Player XP for duel
-      next = { ...next, playerXp: (next.playerXp ?? 0) + (entry.won ? 100 : 30) };
+      next = { ...next, playerXp: (next.playerXp ?? 0) + (entry.won ? 400 : 100) };
 
       return next;
     });
@@ -532,7 +532,7 @@ export function useGameState() {
 
   const addTrainingWin = useCallback(() => {
     update(prev => {
-      let next = { ...prev, duels: { ...prev.duels, wins: prev.duels.wins + 1 } };
+      let next = { ...prev, duels: { ...prev.duels, wins: prev.duels.wins + 1 }, playerXp: (prev.playerXp ?? 0) + 400 };
       next = advanceDuelWinQuests(next);
       return next;
     });

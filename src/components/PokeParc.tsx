@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { GameState, RARITY_COLORS } from '../types';
-import { POKEMON_BY_ID } from '../data/gen1';
+import { POKEMON_BY_ID, GEN1_POKEMON } from '../data/gen1';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
 import { getPlayerGrade, PARK_XP_PER_TICK } from '../lib/playerLevel';
 
@@ -463,11 +463,12 @@ function InteractionModal({
 function DuelModal({
   myPokemonId, myIsShiny, myLevel, myRarity,
   opponentPokemonId, opponentIsShiny, opponentLevel, opponentRarity, opponentName,
-  onClose, onResult,
+  onClose, onResult, autoMode = false, onRematch,
 }: {
   myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity: string;
   opponentPokemonId: number; opponentIsShiny: boolean; opponentLevel: number; opponentRarity: string;
   opponentName: string; onClose: () => void; onResult: (won: boolean) => void;
+  autoMode?: boolean; onRematch?: () => void;
 }) {
   const myData = POKEMON_BY_ID[myPokemonId];
   const oppData = POKEMON_BY_ID[opponentPokemonId];
@@ -638,9 +639,14 @@ function DuelModal({
             <div className="font-black text-lg" style={{ color: winner === 'me' ? '#fbbf24' : '#ef4444' }}>
               {winner === 'me' ? 'VICTOIRE !' : 'Défaite…'}
             </div>
-            <div className="text-xs text-slate-400 mb-1">
+            <div className="text-xs text-slate-400 mb-2">
               {winner === 'me' ? `Tu as battu ${opponentName} !` : `${opponentName} était trop fort.`}
             </div>
+            {onRematch && (
+              <button onClick={onRematch} className="px-6 py-2 rounded-xl bg-indigo-600 text-white font-black text-sm mb-2">
+                {autoMode ? '⚡ Combat auto ON — Prochain adversaire…' : '🔄 Rejouer'}
+              </button>
+            )}
             <button onClick={onClose} className="px-8 py-2 rounded-xl bg-yellow-500 text-black font-black text-sm">
               Fermer
             </button>
@@ -687,6 +693,74 @@ function PokemonPicker({ state, onPick, onClose }: {
   );
 }
 
+// ---- Bot training ----
+const BOT_NAMES = ['Sacha', 'Ondine', 'Pierre', 'Misty', 'Bruno', 'Lorelei', 'Lance', 'Gary', 'Brock', 'Erika', 'Koga', 'Sabrina', 'Blaine', 'Giovanni', 'Ash'];
+const BOT_TIERS = [
+  { label: 'Nul',       minLv: 3,  maxLv: 12,  weight: 30 },
+  { label: 'Faible',    minLv: 10, maxLv: 25,  weight: 30 },
+  { label: 'Moyen',     minLv: 20, maxLv: 50,  weight: 25 },
+  { label: 'Fort',      minLv: 45, maxLv: 80,  weight: 12 },
+  { label: 'Champion',  minLv: 75, maxLv: 100, weight: 3  },
+];
+function pickBot() {
+  const totalW = BOT_TIERS.reduce((s, t) => s + t.weight, 0);
+  let r = Math.random() * totalW;
+  const tier = BOT_TIERS.find(t => { r -= t.weight; return r <= 0; }) ?? BOT_TIERS[0];
+  const level = tier.minLv + Math.floor(Math.random() * (tier.maxLv - tier.minLv + 1));
+  const eligible = GEN1_POKEMON.filter(p => !['legendaire'].includes(p.rarity));
+  const pokemon = eligible[Math.floor(Math.random() * eligible.length)];
+  const name = BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)] + ` (${tier.label})`;
+  return { pokemonId: pokemon.id, rarity: pokemon.rarity, level, name };
+}
+
+function BotDuelWrapper({ myPokemonId, myIsShiny, myLevel, myRarity, onClose, onResult }: {
+  myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity: string;
+  onClose: () => void; onResult: (won: boolean) => void;
+}) {
+  const [bot, setBot] = React.useState(pickBot);
+  const [autoMode, setAutoMode] = React.useState(false);
+  const [key, setKey] = React.useState(0);
+
+  const handleRematch = React.useCallback(() => {
+    setBot(pickBot());
+    setKey(k => k + 1);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 z-[500] flex flex-col" style={{ background: '#020617' }}>
+      {/* Auto-combat toggle */}
+      <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 bg-black/70 rounded-full px-3 py-1.5 border border-indigo-700/60">
+        <span className="text-xs text-slate-400">Combat auto</span>
+        <button
+          onClick={() => setAutoMode(v => !v)}
+          className={`w-10 h-5 rounded-full transition-colors relative ${autoMode ? 'bg-indigo-500' : 'bg-slate-600'}`}
+        >
+          <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${autoMode ? 'left-5' : 'left-0.5'}`} />
+        </button>
+      </div>
+      <DuelModal
+        key={key}
+        myPokemonId={myPokemonId}
+        myIsShiny={myIsShiny}
+        myLevel={myLevel}
+        myRarity={myRarity}
+        opponentPokemonId={bot.pokemonId}
+        opponentIsShiny={false}
+        opponentLevel={bot.level}
+        opponentRarity={bot.rarity}
+        opponentName={bot.name}
+        onClose={onClose}
+        onResult={(won) => {
+          onResult(won);
+          if (autoMode) setTimeout(handleRematch, 1200);
+        }}
+        autoMode={autoMode}
+        onRematch={handleRematch}
+      />
+    </div>
+  );
+}
+
 // ---- Main Component ----
 export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onTrainingWin }: Props) {
   const [presence, setPresence] = useState<PresenceRow[]>([]);
@@ -699,6 +773,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [waveTarget, setWaveTarget] = useState<string | null>(null);
   const [showRace, setShowRace] = useState(false);
   const [showDuel, setShowDuel] = useState(false);
+  const [showBotDuel, setShowBotDuel] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   // mutedUsers: userId -> expiryMs (null = permanent) — persisted in localStorage
   const MUTE_KEY = 'katchii_muted_users';
@@ -1056,9 +1131,19 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
             </div>
           )}
 
-          {/* Player count — others (already excludes me) + me if I have a pokemon */}
-          <div className="absolute top-2 left-2 text-xs text-slate-400 bg-black/40 rounded px-2 py-0.5">
-            {others.length + (myFav ? 1 : 0)} joueurs en ligne
+          {/* Player count + training button */}
+          <div className="absolute top-2 left-2 flex items-center gap-2">
+            <div className="text-xs text-slate-400 bg-black/40 rounded px-2 py-0.5">
+              {others.length + (myFav ? 1 : 0)} joueurs en ligne
+            </div>
+            {myFav && (
+              <button
+                onClick={() => setShowBotDuel(true)}
+                className="text-xs font-bold bg-indigo-700/80 border border-indigo-500/60 text-indigo-200 rounded px-2 py-0.5 active:opacity-70"
+              >
+                ⚔️ Entraînement
+              </button>
+            )}
           </div>
 
           {/* Other players */}
@@ -1201,8 +1286,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           </div>
           <div className="flex gap-2 px-3 py-2 border-t border-slate-700/40 shrink-0" style={{ background: '#0f172a', paddingBottom: 'calc(0.5rem + 72px)' }}>
             <input
-              className="flex-1 rounded-lg px-3 py-2 text-sm text-white outline-none border border-slate-600 focus:border-blue-500"
-              style={{ background: '#1e293b', minHeight: 40 }}
+              className="flex-1 rounded-lg px-3 py-2 text-white outline-none border border-slate-600 focus:border-blue-500"
+              style={{ background: '#1e293b', minHeight: 40, fontSize: 16 }}
               placeholder="Écrire un message…"
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
@@ -1270,6 +1355,17 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           opponentName={interactionTarget.username}
           onResult={(won) => { if (won) onTrainingWin?.(); }}
           onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
+        />
+      )}
+
+      {showBotDuel && myFav && (
+        <BotDuelWrapper
+          myPokemonId={myFav.pokemonId}
+          myIsShiny={myFav.isShiny ?? false}
+          myLevel={getPokemonLevelFromState(state, myFav.pokemonId)}
+          myRarity={mySpriteData?.rarity ?? 'commun'}
+          onResult={(won) => { if (won) onTrainingWin?.(); }}
+          onClose={() => setShowBotDuel(false)}
         />
       )}
     </div>

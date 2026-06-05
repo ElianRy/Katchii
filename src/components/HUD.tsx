@@ -29,6 +29,7 @@ interface Props {
   bossDefeated?: boolean;
   conditionLabel?: string;
   conditionProgress?: number;
+  conditionDescription?: string;
   onFightBoss?: () => void;
 }
 
@@ -76,8 +77,10 @@ export function HUD({
   bossDefeated = false,
   conditionLabel,
   conditionProgress = 0,
+  conditionDescription,
   onFightBoss,
 }: Props) {
+  const [showConditionDetail, setShowConditionDetail] = useState(false);
   // Impact animation when cooldown just finishes
   const [showImpact, setShowImpact] = useState(false);
   const prevCooldown = useRef(cooldownRemaining);
@@ -133,21 +136,27 @@ export function HUD({
         {/* Boss progress bar — only when relevant */}
         {bossName && conditionLabel && !bossDefeated && (
           <div className="px-3 pb-1 pointer-events-auto">
-            <div className="bg-black/60 rounded-xl px-3 py-1.5 border border-slate-700/50 flex flex-col gap-1">
-              <div className="flex justify-between items-center">
+            <button
+              className="w-full bg-black/70 rounded-xl px-3 py-2 border border-yellow-700/50 flex flex-col gap-1.5 text-left active:opacity-80"
+              onClick={() => setShowConditionDetail(v => !v)}
+            >
+              <div className="flex justify-between items-center w-full">
                 <span className="text-yellow-400 text-xs font-bold">⚔️ {bossName}</span>
-                <span className="text-slate-500 text-xs">{conditionLabel}</span>
+                <span className="text-slate-300 text-xs font-semibold">{conditionLabel}</span>
               </div>
-              <div className="w-full bg-slate-700/60 rounded-full h-1.5 overflow-hidden">
-                <div className="h-1.5 rounded-full transition-all duration-500"
+              <div className="w-full bg-slate-700/60 rounded-full h-2 overflow-hidden">
+                <div className="h-2 rounded-full transition-all duration-500"
                   style={{ width: `${Math.min(1, conditionProgress) * 100}%`, background: 'linear-gradient(90deg,#f59e0b,#ef4444)' }} />
               </div>
-              {bossUnlocked && onFightBoss && (
-                <button onClick={onFightBoss} className="w-full text-xs font-black py-1 rounded-lg animate-pulse" style={{ background: 'linear-gradient(90deg,#f59e0b,#ef4444)', color: '#000' }}>
-                  ⚔️ Combat contre le maître !
-                </button>
+              {showConditionDetail && conditionDescription && (
+                <p className="text-xs text-slate-400 mt-0.5">{conditionDescription}</p>
               )}
-            </div>
+            </button>
+            {bossUnlocked && onFightBoss && (
+              <button onClick={onFightBoss} className="w-full text-xs font-black py-1.5 rounded-xl mt-1 animate-pulse" style={{ background: 'linear-gradient(90deg,#f59e0b,#ef4444)', color: '#000' }}>
+                ⚔️ Combat contre le maître !
+              </button>
+            )}
           </div>
         )}
       </div>

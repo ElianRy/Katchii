@@ -47,7 +47,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [10,11,13,14,16,17,19,20,23,29,32,46, 1,63, 25],
     maxLevel: 25,
     completionThreshold: 0.70,
-    unlockCondition: { type: 'total_pokemon', count: 26 },
+    unlockCondition: { type: 'total_pokemon', count: 20 },
     boss: {
       name: 'Maître Pierre',
       title: 'Gym Leader Roche',

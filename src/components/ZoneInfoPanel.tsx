@@ -111,7 +111,10 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
 
         {/* Pokemon list by rarity — grey until caught */}
         <div className="px-5 py-4 pb-6">
-          <h3 className="text-white font-bold text-sm mb-3">Pokémon disponibles dans cette zone</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-white font-bold text-sm">Pokémon disponibles dans cette zone</h3>
+            <span className="text-yellow-400 text-xs font-bold bg-yellow-400/10 border border-yellow-400/30 rounded-full px-2 py-0.5">✨ ~0.4% shiny</span>
+          </div>
           {RARITY_ORDER.map(rarity => {
             const ids = byRarity[rarity];
             if (!ids || ids.length === 0) return null;

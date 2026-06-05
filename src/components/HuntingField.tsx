@@ -190,6 +190,19 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
 
   const { label: conditionLabel, progress: conditionProgress } = getConditionDisplay(currentZone?.unlockCondition);
 
+  function getConditionDescription(cond: ZoneUnlockCondition | null | undefined): string {
+    if (!cond) return '';
+    switch (cond.type) {
+      case 'total_pokemon': return `Capture ${cond.count} Pokémon différents (toutes zones confondues) pour débloquer le combat.`;
+      case 'daily_quests_completed': return `Complète ${cond.count} quêtes journalières aujourd'hui pour débloquer le combat.`;
+      case 'capture_n_times': return `Capture ${POKEMON_BY_ID[cond.pokemonId]?.name ?? `#${cond.pokemonId}`} ${cond.count} fois (doublons compris) pour débloquer le combat.`;
+      case 'duel_wins': return `Remporte ${cond.count} victoires en duel (PokeParc inclus) pour débloquer le combat.`;
+      case 'pokemon_level_in_team': return `Entraîne un Pokémon jusqu'au niveau ${cond.level} pour débloquer le combat.`;
+      case 'shiny_captures': return `Capture ${cond.count} Pokémon Shiny pour débloquer le combat.`;
+    }
+  }
+  const conditionDescription = getConditionDescription(currentZone?.unlockCondition);
+
   const zoneGround = ZONE_GROUND[currentZoneId] ?? ZONE_GROUND['zone1'];
 
   return (
@@ -253,6 +266,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         bossDefeated={bossDefeated}
         conditionLabel={conditionLabel}
         conditionProgress={conditionProgress}
+        conditionDescription={conditionDescription}
         onFightBoss={() => { setFightZone(currentZone ?? null); setShowBossFight(true); }}
       />
 
