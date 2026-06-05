@@ -193,7 +193,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   function getConditionDescription(cond: ZoneUnlockCondition | null | undefined): string {
     if (!cond) return '';
     switch (cond.type) {
-      case 'total_pokemon': return `Capture ${cond.count} Pokémon différents (toutes zones confondues) pour débloquer le combat.`;
+      case 'total_pokemon': return `Capture ${cond.count} Pokémon différents pour débloquer le combat.`;
       case 'daily_quests_completed': return `Complète ${cond.count} quêtes journalières aujourd'hui pour débloquer le combat.`;
       case 'capture_n_times': return `Capture ${POKEMON_BY_ID[cond.pokemonId]?.name ?? `#${cond.pokemonId}`} ${cond.count} fois (doublons compris) pour débloquer le combat.`;
       case 'duel_wins': return `Remporte ${cond.count} victoires en duel (PokeParc inclus) pour débloquer le combat.`;

@@ -196,6 +196,18 @@ export function AdminPanel({ gameState, onClose }: Props) {
                     <div className="text-slate-400 text-xs">{zone.description}</div>
                   </div>
                   {isCurrent && <span className="text-red-400 text-xs font-bold">Actuelle</span>}
+                  {bossDefeated && (
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        gameState.resetBossDefeated(zoneId);
+                        flash(`🔄 Mission maître de ${zone.name} réinitialisée !`);
+                      }}
+                      className="text-xs font-bold px-2 py-1 rounded-lg bg-orange-700/80 text-orange-200 ml-1 shrink-0"
+                    >
+                      🔄 Reset boss
+                    </button>
+                  )}
                 </button>
               );
             })}

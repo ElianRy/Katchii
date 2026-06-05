@@ -83,10 +83,11 @@ interface Props {
 export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon équipe', savedTeams, onSaveTeam, onDeleteTeam }: Props) {
   const [selected, setSelected] = useState<number[]>([]);
   const [sort, setSort] = useState<'level' | 'rarity'>('level');
-  const [mode, setMode] = useState<'team' | 'difficulty' | 'battle' | 'result' | 'savedTeams'>('team');
+  const [mode, setMode] = useState<'team' | 'battle' | 'result' | 'savedTeams'>('team');
   const [chosenDifficulty, setChosenDifficulty] = useState<Difficulty | null>(null);
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
+  const [autoCombat, setAutoCombat] = useState(false);
   const [levelUps, setLevelUps] = useState<LevelUpNotif[]>([]);
   const [showNameInput, setShowNameInput] = useState(false);
   const [teamName, setTeamName] = useState('');
@@ -378,43 +379,39 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
                 );
               })}
             </div>
-            <button
-              onClick={() => { setMode('team'); setBattleResult(null); }}
-              className="w-full py-3 rounded-2xl font-black text-black"
-              style={{ background: 'linear-gradient(90deg, #22c55e, #16a34a)' }}
-            >
-              Continuer
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Difficulty picker */}
-      {mode === 'difficulty' && (
-        <div className="absolute inset-0 z-40 bg-black/80 flex items-end justify-center p-4 pb-[80px]">
-          <div className="bg-slate-900 rounded-2xl w-full max-w-sm border border-slate-700 overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-              <h3 className="text-white font-black">Choix de la difficulté</h3>
-              <button onClick={() => setMode('team')} className="text-slate-400 hover:text-white text-xl px-1">✕</button>
+            {/* Auto-combat toggle */}
+            <div className="flex items-center justify-between bg-slate-800 rounded-xl px-3 py-2">
+              <span className="text-xs text-slate-400">Combat auto</span>
+              <button
+                onClick={() => setAutoCombat(v => !v)}
+                className={`w-10 h-5 rounded-full transition-colors relative ${autoCombat ? 'bg-indigo-500' : 'bg-slate-600'}`}
+              >
+                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${autoCombat ? 'left-5' : 'left-0.5'}`} />
+              </button>
             </div>
-            <div className="flex flex-col gap-1 p-3">
-              {DIFFICULTIES.map(diff => (
-                <button
-                  key={diff.id}
-                  onClick={() => startBattle(diff)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 transition-colors text-left"
-                >
-                  <span className="text-2xl">{diff.emoji}</span>
-                  <div className="flex-1">
-                    <div className="font-black text-white">{diff.label}</div>
-                    <div className="text-xs text-slate-400">{diff.description} — ×{diff.xpMultiplier} XP</div>
-                  </div>
-                  <div className="text-xs font-bold px-2 py-1 rounded-full" style={{ color: diff.color, background: diff.color + '22' }}>
-                    Combattre
-                  </div>
-                </button>
-              ))}
-            </div>
+            {autoCombat ? (
+              <button
+                onClick={() => {
+                  setBattleResult(null);
+                  const weights = [20, 30, 25, 15, 10];
+                  let r = Math.random() * weights.reduce((a, b) => a + b, 0);
+                  const diff = DIFFICULTIES.find((_d, i) => { r -= weights[i]; return r <= 0; }) ?? DIFFICULTIES[1];
+                  startBattle(diff);
+                }}
+                className="w-full py-3 rounded-2xl font-black text-white animate-pulse"
+                style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }}
+              >
+                ⚡ Prochain combat…
+              </button>
+            ) : (
+              <button
+                onClick={() => { setMode('team'); setBattleResult(null); }}
+                className="w-full py-3 rounded-2xl font-black text-black"
+                style={{ background: 'linear-gradient(90deg, #22c55e, #16a34a)' }}
+              >
+                Continuer
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -639,7 +636,15 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
 
           {/* Trainer battle */}
           <button
-            onClick={() => { if (selected.length === 0) return; if (onConfirm) { handleSave(); } else { setMode('difficulty'); } }}
+            onClick={() => {
+              if (selected.length === 0) return;
+              if (onConfirm) { handleSave(); return; }
+              // Pick a random difficulty weighted toward the middle
+              const weights = [20, 30, 25, 15, 10];
+              let r = Math.random() * weights.reduce((a, b) => a + b, 0);
+              const diff = DIFFICULTIES.find((_d, i) => { r -= weights[i]; return r <= 0; }) ?? DIFFICULTIES[1];
+              startBattle(diff);
+            }}
             disabled={selected.length === 0}
             className="flex-1 py-3 rounded-2xl font-black text-sm text-black disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: selected.length > 0 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : '#374151' }}

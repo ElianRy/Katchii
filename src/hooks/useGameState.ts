@@ -429,7 +429,7 @@ export function useGameState() {
       }
 
       // Player XP for duel
-      next = { ...next, playerXp: (next.playerXp ?? 0) + (entry.won ? 400 : 100) };
+      next = { ...next, playerXp: (next.playerXp ?? 0) + (entry.won ? 800 : 200) };
 
       return next;
     });
@@ -532,7 +532,7 @@ export function useGameState() {
 
   const addTrainingWin = useCallback(() => {
     update(prev => {
-      let next = { ...prev, duels: { ...prev.duels, wins: prev.duels.wins + 1 }, playerXp: (prev.playerXp ?? 0) + 400 };
+      let next = { ...prev, duels: { ...prev.duels, wins: prev.duels.wins + 1 }, playerXp: (prev.playerXp ?? 0) + 800 };
       next = advanceDuelWinQuests(next);
       return next;
     });
@@ -578,6 +578,14 @@ export function useGameState() {
           currentZoneId: newZoneId,
         },
       };
+    });
+  }, [update]);
+
+  const resetBossDefeated = useCallback((zoneId: string) => {
+    update(prev => {
+      const newBossDefeated = { ...prev.zoneProgress.bossDefeated };
+      delete newBossDefeated[zoneId];
+      return { ...prev, zoneProgress: { ...prev.zoneProgress, bossDefeated: newBossDefeated } };
     });
   }, [update]);
 
@@ -671,6 +679,7 @@ export function useGameState() {
     addTrainingWin,
     addPlayTime,
     defeatZoneBoss,
+    resetBossDefeated,
     setCurrentZone,
     getActiveLureMultipliers,
     getEffectiveWeights,
