@@ -4,7 +4,8 @@ export type QuestType =
   | 'capture_n'
   | 'capture_rarity'
   | 'capture_shiny'
-  | 'activate_lure';
+  | 'activate_lure'
+  | 'duel_wins';
 
 export interface QuestDefinition {
   id: string;
@@ -16,14 +17,28 @@ export interface QuestDefinition {
 }
 
 export const QUEST_POOL: QuestDefinition[] = [
-  { id: 'capture_5', label: 'Capture 5 Pokémon', type: 'capture_n', target: 5, reward: { points: 30 } },
-  { id: 'capture_10', label: 'Capture 10 Pokémon', type: 'capture_n', target: 10, reward: { points: 50 } },
-  { id: 'capture_rare_3', label: 'Capture 3 Rares', type: 'capture_rarity', rarity: 'rare', target: 3, reward: { points: 40 } },
-  { id: 'capture_elite_1', label: 'Capture 1 Élite', type: 'capture_rarity', rarity: 'elite', target: 1, reward: { points: 35 } },
-  { id: 'capture_legendaire_1', label: 'Capture 1 Légendaire', type: 'capture_rarity', rarity: 'legendaire', target: 1, reward: { points: 60 } },
-  { id: 'capture_shiny_1', label: "Capture ton premier shiny aujourd'hui", type: 'capture_shiny', target: 1, reward: { points: 50 } },
-{ id: 'activate_lure_1', label: 'Active un leurre', type: 'activate_lure', target: 1, reward: { points: 20 } },
-  { id: 'capture_commun_10', label: 'Capture 10 Pokémon Communs', type: 'capture_rarity', rarity: 'commun', target: 10, reward: { points: 25 } },
+  // Facile
+  { id: 'capture_5',          label: 'Capture 5 Pokémon',             type: 'capture_n',       target: 5,  reward: { points: 20 } },
+  { id: 'capture_commun_5',   label: 'Capture 5 Pokémon communs',     type: 'capture_rarity',  rarity: 'commun',      target: 5,  reward: { points: 15 } },
+  { id: 'activate_lure',      label: 'Active un leurre',               type: 'activate_lure',   target: 1,  reward: { points: 20 } },
+  { id: 'duel_wins_1',        label: 'Gagne 1 duel',                   type: 'duel_wins',       target: 1,  reward: { points: 25 } },
+
+  // Moyen
+  { id: 'capture_10',         label: 'Capture 10 Pokémon',            type: 'capture_n',       target: 10, reward: { points: 40 } },
+  { id: 'capture_commun_15',  label: 'Capture 15 Pokémon communs',    type: 'capture_rarity',  rarity: 'commun',      target: 15, reward: { points: 35 } },
+  { id: 'capture_pc_3',       label: 'Capture 3 Pokémon peu communs', type: 'capture_rarity',  rarity: 'peu_commun',  target: 3,  reward: { points: 35 } },
+  { id: 'duel_wins_3',        label: 'Gagne 3 duels',                  type: 'duel_wins',       target: 3,  reward: { points: 50 } },
+
+  // Difficile
+  { id: 'capture_20',         label: 'Capture 20 Pokémon',            type: 'capture_n',       target: 20, reward: { points: 65 } },
+  { id: 'capture_pc_5',       label: 'Capture 5 Pokémon peu communs', type: 'capture_rarity',  rarity: 'peu_commun',  target: 5,  reward: { points: 55 } },
+  { id: 'capture_rare_1',     label: 'Capture 1 Pokémon rare',        type: 'capture_rarity',  rarity: 'rare',        target: 1,  reward: { points: 50 } },
+  { id: 'duel_wins_5',        label: 'Gagne 5 duels',                  type: 'duel_wins',       target: 5,  reward: { points: 70 } },
+
+  // Très difficile
+  { id: 'capture_rare_3',     label: 'Capture 3 Pokémon rares',       type: 'capture_rarity',  rarity: 'rare',        target: 3,  reward: { points: 90 } },
+  { id: 'capture_elite_1',    label: 'Capture 1 Pokémon épique',      type: 'capture_rarity',  rarity: 'elite',       target: 1,  reward: { points: 80 } },
+  { id: 'capture_shiny_1',    label: "Capture 1 Shiny",               type: 'capture_shiny',   target: 1,  reward: { points: 80 } },
 ];
 
 // Seeded random from date string

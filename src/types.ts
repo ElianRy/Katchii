@@ -6,7 +6,8 @@ export type QuestType =
   | 'capture_n'
   | 'capture_rarity'
   | 'capture_shiny'
-  | 'activate_lure';
+  | 'activate_lure'
+  | 'duel_wins';
 
 export interface DuelEntry {
   id: string;

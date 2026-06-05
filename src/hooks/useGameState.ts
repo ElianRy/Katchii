@@ -389,6 +389,15 @@ export function useGameState() {
     update(prev => ({ ...prev, duels: updater(prev.duels) }));
   }, [update]);
 
+  function advanceDuelWinQuests(prev: GameState): GameState {
+    const quests = prev.dailyQuests.quests.map(q => {
+      if (q.completed || q.type !== 'duel_wins') return q;
+      const progress = q.progress + 1;
+      return { ...q, progress, completed: progress >= q.target };
+    });
+    return { ...prev, dailyQuests: { ...prev.dailyQuests, quests } };
+  }
+
   const addDuelResult = useCallback((entry: import('../types').DuelEntry, rankingPointsDelta: number, fragmentPokemonId: number | null, giveLure: boolean) => {
     update(prev => {
       const newStreak = entry.won ? prev.duels.streak + 1 : 0;
@@ -402,6 +411,7 @@ export function useGameState() {
           history: [entry, ...prev.duels.history].slice(0, 20),
         },
       };
+      if (entry.won) next = advanceDuelWinQuests(next);
 
       if (fragmentPokemonId !== null) {
         next = {
@@ -520,10 +530,11 @@ export function useGameState() {
   }, [update]);
 
   const addTrainingWin = useCallback(() => {
-    update(prev => ({
-      ...prev,
-      duels: { ...prev.duels, wins: prev.duels.wins + 1 },
-    }));
+    update(prev => {
+      let next = { ...prev, duels: { ...prev.duels, wins: prev.duels.wins + 1 } };
+      next = advanceDuelWinQuests(next);
+      return next;
+    });
   }, [update]);
 
   const addPlayTime = useCallback((ms: number) => {
