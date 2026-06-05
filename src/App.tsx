@@ -195,7 +195,7 @@ export function App() {
       {view === 'wrapped' && (
         <WrappedPanel
           state={gameState.state}
-          onClose={() => persistView('hunt')}
+          onClose={() => setView('home')}
         />
       )}
 
