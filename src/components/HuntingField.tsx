@@ -6,7 +6,7 @@ import { useGameState } from '../hooks/useGameState';
 import { useSpawner } from '../hooks/useSpawner';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { NARUTO_BY_ID } from '../data/naruto';
-import { ZONE_BY_ID, ZONE_ORDER } from '../data/zones';
+import { Zone, ZONE_BY_ID, ZONE_ORDER } from '../data/zones';
 
 const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
   zone1: { ground: 'linear-gradient(to top, #14532d 0%, #166534 40%, transparent 100%)', bush: 'linear-gradient(to top, #15803d, #22c55e)' },
@@ -68,6 +68,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const [newCaptureInfo, setNewCaptureInfo] = useState<NewCaptureInfo | null>(null);
   const [showZoneInfo, setShowZoneInfo] = useState(false);
   const [showBossFight, setShowBossFight] = useState(false);
+  const [fightZone, setFightZone] = useState<Zone | null>(null);
   const processingRef = useRef<Set<string>>(new Set());
   const capturingRef = useRef(false);
 
@@ -233,8 +234,27 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         bossName={currentZone?.boss?.name}
         bossUnlocked={bossUnlocked}
         bossDefeated={bossDefeated}
-        onFightBoss={() => setShowBossFight(true)}
+        onFightBoss={() => { setFightZone(currentZone ?? null); setShowBossFight(true); }}
       />
+
+      {/* Quêtes pill — seulement sur l'écran de chasse, pas pendant un combat */}
+      {!showBossFight && (
+        <button
+          onClick={onOpenQuests}
+          className="fixed z-[195] flex items-center gap-1.5 font-black pointer-events-auto"
+          style={{
+            top: 52, right: 10,
+            fontSize: '0.65rem', padding: '4px 10px', borderRadius: 999,
+            background: questsCompleted > 0 ? 'rgba(234,179,8,0.22)' : 'rgba(30,41,59,0.75)',
+            color: questsCompleted > 0 ? '#fbbf24' : '#64748b',
+            border: `1px solid ${questsCompleted > 0 ? 'rgba(234,179,8,0.5)' : 'rgba(100,116,139,0.3)'}`,
+            boxShadow: questsCompleted > 0 ? '0 2px 10px rgba(234,179,8,0.3)' : 'none',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          📋 Quêtes{questsCompleted > 0 ? ` (${questsCompleted})` : ''}
+        </button>
+      )}
 
       {/* Floating notifications */}
       {notifications.map((n) => (
@@ -277,12 +297,12 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         </button>
       )}
 
-      {/* Boss fight */}
-      {showBossFight && currentZone?.boss && (
+      {/* Boss fight — fightZone figé au moment du démarrage du combat */}
+      {showBossFight && fightZone?.boss && (
         <BossFightPanel
-          zone={currentZone}
+          zone={fightZone}
           state={gameState.state}
-          onClose={() => setShowBossFight(false)}
+          onClose={() => { setShowBossFight(false); setFightZone(null); }}
           onAddXp={(pokemonId, xp) => gameState.addPokemonXp(pokemonId, xp)}
           onVictory={(zoneId, nextZoneId) => {
             gameState.defeatZoneBoss(zoneId, nextZoneId);
