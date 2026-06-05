@@ -123,10 +123,7 @@ export function loadState(): GameState {
 /** Load state scoped to a specific user. Returns null if nothing found. */
 export function loadUserState(userId: string): GameState | null {
   try {
-    // Try user-scoped key first
-    let raw = localStorage.getItem(userKey(userId));
-    // Fallback: migrate from legacy generic key if user-scoped doesn't exist yet
-    if (!raw) raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(userKey(userId));
     if (!raw) return null;
     return parseState(raw);
   } catch {

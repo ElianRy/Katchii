@@ -26,7 +26,10 @@ export async function loginUser(username: string, password: string): Promise<{ e
 }
 
 export async function logoutUser() {
-  try { localStorage.removeItem('katchii_last_view'); } catch { /* ignore */ }
+  try {
+    localStorage.removeItem('katchii_last_view');
+    localStorage.removeItem('katchii_state'); // clear generic key so next user starts clean
+  } catch { /* ignore */ }
   await supabase.auth.signOut();
 }
 
