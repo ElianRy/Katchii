@@ -1,7 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { RARITY_COLORS } from '../types';
+import { RARITY_COLORS, Rarity } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
+
+function spriteFilter(pokemonId: number, isShiny: boolean, size = 10): string {
+  const rarity = (POKEMON_BY_ID[pokemonId]?.rarity ?? 'commun') as Rarity;
+  const rCol = `drop-shadow(0 0 ${size}px ${RARITY_COLORS[rarity]})`;
+  return isShiny ? `${rCol} drop-shadow(0 0 8px #fde047) drop-shadow(0 0 14px #f472b688)` : rCol;
+}
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
 import { calcDamage, xpGainedFromBattle } from '../data/combatEngine';
 import { TeamMember } from './TeamBuilder';
@@ -447,14 +453,14 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             </div>
             <div className="flex justify-end">
               {enemyFighters[0] && <ShinySprite pokemonId={enemyFighters[0].pokemonId} isShiny={enemyFighters[0].isShiny ?? false} width={88} height={88} flip
-                style={{ filter:`drop-shadow(0 0 10px ${RARITY_COLORS[POKEMON_BY_ID[enemyFighters[0].pokemonId]?.rarity ?? 'commun']})` }} />}
+                style={{ filter: spriteFilter(enemyFighters[0].pokemonId, enemyFighters[0].isShiny ?? false) }} />}
             </div>
           </div>
 
           {/* Player pokemon slides in from bottom-left */}
           <div className="absolute" style={{ bottom:'13%', left:'7%', animation:'battle-enter-player 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
             {playerFighters[0] && <ShinySprite pokemonId={playerFighters[0].pokemonId} isShiny={playerFighters[0].isShiny ?? false} width={96} height={96}
-              style={{ filter:`drop-shadow(0 0 10px ${RARITY_COLORS[POKEMON_BY_ID[playerFighters[0].pokemonId]?.rarity ?? 'commun']})` }} />}
+              style={{ filter: spriteFilter(playerFighters[0].pokemonId, playerFighters[0].isShiny ?? false) }} />}
             <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-white font-black text-sm">{POKEMON_BY_ID[playerFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
@@ -591,7 +597,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           </div>
           <div className={`flex justify-end ${attackEvt?.attacker === 'enemy' ? 'battle-lunge-left' : ''} ${activeEF?.currentHp === 0 ? 'opacity-30' : ''}`}>
             {activeEF && <ShinySprite pokemonId={activeEF.pokemonId} isShiny={activeEF.isShiny ?? false} width={88} height={88} flip
-              style={{ filter: `drop-shadow(0 0 10px ${RARITY_COLORS[POKEMON_BY_ID[activeEF.pokemonId]?.rarity ?? 'commun']})` }} />}
+              style={{ filter: spriteFilter(activeEF.pokemonId, activeEF.isShiny ?? false) }} />}
           </div>
           <div className="flex gap-1.5 justify-end mt-1">
             {enemyFighters.map((f, i) => (
@@ -609,7 +615,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           </div>
           <div className={`${attackEvt?.attacker === 'player' ? 'battle-lunge-right' : ''} ${activePF?.currentHp === 0 ? 'opacity-30' : ''}`}>
             {activePF && <ShinySprite pokemonId={activePF.pokemonId} isShiny={activePF.isShiny ?? false} width={96} height={96}
-              style={{ filter: `drop-shadow(0 0 10px ${RARITY_COLORS[POKEMON_BY_ID[activePF.pokemonId]?.rarity ?? 'commun']})` }} />}
+              style={{ filter: spriteFilter(activePF.pokemonId, activePF.isShiny ?? false, 12) }} />}
           </div>
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
             <div className="flex justify-between items-center mb-1">
@@ -695,7 +701,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
                     className="flex flex-col items-center bg-slate-800/90 border-2 border-slate-500 hover:border-yellow-400 rounded-2xl px-4 py-3 transition-all hover:scale-105"
                   >
                     <ShinySprite pokemonId={f.pokemonId} isShiny={f.isShiny ?? false} width={64} height={64}
-                      style={{ filter: `drop-shadow(0 0 6px ${RARITY_COLORS[p?.rarity ?? 'commun']})` }} />
+                      style={{ filter: spriteFilter(f.pokemonId, f.isShiny ?? false, 6) }} />
                     <span className="text-white font-bold text-sm mt-1">{p?.name}</span>
                     <span className="text-slate-400 text-xs">Nv.{f.level}</span>
                     <div className="w-16 bg-slate-700 rounded-full h-2 mt-1">

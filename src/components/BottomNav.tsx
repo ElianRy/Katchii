@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { View } from '../types';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
-import { SPARKLE_POSITIONS, ORBIT_POSITIONS } from './ShinySprite';
 
 interface Props {
   currentView: View;
@@ -38,6 +37,47 @@ const TYPE_ATTACK_EMOJI: Record<string, string> = {
 
 interface FloatingHeart { id: number; x: number }
 interface AttackEmoji { id: number; emoji: string }
+
+const SPARKLE_COLORS = ['#fde047', '#f0abfc', '#ffffff', '#fbbf24', '#a5f3fc'];
+
+function NavShinySparkles() {
+  // Generate random scattered sparkle positions (relative to pokemon center, in px)
+  const sparkles = useMemo(() => Array.from({ length: 5 }, (_, i) => {
+    const angle = (i / 5) * Math.PI * 2 + Math.random() * 0.8;
+    const r = 22 + Math.random() * 18;
+    return {
+      id: i,
+      x: Math.cos(angle) * r + 26, // center at ~26px (half of 52px sprite)
+      y: Math.sin(angle) * r + 26,
+      color: SPARKLE_COLORS[i % SPARKLE_COLORS.length],
+      delay: `${(i * 0.22).toFixed(2)}s`,
+      duration: `${(1.1 + Math.random() * 0.7).toFixed(2)}s`,
+    };
+  }), []);
+
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
+      {sparkles.map(sp => (
+        <div
+          key={sp.id}
+          className="shiny-sparkle"
+          style={{
+            position: 'absolute',
+            left: sp.x,
+            top: sp.y,
+            '--sp-color': sp.color,
+            '--sp-duration': sp.duration,
+            '--sp-delay': sp.delay,
+          } as React.CSSProperties}
+        />
+      ))}
+      <span style={{
+        position: 'absolute', top: -4, right: -4, fontSize: 10,
+        filter: 'drop-shadow(0 0 3px #fde047)',
+      }}>✨</span>
+    </div>
+  );
+}
 
 function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: boolean }) {
   const [posX, setPosX] = useState(50);
@@ -180,43 +220,8 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
         }}>{badge}</div>
       )}
 
-      {/* Shiny aura — fewer sparkles so animation stays visible */}
-      {isShiny && (
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-          {SPARKLE_POSITIONS.filter((_, i) => i % 2 === 0).map((sp, i) => (
-            <div
-              key={i}
-              className="shiny-sparkle"
-              style={{
-                top: sp.top,
-                left: sp.left,
-                right: (sp as { right?: string }).right,
-                bottom: (sp as { bottom?: string }).bottom,
-                transform: sp.left === '50%' ? 'translateX(-50%)' : undefined,
-                '--sp-color': sp.color,
-                '--sp-duration': sp.duration,
-                '--sp-delay': sp.delay,
-              } as React.CSSProperties}
-            />
-          ))}
-          {ORBIT_POSITIONS.filter((_, i) => i === 0).map((sp, i) => (
-            <div
-              key={`o${i}`}
-              className="shiny-sparkle-orbit"
-              style={{
-                top: sp.top,
-                left: sp.left,
-                right: (sp as { right?: string }).right,
-                bottom: (sp as { bottom?: string }).bottom,
-                '--sp-color': sp.color,
-                '--sp-duration': sp.duration,
-                '--sp-delay': sp.delay,
-              } as React.CSSProperties}
-            />
-          ))}
-          <span className="absolute -top-1 -right-1 text-xs" style={{ filter: 'drop-shadow(0 0 3px #fde047)' }}>✨</span>
-        </div>
-      )}
+      {/* Shiny aura — sparkles scattered randomly around the pokemon */}
+      {isShiny && <NavShinySparkles />}
 
       {/* Flip wrapper — direction; inner img handles bounce/wiggle animation */}
       <div style={{ transform: flipTransform, transition: 'transform 0.3s ease', display: 'inline-block' }}>

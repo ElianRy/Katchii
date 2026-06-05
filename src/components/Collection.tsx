@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GameState, RARITY_COLORS, RARITY_LABELS, Rarity } from '../types';
 import { GEN1_POKEMON } from '../data/gen1';
 import { BADGES } from '../data/badges';
+import { ZONES } from '../data/zones';
 
 interface Props {
   state: GameState;
@@ -9,7 +10,16 @@ interface Props {
 }
 
 type FilterTab = 'tous' | 'captures' | 'shinies' | Rarity;
-type MainTab = 'collection' | 'succes';
+type MainTab = 'collection' | 'badges' | 'succes';
+
+// All arena badges (zones with a boss that has a badge)
+const ARENA_BADGES = ZONES.filter(z => z.boss?.badge).map(z => ({
+  zoneId: z.id,
+  badge: z.boss!.badge,
+  bossName: z.boss!.name,
+  bossTitle: z.boss!.title,
+  zoneName: z.name,
+}));
 
 const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
 
@@ -57,6 +67,7 @@ export function Collection({ state, onClose }: Props) {
       <div className="flex gap-2 px-4 pt-2 border-b border-slate-700 shrink-0">
         {([
           { id: 'collection' as MainTab, label: '📚 Collection' },
+          { id: 'badges' as MainTab, label: '🥇 Badges' },
           { id: 'succes' as MainTab, label: '🏅 Succès' },
         ]).map((tab) => (
           <button
@@ -133,7 +144,7 @@ export function Collection({ state, onClose }: Props) {
                     <div
                       className="relative rounded-lg p-1 w-16 h-16 flex items-center justify-center"
                       style={{
-                        background: 'rgba(0,0,0,0.4)',
+                        background: caught ? 'rgba(0,0,0,0.3)' : 'transparent',
                         boxShadow: caught ? `0 0 12px 4px ${rarityColor}55, 0 0 4px 1px ${rarityColor}33` : 'none',
                       }}
                     >
@@ -190,6 +201,56 @@ export function Collection({ state, onClose }: Props) {
             )}
           </div>
         </>
+      )}
+
+      {mainTab === 'badges' && (
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <p className="text-slate-400 text-xs mb-4 text-center">Bats les maîtres d'arène pour débloquer leurs badges</p>
+          <div className="flex flex-col gap-3">
+            {ARENA_BADGES.map(({ zoneId, badge, bossName, bossTitle, zoneName }) => {
+              const earned = !!(state.zoneProgress?.bossDefeated?.[zoneId]);
+              return (
+                <div
+                  key={zoneId}
+                  className="flex items-center gap-4 rounded-2xl px-4 py-3 border"
+                  style={{
+                    background: earned ? 'rgba(234,179,8,0.12)' : 'rgba(30,41,59,0.5)',
+                    borderColor: earned ? 'rgba(234,179,8,0.45)' : 'rgba(100,116,139,0.2)',
+                    boxShadow: earned ? '0 0 18px rgba(234,179,8,0.2)' : 'none',
+                  }}
+                >
+                  {/* Badge icon */}
+                  <div
+                    className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 text-2xl"
+                    style={{
+                      background: earned ? 'rgba(234,179,8,0.25)' : 'rgba(30,41,59,0.8)',
+                      border: `2px solid ${earned ? 'rgba(234,179,8,0.6)' : 'rgba(100,116,139,0.3)'}`,
+                      filter: earned ? 'none' : 'grayscale(1) opacity(0.35)',
+                    }}
+                  >
+                    🥇
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-black text-base" style={{ color: earned ? '#fde68a' : '#4b5563' }}>
+                      {badge}
+                    </div>
+                    <div className="text-xs font-bold" style={{ color: earned ? '#94a3b8' : '#374151' }}>
+                      {bossName} · {bossTitle}
+                    </div>
+                    <div className="text-xs" style={{ color: earned ? '#64748b' : '#374151' }}>
+                      {zoneName}
+                    </div>
+                  </div>
+                  {earned ? (
+                    <span className="text-yellow-400 text-xl shrink-0">✅</span>
+                  ) : (
+                    <span className="text-slate-600 text-xl shrink-0">🔒</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {mainTab === 'succes' && (
