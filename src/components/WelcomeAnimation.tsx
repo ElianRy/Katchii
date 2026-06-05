@@ -112,12 +112,13 @@ export function WelcomeAnimation({ username, onDone }: Props) {
         zIndex: 10,
       }}>
         <div style={{
-          fontSize: '4rem',
+          fontSize: 'clamp(2.2rem, 10vw, 4rem)',
           fontWeight: 900,
           color: '#1a6b3c',
           textShadow: '0 2px 0 rgba(255,255,255,0.8), 0 4px 12px rgba(0,0,0,0.2)',
           letterSpacing: '0.05em',
           marginBottom: 8,
+          whiteSpace: 'nowrap',
         }}>
           Bienvenue !
         </div>

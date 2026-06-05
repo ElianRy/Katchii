@@ -46,7 +46,7 @@ export function App() {
         setUserId(session.user.id);
         if (event === 'INITIAL_SESSION') {
           const saved = localStorage.getItem('katchii_last_view') as View | null;
-          const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','wrapped','pokepark'];
+          const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','pokepark','clan'];
           setView(saved && validViews.includes(saved) ? saved : 'home');
         } else if (event === 'SIGNED_IN') {
           setView('home');

@@ -129,14 +129,20 @@ export function useGameState() {
     };
 
     // onAuthStateChange fires INITIAL_SESSION on subscribe — handles initial load
+    let signOutTimer: ReturnType<typeof setTimeout> | null = null;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
+        // Cancel any pending sign-out reset (e.g. token refresh momentarily fires SIGNED_OUT)
+        if (signOutTimer) { clearTimeout(signOutTimer); signOutTimer = null; }
         loadForUser(session.user.id, session.user);
       } else {
-        // Logged out — reset in-memory state only, preserve localStorage as backup
+        // Delay the reset by 3s — if a new session arrives (token refresh), cancel reset
         userIdRef.current = null;
         loadingForRef.current = null;
-        setState(() => ({ ...DEFAULT_STATE }));
+        signOutTimer = setTimeout(() => {
+          setState(() => ({ ...DEFAULT_STATE }));
+          signOutTimer = null;
+        }, 3000);
       }
     });
     return () => subscription.unsubscribe();

@@ -93,9 +93,21 @@ function parseState(raw: string): GameState {
   };
 }
 
-/** Load generic (legacy) state — used only for initial useState before userId is known */
+/** Load generic (legacy) state — tries user-scoped keys first so UI doesn't flash empty on reload */
 export function loadState(): GameState {
   try {
+    // Try to find any user-scoped save (most recent one with actual pokemon)
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith('katchii_state_u_')) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw) as Partial<GameState>;
+          const hasPokemon = Object.values(parsed.normalCollection ?? {}).some(v => (v as number) > 0);
+          if (hasPokemon) return parseState(raw);
+        }
+      }
+    }
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULT_STATE };
     return parseState(raw);

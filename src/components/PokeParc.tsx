@@ -484,6 +484,10 @@ function DuelModal({
   const [hitFlash, setHitFlash] = useState<'me' | 'opp' | null>(null);
   const [shakeMe, setShakeMe] = useState(false);
   const [shakeOpp, setShakeOpp] = useState(false);
+  const [attackMe, setAttackMe] = useState(false);
+  const [attackOpp, setAttackOpp] = useState(false);
+  const [hitKeyMe, setHitKeyMe] = useState(0);
+  const [hitKeyOpp, setHitKeyOpp] = useState(0);
   const resultSent = useRef(false);
   const turnRef = useRef(0);
   const myHpRef = useRef(MAX_HP);
@@ -506,17 +510,25 @@ function DuelModal({
 
       if (isMyTurn) {
         const dmg = Math.max(4, Math.round((8 + Math.random() * 8) * myDmgMult));
-        oppHpRef.current = Math.max(0, oppHpRef.current - dmg);
-        setOppHp(oppHpRef.current);
-        setHitFlash('opp'); setShakeOpp(true);
-        setTimeout(() => { setHitFlash(null); setShakeOpp(false); }, 300);
+        setAttackMe(true);
+        setTimeout(() => {
+          setAttackMe(false);
+          oppHpRef.current = Math.max(0, oppHpRef.current - dmg);
+          setOppHp(oppHpRef.current);
+          setHitFlash('opp'); setShakeOpp(true); setHitKeyOpp(k => k + 1);
+          setTimeout(() => { setHitFlash(null); setShakeOpp(false); }, 300);
+        }, 220);
         setLog(prev => [...prev.slice(-5), { text: `${myData?.name ?? 'Toi'} inflige ${dmg} dégâts !`, color: '#4ade80' }]);
       } else {
         const dmg = Math.max(4, Math.round((8 + Math.random() * 8) * oppDmgMult));
-        myHpRef.current = Math.max(0, myHpRef.current - dmg);
-        setMyHp(myHpRef.current);
-        setHitFlash('me'); setShakeMe(true);
-        setTimeout(() => { setHitFlash(null); setShakeMe(false); }, 300);
+        setAttackOpp(true);
+        setTimeout(() => {
+          setAttackOpp(false);
+          myHpRef.current = Math.max(0, myHpRef.current - dmg);
+          setMyHp(myHpRef.current);
+          setHitFlash('me'); setShakeMe(true); setHitKeyMe(k => k + 1);
+          setTimeout(() => { setHitFlash(null); setShakeMe(false); }, 300);
+        }, 220);
         setLog(prev => [...prev.slice(-5), { text: `${oppData?.name ?? opponentName} inflige ${dmg} dégâts !`, color: '#f87171' }]);
       }
 
@@ -571,12 +583,12 @@ function DuelModal({
           </div>
           <div style={{
             filter: hitFlash === 'opp' ? 'brightness(5) saturate(0)' : `drop-shadow(0 0 14px ${oppRarityColor})`,
-            animation: shakeOpp ? 'wiggle 0.3s ease-in-out' : undefined,
-            transition: 'filter 0.15s',
+            transition: 'filter 0.15s, transform 0.22s ease-out',
             opacity: oppHp <= 0 ? 0.25 : 1,
+            transform: attackOpp ? 'translateX(-40px) scale(1.1)' : 'translateX(0px) scale(1)',
           }}>
-            <img src={getSpriteUrl(opponentPokemonId, opponentIsShiny)} width={88} height={88}
-              style={{ imageRendering: 'pixelated', transform: 'scaleX(-1)' }} alt="" />
+            <img key={hitKeyOpp} src={getSpriteUrl(opponentPokemonId, opponentIsShiny)} width={88} height={88}
+              style={{ imageRendering: 'pixelated', transform: 'scaleX(-1)', animation: shakeOpp ? 'wiggle 0.35s ease-in-out' : 'none' }} alt="" />
           </div>
         </div>
 
@@ -584,12 +596,12 @@ function DuelModal({
         <div className="flex-1 flex items-center justify-start pl-10 pb-6 relative">
           <div style={{
             filter: hitFlash === 'me' ? 'brightness(5) saturate(0)' : `drop-shadow(0 0 14px ${myRarityColor})`,
-            animation: shakeMe ? 'wiggle 0.3s ease-in-out' : undefined,
-            transition: 'filter 0.15s',
+            transition: 'filter 0.15s, transform 0.22s ease-out',
             opacity: myHp <= 0 ? 0.25 : 1,
+            transform: attackMe ? 'translateX(40px) scale(1.1)' : 'translateX(0px) scale(1)',
           }}>
-            <img src={getSpriteUrl(myPokemonId, myIsShiny)} width={88} height={88}
-              style={{ imageRendering: 'pixelated' }} alt="" />
+            <img key={hitKeyMe} src={getSpriteUrl(myPokemonId, myIsShiny)} width={88} height={88}
+              style={{ imageRendering: 'pixelated', animation: shakeMe ? 'wiggle 0.35s ease-in-out' : 'none' }} alt="" />
           </div>
           <div className="absolute bottom-4 right-4 bg-black/80 rounded-xl px-3 py-2 border border-slate-600/50 min-w-[150px]">
             <div className="text-xs font-black text-yellow-400 mb-1 truncate">Toi — {myData?.name ?? `#${myPokemonId}`}</div>
@@ -1014,7 +1026,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         <div
           className="relative overflow-hidden shrink-0"
           style={{
-            height: '55%',
+            height: '42%',
             background: 'linear-gradient(180deg, #0f2a1a 0%, #1a3a2a 40%, #1e4a30 100%)',
           }}
         >
