@@ -141,3 +141,12 @@ export function saveState(state: GameState): void {
     // Silently fail if localStorage not available
   }
 }
+
+export function clearState(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('katchii_last_view');
+  } catch {
+    // ignore
+  }
+}

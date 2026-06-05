@@ -119,14 +119,28 @@ function ParkSprite({
         <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-sm" style={{ animation: 'zzz-float 3s ease-in-out infinite' }}>👑</div>
       )}
 
-      {/* Shiny rainbow aura */}
+      {/* Shiny aura — small tight glow */}
       {isShiny && (
-        <div className="absolute pointer-events-none" style={{
-          inset: -8, borderRadius: '50%',
-          background: 'conic-gradient(from 0deg, #f87171, #fb923c, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
-          animation: 'rainbow-spin 2s linear infinite',
-          opacity: 0.6, filter: 'blur(5px)',
-        }} />
+        <>
+          <div className="absolute pointer-events-none" style={{
+            inset: -4, borderRadius: '50%',
+            background: 'conic-gradient(from 0deg, #f87171, #fb923c, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
+            animation: 'rainbow-spin 2s linear infinite',
+            opacity: 0.55, filter: 'blur(3px)',
+          }} />
+          {/* Sparkle stars */}
+          {[
+            { top: '-10px', left: '50%', delay: '0s' },
+            { top: '10%',  right: '-10px', delay: '0.4s' },
+            { bottom: '-8px', left: '50%', delay: '0.8s' },
+            { top: '10%',  left: '-10px', delay: '1.2s' },
+          ].map((pos, i) => (
+            <div key={i} className="absolute pointer-events-none text-yellow-300 leading-none"
+              style={{ ...pos, fontSize: '0.65rem', animation: `zzz-float 1.2s ${pos.delay} ease-in-out infinite` }}>
+              ✦
+            </div>
+          ))}
+        </>
       )}
 
       {/* Sprite */}
@@ -835,10 +849,11 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
             ))}
             <div ref={chatEndRef} />
           </div>
-          <div className="flex gap-2 px-3 py-2 border-t border-slate-700/40 shrink-0 bg-black/20">
+          <div className="flex gap-2 px-3 py-2 border-t border-slate-700/40 shrink-0" style={{ background: '#0f172a' }}>
             <input
-              className="flex-1 bg-slate-700/60 rounded-lg px-3 py-1.5 text-xs text-white outline-none border border-slate-600/40 focus:border-blue-500/60"
-              placeholder="Message…"
+              className="flex-1 rounded-lg px-3 py-2 text-sm text-white outline-none border border-slate-600 focus:border-blue-500"
+              style={{ background: '#1e293b', minHeight: 40 }}
+              placeholder="Écrire un message…"
               value={chatInput}
               onChange={e => setChatInput(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') sendChat(); }}
@@ -847,7 +862,7 @@ export function PokeParc({ state, username, onClose, onUpdateVillage }: Props) {
             <button
               onClick={sendChat}
               disabled={!chatInput.trim()}
-              className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold disabled:opacity-40"
+              className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold disabled:opacity-40 shrink-0"
             >
               ➤
             </button>

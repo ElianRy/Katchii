@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_WEIGHTS } from '../types';
-import { loadState, saveState } from '../lib/storage';
+import { loadState, saveState, DEFAULT_STATE } from '../lib/storage';
 import { loadCloudState, saveCloudState, onSaveStatus, SaveStatus } from '../lib/cloudSync';
 import { supabase } from '../lib/supabase';
 import { ZONE_BY_ID } from '../data/zones';
@@ -86,8 +86,11 @@ export function useGameState() {
       loadCloudState(user.id).then(cloudState => {
         const localState = loadState();
         if (!cloudState) {
-          // No cloud data — push local state up so next deploy has it
-          saveCloudState(user.id, localState);
+          // New account — local data belongs to a different user, start fresh
+          const fresh = { ...DEFAULT_STATE };
+          saveState(fresh);
+          setState(() => fresh);
+          saveCloudState(user.id, fresh);
           return;
         }
         // Keep whichever has the best score: pokemon count (×1000) + total level sum
