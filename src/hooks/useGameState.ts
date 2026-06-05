@@ -138,16 +138,11 @@ export function useGameState() {
       const next = updater(prev);
       latestStateRef.current = next;
       saveState(next);
-      // Immediate cloud save
-      if (userIdRef.current) {
-        saveCloudState(userIdRef.current, next);
-      } else {
-        // userId not yet loaded — queue a save once it's available
-        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-        saveTimerRef.current = setTimeout(() => {
-          if (userIdRef.current) saveCloudState(userIdRef.current, latestStateRef.current);
-        }, 3000);
-      }
+      // Debounced cloud save — max 1 write per 8s instead of on every action
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(() => {
+        if (userIdRef.current) saveCloudState(userIdRef.current, latestStateRef.current);
+      }, 8000);
       return next;
     });
   }, []);

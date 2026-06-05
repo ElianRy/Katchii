@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase';
 import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
-import { SPARKLE_POSITIONS, ORBIT_POSITIONS } from './ShinySprite';
 
 type Mood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited' | 'scared' | 'proud' | 'hungry' | 'curious';
 
@@ -59,6 +58,33 @@ function getPokemonLevelFromState(state: GameState, pokemonId: number): number {
 function getSpriteUrl(pokemonId: number, isShiny: boolean) {
   const base = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon';
   return isShiny ? `${base}/shiny/${pokemonId}.png` : `${base}/${pokemonId}.png`;
+}
+
+// ---- Shiny sparkles centered on the 56×56 sprite ----
+const PARK_SPARKLE_COLORS = ['#fde047', '#f0abfc', '#ffffff', '#fbbf24', '#a5f3fc'];
+function ParkShinySparkles() {
+  const sparkles = React.useMemo(() => Array.from({ length: 5 }, (_, i) => {
+    const angle = (i / 5) * Math.PI * 2 + i * 0.5;
+    const r = 26 + (i % 2) * 12;
+    return {
+      id: i,
+      x: Math.cos(angle) * r + 28, // center = 28px (half of 56px)
+      y: Math.sin(angle) * r + 28,
+      color: PARK_SPARKLE_COLORS[i % PARK_SPARKLE_COLORS.length],
+      delay: `${(i * 0.22).toFixed(2)}s`,
+      duration: `${(1.1 + i * 0.15).toFixed(2)}s`,
+    };
+  }), []);
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
+      {sparkles.map(sp => (
+        <div key={sp.id} className="shiny-sparkle" style={{
+          position: 'absolute', left: sp.x, top: sp.y,
+          '--sp-color': sp.color, '--sp-duration': sp.duration, '--sp-delay': sp.delay,
+        } as React.CSSProperties} />
+      ))}
+    </div>
+  );
 }
 
 // ---- Park Attack VFX ----
@@ -184,63 +210,29 @@ function ParkSprite({
         <ParkAttackVfx pokemonId={pokemonId} facingRight={!isMine} />
       )}
 
-      {/* Shiny aura — same sparkles as ShinySprite */}
-      {isShiny && (
-        <div className="absolute pointer-events-none" style={{ inset: 0 }}>
-          {SPARKLE_POSITIONS.map((sp, i) => (
-            <div
-              key={i}
-              className="shiny-sparkle"
-              style={{
-                top: sp.top,
-                left: sp.left,
-                right: (sp as { right?: string }).right,
-                bottom: (sp as { bottom?: string }).bottom,
-                transform: sp.left === '50%' ? 'translateX(-50%)' : undefined,
-                '--sp-color': sp.color,
-                '--sp-duration': sp.duration,
-                '--sp-delay': sp.delay,
-              } as React.CSSProperties}
-            />
-          ))}
-          {ORBIT_POSITIONS.map((sp, i) => (
-            <div
-              key={`o${i}`}
-              className="shiny-sparkle-orbit"
-              style={{
-                top: sp.top,
-                left: sp.left,
-                right: (sp as { right?: string }).right,
-                bottom: (sp as { bottom?: string }).bottom,
-                '--sp-color': sp.color,
-                '--sp-duration': sp.duration,
-                '--sp-delay': sp.delay,
-              } as React.CSSProperties}
-            />
-          ))}
-          <span className="absolute -top-1 -right-1 text-xs" style={{ filter: 'drop-shadow(0 0 3px #fde047)' }}>✨</span>
-        </div>
-      )}
-
-      {/* Sprite */}
-      {err ? (
-        <div style={{
-          width: 56, height: 56,
-          background: `linear-gradient(135deg, ${rarityColor}33, ${rarityColor}11)`,
-          border: `1px solid ${rarityColor}66`,
-          borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 24, filter,
-        }}>?</div>
-      ) : (
-        <img
-          src={getSpriteUrl(pokemonId, isShiny)}
-          width={56} height={56}
-          style={{ imageRendering: 'pixelated', objectFit: 'contain', filter, animation: spriteAnim }}
-          onError={() => setErr(true)}
-          draggable={false}
-          alt={data?.name ?? '?'}
-        />
-      )}
+      {/* Sprite + shiny sparkles centered on it */}
+      <div style={{ position: 'relative', width: 56, height: 56, display: 'inline-block' }}>
+        {err ? (
+          <div style={{
+            width: 56, height: 56,
+            background: `linear-gradient(135deg, ${rarityColor}33, ${rarityColor}11)`,
+            border: `1px solid ${rarityColor}66`,
+            borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 24, filter,
+          }}>?</div>
+        ) : (
+          <img
+            src={getSpriteUrl(pokemonId, isShiny)}
+            width={56} height={56}
+            style={{ imageRendering: 'pixelated', objectFit: 'contain', filter, animation: spriteAnim }}
+            onError={() => setErr(true)}
+            draggable={false}
+            alt={data?.name ?? '?'}
+          />
+        )}
+        {/* Shiny sparkles — positioned relative to sprite center (28px) */}
+        {isShiny && <ParkShinySparkles />}
+      </div>
 
       {/* Username badge */}
       <div className="rounded px-1.5 py-0.5 text-center max-w-[80px] truncate" style={{

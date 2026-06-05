@@ -34,6 +34,21 @@ interface Props {
   onFightBoss?: () => void;
 }
 
+function zoneEmoji(name: string): string {
+  const n = name.toLowerCase();
+  if (n.includes('mer') || n.includes('bord') || n.includes('eau') || n.includes('côte')) return '🌊';
+  if (n.includes('électr') || n.includes('electr') || n.includes('central')) return '⚡';
+  if (n.includes('fleur') || n.includes('bois') || n.includes('plaine')) return '🌸';
+  if (n.includes('fantôme') || n.includes('tour') || n.includes('spectre')) return '👻';
+  if (n.includes('sylphe') || n.includes('corp') || n.includes('usine') || n.includes('sarl')) return '🏢';
+  if (n.includes('cramois') || n.includes('île') || n.includes('volcan')) return '🌋';
+  if (n.includes('arène') || n.includes('jadiel') || n.includes('ville')) return '🏙️';
+  if (n.includes('ligue') || n.includes('champion')) return '🏆';
+  if (n.includes('grotte') || n.includes('mont') || n.includes('roche') || n.includes('pic')) return '⛰️';
+  if (n.includes('forêt') || n.includes('foret') || n.includes('pallet') || n.includes('bois')) return '🌲';
+  return '🗺️';
+}
+
 function formatLureRemaining(expiresAt: number): string {
   const ms = Math.max(0, expiresAt - Date.now());
   const totalSec = Math.ceil(ms / 1000);
@@ -90,7 +105,7 @@ export function HUD({
           {/* Zone name + info */}
           <div className="flex items-center gap-1 flex-1 min-w-0 bg-black/60 rounded-xl px-3 py-1.5 border border-slate-700/50">
             <span className="text-slate-300 text-xs truncate">
-              {activeUniverse === 'naruto' ? '🍥 Konoha' : `🌲 ${currentZoneName ?? 'Zone 1'}`}
+              {activeUniverse === 'naruto' ? '🍥 Konoha' : `${zoneEmoji(currentZoneName ?? '')} ${currentZoneName ?? 'Zone 1'}`}
             </span>
             {onOpenZoneInfo && (
               <button onClick={onOpenZoneInfo} className="bg-slate-700/80 hover:bg-slate-600 border border-slate-500/50 rounded-lg px-2 py-1 text-slate-200 hover:text-white text-sm font-bold ml-1 shrink-0">ℹ️ Zone</button>

@@ -239,27 +239,6 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         onFightBoss={() => { setFightZone(currentZone ?? null); setShowBossFight(true); }}
       />
 
-      {/* Quêtes pill — au-dessus du bouton Menu (bottom-right), style nav */}
-      {!showBossFight && (
-        <button
-          onClick={onOpenQuests}
-          className="fixed z-[45] flex flex-col items-center gap-1 px-3 py-2 rounded-xl pointer-events-auto"
-          style={{
-            bottom: 80,
-            right: 8,
-            background: questsCompleted > 0 ? 'rgba(234,179,8,0.18)' : 'rgba(15,23,42,0.85)',
-            border: `1px solid ${questsCompleted > 0 ? 'rgba(234,179,8,0.5)' : 'rgba(100,116,139,0.25)'}`,
-            backdropFilter: 'blur(10px)',
-            boxShadow: questsCompleted > 0 ? '0 2px 12px rgba(234,179,8,0.3)' : 'none',
-          }}
-        >
-          <span className="text-2xl leading-none">📋</span>
-          <span className="font-bold leading-none"
-            style={{ fontSize: '0.6rem', color: questsCompleted > 0 ? '#fbbf24' : '#64748b' }}>
-            Quêtes{questsCompleted > 0 ? ` (${questsCompleted})` : ''}
-          </span>
-        </button>
-      )}
 
       {/* Floating notifications */}
       {notifications.map((n) => (

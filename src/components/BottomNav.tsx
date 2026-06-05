@@ -218,11 +218,8 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
         }}>{badge}</div>
       )}
 
-      {/* Shiny aura — sparkles scattered randomly around the pokemon */}
-      {isShiny && <NavShinySparkles />}
-
       {/* Flip wrapper — direction; inner img handles bounce/wiggle animation */}
-      <div style={{ transform: flipTransform, transition: 'transform 0.3s ease', display: 'inline-block' }}>
+      <div style={{ transform: flipTransform, transition: 'transform 0.3s ease', display: 'inline-block', position: 'relative' }}>
         <img
           src={spriteUrl}
           width={52}
@@ -236,6 +233,8 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
           draggable={false}
           alt=""
         />
+        {/* Shiny aura — inside flip wrapper so it's always centered on the sprite */}
+        {isShiny && <NavShinySparkles />}
       </div>
     </div>
   );
