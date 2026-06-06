@@ -238,7 +238,7 @@ export function useGameState() {
           const current = next.pokemonLevels?.[pokemonId] ?? { level: 1, xp: 0 };
           if (current.level < 100) {
             let { level, xp } = current;
-            xp += current.level * 10;
+            xp += current.level * current.level; // ~20% of xpToNextLevel at every level
             while (level < 100 && xp >= xpToNextLevel(level)) {
               xp -= xpToNextLevel(level);
               level++;

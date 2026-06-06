@@ -360,7 +360,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           if (newEHp <= 0) {
             addLog(`${eName} est K.O. !`, '#f87171');
             const xpBase = xpGainedFromBattle(eFighter.level, true);
-            const levelBonus = 1 + pFighter.level * 0.015;
+            const levelBonus = 1 + pFighter.level * 0.025;
             const xpEarned = Math.floor(xpBase * levelBonus);
             setXpGains(prev => ({ ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned }));
             const nextE = newEf.findIndex((f, i) => i > enemyIdx && f.currentHp > 0);

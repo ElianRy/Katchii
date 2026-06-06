@@ -843,13 +843,15 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     return () => { if (wanderRef.current) clearInterval(wanderRef.current); };
   }, [mood]);
 
-  // Park XP tick — every 2 min, player + pokemon earn XP based on pokemon rarity/shiny
+  // Park XP tick — every 2 min, player + pokemon earn XP scaled by pokemon level
   useEffect(() => {
     if (!myFav) return;
     const data = POKEMON_BY_ID[myFav.pokemonId];
-    const baseXp = PARK_XP_PER_TICK[data?.rarity ?? 'commun'] ?? 5;
-    const xp = myFav.isShiny ? baseXp * 2 : baseXp;
+    const rarityBase = PARK_XP_PER_TICK[data?.rarity ?? 'commun'] ?? 5;
     const id = setInterval(() => {
+      const level = state.pokemonLevels?.[myFav.pokemonId]?.level ?? 1;
+      // XP scales with level so higher-level pokemon gain proportionally more
+      const xp = Math.floor(rarityBase * (1 + level * 0.4) * (myFav.isShiny ? 2 : 1));
       onAddPlayerXp(xp);
       onAddPokemonXp(myFav.pokemonId, xp);
       setXpPop({ xp, key: Date.now() });
