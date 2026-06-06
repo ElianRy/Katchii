@@ -57,7 +57,7 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
     >
       <div
         className="bg-slate-900 rounded-2xl w-full max-w-lg overflow-y-auto"
-        style={{ maxHeight: '85vh' }}
+        style={{ maxHeight: 'calc(100dvh - 96px)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

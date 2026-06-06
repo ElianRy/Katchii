@@ -482,11 +482,12 @@ function InteractionModal({
 function DuelModal({
   myPokemonId, myIsShiny, myLevel, myRarity,
   opponentPokemonId, opponentIsShiny, opponentLevel, opponentRarity, opponentName,
-  onClose, onResult,
+  onClose, onResult, onAddPokemonXp,
 }: {
   myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity: string;
   opponentPokemonId: number; opponentIsShiny: boolean; opponentLevel: number; opponentRarity: string;
   opponentName: string; onClose: () => void; onResult: (won: boolean) => void;
+  onAddPokemonXp?: (pokemonId: number, xp: number) => void;
 }) {
   const myData = POKEMON_BY_ID[myPokemonId];
   const oppData = POKEMON_BY_ID[opponentPokemonId];
@@ -518,6 +519,14 @@ function DuelModal({
   const oppRarityColor = oppData ? RARITY_COLORS[oppData.rarity] : '#6b7280';
   const hpColor = (pct: number) => pct > 0.5 ? '#4ade80' : pct > 0.25 ? '#facc15' : '#ef4444';
 
+  // Attack VFX emoji — picks based on pokemon type hint from rarity
+  const getAttackEmoji = (pokemonId: number) => {
+    const id = pokemonId % 5;
+    return ['⚡','🔥','💧','🌿','💥'][id];
+  };
+  const myAtkEmoji = getAttackEmoji(myPokemonId);
+  const oppAtkEmoji = getAttackEmoji(opponentPokemonId);
+
   useEffect(() => {
     const won = wonRef.current;
     // Winner deals more damage per hit on average
@@ -529,36 +538,46 @@ function DuelModal({
       turnRef.current += 1;
       const isMyTurn = turnRef.current % 2 === 1;
 
+      const checkEnd = () => {
+        if ((myHpRef.current <= 0 || oppHpRef.current <= 0) && !resultSent.current) {
+          clearInterval(interval);
+          const w = oppHpRef.current <= 0 ? 'me' : 'opponent';
+          setWinner(w);
+          setPhase('result');
+          resultSent.current = true;
+          const didWin = w === 'me';
+          onResult(didWin);
+          if (didWin) {
+            const xp = Math.floor((opponentLevel * 4) * (1 + myLevel * 0.02));
+            onAddPokemonXp?.(myPokemonId, xp);
+          }
+        }
+      };
+
       if (isMyTurn) {
         const dmg = Math.max(4, Math.round((8 + Math.random() * 8) * myDmgMult));
         setAttackMe(true);
+        setLog(prev => [...prev.slice(-5), { text: `${myData?.name ?? 'Toi'} inflige ${dmg} dégâts !`, color: '#4ade80' }]);
         setTimeout(() => {
           setAttackMe(false);
           oppHpRef.current = Math.max(0, oppHpRef.current - dmg);
           setOppHp(oppHpRef.current);
           setHitFlash('opp'); setShakeOpp(true); setHitKeyOpp(k => k + 1);
           setTimeout(() => { setHitFlash(null); setShakeOpp(false); }, 300);
+          checkEnd();
         }, 220);
-        setLog(prev => [...prev.slice(-5), { text: `${myData?.name ?? 'Toi'} inflige ${dmg} dégâts !`, color: '#4ade80' }]);
       } else {
         const dmg = Math.max(4, Math.round((8 + Math.random() * 8) * oppDmgMult));
         setAttackOpp(true);
+        setLog(prev => [...prev.slice(-5), { text: `${oppData?.name ?? opponentName} inflige ${dmg} dégâts !`, color: '#f87171' }]);
         setTimeout(() => {
           setAttackOpp(false);
           myHpRef.current = Math.max(0, myHpRef.current - dmg);
           setMyHp(myHpRef.current);
           setHitFlash('me'); setShakeMe(true); setHitKeyMe(k => k + 1);
           setTimeout(() => { setHitFlash(null); setShakeMe(false); }, 300);
+          checkEnd();
         }, 220);
-        setLog(prev => [...prev.slice(-5), { text: `${oppData?.name ?? opponentName} inflige ${dmg} dégâts !`, color: '#f87171' }]);
-      }
-
-      if (myHpRef.current <= 0 || oppHpRef.current <= 0) {
-        clearInterval(interval);
-        const w = oppHpRef.current <= 0 ? 'me' : 'opponent';
-        setWinner(w);
-        setPhase('result');
-        if (!resultSent.current) { resultSent.current = true; onResult(w === 'me'); }
       }
     }, 650);
     return () => clearInterval(interval);
@@ -590,6 +609,22 @@ function DuelModal({
 
       {/* Battle area */}
       <div className="relative flex-1 flex flex-col">
+        {/* Attack VFX — flying emoji */}
+        {attackMe && (
+          <div className="absolute pointer-events-none z-20" style={{
+            left: '30%', top: '55%',
+            fontSize: '2.2rem', filter: 'drop-shadow(0 0 8px #fbbf24)',
+            animation: 'duel-attack-r 0.45s ease-in forwards',
+          }}>{myAtkEmoji}</div>
+        )}
+        {attackOpp && (
+          <div className="absolute pointer-events-none z-20" style={{
+            right: '30%', top: '35%',
+            fontSize: '2.2rem', filter: 'drop-shadow(0 0 8px #f87171)',
+            animation: 'duel-attack-l 0.45s ease-in forwards',
+          }}>{oppAtkEmoji}</div>
+        )}
+
         {/* Enemy side — top right */}
         <div className="flex-1 flex items-center justify-end pr-10 pt-6 relative">
           <div className="absolute top-4 left-4 bg-black/80 rounded-xl px-3 py-2 border border-slate-600/50 min-w-[150px]">
@@ -1322,6 +1357,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           opponentRarity={interactionTarget.rarity}
           opponentName={interactionTarget.username}
           onResult={(won) => { if (won) onTrainingWin?.(); }}
+          onAddPokemonXp={onAddPokemonXp}
           onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
         />
       )}

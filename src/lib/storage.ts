@@ -107,6 +107,22 @@ function parseState(raw: string): GameState {
     playerXp: parsed.playerXp ?? 0,
     pokemonCaptureCount: parsed.pokemonCaptureCount ?? {},
     shinyCapturesTotal: parsed.shinyCapturesTotal ?? 0,
+    pokemonWins: parsed.pokemonWins ?? {},
+    questsCompletedTotal: parsed.questsCompletedTotal ?? 0,
+    questsBaselineAtUnlock: (() => {
+      const baseline = parsed.questsBaselineAtUnlock ?? {};
+      // Migration: for already-unlocked zones without a baseline, set baseline to current total
+      // so quests completed before this system launched don't incorrectly count
+      const total = parsed.questsCompletedTotal ?? 0;
+      const unlocked = parsed.zoneProgress?.unlockedZones ?? ['zone1'];
+      const migrated = { ...baseline };
+      unlocked.forEach(zoneId => {
+        if (zoneId !== 'zone1' && migrated[zoneId] === undefined) {
+          migrated[zoneId] = total;
+        }
+      });
+      return migrated;
+    })(),
   };
 }
 
