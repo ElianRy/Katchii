@@ -216,6 +216,7 @@ export function App() {
           onSetFavoritePokemon={gameState.setFavoritePokemon}
           onAddPlayerXp={gameState.addPlayerXp}
           onAddPokemonXp={gameState.addPokemonXp}
+          onSetLastParkXpAt={gameState.setLastParkXpAt}
           onTrainingWin={gameState.addTrainingWin}
         />
       )}
@@ -267,6 +268,48 @@ export function App() {
           onDismiss={gameState.dismissBadgeToast}
         />
       )}
+
+      {/* Achievement toasts */}
+      {gameState.achievementToasts.length > 0 && (
+        <AchievementToast
+          achievementId={gameState.achievementToasts[0]}
+          onDismiss={gameState.dismissAchievementToast}
+        />
+      )}
+    </div>
+  );
+}
+
+const ACHIEVEMENT_LABELS: Record<string, { icon: string; title: string; desc: string }> = {
+  pokedex_complete: { icon: '📖', title: 'Pokédex Complet !', desc: 'Tu as capturé les 151 Pokémon !' },
+  level_100: { icon: '⭐', title: 'Niveau 100 !', desc: 'Un de tes Pokémon a atteint le niveau 100 !' },
+  shiny_100: { icon: '💎', title: '100 Shinys !', desc: 'Tu as capturé 100 Pokémon shiny différents !' },
+};
+
+function AchievementToast({ achievementId, onDismiss }: { achievementId: string; onDismiss: () => void }) {
+  const info = ACHIEVEMENT_LABELS[achievementId] ?? { icon: '🏆', title: 'Exploit accompli !', desc: achievementId };
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 6000);
+    return () => clearTimeout(t);
+  }, [achievementId, onDismiss]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[900] flex items-center justify-center pointer-events-none"
+      style={{ animation: 'fadeIn 0.4s ease' }}
+    >
+      <div
+        className="pointer-events-auto bg-gradient-to-br from-yellow-900/90 to-slate-900/90 border-2 border-yellow-400 rounded-3xl px-8 py-6 text-center shadow-2xl"
+        style={{ maxWidth: 320 }}
+        onClick={onDismiss}
+      >
+        <div style={{ fontSize: '3rem', lineHeight: 1 }}>{info.icon}</div>
+        <div className="text-yellow-300 font-black text-xl mt-2">EXPLOIT DÉBLOQUÉ !</div>
+        <div className="text-white font-bold text-lg mt-1">{info.title}</div>
+        <div className="text-slate-300 text-sm mt-1">{info.desc}</div>
+        <div className="text-yellow-400 font-bold text-sm mt-3">✨ Taux Shiny augmenté !</div>
+        <div className="text-slate-400 text-xs mt-1">Appuie pour fermer</div>
+      </div>
     </div>
   );
 }

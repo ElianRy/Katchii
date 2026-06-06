@@ -46,6 +46,7 @@ interface Props {
   onSetFavoritePokemon: (fav: GameState['favoritePokemon']) => void;
   onAddPlayerXp: (xp: number) => void;
   onAddPokemonXp: (pokemonId: number, xp: number) => void;
+  onSetLastParkXpAt?: (ts: number) => void;
   onTrainingWin?: () => void;
 }
 
@@ -744,7 +745,7 @@ function PokemonPicker({ state, onPick, onClose }: {
 
 
 // ---- Main Component ----
-export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onTrainingWin }: Props) {
+export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt, onTrainingWin }: Props) {
   const [presence, setPresence] = useState<PresenceRow[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -759,6 +760,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [justPlaced, setJustPlaced] = useState(false);
   const [parkRevealed, setParkRevealed] = useState(!!state.favoritePokemon);
   const [xpPop, setXpPop] = useState<{ xp: number; key: number } | null>(null);
+  const [offlineParkXp, setOfflineParkXp] = useState<number | null>(null);
   // mutedUsers: userId -> expiryMs (null = permanent) — persisted in localStorage
   const MUTE_KEY = 'katchii_muted_users';
   const loadMuted = (): Map<string, number | null> => {
@@ -879,21 +881,53 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   }, [mood]);
 
   // Park XP tick — every 2 min, player + pokemon earn XP scaled by pokemon level
+  // Offline XP: on mount, award XP for time away (capped at 30h, only notified after 1h)
+  useEffect(() => {
+    if (!myFav) return;
+    const data = POKEMON_BY_ID[myFav.pokemonId];
+    const rarityBase = PARK_XP_PER_TICK[data?.rarity ?? 'commun'] ?? 5;
+    const lastAt = state.lastParkXpAt;
+    if (lastAt) {
+      const elapsed = Date.now() - lastAt;
+      const ONE_HOUR = 60 * 60 * 1000;
+      const THIRTY_HOURS = 30 * ONE_HOUR;
+      const TICK_MS = 2 * 60 * 1000;
+      if (elapsed >= ONE_HOUR) {
+        const cappedElapsed = Math.min(elapsed, THIRTY_HOURS);
+        const ticks = Math.floor(cappedElapsed / TICK_MS);
+        if (ticks > 0) {
+          const level = state.pokemonLevels?.[myFav.pokemonId]?.level ?? 1;
+          const xpPerTick = Math.floor(rarityBase * (1 + level * 0.4) * (myFav.isShiny ? 2 : 1));
+          const totalXp = ticks * xpPerTick;
+          onAddPlayerXp(totalXp);
+          onAddPokemonXp(myFav.pokemonId, totalXp);
+          setOfflineParkXp(totalXp);
+          setTimeout(() => setOfflineParkXp(null), 6000);
+        }
+      }
+      onSetLastParkXpAt?.(Date.now());
+    } else {
+      onSetLastParkXpAt?.(Date.now());
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Live park XP tick every 2 min
   useEffect(() => {
     if (!myFav) return;
     const data = POKEMON_BY_ID[myFav.pokemonId];
     const rarityBase = PARK_XP_PER_TICK[data?.rarity ?? 'commun'] ?? 5;
     const id = setInterval(() => {
       const level = state.pokemonLevels?.[myFav.pokemonId]?.level ?? 1;
-      // XP scales with level so higher-level pokemon gain proportionally more
       const xp = Math.floor(rarityBase * (1 + level * 0.4) * (myFav.isShiny ? 2 : 1));
       onAddPlayerXp(xp);
       onAddPokemonXp(myFav.pokemonId, xp);
+      onSetLastParkXpAt?.(Date.now());
       setXpPop({ xp, key: Date.now() });
       setTimeout(() => setXpPop(null), 2000);
     }, 2 * 60 * 1000);
     return () => clearInterval(id);
-  }, [myFav, onAddPlayerXp, onAddPokemonXp]);
+  }, [myFav, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt]);
 
   // Upsert my presence
   const upsertPresence = useCallback(async (pos: { x: number; y: number }, m: Mood) => {
@@ -1042,6 +1076,17 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div className="font-black text-yellow-400 text-sm flex-1">🌿 PokéParc</div>
       </div>
+
+      {/* Offline XP notification */}
+      {offlineParkXp !== null && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+          <div className="bg-slate-900/90 border border-yellow-400/60 rounded-2xl px-5 py-3 text-center shadow-xl">
+            <div className="text-yellow-300 font-black text-sm">🌿 Bienvenue au PokéParc !</div>
+            <div className="text-white font-bold text-lg mt-1">+{offlineParkXp} XP ✨</div>
+            <div className="text-slate-400 text-xs mt-0.5">Ton Pokémon a entraîné pendant ton absence</div>
+          </div>
+        </div>
+      )}
 
       {/* Mood bar */}
       <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 border-b border-slate-700/30 shrink-0 overflow-x-auto">
@@ -1357,7 +1402,6 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           opponentRarity={interactionTarget.rarity}
           opponentName={interactionTarget.username}
           onResult={(won) => { if (won) onTrainingWin?.(); }}
-          onAddPokemonXp={onAddPokemonXp}
           onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
         />
       )}

@@ -108,6 +108,8 @@ export interface GameState {
   pokemonWins?: Record<number, number>;
   questsCompletedTotal?: number;
   questsBaselineAtUnlock?: Record<string, number>;
+  achievementsCompleted?: string[];
+  lastParkXpAt?: number | null;
 }
 
 export type ZoneUnlockCondition =

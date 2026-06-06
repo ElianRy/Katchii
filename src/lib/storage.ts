@@ -71,6 +71,8 @@ export const DEFAULT_STATE: GameState = {
   pokemonWins: {},
   questsCompletedTotal: 0,
   questsBaselineAtUnlock: {},
+  achievementsCompleted: [],
+  lastParkXpAt: null,
 };
 
 function parseState(raw: string): GameState {
@@ -109,6 +111,8 @@ function parseState(raw: string): GameState {
     shinyCapturesTotal: parsed.shinyCapturesTotal ?? 0,
     pokemonWins: parsed.pokemonWins ?? {},
     questsCompletedTotal: parsed.questsCompletedTotal ?? 0,
+    achievementsCompleted: parsed.achievementsCompleted ?? [],
+    lastParkXpAt: parsed.lastParkXpAt ?? null,
     questsBaselineAtUnlock: (() => {
       const baseline = parsed.questsBaselineAtUnlock ?? {};
       // Migration: for already-unlocked zones without a baseline, set baseline to current total

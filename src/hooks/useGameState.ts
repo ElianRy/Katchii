@@ -22,6 +22,26 @@ import { naturalLevel, xpToNextLevel } from '../data/combatEngine';
 const COOLDOWN_MS = 30_000;
 const LURE_DURATION_MS = 10 * 60_000;
 
+const ACHIEVEMENT_SHINY_RATES = [250, 220, 190, 160];
+
+/** Returns list of newly earned permanent achievement IDs */
+function checkAchievements(state: GameState): string[] {
+  const existing = new Set(state.achievementsCompleted ?? []);
+  const earned: string[] = [];
+  const check = (id: string, cond: boolean) => { if (cond && !existing.has(id)) earned.push(id); };
+
+  const caughtNormal = Object.keys(state.normalCollection).filter(id => (state.normalCollection[Number(id)] ?? 0) > 0).length;
+  check('pokedex_complete', caughtNormal >= 151);
+
+  const maxLevel = Math.max(0, ...Object.values(state.pokemonLevels ?? {}).map(l => l.level));
+  check('level_100', maxLevel >= 100);
+
+  const uniqueShinies = Object.keys(state.shinyCollection).filter(id => (state.shinyCollection[Number(id)] ?? 0) > 0).length;
+  check('shiny_100', uniqueShinies >= 100);
+
+  return earned;
+}
+
 /** Returns list of newly earned badge IDs given the new state */
 function checkBadges(state: GameState): string[] {
   const existing = new Set(state.badges);
@@ -78,6 +98,8 @@ export function useGameState() {
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   // Badge toast queue
   const [badgeToasts, setBadgeToasts] = useState<string[]>([]);
+  // Achievement toast queue
+  const [achievementToasts, setAchievementToasts] = useState<string[]>([]);
   const userIdRef = useRef<string | null>(null);
   const loadingForRef = useRef<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -87,6 +109,10 @@ export function useGameState() {
 
   const dismissBadgeToast = useCallback(() => {
     setBadgeToasts((prev) => prev.slice(1));
+  }, []);
+
+  const dismissAchievementToast = useCallback(() => {
+    setAchievementToasts((prev) => prev.slice(1));
   }, []);
 
   // Load cloud state whenever auth changes (login, new account, re-login)
@@ -199,6 +225,13 @@ export function useGameState() {
     return { ...newState, badges: [...newState.badges, ...newBadges] };
   }, []);
 
+  const awardAchievements = useCallback((newState: GameState): GameState => {
+    const earned = checkAchievements(newState);
+    if (earned.length === 0) return newState;
+    setAchievementToasts((prev) => [...prev, ...earned]);
+    return { ...newState, achievementsCompleted: [...(newState.achievementsCompleted ?? []), ...earned] };
+  }, []);
+
   const addCapture = useCallback((pokemonId: number, isShiny: boolean, rarity: Rarity): number => {
     let pointsEarned = 0;
 
@@ -278,14 +311,15 @@ export function useGameState() {
         next.playerXp = (prev.playerXp ?? 0) + (isFirstShiny ? baseXp * 3 : baseXp);
       }
 
-      // Badge check
+      // Badge + achievement check
       next = awardBadges(next);
+      next = awardAchievements(next);
 
       return next;
     });
 
     return pointsEarned;
-  }, [update, awardBadges]);
+  }, [update, awardBadges, awardAchievements]);
 
   const buyLure = useCallback((type: LureType): boolean => {
     let success = false;
@@ -364,15 +398,17 @@ export function useGameState() {
   }, [update]);
 
   const getActiveLureMultipliers = useCallback(() => {
-    const defaults = { rare: 1, elite: 1, legendaire: 1, shinyRate: 1 / 250 };
+    const achieveCount = Math.min((state.achievementsCompleted ?? []).length, 3);
+    const baseShinyRate = 1 / ACHIEVEMENT_SHINY_RATES[achieveCount];
+    const defaults = { rare: 1, elite: 1, legendaire: 1, shinyRate: baseShinyRate };
     if (!state.activeLure || Date.now() > state.activeLure.expiresAt) return defaults;
     const { type } = state.activeLure;
     if (type === 'rare')      return { ...defaults, rare: 4 };
     if (type === 'epique')    return { ...defaults, elite: 4 };
     if (type === 'legendaire') return { ...defaults, legendaire: 4 };
-    if (type === 'shiny')     return { ...defaults, shinyRate: 1 / 62.5 };
+    if (type === 'shiny')     return { ...defaults, shinyRate: baseShinyRate * 4 };
     return defaults;
-  }, [state.activeLure]);
+  }, [state.activeLure, state.achievementsCompleted]);
 
   const getEffectiveWeights = useCallback((): Record<Rarity, number> => {
     const mult = getActiveLureMultipliers();
@@ -669,15 +705,21 @@ export function useGameState() {
       }
       if (level >= 100) currentXp = 0;
 
-      return {
+      let next = {
         ...prev,
         pokemonLevels: { ...prev.pokemonLevels, [pokemonId]: { level, xp: currentXp } },
       };
+      next = awardAchievements(next);
+      return next;
     });
-  }, [update]);
+  }, [update, awardAchievements]);
 
   const addPlayerXp = useCallback((xp: number) => {
     update(prev => ({ ...prev, playerXp: (prev.playerXp ?? 0) + xp }));
+  }, [update]);
+
+  const setLastParkXpAt = useCallback((ts: number) => {
+    update(prev => ({ ...prev, lastParkXpAt: ts }));
   }, [update]);
 
   const saveTeam = useCallback((name: string, members: TeamMember[]) => {
@@ -737,10 +779,13 @@ export function useGameState() {
     saveStatus,
     badgeToasts,
     dismissBadgeToast,
+    achievementToasts,
+    dismissAchievementToast,
     getPokemonLevel,
     initPokemonLevel,
     addPokemonXp,
     addPlayerXp,
+    setLastParkXpAt,
     adminGiveAllMax,
     saveTeam,
     deleteTeam,
