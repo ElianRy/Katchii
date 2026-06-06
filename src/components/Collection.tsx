@@ -6,6 +6,16 @@ import { ZONES } from '../data/zones';
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
 import { xpToNextLevel } from '../data/combatEngine';
 
+function getPokemonTitle(wins: number): string | null {
+  if (wins >= 500) return '👑 Maître';
+  if (wins >= 200) return '🔥 Légende';
+  if (wins >= 100) return '💎 Champion';
+  if (wins >= 50) return '⚔️ Guerrier';
+  if (wins >= 25) return '🛡️ Combattant';
+  if (wins >= 10) return '🌱 Novice';
+  return null;
+}
+
 interface Props {
   state: GameState;
   onClose: () => void;
@@ -277,6 +287,9 @@ export function Collection({ state, onClose }: Props) {
               </div>
               <div className="text-center">
                 <div className="font-black text-xl text-white">{p.name}</div>
+                {getPokemonTitle(wins) && (
+                  <div className="text-sm font-bold mt-0.5 text-yellow-300">{getPokemonTitle(wins)}</div>
+                )}
                 <div className="text-xs mt-0.5" style={{ color: rarityColor }}>{RARITY_LABELS[p.rarity]}</div>
               </div>
               <div className="flex gap-1.5">

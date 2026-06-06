@@ -722,6 +722,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [showDuel, setShowDuel] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [justPlaced, setJustPlaced] = useState(false);
+  const [parkRevealed, setParkRevealed] = useState(!!state.favoritePokemon);
   // mutedUsers: userId -> expiryMs (null = permanent) — persisted in localStorage
   const MUTE_KEY = 'katchii_muted_users';
   const loadMuted = (): Map<string, number | null> => {
@@ -1063,9 +1064,9 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
               style={{ left: `${x}%`, opacity: 0.4 }}>🌲</div>
           ))}
 
-          {/* No pokemon message */}
-          {!myFav && (
-            <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(15,23,42,0.65)' }}>
+          {/* Dark overlay before first pokemon is placed */}
+          {!parkRevealed && (
+            <div className="absolute inset-0 flex items-center justify-center z-10" style={{ background: 'rgba(2,6,23,0.92)' }}>
               <button
                 onClick={() => setShowPicker(true)}
                 className="px-6 py-3 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-transform"
@@ -1076,6 +1077,14 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
             </div>
           )}
 
+          {/* Reveal animation overlay — plays once after placement */}
+          {justPlaced && (
+            <div
+              className="absolute inset-0 z-10 pointer-events-none"
+              style={{ animation: 'park-reveal 1.4s ease-out forwards' }}
+            />
+          )}
+
           {/* Player count */}
           <div className="absolute top-2 left-2">
             <div className="text-xs text-slate-400 bg-black/40 rounded px-2 py-0.5">
@@ -1083,8 +1092,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
             </div>
           </div>
 
-          {/* Other players */}
-          {others.map(p => {
+          {/* Other players — hidden until park is revealed */}
+          {parkRevealed && others.map(p => {
             const data = POKEMON_BY_ID[p.pokemon_id];
             return (
               <div
@@ -1257,6 +1266,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           onPick={(pokemonId, isShiny) => {
             onSetFavoritePokemon({ pokemonId, isShiny });
             setShowPicker(false);
+            setParkRevealed(true);
             setJustPlaced(true);
             setTimeout(() => setJustPlaced(false), 1500);
           }}

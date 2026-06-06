@@ -19,6 +19,8 @@ interface Props {
   onBattleEnd: (won: boolean, xpGains: Record<number, number>) => void;
   autoCombat?: boolean;
   onAutoCombatChange?: (v: boolean) => void;
+  speedLevel?: number;
+  onSpeedLevelChange?: (v: number) => void;
 }
 
 interface FighterState extends TeamMember { currentHp: number; }
@@ -284,7 +286,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.maxHp }))
   );
@@ -299,7 +301,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [xpGains, setXpGains] = useState<Record<number, number>>({});
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
-  const [speedLevel, setSpeedLevel] = useState(0); // 0=x1, 1=x2, 2=x4, 3=x10
+  const [speedLevel, setSpeedLevelLocal] = useState(speedLevelProp);
+  const setSpeedLevel = (v: number) => { setSpeedLevelLocal(v); onSpeedLevelChange?.(v); };
   const won = useRef(false);
   const battleDone = useRef(false);
   const paused = useRef(false); // paused while player chooses switch
@@ -751,7 +754,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
                 </button>
               </div>
               <button
-                onClick={() => setSpeedLevel(v => (v + 1) % 4)}
+                onClick={() => setSpeedLevel((speedLevel + 1) % 4)}
                 className="px-3 py-1.5 rounded-xl font-black text-sm"
                 style={{
                   background: speedLevel === 3 ? 'linear-gradient(90deg, #ef4444, #7c3aed)' : speedLevel === 2 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : speedLevel === 1 ? 'linear-gradient(90deg, #eab308, #f59e0b)' : '#1e293b',

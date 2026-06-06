@@ -83,6 +83,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
   const [autoCombat, setAutoCombat] = useState(true);
+  const [battleSpeed, setBattleSpeed] = useState(0);
   const [levelUps, setLevelUps] = useState<LevelUpNotif[]>([]);
   const [showNameInput, setShowNameInput] = useState(false);
   const [teamName, setTeamName] = useState('');
@@ -190,6 +191,8 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         onBattleEnd={handleBattleEnd}
         autoCombat={autoCombat}
         onAutoCombatChange={setAutoCombat}
+        speedLevel={battleSpeed}
+        onSpeedLevelChange={setBattleSpeed}
       />
     );
   }
@@ -373,13 +376,20 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
                 );
               })}
             </div>
-            <button
-              onClick={() => { setMode('team'); setBattleResult(null); }}
-              className="w-full py-3 rounded-2xl font-black text-black"
-              style={{ background: 'linear-gradient(90deg, #22c55e, #16a34a)' }}
-            >
-              Continuer
-            </button>
+            {autoCombat ? (
+              <div className="flex items-center justify-center gap-2 bg-indigo-900/40 rounded-xl px-3 py-2 border border-indigo-500/50 animate-pulse">
+                <span className="text-indigo-300 text-sm">⚡</span>
+                <span className="text-indigo-300 text-xs font-bold">Combat auto en cours…</span>
+              </div>
+            ) : (
+              <button
+                onClick={() => { setMode('team'); setBattleResult(null); }}
+                className="w-full py-3 rounded-2xl font-black text-black"
+                style={{ background: 'linear-gradient(90deg, #22c55e, #16a34a)' }}
+              >
+                Continuer
+              </button>
+            )}
           </div>
         </div>
       )}
