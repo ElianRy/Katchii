@@ -723,6 +723,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [showPicker, setShowPicker] = useState(false);
   const [justPlaced, setJustPlaced] = useState(false);
   const [parkRevealed, setParkRevealed] = useState(!!state.favoritePokemon);
+  const [xpPop, setXpPop] = useState<{ xp: number; key: number } | null>(null);
   // mutedUsers: userId -> expiryMs (null = permanent) — persisted in localStorage
   const MUTE_KEY = 'katchii_muted_users';
   const loadMuted = (): Map<string, number | null> => {
@@ -851,6 +852,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     const id = setInterval(() => {
       onAddPlayerXp(xp);
       onAddPokemonXp(myFav.pokemonId, xp);
+      setXpPop({ xp, key: Date.now() });
+      setTimeout(() => setXpPop(null), 2000);
     }, 2 * 60 * 1000);
     return () => clearInterval(id);
   }, [myFav, onAddPlayerXp, onAddPokemonXp]);
@@ -1151,6 +1154,22 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                 animation: justPlaced ? 'park-place-bounce 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' : undefined,
               }}
             >
+              {xpPop && (
+                <div
+                  key={xpPop.key}
+                  className="absolute left-1/2 pointer-events-none font-black text-sm text-yellow-300"
+                  style={{
+                    transform: 'translateX(-50%)',
+                    top: '-28px',
+                    textShadow: '0 1px 6px #000',
+                    animation: 'park-xp-pop 2s ease-out forwards',
+                    zIndex: 30,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  +{xpPop.xp} XP ✨
+                </div>
+              )}
               <ParkSprite
                 pokemonId={myFav.pokemonId}
                 isShiny={myFav.isShiny ?? false}

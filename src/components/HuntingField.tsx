@@ -105,11 +105,16 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           capturingRef.current = false;
           return;
         }
+        const isDoublon = !isShiny && (gameState.state.normalCollection[pokemonId] ?? 0) > 0;
+        const doubonLevel = gameState.state.pokemonLevels?.[pokemonId]?.level ?? 1;
         const pts = gameState.addCapture(pokemonId, isShiny, pokemon.rarity);
         if (pts > 0) {
           addNotification(`+${pts} pts !`, x, y, true);
           addNotification('Nouveau !', x, y - 8, true);
           setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity });
+        } else if (isDoublon) {
+          addNotification(`+${doubonLevel * 10} XP !`, x, y, true);
+          addNotification('Doublon !', x, y - 8, false);
         }
         processingRef.current.delete(uid);
         capturingRef.current = false; // UNLOCK
