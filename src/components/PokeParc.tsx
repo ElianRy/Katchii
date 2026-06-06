@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
@@ -1373,8 +1374,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         />
       )}
 
-      {showRace && interactionTarget && myFav && (
-        <RaceModal
+      {showRace && interactionTarget && myFav && createPortal(<RaceModal
           myPokemonId={myFav.pokemonId}
           myIsShiny={myFav.isShiny ?? false}
           myLevel={getPokemonLevelFromState(state, myFav.pokemonId)}
@@ -1386,10 +1386,9 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           opponentName={interactionTarget.username}
           onResult={(won) => { if (won) onTrainingWin?.(); }}
           onClose={() => { setShowRace(false); setInteractionTarget(null); }}
-        />
-      )}
+        />, document.body)}
 
-      {showDuel && interactionTarget && myFav && (
+      {showDuel && interactionTarget && myFav && createPortal(
         <DuelModal
           myPokemonId={myFav.pokemonId}
           myIsShiny={myFav.isShiny ?? false}
@@ -1402,7 +1401,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           opponentName={interactionTarget.username}
           onResult={(won) => { if (won) onTrainingWin?.(); }}
           onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
-        />
+        />,
+        document.body
       )}
 
     </div>

@@ -40,7 +40,7 @@ function getPermanentQuests(state: GameState): PermanentQuest[] {
       icon: '📖',
       progress: caughtNormal,
       target: 151,
-      reward: 'Taux Shiny : 1/250 → 1/220',
+      reward: 'Taux Shiny +14%',
     },
     {
       id: 'level_100',
@@ -49,7 +49,7 @@ function getPermanentQuests(state: GameState): PermanentQuest[] {
       icon: '⭐',
       progress: Math.min(maxLevel, 100),
       target: 100,
-      reward: 'Taux Shiny : 1/220 → 1/190',
+      reward: 'Taux Shiny +16%',
     },
     {
       id: 'shiny_100',
@@ -58,7 +58,7 @@ function getPermanentQuests(state: GameState): PermanentQuest[] {
       icon: '💎',
       progress: uniqueShinies,
       target: 100,
-      reward: 'Taux Shiny : 1/190 → 1/160',
+      reward: 'Taux Shiny +19%',
     },
   ];
 }
@@ -79,7 +79,7 @@ export function QuestPanel({ state, onClaim, onClose }: Props) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto px-4 py-4 pb-28 flex flex-col gap-6">
         {/* Daily quests */}
         <section>
           <h3 className="text-slate-300 font-bold text-sm uppercase tracking-wide mb-3">Quêtes du jour</h3>
