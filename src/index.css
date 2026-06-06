@@ -14,6 +14,19 @@ input, textarea, select {
   75% { opacity: 0.2; }
 }
 
+@keyframes blink-red {
+  0%, 44%, 56%, 100% { opacity: 1; }
+  50% { opacity: 0.05; }
+}
+
+.electric-arc-flicker { animation: electric-flicker 0.2s step-end infinite; }
+.electric-node-1 { animation: electric-flicker 0.15s step-end infinite; }
+.electric-node-2 { animation: electric-flicker 0.18s step-end 0.4s infinite; }
+.electric-node-3 { animation: electric-flicker 0.16s step-end 0.8s infinite; }
+.electric-node-sub { animation: electric-flicker 0.22s step-end 0.2s infinite; }
+.warning-blink { animation: blink-red 1.8s ease-in-out infinite; }
+.warning-blink-2 { animation: blink-red 1.8s ease-in-out 0.9s infinite; }
+
 @keyframes boss-ready-pop {
   0%   { transform: scale(0.6); opacity: 0; }
   70%  { transform: scale(1.08); opacity: 1; }

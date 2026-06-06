@@ -69,15 +69,6 @@ const STARS = Array.from({ length: 120 }, (_, i) => ({
   duration: 1.5 + (i % 8) * 0.6,
 }));
 
-// Electric arcs for zone3
-const ELECTRIC_ARCS = Array.from({ length: 6 }, (_, i) => ({
-  x1: 10 + (i * 79.3) % 80,
-  x2: 10 + (i * 79.3 + 30 + (i % 3) * 20) % 80,
-  height: 30 + (i % 4) * 25,
-  delay: (i * 0.55) % 2.5,
-  duration: 0.12 + (i % 3) * 0.06,
-}));
-
 // Ground flowers for zone4
 const GROUND_FLOWERS = Array.from({ length: 22 }, (_, i) => ({
   x: (i * 31.7 + 3) % 96,
@@ -105,10 +96,10 @@ const ZONE_CONFIGS: Record<string, {
     ambientLight: 'radial-gradient(ellipse 70% 30% at 30% 30%, rgba(40,120,200,0.1) 0%, transparent 100%)',
   },
   zone3: {
-    sky: 'linear-gradient(180deg, #08080f 0%, #0d0d1a 35%, #12100a 65%, #0a0a05 100%)',
-    particles: 'electric',
-    fog: 'radial-gradient(ellipse 100% 40% at 50% 100%, rgba(250,204,21,0.06) 0%, transparent 100%)',
-    ambientLight: 'radial-gradient(ellipse 60% 30% at 50% 60%, rgba(250,204,21,0.04) 0%, transparent 100%)',
+    sky: 'linear-gradient(180deg, #1e1c0a 0%, #161408 45%, #0e0c06 80%, #080808 100%)',
+    particles: 'none',
+    fog: 'radial-gradient(ellipse 100% 30% at 50% 100%, rgba(80,70,10,0.1) 0%, transparent 100%)',
+    ambientLight: undefined,
   },
   zone4: {
     sky: 'linear-gradient(180deg, #6ec8e0 0%, #9adbc0 40%, #b8e8a0 70%, #7ac855 100%)',
@@ -325,69 +316,157 @@ export function ZoneBackground({ zoneId }: Props) {
         </div>
       ))}
 
-      {/* ELECTRIC ARCS — zone3 power plant */}
-      {cfg.particles === 'electric' && (
+      {/* ZONE 3 — Centrale Électrique : pylônes HTB, tours de refroidissement, usine */}
+      {zoneId === 'zone3' && (
         <>
-          {/* Dark industrial background elements */}
-          {/* Ceiling struts */}
-          {[15, 35, 55, 75].map((x, i) => (
-            <div key={i} className="absolute pointer-events-none" style={{
-              left: `${x}%`, top: 0, width: 6, height: '45%',
-              background: 'linear-gradient(to bottom, #2a2a3a, #1a1a28)',
-              boxShadow: '0 0 8px rgba(100,100,200,0.15)',
-            }} />
-          ))}
-          {/* Horizontal beam */}
-          <div className="absolute pointer-events-none w-full" style={{
-            top: '30%', height: 10,
-            background: 'linear-gradient(to right, transparent, #1e1e2e 15%, #252535 50%, #1e1e2e 85%, transparent)',
+          {/* Pollution haze overlay */}
+          <div className="absolute inset-0 pointer-events-none" style={{
+            background: 'radial-gradient(ellipse 120% 35% at 50% 95%, rgba(90,80,15,0.18) 0%, transparent 65%)',
           }} />
-          {/* Machines / boxes at bottom */}
-          {[5, 20, 50, 68, 82].map((x, i) => (
-            <div key={i} className="absolute pointer-events-none" style={{
-              left: `${x}%`, bottom: '18%',
-              width: 10 + (i % 3) * 6, height: 14 + (i % 4) * 8,
-              background: 'linear-gradient(135deg, #1e2030 0%, #2a2d42 100%)',
-              border: '1px solid #3a3d52',
-              borderRadius: 2,
-              boxShadow: `0 0 ${6 + i * 2}px rgba(100,150,255,0.1)`,
-            }} />
-          ))}
-          {/* Electric arc SVG paths */}
-          {ELECTRIC_ARCS.map((arc, i) => (
-            <svg key={i} className="absolute pointer-events-none" style={{
-              left: `${Math.min(arc.x1, arc.x2)}%`,
-              top: `${15 + (i % 3) * 10}%`,
-              width: `${Math.abs(arc.x2 - arc.x1)}%`,
-              height: arc.height,
-              overflow: 'visible',
-              animation: `electric-flicker ${arc.duration}s step-end infinite`,
-              animationDelay: `${arc.delay}s`,
-              opacity: 0.9,
-            }}>
-              <polyline
-                points={`0,${arc.height} ${arc.height * 0.3},${arc.height * 0.4} ${arc.height * 0.5},${arc.height * 0.8} ${arc.height * 0.7},${arc.height * 0.2} 100%,0`}
-                fill="none" stroke="#fde047" strokeWidth="2"
-                style={{ filter: 'drop-shadow(0 0 4px #facc15) drop-shadow(0 0 8px #eab308)' }}
-              />
-              <polyline
-                points={`0,${arc.height} ${arc.height * 0.25},${arc.height * 0.6} ${arc.height * 0.55},${arc.height * 0.3} ${arc.height * 0.75},${arc.height * 0.7} 100%,0`}
-                fill="none" stroke="white" strokeWidth="1" opacity="0.6"
-              />
-            </svg>
-          ))}
-          {/* Glow nodes at arc endpoints */}
-          {ELECTRIC_ARCS.map((arc, i) => (
-            <div key={`node-${i}`} className="absolute pointer-events-none rounded-full" style={{
-              left: `calc(${arc.x1}% - 5px)`,
-              top: `calc(${15 + (i % 3) * 10}% + ${arc.height - 10}px)`,
-              width: 10, height: 10,
-              background: 'radial-gradient(circle, #fde047, #facc15)',
-              boxShadow: '0 0 12px 4px rgba(250,204,21,0.7)',
-              animation: `electric-flicker ${arc.duration * 1.3}s step-end infinite`,
-              animationDelay: `${arc.delay + 0.05}s`,
-            }} />
-          ))}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none"
+            viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              <filter id="e3gy" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="1.8" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="e3gr" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="1.2" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <linearGradient id="e3tw" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="#232118"/>
+                <stop offset="50%" stopColor="#1c1a12"/>
+                <stop offset="100%" stopColor="#161410"/>
+              </linearGradient>
+              <linearGradient id="e3fc" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#1c1a12"/>
+                <stop offset="100%" stopColor="#0e0c08"/>
+              </linearGradient>
+            </defs>
+
+            {/* ── COOLING TOWER LEFT ── */}
+            <polygon points="5,78 11,26 21,26 27,78" fill="url(#e3tw)" stroke="#2a2818" strokeWidth="0.3"/>
+            <ellipse cx="16" cy="26" rx="5" ry="1.4" fill="#161410" stroke="#2a2818" strokeWidth="0.3"/>
+            {[38,50,64].map((y,i) => {
+              const t=(y-26)/52; const xl=5+(11-5)*t+0.6; const xr=27-(27-21)*t-0.6;
+              return <line key={i} x1={xl} y1={y} x2={xr} y2={y} stroke="#2a2818" strokeWidth="0.22" opacity="0.55"/>;
+            })}
+
+            {/* ── COOLING TOWER RIGHT ── */}
+            <polygon points="67,78 74,18 86,18 93,78" fill="url(#e3tw)" stroke="#252316" strokeWidth="0.3"/>
+            <ellipse cx="80" cy="18" rx="6" ry="1.7" fill="#141210" stroke="#252316" strokeWidth="0.3"/>
+            {[34,48,62].map((y,i) => {
+              const t=(y-18)/60; const xl=67+(74-67)*t+0.6; const xr=93-(93-86)*t-0.6;
+              return <line key={i} x1={xl} y1={y} x2={xr} y2={y} stroke="#252316" strokeWidth="0.22" opacity="0.55"/>;
+            })}
+
+            {/* ── FACTORY BUILDING ── */}
+            <rect x="28" y="48" width="40" height="30" fill="url(#e3fc)" stroke="#1e1c10" strokeWidth="0.3"/>
+            {/* Saw-tooth industrial roof */}
+            <polygon points="28,48 34,41 40,48 46,41 52,48 58,41 64,48 68,48 28,48" fill="#181610" stroke="#22200e" strokeWidth="0.3"/>
+            <rect x="28" y="48" width="40" height="1.5" fill="#262416"/>
+            {/* Windows row 1 */}
+            {[30.5,36,41.5,47,52.5,58].map((x,i)=>(
+              <rect key={`w1${i}`} x={x} y={52} width={3.5} height={3.5} rx={0.3}
+                fill={['rgba(255,185,35,0.9)','rgba(200,150,25,0.55)','rgba(55,45,8,0.3)'][i%3]}/>
+            ))}
+            {/* Windows row 2 */}
+            {[30.5,36,41.5,47,52.5,58].map((x,i)=>(
+              <rect key={`w2${i}`} x={x} y={60} width={3.5} height={3.5} rx={0.3}
+                fill={['rgba(55,45,8,0.3)','rgba(255,185,35,0.85)','rgba(175,135,20,0.5)'][i%3]}/>
+            ))}
+            {/* Chimney stacks */}
+            <rect x="30.5" y="36" width="2.5" height="12.5" fill="#161410"/>
+            <rect x="36" y="32" width="2.5" height="16.5" fill="#161410"/>
+            <rect x="61" y="38" width="2.5" height="10.5" fill="#161410"/>
+
+            {/* ── ELECTRICAL SUBSTATION (lower left) ── */}
+            <rect x="0" y="62" width="24" height="16" fill="#0e0c08" stroke="#1a1810" strokeWidth="0.3"/>
+            {[1.5,6.5,12,17.5].map((x,i)=>(
+              <rect key={`tr${i}`} x={x} y={64} width={4} height={10} rx={0.5} fill="#181612" stroke="#242216" strokeWidth="0.3"/>
+            ))}
+            {[3.5,8.5,14,19.5].map((x,i)=>(
+              <g key={`ins${i}`}>
+                <circle cx={x} cy={63.5} r={0.9} fill="#fde047" filter="url(#e3gy)" className="electric-node-sub"/>
+                <line x1={x} y1={63.5} x2={x} y2={64.5} stroke="#2a2820" strokeWidth="0.5"/>
+              </g>
+            ))}
+
+            {/* ── PYLON 1 — far left (small) ── */}
+            <line x1="11" y1="12" x2="11" y2="16.5" stroke="#2e2c1e" strokeWidth="0.7"/>
+            <line x1="6" y1="18" x2="16" y2="18" stroke="#2e2c1e" strokeWidth="0.8"/>
+            <line x1="11" y1="16.5" x2="11" y2="49" stroke="#2e2c1e" strokeWidth="0.7"/>
+            <line x1="8.5" y1="23" x2="13.5" y2="30" stroke="#2e2c1e" strokeWidth="0.45"/>
+            <line x1="8.5" y1="30" x2="13.5" y2="23" stroke="#2e2c1e" strokeWidth="0.45"/>
+            <line x1="8.5" y1="33" x2="13.5" y2="40" stroke="#2e2c1e" strokeWidth="0.45"/>
+            <line x1="8.5" y1="40" x2="13.5" y2="33" stroke="#2e2c1e" strokeWidth="0.45"/>
+            <line x1="11" y1="43" x2="9" y2="49" stroke="#2e2c1e" strokeWidth="0.7"/>
+            <line x1="11" y1="43" x2="13" y2="49" stroke="#2e2c1e" strokeWidth="0.7"/>
+            <circle cx="6" cy="18" r="0.9" fill="#fde047" filter="url(#e3gy)" className="electric-node-1"/>
+            <circle cx="16" cy="18" r="0.9" fill="#fde047" filter="url(#e3gy)" className="electric-node-1"/>
+            <circle cx="11" cy="12.5" r="0.8" fill="#fde047" filter="url(#e3gy)" className="electric-node-1"/>
+
+            {/* ── PYLON 2 — center (medium) ── */}
+            <line x1="50" y1="5" x2="50" y2="9.5" stroke="#2e2c1e" strokeWidth="1"/>
+            <line x1="44" y1="12.5" x2="56" y2="12.5" stroke="#2e2c1e" strokeWidth="1.1"/>
+            <line x1="50" y1="9.5" x2="50" y2="52" stroke="#2e2c1e" strokeWidth="1"/>
+            <line x1="46" y1="19" x2="54" y2="27" stroke="#2e2c1e" strokeWidth="0.65"/>
+            <line x1="46" y1="27" x2="54" y2="19" stroke="#2e2c1e" strokeWidth="0.65"/>
+            <line x1="46" y1="30" x2="54" y2="38" stroke="#2e2c1e" strokeWidth="0.65"/>
+            <line x1="46" y1="38" x2="54" y2="30" stroke="#2e2c1e" strokeWidth="0.65"/>
+            <line x1="50" y1="44" x2="46" y2="52" stroke="#2e2c1e" strokeWidth="1"/>
+            <line x1="50" y1="44" x2="54" y2="52" stroke="#2e2c1e" strokeWidth="1"/>
+            <circle cx="44" cy="12.5" r="1.1" fill="#fde047" filter="url(#e3gy)" className="electric-node-2"/>
+            <circle cx="56" cy="12.5" r="1.1" fill="#fde047" filter="url(#e3gy)" className="electric-node-2"/>
+            <circle cx="50" cy="5.5" r="1" fill="#fde047" filter="url(#e3gy)" className="electric-node-2"/>
+
+            {/* ── PYLON 3 — right (large) ── */}
+            <line x1="88" y1="-0.5" x2="88" y2="5" stroke="#2e2c1e" strokeWidth="1.4"/>
+            <line x1="80" y1="8" x2="96" y2="8" stroke="#2e2c1e" strokeWidth="1.5"/>
+            <line x1="88" y1="5" x2="88" y2="52" stroke="#2e2c1e" strokeWidth="1.4"/>
+            <line x1="83.5" y1="14" x2="92.5" y2="23" stroke="#2e2c1e" strokeWidth="0.9"/>
+            <line x1="83.5" y1="23" x2="92.5" y2="14" stroke="#2e2c1e" strokeWidth="0.9"/>
+            <line x1="83.5" y1="27" x2="92.5" y2="36" stroke="#2e2c1e" strokeWidth="0.9"/>
+            <line x1="83.5" y1="36" x2="92.5" y2="27" stroke="#2e2c1e" strokeWidth="0.9"/>
+            <line x1="88" y1="43" x2="84" y2="52" stroke="#2e2c1e" strokeWidth="1.4"/>
+            <line x1="88" y1="43" x2="92" y2="52" stroke="#2e2c1e" strokeWidth="1.4"/>
+            <circle cx="80" cy="8" r="1.5" fill="#fde047" filter="url(#e3gy)" className="electric-node-3"/>
+            <circle cx="96" cy="8" r="1.5" fill="#fde047" filter="url(#e3gy)" className="electric-node-3"/>
+            <circle cx="88" cy="0.2" r="1.3" fill="#fde047" filter="url(#e3gy)" className="electric-node-3"/>
+
+            {/* ── POWER LINES ── */}
+            {/* Top wires peak-to-peak */}
+            <path d="M 11 12.5 C 28 11 40 7.5 50 5.5" fill="none" stroke="#1c1a10" strokeWidth="0.5"/>
+            <path d="M 50 5.5 C 65 4 76 2.5 88 0" fill="none" stroke="#1c1a10" strokeWidth="0.5"/>
+            {/* Left crossarm wires */}
+            <path d="M 6 18 C 22 19.5 36 15.5 44 12.5" fill="none" stroke="#1c1a10" strokeWidth="0.45"/>
+            <path d="M 16 18 C 30 19.5 40 16 44 12.5" fill="none" stroke="#1c1a10" strokeWidth="0.4"/>
+            {/* Right crossarm wires */}
+            <path d="M 56 12.5 C 66 12 74 10.5 80 8" fill="none" stroke="#1c1a10" strokeWidth="0.45"/>
+            <path d="M 56 12.5 C 68 11.5 78 10 96 8" fill="none" stroke="#1c1a10" strokeWidth="0.4"/>
+            {/* Off-screen continuations */}
+            <path d="M 6 18 C 3.5 22 1.5 28 0 36" fill="none" stroke="#1c1a10" strokeWidth="0.4"/>
+            <path d="M 96 8 C 98 13 99 20 100 28" fill="none" stroke="#1c1a10" strokeWidth="0.4"/>
+
+            {/* ── ELECTRIC ARC — animated, between pylon1 and pylon2 ── */}
+            <path d="M 11 13 L 18 11 L 23 14 L 30 9.5 L 37 12.5 L 43 9 L 50 5.5"
+              fill="none" stroke="#fde047" strokeWidth="0.65"
+              className="electric-arc-flicker"
+              style={{ filter: 'drop-shadow(0 0 1.5px #facc15)' }}
+            />
+
+            {/* ── WARNING LIGHTS — red blinking on structures ── */}
+            <circle cx="16" cy="25.5" r="1.3" fill="#ff2c14" filter="url(#e3gr)" className="warning-blink"/>
+            <circle cx="80" cy="17.5" r="1.6" fill="#ff2c14" filter="url(#e3gr)" className="warning-blink-2"/>
+            <circle cx="36.5" cy="31.5" r="1" fill="#ff2c14" filter="url(#e3gr)" className="warning-blink"/>
+
+            {/* ── GROUND ── */}
+            <rect x="0" y="78" width="100" height="22" fill="#090908"/>
+            <line x1="0" y1="78" x2="100" y2="78" stroke="#1c1a0c" strokeWidth="0.5"/>
+            <line x1="0" y1="82" x2="100" y2="82" stroke="#141208" strokeWidth="1.5"/>
+            <line x1="18" y1="87" x2="66" y2="87" stroke="#101008" strokeWidth="1.2"/>
+          </svg>
         </>
       )}
 
