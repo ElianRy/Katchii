@@ -82,7 +82,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [chosenDifficulty, setChosenDifficulty] = useState<Difficulty | null>(null);
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
-  const [autoCombat, setAutoCombat] = useState(true);
+  const [autoCombat, setAutoCombat] = useState(false);
   const [battleSpeed, setBattleSpeed] = useState(0);
   const [levelUps, setLevelUps] = useState<LevelUpNotif[]>([]);
   const [showNameInput, setShowNameInput] = useState(false);
@@ -193,6 +193,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         onAutoCombatChange={setAutoCombat}
         speedLevel={battleSpeed}
         onSpeedLevelChange={setBattleSpeed}
+        onQuit={() => { setMode('team'); setBattleResult(null); }}
       />
     );
   }

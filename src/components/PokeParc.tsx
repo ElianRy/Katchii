@@ -532,26 +532,33 @@ function DuelModal({
     const won = wonRef.current;
     const myDmgMult = won ? 1.4 : 0.7;
     const oppDmgMult = won ? 0.7 : 1.4;
-    let ended = false;
+    // Use object ref so closure always reads the current value
+    const endedRef = { current: false };
+    let intervalId: ReturnType<typeof setInterval>;
+    let safetyId: ReturnType<typeof setTimeout>;
 
     const endBattle = () => {
-      if (ended) return;
-      ended = true;
+      if (endedRef.current) return;
+      endedRef.current = true;
       clearInterval(intervalId);
-      const w = oppHpRef.current <= 0 ? 'me' : 'opponent';
+      clearTimeout(safetyId);
+      // Force the loser's HP to 0 visually
+      if (won) { oppHpRef.current = 0; setOppHp(0); }
+      else      { myHpRef.current  = 0; setMyHp(0); }
+      const w = won ? 'me' : 'opponent';
       setWinner(w);
       setPhase('result');
       resultSent.current = true;
-      onResult(w === 'me');
+      onResult(won);
     };
 
-    const intervalId = setInterval(() => {
-      if (ended) return;
-      // Safety net: if HP already 0, finalize immediately
-      if (myHpRef.current <= 0 || oppHpRef.current <= 0) {
-        endBattle();
-        return;
-      }
+    // Guarantee end after 12 s regardless of HP state
+    safetyId = setTimeout(endBattle, 12000);
+
+    intervalId = setInterval(() => {
+      if (endedRef.current) return;
+      if (myHpRef.current <= 0 || oppHpRef.current <= 0) { endBattle(); return; }
+
       turnRef.current += 1;
       const isMyTurn = turnRef.current % 2 === 1;
 
@@ -560,6 +567,7 @@ function DuelModal({
         setAttackMe(true);
         setLog(prev => [...prev.slice(-5), { text: `${myData?.name ?? 'Toi'} inflige ${dmg} dégâts !`, color: '#4ade80' }]);
         setTimeout(() => {
+          if (endedRef.current) return;
           setAttackMe(false);
           oppHpRef.current = Math.max(0, oppHpRef.current - dmg);
           setOppHp(oppHpRef.current);
@@ -572,6 +580,7 @@ function DuelModal({
         setAttackOpp(true);
         setLog(prev => [...prev.slice(-5), { text: `${oppData?.name ?? opponentName} inflige ${dmg} dégâts !`, color: '#f87171' }]);
         setTimeout(() => {
+          if (endedRef.current) return;
           setAttackOpp(false);
           myHpRef.current = Math.max(0, myHpRef.current - dmg);
           setMyHp(myHpRef.current);
@@ -581,7 +590,7 @@ function DuelModal({
         }, 220);
       }
     }, 650);
-    return () => { ended = true; clearInterval(intervalId); };
+    return () => { endedRef.current = true; clearInterval(intervalId); clearTimeout(safetyId); };
   }, []);
 
   // Stars background (precomputed)
@@ -591,7 +600,7 @@ function DuelModal({
   })), []);
 
   return (
-    <div className="fixed inset-0 z-[500] flex flex-col" style={{ background: '#020617' }}>
+    <div className="fixed inset-0 z-[500] flex flex-col" style={{ background: '#020617', height: '100dvh' }}>
       {/* Starfield background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 20%, #1e1b4b 0%, #0f0720 55%, #020617 100%)' }} />

@@ -21,6 +21,7 @@ interface Props {
   onAutoCombatChange?: (v: boolean) => void;
   speedLevel?: number;
   onSpeedLevelChange?: (v: number) => void;
+  onQuit?: () => void;
 }
 
 interface FighterState extends TeamMember { currentHp: number; }
@@ -286,7 +287,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.maxHp }))
   );
@@ -743,6 +744,14 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           </div>
           {phase === 'battle' && (
             <div className="flex gap-2 ml-2 shrink-0 items-center">
+              {onQuit && (
+                <button
+                  onClick={onQuit}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-400 border border-slate-600 hover:border-red-500 hover:text-red-400 transition-colors"
+                >
+                  ✕ Quitter
+                </button>
+              )}
               {/* Auto-combat toggle — only shown in training (when onAutoCombatChange is provided) */}
               {onAutoCombatChange && (
                 <div className="flex items-center gap-1.5">
