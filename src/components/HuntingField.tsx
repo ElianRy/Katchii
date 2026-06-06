@@ -223,7 +223,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       case 'daily_quests_completed': return `Complète ${cond.count} quêtes journalières aujourd'hui pour débloquer le combat.`;
       case 'capture_n_times': return `Capture ${POKEMON_BY_ID[cond.pokemonId]?.name ?? `#${cond.pokemonId}`} ${cond.count} fois (doublons compris) pour débloquer le combat.`;
       case 'duel_wins': return `Remporte ${cond.count} victoires en duel (PokeParc inclus) pour débloquer le combat.`;
-      case 'training_battles': return `Effectue ${cond.count} entraînements au PokéParc pour débloquer le combat.`;
+      case 'training_battles': return `Effectue ${cond.count} entraînements dans cette zone pour débloquer le combat.`;
       case 'pokemon_level_in_team': return `Entraîne un Pokémon jusqu'au niveau ${cond.level} pour débloquer le combat.`;
       case 'shiny_captures': return `Capture ${cond.count} Pokémon Shiny pour débloquer le combat.`;
     }
