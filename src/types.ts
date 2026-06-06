@@ -106,6 +106,7 @@ export interface GameState {
   pokemonCaptureCount: Record<number, number>;
   shinyCapturesTotal: number;
   pokemonWins?: Record<number, number>;
+  trainingBattlesTotal?: number;
   questsCompletedTotal?: number;
   questsBaselineAtUnlock?: Record<string, number>;
   achievementsCompleted?: string[];
@@ -117,6 +118,7 @@ export type ZoneUnlockCondition =
   | { type: 'daily_quests_completed'; count: number }
   | { type: 'capture_n_times'; pokemonId: number; count: number }
   | { type: 'duel_wins'; count: number }
+  | { type: 'training_battles'; count: number }
   | { type: 'pokemon_level_in_team'; level: number }
   | { type: 'shiny_captures'; count: number };
 

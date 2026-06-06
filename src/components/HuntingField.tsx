@@ -162,6 +162,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         return ((s.pokemonCaptureCount ?? {})[cond.pokemonId] ?? 0) >= cond.count;
       case 'duel_wins':
         return s.duels.wins >= cond.count;
+      case 'training_battles':
+        return (s.trainingBattlesTotal ?? 0) >= cond.count;
       case 'pokemon_level_in_team':
         return Object.values(s.pokemonLevels ?? {}).some(l => l.level >= cond.level);
       case 'shiny_captures':
@@ -197,6 +199,10 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         return { label: `${n}/${cond.count} ${name}`, progress: n / cond.count };
       }
       case 'duel_wins': return { label: `${s.duels.wins}/${cond.count} victoires`, progress: s.duels.wins / cond.count };
+      case 'training_battles': {
+        const n = s.trainingBattlesTotal ?? 0;
+        return { label: `${n}/${cond.count} entraînements`, progress: n / cond.count };
+      }
       case 'pokemon_level_in_team': {
         const maxLvl = Math.max(0, ...Object.values(s.pokemonLevels ?? {}).map(l => l.level));
         return { label: `Niv. max: ${maxLvl}/${cond.level}`, progress: maxLvl / cond.level };
@@ -217,6 +223,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       case 'daily_quests_completed': return `Complète ${cond.count} quêtes journalières aujourd'hui pour débloquer le combat.`;
       case 'capture_n_times': return `Capture ${POKEMON_BY_ID[cond.pokemonId]?.name ?? `#${cond.pokemonId}`} ${cond.count} fois (doublons compris) pour débloquer le combat.`;
       case 'duel_wins': return `Remporte ${cond.count} victoires en duel (PokeParc inclus) pour débloquer le combat.`;
+      case 'training_battles': return `Effectue ${cond.count} entraînements au PokéParc pour débloquer le combat.`;
       case 'pokemon_level_in_team': return `Entraîne un Pokémon jusqu'au niveau ${cond.level} pour débloquer le combat.`;
       case 'shiny_captures': return `Capture ${cond.count} Pokémon Shiny pour débloquer le combat.`;
     }

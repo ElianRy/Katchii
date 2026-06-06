@@ -484,11 +484,11 @@ function InteractionModal({
 function DuelModal({
   myPokemonId, myIsShiny, myLevel, myRarity,
   opponentPokemonId, opponentIsShiny, opponentLevel, opponentRarity, opponentName,
-  onClose, onResult,
+  onClose, onResult, onExitParc,
 }: {
   myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity: string;
   opponentPokemonId: number; opponentIsShiny: boolean; opponentLevel: number; opponentRarity: string;
-  opponentName: string; onClose: () => void; onResult: (won: boolean) => void;
+  opponentName: string; onClose: () => void; onResult: (won: boolean) => void; onExitParc?: () => void;
 }) {
   const myData = POKEMON_BY_ID[myPokemonId];
   const oppData = POKEMON_BY_ID[opponentPokemonId];
@@ -707,9 +707,16 @@ function DuelModal({
             <div className="text-xs text-slate-400 mb-2">
               {winner === 'me' ? `Tu as battu ${opponentName} !` : `${opponentName} était trop fort.`}
             </div>
-            <button onClick={onClose} className="px-8 py-2 rounded-xl bg-yellow-500 text-black font-black text-sm">
-              Fermer
-            </button>
+            <div className="flex gap-2">
+              <button onClick={onClose} className="px-6 py-2 rounded-xl bg-slate-700 text-white font-black text-sm">
+                Retour
+              </button>
+              {onExitParc && (
+                <button onClick={() => { onClose(); onExitParc(); }} className="px-6 py-2 rounded-xl bg-yellow-500 text-black font-black text-sm">
+                  Quitter
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -785,6 +792,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     localStorage.setItem(MUTE_KEY, JSON.stringify([...m.entries()]));
   };
   const [mutedUsers, setMutedUsers] = useState<Map<string, number | null>>(loadMuted);
+  const adminChanRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const [muteMenuFor, setMuteMenuFor] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const wanderRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -800,8 +808,12 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
 
   // Fetch and subscribe to presence
   useEffect(() => {
+    const HIDDEN_USERS = ['elian', 'resteappu', 'test'];
+    const filterPresence = (rows: PresenceRow[]) =>
+      rows.filter(r => !HIDDEN_USERS.includes(r.username?.toLowerCase() ?? ''));
+
     supabase.from('pokepark_presence').select('*').then(({ data }) => {
-      if (data) setPresence(data as PresenceRow[]);
+      if (data) setPresence(filterPresence(data as PresenceRow[]));
     });
 
     const chan = supabase.channel('pokepark_presence_changes')
@@ -810,6 +822,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           setPresence(prev => prev.filter(p => p.user_id !== (payload.old as PresenceRow).user_id));
         } else {
           const row = payload.new as PresenceRow;
+          if (HIDDEN_USERS.includes(row.username?.toLowerCase() ?? '')) return;
           setPresence(prev => {
             const idx = prev.findIndex(p => p.user_id === row.user_id);
             if (idx >= 0) { const next = [...prev]; next[idx] = row; return next; }
@@ -857,6 +870,26 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         setChat(prev => prev.filter(m => m.id !== deleted.id));
       }).subscribe();
 
+    return () => { supabase.removeChannel(chan); };
+  }, []);
+
+  // Broadcast channel for moderation (delete/mute) — propagates to all connected clients
+  useEffect(() => {
+    const chan = supabase.channel('katchii_moderation')
+      .on('broadcast', { event: 'delete' }, ({ payload }) => {
+        const { msgId } = payload as { msgId: string };
+        setChat(prev => prev.filter(m => m.id !== msgId));
+      })
+      .on('broadcast', { event: 'mute' }, ({ payload }) => {
+        const { userId, expiry } = payload as { userId: string; expiry: number | null };
+        setMutedUsers(prev => { const next = new Map(prev).set(userId, expiry); saveMuted(next); return next; });
+      })
+      .on('broadcast', { event: 'unmute' }, ({ payload }) => {
+        const { userId } = payload as { userId: string };
+        setMutedUsers(prev => { const next = new Map(prev); next.delete(userId); saveMuted(next); return next; });
+      })
+      .subscribe();
+    adminChanRef.current = chan;
     return () => { supabase.removeChannel(chan); };
   }, []);
 
@@ -971,6 +1004,11 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const sendChat = async () => {
     const msg = chatInput.trim();
     if (!msg) return;
+    // Block muted users from sending
+    if (myUserId && isMuted(myUserId)) {
+      setChatInput('');
+      return;
+    }
     let uid = myUserId;
     if (!uid) {
       const { data: { user } } = await supabase.auth.getUser();
@@ -1022,27 +1060,21 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const deleteMessage = async (msgId: string) => {
     setChat(prev => prev.filter(m => m.id !== msgId));
     persistDeletedId(msgId);
+    adminChanRef.current?.send({ type: 'broadcast', event: 'delete', payload: { msgId } });
     const { error } = await supabase.from('pokepark_chat').delete().eq('id', msgId);
     if (error) console.error('[chat] delete error:', error.message, error.code);
   };
 
   const muteUser = (userId: string, durationMs: number | null) => {
     const expiry = durationMs === null ? null : Date.now() + durationMs;
-    setMutedUsers(prev => {
-      const next = new Map(prev).set(userId, expiry);
-      saveMuted(next);
-      return next;
-    });
+    setMutedUsers(prev => { const next = new Map(prev).set(userId, expiry); saveMuted(next); return next; });
+    adminChanRef.current?.send({ type: 'broadcast', event: 'mute', payload: { userId, expiry } });
     setMuteMenuFor(null);
   };
 
   const unmuteUser = (userId: string) => {
-    setMutedUsers(prev => {
-      const next = new Map(prev);
-      next.delete(userId);
-      saveMuted(next);
-      return next;
-    });
+    setMutedUsers(prev => { const next = new Map(prev); next.delete(userId); saveMuted(next); return next; });
+    adminChanRef.current?.send({ type: 'broadcast', event: 'unmute', payload: { userId } });
   };
 
   const isMuted = (userId: string) => {
@@ -1410,6 +1442,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           opponentRarity={interactionTarget.rarity}
           opponentName={interactionTarget.username}
           onResult={(won) => { if (won) onTrainingWin?.(); }}
+          onExitParc={onClose}
           onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
         />,
         document.body

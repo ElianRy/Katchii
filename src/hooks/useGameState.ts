@@ -583,8 +583,11 @@ export function useGameState() {
 
   const addTrainingWin = useCallback(() => {
     update(prev => {
-      let next = { ...prev, duels: { ...prev.duels, wins: prev.duels.wins + 1 }, playerXp: (prev.playerXp ?? 0) + 800 };
-      next = advanceDuelWinQuests(next);
+      const next = {
+        ...prev,
+        trainingBattlesTotal: (prev.trainingBattlesTotal ?? 0) + 1,
+        playerXp: (prev.playerXp ?? 0) + 800,
+      };
       return next;
     });
   }, [update]);
