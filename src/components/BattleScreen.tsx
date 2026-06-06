@@ -17,7 +17,6 @@ interface Props {
   enemyTeam: TeamMember[];
   bossName?: string;
   onBattleEnd: (won: boolean, xpGains: Record<number, number>) => void;
-  onSkip?: () => void;
 }
 
 interface FighterState extends TeamMember { currentHp: number; }
@@ -283,7 +282,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, onSkip }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.maxHp }))
   );
@@ -298,7 +297,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [xpGains, setXpGains] = useState<Record<number, number>>({});
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
-  const [speedLevel, setSpeedLevel] = useState(0); // 0=x1, 1=x2, 2=x4, 3=x10, 4=x30
+  const [speedLevel, setSpeedLevel] = useState(0); // 0=x1, 1=x2, 2=x4, 3=x10
   const won = useRef(false);
   const battleDone = useRef(false);
   const paused = useRef(false); // paused while player chooses switch
@@ -322,7 +321,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
   useEffect(() => {
     if (battleDone.current) return;
-    const intervalMs = speedLevel === 4 ? 50 : speedLevel === 3 ? 160 : speedLevel === 2 ? 400 : speedLevel === 1 ? 800 : 1600;
+    const intervalMs = speedLevel === 3 ? 160 : speedLevel === 2 ? 400 : speedLevel === 1 ? 800 : 1600;
 
     const runTurn = () => {
       if (battleDone.current || paused.current) return;
@@ -738,25 +737,16 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           {phase === 'battle' && (
             <div className="flex gap-2 ml-2 shrink-0">
               <button
-                onClick={() => setSpeedLevel(v => (v + 1) % 5)}
+                onClick={() => setSpeedLevel(v => (v + 1) % 4)}
                 className="px-3 py-1.5 rounded-xl font-black text-sm"
                 style={{
-                  background: speedLevel === 4 ? 'linear-gradient(90deg, #dc2626, #7c3aed)' : speedLevel === 3 ? 'linear-gradient(90deg, #ef4444, #7c3aed)' : speedLevel === 2 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : speedLevel === 1 ? 'linear-gradient(90deg, #eab308, #f59e0b)' : '#1e293b',
+                  background: speedLevel === 3 ? 'linear-gradient(90deg, #ef4444, #7c3aed)' : speedLevel === 2 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : speedLevel === 1 ? 'linear-gradient(90deg, #eab308, #f59e0b)' : '#1e293b',
                   border: speedLevel > 0 ? `2px solid ${speedLevel >= 3 ? '#ef4444' : '#f59e0b'}` : '2px solid #475569',
                   color: speedLevel > 0 ? '#fff' : '#94a3b8',
                 }}
               >
-                {speedLevel === 4 ? '⚡ x30' : speedLevel === 3 ? '⚡ x10' : speedLevel === 2 ? '⚡ x4' : speedLevel === 1 ? '⚡ x2' : '▶ x1'}
+                {speedLevel === 3 ? '⚡ x10' : speedLevel === 2 ? '⚡ x4' : speedLevel === 1 ? '⚡ x2' : '▶ x1'}
               </button>
-              {onSkip && (
-                <button
-                  onClick={onSkip}
-                  className="px-3 py-1.5 rounded-xl font-black text-sm"
-                  style={{ background: '#1e293b', border: '2px solid #475569', color: '#94a3b8' }}
-                >
-                  ⏭ Skip
-                </button>
-              )}
             </div>
           )}
         </div>

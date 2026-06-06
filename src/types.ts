@@ -105,6 +105,8 @@ export interface GameState {
   playerXp: number;
   pokemonCaptureCount: Record<number, number>;
   shinyCapturesTotal: number;
+  pokemonWins?: Record<number, number>;
+  questsCompletedTotal?: number;
 }
 
 export type ZoneUnlockCondition =

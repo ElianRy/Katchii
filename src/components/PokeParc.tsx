@@ -49,6 +49,16 @@ interface Props {
   onTrainingWin?: () => void;
 }
 
+function getPokemonTitle(wins: number): string | null {
+  if (wins >= 500) return '👑 Maître';
+  if (wins >= 200) return '🔥 Légende';
+  if (wins >= 100) return '💎 Champion';
+  if (wins >= 50) return '⚔️ Guerrier';
+  if (wins >= 25) return '🛡️ Combattant';
+  if (wins >= 10) return '🌱 Novice';
+  return null;
+}
+
 function formatChatTime(iso: string): string {
   const d = new Date(iso);
   return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
@@ -57,6 +67,8 @@ function formatChatTime(iso: string): string {
 const RARITY_SCORE: Record<string, number> = {
   commun: 1, peu_commun: 1.5, rare: 2.5, elite: 4, legendaire: 8,
 };
+
+
 
 
 function getPokemonLevelFromState(state: GameState, pokemonId: number): number {
@@ -159,10 +171,10 @@ function ParkAttackVfx({ pokemonId, facingRight }: { pokemonId: number; facingRi
 }
 
 function ParkSprite({
-  pokemonId, isShiny, mood, username, isMine, onClick, waveTarget,
+  pokemonId, isShiny, mood, username, isMine, onClick, waveTarget, wins,
 }: {
   pokemonId: number; isShiny: boolean; mood: Mood; username: string;
-  isMine: boolean; onClick?: () => void; waveTarget?: boolean;
+  isMine: boolean; onClick?: () => void; waveTarget?: boolean; wins?: number;
 }) {
   const data = POKEMON_BY_ID[pokemonId];
   const rarityColor = data ? RARITY_COLORS[data.rarity] : '#6b7280';
@@ -248,14 +260,21 @@ function ParkSprite({
       </div>
 
       {/* Username badge */}
-      <div className="rounded px-1.5 py-0.5 text-center max-w-[80px] truncate" style={{
-        background: isMine ? 'rgba(251,191,36,0.85)' : 'rgba(0,0,0,0.75)',
-        color: isMine ? '#000' : rarityColor,
-        fontSize: '0.55rem',
-        fontWeight: 'bold',
-        whiteSpace: 'nowrap',
-      }}>
-        {isMine ? '★ ' : ''}<span style={username?.toLowerCase() === 'pokelian' && !isMine ? { color: '#ef4444' } : {}}>{username}</span>
+      <div className="flex flex-col items-center gap-0" style={{ maxWidth: 80 }}>
+        <div className="rounded px-1.5 py-0.5 text-center w-full truncate" style={{
+          background: isMine ? 'rgba(251,191,36,0.85)' : 'rgba(0,0,0,0.75)',
+          color: isMine ? '#000' : rarityColor,
+          fontSize: '0.55rem',
+          fontWeight: 'bold',
+          whiteSpace: 'nowrap',
+        }}>
+          {isMine ? '★ ' : ''}<span style={username?.toLowerCase() === 'pokelian' && !isMine ? { color: '#ef4444' } : {}}>{username}</span>
+        </div>
+        {wins !== undefined && wins >= 10 && getPokemonTitle(wins) && (
+          <div style={{ fontSize: '0.45rem', color: '#fbbf24', fontWeight: 'bold', textAlign: 'center' }}>
+            {getPokemonTitle(wins)}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -988,9 +1007,9 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   return (
     <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col" style={{ height: '100dvh' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 bg-black/60 border-b border-slate-700/60 shrink-0">
-        <div className="font-black text-yellow-400 text-sm">🌿 PokéParc</div>
-        <button onClick={onClose} className="text-slate-400 text-xl font-black px-2">✕</button>
+      <div className="flex items-center gap-3 px-3 py-2 bg-black/60 border-b border-slate-700/60 shrink-0">
+        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
+        <div className="font-black text-yellow-400 text-sm flex-1">🌿 PokéParc</div>
       </div>
 
       {/* Mood bar */}
@@ -1045,15 +1064,13 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
 
           {/* No pokemon message */}
           {!myFav && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
-              <div className="text-slate-400 text-sm text-center px-6">
-                Choisis un Pokémon favori pour rejoindre le parc !
-              </div>
+            <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(15,23,42,0.65)' }}>
               <button
                 onClick={() => setShowPicker(true)}
-                className="px-4 py-2 rounded-xl bg-yellow-500 text-black font-bold text-sm"
+                className="px-6 py-3 rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-transform"
+                style={{ background: 'linear-gradient(90deg,#fbbf24,#f59e0b)', color: '#000' }}
               >
-                Choisir mon Pokémon
+                ➕ Ajouter un Pokémon
               </button>
             </div>
           )}
@@ -1124,6 +1141,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                 username={username}
                 isMine={true}
                 onClick={() => setShowPicker(true)}
+                wins={(state.pokemonWins ?? {})[myFav.pokemonId] ?? 0}
               />
             </div>
           )}

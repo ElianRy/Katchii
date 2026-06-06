@@ -60,6 +60,8 @@ export const DEFAULT_STATE: GameState = {
   playerXp: 0,
   pokemonCaptureCount: {},
   shinyCapturesTotal: 0,
+  pokemonWins: {},
+  questsCompletedTotal: 0,
 };
 
 function parseState(raw: string): GameState {

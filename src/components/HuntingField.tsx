@@ -147,7 +147,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       case 'total_pokemon':
         return totalDiff >= cond.count;
       case 'daily_quests_completed':
-        return s.dailyQuests.quests.filter(q => q.completed).length >= cond.count;
+        return (s.questsCompletedTotal ?? 0) + s.dailyQuests.quests.filter(q => q.completed).length >= cond.count;
       case 'capture_n_times':
         return ((s.pokemonCaptureCount ?? {})[cond.pokemonId] ?? 0) >= cond.count;
       case 'duel_wins':
@@ -168,7 +168,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
     switch (cond.type) {
       case 'total_pokemon': return { label: `${totalDiff}/${cond.count} pokémon`, progress: totalDiff / cond.count };
       case 'daily_quests_completed': {
-        const done = s.dailyQuests.quests.filter(q => q.completed).length;
+        const done = (s.questsCompletedTotal ?? 0) + s.dailyQuests.quests.filter(q => q.completed).length;
         return { label: `${done}/${cond.count} quêtes`, progress: done / cond.count };
       }
       case 'capture_n_times': {

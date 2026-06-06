@@ -13,7 +13,7 @@ import { getWeekId, todayDate, getTeamDamage } from '../components/RaidPanel';
 import { naturalLevel, xpToNextLevel } from '../data/combatEngine';
 
 
-const COOLDOWN_MS = 60_000;
+const COOLDOWN_MS = 30_000;
 const LURE_DURATION_MS = 10 * 60_000;
 
 /** Returns list of newly earned badge IDs given the new state */
@@ -68,6 +68,7 @@ function checkBadges(state: GameState): string[] {
 
 export function useGameState() {
   const [state, setState] = useState<GameState>(() => loadState());
+  const isReadyToSaveRef = useRef(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   // Badge toast queue
   const [badgeToasts, setBadgeToasts] = useState<string[]>([]);
@@ -95,6 +96,8 @@ export function useGameState() {
           console.warn('[useGameState] cloud load failed, using user-local state');
           const local = loadUserState(userId) ?? { ...DEFAULT_STATE };
           const stamped = username ? { ...local, username } : local;
+          latestStateRef.current = stamped;
+          isReadyToSaveRef.current = true;
           setState(() => { saveUserState(userId, stamped); return stamped; });
           loadingForRef.current = null;
           // Retry cloud save in 5s
@@ -110,11 +113,15 @@ export function useGameState() {
           if (local) {
             // Had local data — use it and push it to cloud now
             const stamped = username ? { ...local, username } : local;
+            latestStateRef.current = stamped;
+            isReadyToSaveRef.current = true;
             setState(() => { saveUserState(userId, stamped); return stamped; });
             saveCloudState(userId, stamped);
           } else {
             // Truly new user — start fresh
             const fresh = { ...DEFAULT_STATE, ...(username ? { username } : {}) };
+            latestStateRef.current = fresh;
+            isReadyToSaveRef.current = true;
             saveUserState(userId, fresh);
             setState(() => fresh);
             saveCloudState(userId, fresh);
@@ -124,6 +131,8 @@ export function useGameState() {
         }
         // Cloud has the authoritative state — always use it.
         const stamped = username ? { ...cloudState, username } : cloudState;
+        latestStateRef.current = stamped;
+        isReadyToSaveRef.current = true;
         setState(() => { saveUserState(userId, stamped); return stamped; });
         loadingForRef.current = null;
       });
@@ -138,6 +147,7 @@ export function useGameState() {
         loadForUser(session.user.id, session.user);
       } else {
         // Delay the reset by 3s — if a new session arrives (token refresh), cancel reset
+        isReadyToSaveRef.current = false;
         userIdRef.current = null;
         loadingForRef.current = null;
         signOutTimer = setTimeout(() => {
@@ -153,17 +163,15 @@ export function useGameState() {
     setState(prev => {
       const next = updater(prev);
       latestStateRef.current = next;
-      // Save locally — user-scoped if userId known, generic otherwise
-      if (userIdRef.current) {
+      if (userIdRef.current && isReadyToSaveRef.current) {
         saveUserState(userIdRef.current, next);
+        if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = setTimeout(() => {
+          if (userIdRef.current && isReadyToSaveRef.current) saveCloudState(userIdRef.current, latestStateRef.current);
+        }, 8000);
       } else {
         saveState(next);
       }
-      // Debounced cloud save — max 1 write per 8s instead of on every action
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-      saveTimerRef.current = setTimeout(() => {
-        if (userIdRef.current) saveCloudState(userIdRef.current, latestStateRef.current);
-      }, 8000);
       return next;
     });
   }, []);
@@ -171,7 +179,7 @@ export function useGameState() {
   // Periodic backup save every 20s to catch any missed saves
   useEffect(() => {
     const id = setInterval(() => {
-      if (userIdRef.current) {
+      if (userIdRef.current && isReadyToSaveRef.current) {
         saveCloudState(userIdRef.current, latestStateRef.current);
       }
     }, 20000);
@@ -331,6 +339,7 @@ export function useGameState() {
         ...prev,
         points: prev.points + quest.reward.points,
         dailyQuests: { ...prev.dailyQuests, quests },
+        questsCompletedTotal: (prev.questsCompletedTotal ?? 0) + 1,
       };
 
       if (quest.reward.fragments) {
@@ -538,6 +547,14 @@ export function useGameState() {
     });
   }, [update]);
 
+  const addPokemonWins = useCallback((pokemonIds: number[]) => {
+    update(prev => {
+      const wins = { ...(prev.pokemonWins ?? {}) };
+      pokemonIds.forEach(id => { wins[id] = (wins[id] ?? 0) + 1; });
+      return { ...prev, pokemonWins: wins };
+    });
+  }, [update]);
+
   const addPlayTime = useCallback((ms: number) => {
     update(prev => ({
       ...prev,
@@ -590,10 +607,25 @@ export function useGameState() {
   }, [update]);
 
   const setCurrentZone = useCallback((zoneId: string) => {
-    update(prev => ({
-      ...prev,
-      zoneProgress: { ...prev.zoneProgress, currentZoneId: zoneId },
-    }));
+    update(prev => {
+      if (prev.zoneProgress.currentZoneId === zoneId) return prev;
+      const date = todayDate();
+      const defs = pickDailyQuests(date, zoneId);
+      const newDailyQuests = {
+        date,
+        zoneId,
+        quests: defs.map((d: QuestDefinition) => ({
+          id: d.id, label: d.label, type: d.type, rarity: d.rarity,
+          target: d.target, progress: 0, completed: false,
+          reward: d.reward, rewardClaimed: false,
+        })),
+      };
+      return {
+        ...prev,
+        zoneProgress: { ...prev.zoneProgress, currentZoneId: zoneId },
+        dailyQuests: newDailyQuests,
+      };
+    });
   }, [update]);
 
   const getPokemonLevel = useCallback((pokemonId: number): { level: number; xp: number } => {
@@ -677,6 +709,7 @@ export function useGameState() {
     claimRaidReward,
     spendPoints,
     addTrainingWin,
+    addPokemonWins,
     addPlayTime,
     defeatZoneBoss,
     resetBossDefeated,

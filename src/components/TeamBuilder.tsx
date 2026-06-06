@@ -25,39 +25,32 @@ interface Difficulty {
   description: string;
 }
 
-const DIFFICULTIES: Difficulty[] = [
-  { id: 'facile',    label: 'Facile',    emoji: '🟢', enemyLevel: 10,  color: '#22c55e', xpMultiplier: 1,   description: 'Niv. ~10' },
-  { id: 'normal',    label: 'Normal',    emoji: '🔵', enemyLevel: 25,  color: '#3b82f6', xpMultiplier: 2,   description: 'Niv. ~25' },
-  { id: 'difficile', label: 'Difficile', emoji: '🟡', enemyLevel: 45,  color: '#f59e0b', xpMultiplier: 3.5, description: 'Niv. ~45' },
-  { id: 'champion',  label: 'Champion',  emoji: '🟠', enemyLevel: 65,  color: '#f97316', xpMultiplier: 5,   description: 'Niv. ~65' },
-  { id: 'maitre',    label: 'Maître',    emoji: '🔴', enemyLevel: 85,  color: '#ef4444', xpMultiplier: 8,   description: 'Niv. ~85' },
-];
 
-// Rarity pool by difficulty — harder = rarer pokemon
-const DIFFICULTY_RARITY_POOL: Record<string, string[]> = {
-  facile:    ['commun', 'commun', 'peu_commun'],
-  normal:    ['commun', 'peu_commun', 'peu_commun'],
-  difficile: ['peu_commun', 'peu_commun', 'rare'],
-  champion:  ['peu_commun', 'rare', 'rare'],
-  maitre:    ['rare', 'elite', 'legendaire'],
+
+const ZONE_LEVEL_RANGE: Record<string, [number, number]> = {
+  zone1: [5, 20], zone2: [15, 35], zone3: [25, 50],
+  zone4: [35, 65], zone5: [50, 75], zone6: [60, 85],
+  zone7: [70, 95], zone8: [80, 100], ligue: [85, 100], zone_libre: [85, 100],
 };
 
-function buildEnemyTeam(difficulty: Difficulty): TeamMember[] {
-  const rarities = DIFFICULTY_RARITY_POOL[difficulty.id] ?? ['commun', 'commun', 'peu_commun'];
+function buildEnemyTeam(zoneId: string): TeamMember[] {
+  const [minLv, maxLv] = ZONE_LEVEL_RANGE[zoneId] ?? [10, 30];
+  const rarities: string[] = maxLv <= 25 ? ['commun', 'commun', 'peu_commun']
+    : maxLv <= 40 ? ['commun', 'peu_commun', 'peu_commun']
+    : maxLv <= 55 ? ['peu_commun', 'peu_commun', 'rare']
+    : maxLv <= 70 ? ['peu_commun', 'rare', 'rare']
+    : ['rare', 'elite', 'elite'];
   const picked: number[] = [];
   for (const rarity of rarities) {
     const pool = GEN1_POKEMON.filter(p => p.rarity === rarity && !picked.includes(p.id));
-    if (pool.length === 0) continue;
-    picked.push(pool[Math.floor(Math.random() * pool.length)].id);
+    if (pool.length > 0) picked.push(pool[Math.floor(Math.random() * pool.length)].id);
   }
-  // fallback if not enough
   while (picked.length < 3) {
     const p = GEN1_POKEMON[Math.floor(Math.random() * GEN1_POKEMON.length)];
     if (!picked.includes(p.id)) picked.push(p.id);
   }
-  const spread = 8;
   return picked.map(id => {
-    const level = Math.max(1, difficulty.enemyLevel - spread + Math.floor(Math.random() * spread * 2));
+    const level = minLv + Math.floor(Math.random() * (maxLv - minLv + 1));
     const maxHp = calcMaxHp(id, level);
     return { pokemonId: id, level, xp: 0, currentHp: maxHp, maxHp };
   });
@@ -70,9 +63,11 @@ interface LevelUpNotif {
 
 interface Props {
   state: GameState;
+  currentZoneId?: string;
   getPokemonLevel?: (id: number) => { level: number; xp: number };
   onConfirm?: (team: TeamMember[]) => void;
   onAddXp?: (pokemonId: number, xp: number) => void;
+  onBattleWin?: (pokemonIds: number[]) => void;
   onClose: () => void;
   title?: string;
   savedTeams?: Array<{ id: string; name: string; members: TeamMember[] }>;
@@ -80,14 +75,14 @@ interface Props {
   onDeleteTeam?: (id: string) => void;
 }
 
-export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon équipe', savedTeams, onSaveTeam, onDeleteTeam }: Props) {
+export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattleWin, onClose, title = 'Mon équipe', savedTeams, onSaveTeam, onDeleteTeam }: Props) {
   const [selected, setSelected] = useState<number[]>([]);
   const [sort, setSort] = useState<'level' | 'rarity'>('level');
   const [mode, setMode] = useState<'team' | 'battle' | 'result' | 'savedTeams'>('team');
   const [chosenDifficulty, setChosenDifficulty] = useState<Difficulty | null>(null);
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
-  const [autoCombat, setAutoCombat] = useState(false);
+  const [autoCombat, setAutoCombat] = useState(true);
   const [levelUps, setLevelUps] = useState<LevelUpNotif[]>([]);
   const [showNameInput, setShowNameInput] = useState(false);
   const [teamName, setTeamName] = useState('');
@@ -127,30 +122,17 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
     onConfirm?.(team);
   };
 
-  const startBattle = (diff: Difficulty) => {
+  const startBattle = () => {
     if (selected.length === 0) return;
-    setChosenDifficulty(diff);
-    setEnemyTeam(buildEnemyTeam(diff));
+    const zoneId = currentZoneId ?? 'zone1';
+    const ZONE_XP_MULT: Record<string, number> = {
+      zone1: 1, zone2: 1.5, zone3: 2, zone4: 2.5, zone5: 3, zone6: 3.5, zone7: 4, zone8: 5, ligue: 6, zone_libre: 5
+    };
+    const mult = ZONE_XP_MULT[zoneId] ?? 1;
+    const pseudoDiff: Difficulty = { id: zoneId, label: zoneId, emoji: '⚔️', enemyLevel: 0, color: '#f59e0b', xpMultiplier: mult, description: '' };
+    setChosenDifficulty(pseudoDiff);
+    setEnemyTeam(buildEnemyTeam(zoneId));
     setMode('battle');
-  };
-
-  const skipBattle = () => {
-    if (!chosenDifficulty) return;
-    // Simulate outcome: compare total atk*level of both sides
-    const playerPower = selected.reduce((sum, id) => {
-      const lv = state.pokemonLevels?.[id]?.level ?? 1;
-      return sum + calcAttack(id, lv) + calcMaxHp(id, lv) / 10;
-    }, 0);
-    const enemyPower = enemyTeam.reduce((sum, m) => {
-      return sum + calcAttack(m.pokemonId, m.level) + calcMaxHp(m.pokemonId, m.level) / 10;
-    }, 0);
-    const winChance = Math.min(0.9, Math.max(0.1, playerPower / (playerPower + enemyPower)));
-    const won = Math.random() < winChance;
-    const xpGains: Record<number, number> = {};
-    selected.forEach(id => {
-      xpGains[id] = won ? Math.floor(50 + chosenDifficulty.enemyLevel * 2) : Math.floor(20 + chosenDifficulty.enemyLevel);
-    });
-    handleBattleEnd(won, xpGains);
   };
 
   const handleBattleEnd = (won: boolean, xpGains: Record<number, number>) => {
@@ -172,6 +154,7 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
       if (onAddXp) onAddXp(id, Math.floor(xp * (chosenDifficulty?.xpMultiplier ?? 1)));
     });
     setLevelUps(ups);
+    if (won) onBattleWin?.(selected);
     setMode('result');
   };
 
@@ -195,7 +178,6 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
         enemyTeam={enemyTeam}
         bossName={`Dresseur ${chosenDifficulty.label}`}
         onBattleEnd={handleBattleEnd}
-        onSkip={skipBattle}
       />
     );
   }
@@ -393,10 +375,7 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
               <button
                 onClick={() => {
                   setBattleResult(null);
-                  const weights = [20, 30, 25, 15, 10];
-                  let r = Math.random() * weights.reduce((a, b) => a + b, 0);
-                  const diff = DIFFICULTIES.find((_d, i) => { r -= weights[i]; return r <= 0; }) ?? DIFFICULTIES[1];
-                  startBattle(diff);
+                  startBattle();
                 }}
                 className="w-full py-3 rounded-2xl font-black text-white animate-pulse"
                 style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }}
@@ -639,11 +618,7 @@ export function TeamBuilder({ state, onConfirm, onAddXp, onClose, title = 'Mon �
             onClick={() => {
               if (selected.length === 0) return;
               if (onConfirm) { handleSave(); return; }
-              // Pick a random difficulty weighted toward the middle
-              const weights = [20, 30, 25, 15, 10];
-              let r = Math.random() * weights.reduce((a, b) => a + b, 0);
-              const diff = DIFFICULTIES.find((_d, i) => { r -= weights[i]; return r <= 0; }) ?? DIFFICULTIES[1];
-              startBattle(diff);
+              startBattle();
             }}
             disabled={selected.length === 0}
             className="flex-1 py-3 rounded-2xl font-black text-sm text-black disabled:opacity-40 disabled:cursor-not-allowed"
