@@ -316,9 +316,9 @@ export function Collection({ state, onClose }: Props) {
                 <span className="text-slate-400 text-sm font-bold">Victoires</span>
                 <span className="text-yellow-400 font-black text-lg">{wins}</span>
               </div>
-              <div className="flex gap-3 text-xs text-slate-500">
-                <span>×{normalCount} normal</span>
-                {shinyCount > 0 && <span className="text-yellow-400">✨×{shinyCount} shiny</span>}
+              <div className="flex flex-col items-center gap-0.5 text-xs text-slate-500">
+                <span>Capturé {normalCount} fois</span>
+                {shinyCount > 0 && <span className="text-yellow-400">✨ Shiny capturé {shinyCount} fois</span>}
               </div>
             </div>
           </div>

@@ -743,16 +743,18 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           </div>
           {phase === 'battle' && (
             <div className="flex gap-2 ml-2 shrink-0 items-center">
-              {/* Auto-combat toggle */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-slate-400">Auto</span>
-                <button
-                  onClick={() => onAutoCombatChange?.(!autoCombat)}
-                  className={`w-9 h-5 rounded-full transition-colors relative ${autoCombat ? 'bg-indigo-500' : 'bg-slate-600'}`}
-                >
-                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${autoCombat ? 'left-4' : 'left-0.5'}`} />
-                </button>
-              </div>
+              {/* Auto-combat toggle — only shown in training (when onAutoCombatChange is provided) */}
+              {onAutoCombatChange && (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-slate-400">Auto</span>
+                  <button
+                    onClick={() => onAutoCombatChange(!autoCombat)}
+                    className={`w-9 h-5 rounded-full transition-colors relative ${autoCombat ? 'bg-indigo-500' : 'bg-slate-600'}`}
+                  >
+                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${autoCombat ? 'left-4' : 'left-0.5'}`} />
+                  </button>
+                </div>
+              )}
               <button
                 onClick={() => setSpeedLevel((speedLevel + 1) % 4)}
                 className="px-3 py-1.5 rounded-xl font-black text-sm"
