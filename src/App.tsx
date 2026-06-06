@@ -157,7 +157,7 @@ export function App() {
           currentZoneId={gameState.state.zoneProgress?.currentZoneId ?? 'zone1'}
           getPokemonLevel={gameState.getPokemonLevel}
           onAddXp={gameState.addPokemonXp}
-          onBattleWin={(pokemonIds) => { gameState.addPokemonWins(pokemonIds); gameState.addTrainingWin(); }}
+          onBattleWin={(pokemonIds) => { gameState.addPokemonWins(pokemonIds); gameState.addTrainingWin(gameState.state.zoneProgress?.currentZoneId); }}
           onClose={() => persistView('hunt')}
           savedTeams={gameState.state.savedTeams}
           onSaveTeam={gameState.saveTeam}

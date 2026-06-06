@@ -163,7 +163,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       case 'duel_wins':
         return s.duels.wins >= cond.count;
       case 'training_battles':
-        return (s.trainingBattlesTotal ?? 0) >= cond.count;
+        return ((s.trainingBattlesByZone ?? {})[currentZoneId] ?? 0) >= cond.count;
       case 'pokemon_level_in_team':
         return Object.values(s.pokemonLevels ?? {}).some(l => l.level >= cond.level);
       case 'shiny_captures':
@@ -200,7 +200,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       }
       case 'duel_wins': return { label: `${s.duels.wins}/${cond.count} victoires`, progress: s.duels.wins / cond.count };
       case 'training_battles': {
-        const n = s.trainingBattlesTotal ?? 0;
+        const n = (s.trainingBattlesByZone ?? {})[currentZoneId] ?? 0;
         return { label: `${n}/${cond.count} entraînements`, progress: n / cond.count };
       }
       case 'pokemon_level_in_team': {

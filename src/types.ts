@@ -107,6 +107,7 @@ export interface GameState {
   shinyCapturesTotal: number;
   pokemonWins?: Record<number, number>;
   trainingBattlesTotal?: number;
+  trainingBattlesByZone?: Record<string, number>;
   questsCompletedTotal?: number;
   questsBaselineAtUnlock?: Record<string, number>;
   achievementsCompleted?: string[];

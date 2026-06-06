@@ -581,14 +581,16 @@ export function useGameState() {
     return success;
   }, [update]);
 
-  const addTrainingWin = useCallback(() => {
+  const addTrainingWin = useCallback((zoneId?: string) => {
     update(prev => {
-      const next = {
+      const zone = zoneId ?? prev.zoneProgress?.currentZoneId ?? 'zone1';
+      const byZone = { ...(prev.trainingBattlesByZone ?? {}), [zone]: ((prev.trainingBattlesByZone ?? {})[zone] ?? 0) + 1 };
+      return {
         ...prev,
         trainingBattlesTotal: (prev.trainingBattlesTotal ?? 0) + 1,
+        trainingBattlesByZone: byZone,
         playerXp: (prev.playerXp ?? 0) + 800,
       };
-      return next;
     });
   }, [update]);
 
