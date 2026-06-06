@@ -16,6 +16,18 @@ function getPokemonTitle(wins: number): string | null {
   return null;
 }
 
+const TITLE_THRESHOLDS = [10, 25, 50, 100, 200, 500];
+const TITLE_LABELS = ['🌱 Novice', '🛡️ Combattant', '⚔️ Guerrier', '💎 Champion', '🔥 Légende', '👑 Maître'];
+
+function getNextTitle(wins: number): { label: string; remaining: number } | null {
+  for (let i = 0; i < TITLE_THRESHOLDS.length; i++) {
+    if (wins < TITLE_THRESHOLDS[i]) {
+      return { label: TITLE_LABELS[i], remaining: TITLE_THRESHOLDS[i] - wins };
+    }
+  }
+  return null;
+}
+
 interface Props {
   state: GameState;
   onClose: () => void;
@@ -312,10 +324,25 @@ export function Collection({ state, onClose }: Props) {
                   <div className="text-right text-xs text-slate-500">{lvData.xp} / {xpToNextLevel(lvData.level)} XP</div>
                 )}
               </div>
-              <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex justify-between items-center">
-                <span className="text-slate-400 text-sm font-bold">Victoires</span>
-                <span className="text-yellow-400 font-black text-lg">{wins}</span>
-              </div>
+              {(() => {
+                const next = getNextTitle(wins);
+                return (
+                  <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex flex-col gap-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-400 text-sm font-bold">Victoires</span>
+                      <span className="text-yellow-400 font-black text-lg">{wins}</span>
+                    </div>
+                    {next ? (
+                      <div className="text-xs text-slate-400">
+                        Prochain titre : <span className="text-white font-bold">{next.label}</span>
+                        <span className="text-slate-500"> — encore {next.remaining} victoire{next.remaining > 1 ? 's' : ''}</span>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-yellow-400 font-bold">Titre maximum atteint !</div>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="flex flex-col items-center gap-0.5 text-xs text-slate-500">
                 <span>Capturé {normalCount} fois</span>
                 {shinyCount > 0 && <span className="text-yellow-400">✨ Shiny capturé {shinyCount} fois</span>}
