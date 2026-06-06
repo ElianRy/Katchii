@@ -65,13 +65,20 @@ function pickFrom<T>(pool: T[], rng: () => number): T {
   return item;
 }
 
-export function pickDailyQuests(date: string, zoneId: string): QuestDefinition[] {
+export function pickDailyQuests(date: string, zoneId: string, availableRarities?: Set<Rarity>): QuestDefinition[] {
   const rng = seededRandom(`${date}__${zoneId}`);
-  const pool = [...QUEST_POOL];
+
+  // Filter pool to only include quests achievable in this zone
+  const pool = QUEST_POOL.filter(q => {
+    if (!q.rarity || !availableRarities) return true;
+    return availableRarities.has(q.rarity);
+  }).map(q => ({ ...q }));
+
   const picked: QuestDefinition[] = [];
 
-  // Zone 2: guarantee at least 1 très difficile quest
-  if (zoneId === 'zone2') {
+  // Advanced zones: guarantee at least 1 très difficile quest if possible
+  const advancedZones = ['zone2','zone3','zone4','zone5','zone6','zone7','zone8','ligue','zone_libre'];
+  if (advancedZones.includes(zoneId)) {
     const hardPool = pool.filter(q => q.difficulty === 'tres_difficile');
     if (hardPool.length > 0) {
       const hard = hardPool[Math.floor(rng() * hardPool.length)];
@@ -80,7 +87,7 @@ export function pickDailyQuests(date: string, zoneId: string): QuestDefinition[]
     }
   }
 
-  // Fill remaining slots from the rest of the pool
+  // Fill remaining slots
   while (picked.length < 3 && pool.length > 0) {
     picked.push(pickFrom(pool, rng));
   }

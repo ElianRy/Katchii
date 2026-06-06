@@ -9,6 +9,12 @@ import { supabase } from '../lib/supabase';
 import { getUsername } from '../lib/auth';
 import { ZONE_BY_ID } from '../data/zones';
 import { POKEMON_BY_ID } from '../data/gen1';
+
+function zoneRarities(zoneId: string): Set<Rarity> {
+  const zone = ZONE_BY_ID[zoneId];
+  if (!zone) return new Set(['commun', 'peu_commun', 'rare', 'elite', 'legendaire'] as Rarity[]);
+  return new Set(zone.pokemonIds.map(id => POKEMON_BY_ID[id]?.rarity).filter(Boolean) as Rarity[]);
+}
 import { getWeekId, todayDate, getTeamDamage } from '../components/RaidPanel';
 import { naturalLevel, xpToNextLevel } from '../data/combatEngine';
 
@@ -575,7 +581,7 @@ export function useGameState() {
       const newZoneId = nextZoneId ?? prev.zoneProgress.currentZoneId;
       // Refresh quests for the new zone
       const date = todayDate();
-      const defs = pickDailyQuests(date, newZoneId);
+      const defs = pickDailyQuests(date, newZoneId, zoneRarities(newZoneId));
       const newDailyQuests = {
         date,
         zoneId: newZoneId,
@@ -585,9 +591,15 @@ export function useGameState() {
           reward: d.reward, rewardClaimed: false,
         })),
       };
+      // Record baseline quest count at the moment next zone is unlocked
+      const newBaseline = { ...(prev.questsBaselineAtUnlock ?? {}) };
+      if (nextZoneId) {
+        newBaseline[nextZoneId] = prev.questsCompletedTotal ?? 0;
+      }
       return {
         ...prev,
         dailyQuests: newDailyQuests,
+        questsBaselineAtUnlock: newBaseline,
         zoneProgress: {
           ...prev.zoneProgress,
           bossDefeated: newBossDefeated,
@@ -610,7 +622,7 @@ export function useGameState() {
     update(prev => {
       if (prev.zoneProgress.currentZoneId === zoneId) return prev;
       const date = todayDate();
-      const defs = pickDailyQuests(date, zoneId);
+      const defs = pickDailyQuests(date, zoneId, zoneRarities(zoneId));
       const newDailyQuests = {
         date,
         zoneId,

@@ -1,12 +1,20 @@
-import { GameState } from '../types';
+import { GameState, Rarity } from '../types';
 import { pickDailyQuests, todayDate } from '../data/quests';
+import { ZONE_BY_ID } from '../data/zones';
+import { POKEMON_BY_ID } from '../data/gen1';
+
+function zoneRarities(zoneId: string): Set<Rarity> {
+  const zone = ZONE_BY_ID[zoneId];
+  if (!zone) return new Set(['commun', 'peu_commun', 'rare', 'elite', 'legendaire'] as Rarity[]);
+  return new Set(zone.pokemonIds.map(id => POKEMON_BY_ID[id]?.rarity).filter(Boolean) as Rarity[]);
+}
 
 const STORAGE_KEY = 'katchii_state';
 const userKey = (userId: string) => `katchii_state_u_${userId}`;
 
 function buildDailyQuests(zoneId = 'zone1') {
   const date = todayDate();
-  const defs = pickDailyQuests(date, zoneId);
+  const defs = pickDailyQuests(date, zoneId, zoneRarities(zoneId));
   return {
     date,
     zoneId,
@@ -62,6 +70,7 @@ export const DEFAULT_STATE: GameState = {
   shinyCapturesTotal: 0,
   pokemonWins: {},
   questsCompletedTotal: 0,
+  questsBaselineAtUnlock: {},
 };
 
 function parseState(raw: string): GameState {
