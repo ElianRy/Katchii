@@ -483,12 +483,11 @@ function InteractionModal({
 function DuelModal({
   myPokemonId, myIsShiny, myLevel, myRarity,
   opponentPokemonId, opponentIsShiny, opponentLevel, opponentRarity, opponentName,
-  onClose, onResult, onAddPokemonXp,
+  onClose, onResult,
 }: {
   myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity: string;
   opponentPokemonId: number; opponentIsShiny: boolean; opponentLevel: number; opponentRarity: string;
   opponentName: string; onClose: () => void; onResult: (won: boolean) => void;
-  onAddPokemonXp?: (pokemonId: number, xp: number) => void;
 }) {
   const myData = POKEMON_BY_ID[myPokemonId];
   const oppData = POKEMON_BY_ID[opponentPokemonId];
@@ -530,30 +529,30 @@ function DuelModal({
 
   useEffect(() => {
     const won = wonRef.current;
-    // Winner deals more damage per hit on average
     const myDmgMult = won ? 1.4 : 0.7;
     const oppDmgMult = won ? 0.7 : 1.4;
+    let ended = false;
 
-    const interval = setInterval(() => {
-      if (myHpRef.current <= 0 || oppHpRef.current <= 0) return;
+    const endBattle = () => {
+      if (ended) return;
+      ended = true;
+      clearInterval(intervalId);
+      const w = oppHpRef.current <= 0 ? 'me' : 'opponent';
+      setWinner(w);
+      setPhase('result');
+      resultSent.current = true;
+      onResult(w === 'me');
+    };
+
+    const intervalId = setInterval(() => {
+      if (ended) return;
+      // Safety net: if HP already 0, finalize immediately
+      if (myHpRef.current <= 0 || oppHpRef.current <= 0) {
+        endBattle();
+        return;
+      }
       turnRef.current += 1;
       const isMyTurn = turnRef.current % 2 === 1;
-
-      const checkEnd = () => {
-        if ((myHpRef.current <= 0 || oppHpRef.current <= 0) && !resultSent.current) {
-          clearInterval(interval);
-          const w = oppHpRef.current <= 0 ? 'me' : 'opponent';
-          setWinner(w);
-          setPhase('result');
-          resultSent.current = true;
-          const didWin = w === 'me';
-          onResult(didWin);
-          if (didWin) {
-            const xp = Math.floor((opponentLevel * 4) * (1 + myLevel * 0.02));
-            onAddPokemonXp?.(myPokemonId, xp);
-          }
-        }
-      };
 
       if (isMyTurn) {
         const dmg = Math.max(4, Math.round((8 + Math.random() * 8) * myDmgMult));
@@ -565,7 +564,7 @@ function DuelModal({
           setOppHp(oppHpRef.current);
           setHitFlash('opp'); setShakeOpp(true); setHitKeyOpp(k => k + 1);
           setTimeout(() => { setHitFlash(null); setShakeOpp(false); }, 300);
-          checkEnd();
+          if (oppHpRef.current <= 0) endBattle();
         }, 220);
       } else {
         const dmg = Math.max(4, Math.round((8 + Math.random() * 8) * oppDmgMult));
@@ -577,11 +576,11 @@ function DuelModal({
           setMyHp(myHpRef.current);
           setHitFlash('me'); setShakeMe(true); setHitKeyMe(k => k + 1);
           setTimeout(() => { setHitFlash(null); setShakeMe(false); }, 300);
-          checkEnd();
+          if (myHpRef.current <= 0) endBattle();
         }, 220);
       }
     }, 650);
-    return () => clearInterval(interval);
+    return () => { ended = true; clearInterval(intervalId); };
   }, []);
 
   // Stars background (precomputed)
