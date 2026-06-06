@@ -102,7 +102,15 @@ export function PlayersPanel({ onClose }: Props) {
           showcase,
           badgeCount,
         } as PlayerRow;
-      }).filter((r): r is PlayerRow => r !== null && !!r.username && r.username !== '?');
+      }).filter((r): r is PlayerRow => {
+        if (!r || !r.username || r.username === '?') return false;
+        const u = r.username.toLowerCase();
+        // Hide admin account and test/deleted accounts from the leaderboard
+        if (u === 'elian') return false;
+        if (u === 'resteappu') return false;
+        if (u === 'test') return false;
+        return true;
+      });
       setPlayers(rows);
       setLoading(false);
     });

@@ -7,6 +7,19 @@ input, textarea, select {
   font-size: 16px !important;
 }
 
+@keyframes electric-flicker {
+  0%, 100% { opacity: 1; }
+  25% { opacity: 0; }
+  50% { opacity: 0.8; }
+  75% { opacity: 0.2; }
+}
+
+@keyframes boss-ready-pop {
+  0%   { transform: scale(0.6); opacity: 0; }
+  70%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }

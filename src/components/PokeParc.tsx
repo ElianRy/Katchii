@@ -514,7 +514,6 @@ function DuelModal({
   const [hitKeyMe, setHitKeyMe] = useState(0);
   const [hitKeyOpp, setHitKeyOpp] = useState(0);
   const resultSent = useRef(false);
-  const turnRef = useRef(0);
 
   const myRarityColor = myData ? RARITY_COLORS[myData.rarity] : '#6b7280';
   const oppRarityColor = oppData ? RARITY_COLORS[oppData.rarity] : '#6b7280';
@@ -530,67 +529,69 @@ function DuelModal({
 
   useEffect(() => {
     const won = wonRef.current;
-    const myDmgMult = won ? 1.4 : 0.7;
-    const oppDmgMult = won ? 0.7 : 1.4;
-    // Use object ref so closure always reads the current value
-    const endedRef = { current: false };
-    let intervalId: ReturnType<typeof setInterval>;
-    let safetyId: ReturnType<typeof setTimeout>;
+    // Animate HP bars depleting toward the final state over ~3s
+    // Loser drops to 0, winner keeps some HP
+    const targetOppHp = won ? 0 : Math.round(oppMaxHp * (0.3 + Math.random() * 0.3));
+    const targetMyHp  = won ? Math.round(myMaxHp * (0.3 + Math.random() * 0.3)) : 0;
+    const DURATION = 3500;
+    const TICK = 120;
+    const steps = Math.floor(DURATION / TICK);
+    let step = 0;
+    let ended = false;
 
     const endBattle = () => {
-      if (endedRef.current) return;
-      endedRef.current = true;
-      clearInterval(intervalId);
-      clearTimeout(safetyId);
-      // Force the loser's HP to 0 visually
-      if (won) { oppHpRef.current = 0; setOppHp(0); }
-      else      { myHpRef.current  = 0; setMyHp(0); }
-      const w = won ? 'me' : 'opponent';
-      setWinner(w);
+      if (ended) return;
+      ended = true;
+      clearInterval(tickId);
+      setOppHp(targetOppHp);
+      setMyHp(targetMyHp);
+      oppHpRef.current = targetOppHp;
+      myHpRef.current = targetMyHp;
+      setWinner(won ? 'me' : 'opponent');
       setPhase('result');
       resultSent.current = true;
       onResult(won);
     };
 
-    // Guarantee end after 12 s regardless of HP state
-    safetyId = setTimeout(endBattle, 12000);
+    const tickId = setInterval(() => {
+      step++;
+      const t = Math.min(step / steps, 1);
+      // Ease-out: slower at the end
+      const ease = 1 - Math.pow(1 - t, 2);
 
-    intervalId = setInterval(() => {
-      if (endedRef.current) return;
-      if (myHpRef.current <= 0 || oppHpRef.current <= 0) { endBattle(); return; }
+      // Opponent HP
+      const newOppHp = Math.round(oppMaxHp + (targetOppHp - oppMaxHp) * ease);
+      oppHpRef.current = newOppHp;
+      setOppHp(newOppHp);
 
-      turnRef.current += 1;
-      const isMyTurn = turnRef.current % 2 === 1;
+      // My HP
+      const newMyHp = Math.round(myMaxHp + (targetMyHp - myMaxHp) * ease);
+      myHpRef.current = newMyHp;
+      setMyHp(newMyHp);
 
-      if (isMyTurn) {
-        const dmg = Math.max(4, Math.round((8 + Math.random() * 8) * myDmgMult));
+      // Alternate attack VFX
+      if (step % 3 === 1) {
         setAttackMe(true);
-        setLog(prev => [...prev.slice(-5), { text: `${myData?.name ?? 'Toi'} inflige ${dmg} dégâts !`, color: '#4ade80' }]);
-        setTimeout(() => {
-          if (endedRef.current) return;
-          setAttackMe(false);
-          oppHpRef.current = Math.max(0, oppHpRef.current - dmg);
-          setOppHp(oppHpRef.current);
-          setHitFlash('opp'); setShakeOpp(true); setHitKeyOpp(k => k + 1);
-          setTimeout(() => { setHitFlash(null); setShakeOpp(false); }, 300);
-          if (oppHpRef.current <= 0) endBattle();
-        }, 220);
-      } else {
-        const dmg = Math.max(4, Math.round((8 + Math.random() * 8) * oppDmgMult));
+        setHitFlash('opp'); setShakeOpp(true); setHitKeyOpp(k => k + 1);
+        setLog(prev => [...prev.slice(-5), {
+          text: `${myData?.name ?? 'Toi'} attaque !`,
+          color: '#4ade80',
+        }]);
+        setTimeout(() => { setAttackMe(false); setHitFlash(null); setShakeOpp(false); }, 220);
+      } else if (step % 3 === 2) {
         setAttackOpp(true);
-        setLog(prev => [...prev.slice(-5), { text: `${oppData?.name ?? opponentName} inflige ${dmg} dégâts !`, color: '#f87171' }]);
-        setTimeout(() => {
-          if (endedRef.current) return;
-          setAttackOpp(false);
-          myHpRef.current = Math.max(0, myHpRef.current - dmg);
-          setMyHp(myHpRef.current);
-          setHitFlash('me'); setShakeMe(true); setHitKeyMe(k => k + 1);
-          setTimeout(() => { setHitFlash(null); setShakeMe(false); }, 300);
-          if (myHpRef.current <= 0) endBattle();
-        }, 220);
+        setHitFlash('me'); setShakeMe(true); setHitKeyMe(k => k + 1);
+        setLog(prev => [...prev.slice(-5), {
+          text: `${oppData?.name ?? opponentName} contre-attaque !`,
+          color: '#f87171',
+        }]);
+        setTimeout(() => { setAttackOpp(false); setHitFlash(null); setShakeMe(false); }, 220);
       }
-    }, 650);
-    return () => { endedRef.current = true; clearInterval(intervalId); clearTimeout(safetyId); };
+
+      if (step >= steps) endBattle();
+    }, TICK);
+
+    return () => { ended = true; clearInterval(tickId); };
   }, []);
 
   // Stars background (precomputed)

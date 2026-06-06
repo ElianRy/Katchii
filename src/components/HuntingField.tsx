@@ -17,7 +17,6 @@ const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
   zone6: { ground: 'linear-gradient(to top, #2e1065 0%, #4a1d96 40%, transparent 100%)', bush: 'linear-gradient(to top, #6d28d9, #a855f7)' },
   zone7: { ground: 'linear-gradient(to top, #7c2d12 0%, #9a3412 40%, transparent 100%)', bush: 'linear-gradient(to top, #b45309, #f97316)' },
   zone8: { ground: 'linear-gradient(to top, #1c1917 0%, #292524 40%, transparent 100%)', bush: 'linear-gradient(to top, #57534e, #a8a29e)' },
-  ligue: { ground: 'linear-gradient(to top, #0f0a1e 0%, #1e1040 40%, transparent 100%)', bush: 'linear-gradient(to top, #312e81, #6366f1)' },
   zone_libre: { ground: 'linear-gradient(to top, #1e1b4b 0%, #312e81 40%, transparent 100%)', bush: 'linear-gradient(to top, #4f46e5, #818cf8)' },
 };
 import { NewCaptureModal } from './NewCaptureModal';
@@ -66,6 +65,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const [showBossFight, setShowBossFight] = useState(false);
   const [fightZone, setFightZone] = useState<Zone | null>(null);
   const [discoveryZoneName, setDiscoveryZoneName] = useState<string | null>(null);
+  const [bossReadyAnim, setBossReadyAnim] = useState(false);
+  const prevBossUnlockedRef = useRef(false);
   const [zoneTransition, setZoneTransition] = useState<'left' | 'right' | null>(null);
   const processingRef = useRef<Set<string>>(new Set());
   const capturingRef = useRef(false);
@@ -169,6 +170,15 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   }
 
   const bossUnlocked = !bossDefeated && !!currentZone?.boss && checkUnlockCondition(currentZone.unlockCondition);
+
+  // Show animation when boss condition first becomes fulfilled
+  useEffect(() => {
+    if (bossUnlocked && !prevBossUnlockedRef.current) {
+      setBossReadyAnim(true);
+      setTimeout(() => setBossReadyAnim(false), 4000);
+    }
+    prevBossUnlockedRef.current = bossUnlocked;
+  }, [bossUnlocked]);
 
   function getConditionDisplay(cond: ZoneUnlockCondition | null | undefined): { label: string; progress: number } {
     if (!cond) return { label: '', progress: 0 };
@@ -298,6 +308,22 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           {n.text}
         </div>
       ))}
+
+      {/* Boss ready animation */}
+      {bossReadyAnim && currentZone?.boss && (
+        <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center"
+          style={{ animation: 'fadeIn 0.3s ease' }}>
+          <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(239,68,68,0.18) 0%, transparent 70%)' }} />
+          <div className="bg-black/85 border-2 border-red-500 rounded-3xl px-8 py-5 text-center shadow-2xl"
+            style={{ animation: 'boss-ready-pop 0.5s cubic-bezier(.175,.885,.32,1.275) forwards', maxWidth: 300 }}>
+            <div style={{ fontSize: '2.5rem' }}>⚔️</div>
+            <div className="text-red-400 font-black text-xl mt-1">DÉFI DÉBLOQUÉ !</div>
+            <div className="text-white font-bold mt-1">{currentZone.boss.name}</div>
+            <div className="text-slate-400 text-sm mt-0.5">{currentZone.boss.title}</div>
+            <div className="text-yellow-400 text-xs mt-2 font-bold">Tu peux maintenant l'affronter !</div>
+          </div>
+        </div>
+      )}
 
       {/* Zone info panel */}
       {showZoneInfo && <ZoneInfoPanel state={gameState.state} onClose={() => setShowZoneInfo(false)} />}

@@ -225,34 +225,9 @@ export const ZONES: Zone[] = [
         { pokemonId: 76, isShiny: false },
       ],
       badge: 'Badge Terre',
-      reward: 'Débloque la Ligue Pokémon',
-    },
-    unlockRequirement: 'zone7',
-    includesLegendaries: false,
-  },
-  {
-    id: 'ligue',
-    name: 'Ligue Pokémon',
-    description: 'Le défi ultime. Affronte les meilleurs dresseurs de Kanto.',
-    background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2a 50%, #0a0a1a 100%)',
-    pokemonIds: [],
-    maxLevel: 100,
-    completionThreshold: 1.0,
-    unlockCondition: null,
-    boss: {
-      name: 'La Ligue',
-      title: 'Champions de la Ligue',
-      team: [
-        { pokemonId: 149, isShiny: false },
-        { pokemonId: 131, isShiny: false },
-        { pokemonId: 130, isShiny: false },
-        { pokemonId: 143, isShiny: false },
-        { pokemonId: 94, isShiny: false },
-      ],
-      badge: 'Badge Championnat',
       reward: 'Débloque la Zone Libre — Tous les Pokémon !',
     },
-    unlockRequirement: 'zone8',
+    unlockRequirement: 'zone7',
     includesLegendaries: false,
   },
   {
@@ -265,7 +240,7 @@ export const ZONES: Zone[] = [
     completionThreshold: 1.0,
     unlockCondition: null,
     boss: null,
-    unlockRequirement: 'ligue',
+    unlockRequirement: 'zone8',
     includesLegendaries: true,
   },
 ];
@@ -274,4 +249,4 @@ export const ZONE_BY_ID: Record<string, Zone> = Object.fromEntries(
   ZONES.map((z) => [z.id, z])
 );
 
-export const ZONE_ORDER = ['zone1','zone2','zone3','zone4','zone5','zone6','zone7','zone8','ligue','zone_libre'];
+export const ZONE_ORDER = ['zone1','zone2','zone3','zone4','zone5','zone6','zone7','zone8','zone_libre'];

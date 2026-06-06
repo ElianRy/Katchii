@@ -69,9 +69,26 @@ const STARS = Array.from({ length: 120 }, (_, i) => ({
   duration: 1.5 + (i % 8) * 0.6,
 }));
 
+// Electric arcs for zone3
+const ELECTRIC_ARCS = Array.from({ length: 6 }, (_, i) => ({
+  x1: 10 + (i * 79.3) % 80,
+  x2: 10 + (i * 79.3 + 30 + (i % 3) * 20) % 80,
+  height: 30 + (i % 4) * 25,
+  delay: (i * 0.55) % 2.5,
+  duration: 0.12 + (i % 3) * 0.06,
+}));
+
+// Ground flowers for zone4
+const GROUND_FLOWERS = Array.from({ length: 22 }, (_, i) => ({
+  x: (i * 31.7 + 3) % 96,
+  size: 8 + (i % 4) * 5,
+  color: ['#f9a8d4', '#fbcfe8', '#fde68a', '#bbf7d0', '#c4b5fd', '#fca5a5', '#a5f3fc'][i % 7],
+  delay: (i * 0.3) % 3,
+}));
+
 const ZONE_CONFIGS: Record<string, {
   sky: string;
-  particles: 'leaves' | 'fireflies' | 'bubbles' | 'sparks' | 'wisps' | 'lava' | 'stars' | 'none';
+  particles: 'leaves' | 'leaves_flowers' | 'fireflies' | 'bubbles' | 'sparks' | 'electric' | 'wisps' | 'indoor' | 'lava' | 'stars' | 'none';
   fog?: string;
   ambientLight?: string;
 }> = {
@@ -88,14 +105,14 @@ const ZONE_CONFIGS: Record<string, {
     ambientLight: 'radial-gradient(ellipse 70% 30% at 30% 30%, rgba(40,120,200,0.1) 0%, transparent 100%)',
   },
   zone3: {
-    sky: 'linear-gradient(180deg, #181408 0%, #2a2200 30%, #1e1a00 60%, #111000 100%)',
-    particles: 'sparks',
-    fog: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(40,30,0,0.4) 0%, transparent 100%)',
-    ambientLight: 'radial-gradient(ellipse 50% 40% at 80% 40%, rgba(200,180,0,0.07) 0%, transparent 100%)',
+    sky: 'linear-gradient(180deg, #08080f 0%, #0d0d1a 35%, #12100a 65%, #0a0a05 100%)',
+    particles: 'electric',
+    fog: 'radial-gradient(ellipse 100% 40% at 50% 100%, rgba(250,204,21,0.06) 0%, transparent 100%)',
+    ambientLight: 'radial-gradient(ellipse 60% 30% at 50% 60%, rgba(250,204,21,0.04) 0%, transparent 100%)',
   },
   zone4: {
     sky: 'linear-gradient(180deg, #6ec8e0 0%, #9adbc0 40%, #b8e8a0 70%, #7ac855 100%)',
-    particles: 'leaves',
+    particles: 'leaves_flowers',
     fog: 'radial-gradient(ellipse 90% 50% at 50% 60%, rgba(30,70,30,0.4) 0%, transparent 100%)',
     ambientLight: 'radial-gradient(ellipse 50% 30% at 40% 20%, rgba(200,255,100,0.06) 0%, transparent 100%)',
   },
@@ -106,10 +123,10 @@ const ZONE_CONFIGS: Record<string, {
     ambientLight: 'radial-gradient(ellipse 60% 40% at 60% 30%, rgba(120,50,200,0.08) 0%, transparent 100%)',
   },
   zone6: {
-    sky: 'linear-gradient(180deg, #180820 0%, #250e35 30%, #1e0a28 60%, #120818 100%)',
-    particles: 'wisps',
-    fog: 'radial-gradient(ellipse 70% 50% at 50% 60%, rgba(60,20,80,0.4) 0%, transparent 100%)',
-    ambientLight: 'radial-gradient(ellipse 50% 35% at 70% 25%, rgba(180,100,255,0.07) 0%, transparent 100%)',
+    sky: 'linear-gradient(180deg, #1a1a2e 0%, #16213e 40%, #0f3460 80%, #0a0a1a 100%)',
+    particles: 'indoor',
+    fog: 'radial-gradient(ellipse 80% 30% at 50% 100%, rgba(30,60,120,0.25) 0%, transparent 100%)',
+    ambientLight: 'radial-gradient(ellipse 60% 40% at 50% 30%, rgba(100,150,255,0.05) 0%, transparent 100%)',
   },
   zone7: {
     sky: 'linear-gradient(180deg, #1a0500 0%, #300a00 30%, #451200 55%, #2a0800 100%)',
@@ -227,7 +244,37 @@ export function ZoneBackground({ zoneId }: Props) {
         />
       ))}
 
-      {/* LEAVES — floral forest zone4 */}
+      {/* LEAVES + FLOWERS — zone4 */}
+      {cfg.particles === 'leaves_flowers' && (
+        <>
+          {/* Ground flowers row */}
+          {GROUND_FLOWERS.map((f, i) => (
+            <div key={`flower-${i}`} className="absolute pointer-events-none" style={{
+              left: `${f.x}%`,
+              bottom: `${18 + (i % 3) * 2}%`,
+              fontSize: f.size,
+              animation: `sway ${2 + (i % 4) * 0.5}s ease-in-out infinite`,
+              animationDelay: `${f.delay}s`,
+              userSelect: 'none',
+              lineHeight: 1,
+            }}>
+              {['🌸','🌼','🌺','💐','🌷','🌻','🌹'][i % 7]}
+            </div>
+          ))}
+          {/* Falling leaves */}
+          {LEAVES.map((leaf, i) => (
+            <div key={`leaf-${i}`} className="absolute pointer-events-none rounded-full" style={{
+              left: `${leaf.x}%`, top: '-12px',
+              width: leaf.size, height: leaf.size * 0.6,
+              background: leaf.color, opacity: 0.7,
+              '--leaf-x': `${leaf.leafX}px`, '--leaf-rot': `${leaf.leafRot}deg`,
+              animation: `leaf-fall ${leaf.duration}s linear infinite`,
+              animationDelay: `${leaf.delay}s`,
+            } as React.CSSProperties} />
+          ))}
+        </>
+      )}
+      {/* LEAVES — leaves only */}
       {cfg.particles === 'leaves' && LEAVES.map((leaf, i) => (
         <div
           key={i}
@@ -264,23 +311,146 @@ export function ZoneBackground({ zoneId }: Props) {
         />
       ))}
 
-      {/* SPARKS — electric zone3 */}
+      {/* SPARKS — (kept for fallback) */}
       {cfg.particles === 'sparks' && SPARKS.map((s, i) => (
         <div key={i} className="absolute pointer-events-none" style={{ left: `${s.x}%`, top: `${s.y}%` }}>
-          <div
-            className="absolute"
-            style={{
-              width: 2,
-              height: 20 + (i % 3) * 15,
-              background: `linear-gradient(to bottom, #fde047, #facc15, transparent)`,
-              transformOrigin: 'top center',
-              boxShadow: '0 0 6px 2px rgba(250, 204, 21, 0.5)',
-              animation: `spark ${1.5 + (i % 3) * 0.8}s ease-in-out infinite`,
-              animationDelay: `${s.delay}s`,
-            }}
-          />
+          <div className="absolute" style={{
+            width: 2, height: 20 + (i % 3) * 15,
+            background: `linear-gradient(to bottom, #fde047, #facc15, transparent)`,
+            transformOrigin: 'top center',
+            boxShadow: '0 0 6px 2px rgba(250,204,21,0.5)',
+            animation: `spark ${1.5 + (i % 3) * 0.8}s ease-in-out infinite`,
+            animationDelay: `${s.delay}s`,
+          }} />
         </div>
       ))}
+
+      {/* ELECTRIC ARCS — zone3 power plant */}
+      {cfg.particles === 'electric' && (
+        <>
+          {/* Dark industrial background elements */}
+          {/* Ceiling struts */}
+          {[15, 35, 55, 75].map((x, i) => (
+            <div key={i} className="absolute pointer-events-none" style={{
+              left: `${x}%`, top: 0, width: 6, height: '45%',
+              background: 'linear-gradient(to bottom, #2a2a3a, #1a1a28)',
+              boxShadow: '0 0 8px rgba(100,100,200,0.15)',
+            }} />
+          ))}
+          {/* Horizontal beam */}
+          <div className="absolute pointer-events-none w-full" style={{
+            top: '30%', height: 10,
+            background: 'linear-gradient(to right, transparent, #1e1e2e 15%, #252535 50%, #1e1e2e 85%, transparent)',
+          }} />
+          {/* Machines / boxes at bottom */}
+          {[5, 20, 50, 68, 82].map((x, i) => (
+            <div key={i} className="absolute pointer-events-none" style={{
+              left: `${x}%`, bottom: '18%',
+              width: 10 + (i % 3) * 6, height: 14 + (i % 4) * 8,
+              background: 'linear-gradient(135deg, #1e2030 0%, #2a2d42 100%)',
+              border: '1px solid #3a3d52',
+              borderRadius: 2,
+              boxShadow: `0 0 ${6 + i * 2}px rgba(100,150,255,0.1)`,
+            }} />
+          ))}
+          {/* Electric arc SVG paths */}
+          {ELECTRIC_ARCS.map((arc, i) => (
+            <svg key={i} className="absolute pointer-events-none" style={{
+              left: `${Math.min(arc.x1, arc.x2)}%`,
+              top: `${15 + (i % 3) * 10}%`,
+              width: `${Math.abs(arc.x2 - arc.x1)}%`,
+              height: arc.height,
+              overflow: 'visible',
+              animation: `electric-flicker ${arc.duration}s step-end infinite`,
+              animationDelay: `${arc.delay}s`,
+              opacity: 0.9,
+            }}>
+              <polyline
+                points={`0,${arc.height} ${arc.height * 0.3},${arc.height * 0.4} ${arc.height * 0.5},${arc.height * 0.8} ${arc.height * 0.7},${arc.height * 0.2} 100%,0`}
+                fill="none" stroke="#fde047" strokeWidth="2"
+                style={{ filter: 'drop-shadow(0 0 4px #facc15) drop-shadow(0 0 8px #eab308)' }}
+              />
+              <polyline
+                points={`0,${arc.height} ${arc.height * 0.25},${arc.height * 0.6} ${arc.height * 0.55},${arc.height * 0.3} ${arc.height * 0.75},${arc.height * 0.7} 100%,0`}
+                fill="none" stroke="white" strokeWidth="1" opacity="0.6"
+              />
+            </svg>
+          ))}
+          {/* Glow nodes at arc endpoints */}
+          {ELECTRIC_ARCS.map((arc, i) => (
+            <div key={`node-${i}`} className="absolute pointer-events-none rounded-full" style={{
+              left: `calc(${arc.x1}% - 5px)`,
+              top: `calc(${15 + (i % 3) * 10}% + ${arc.height - 10}px)`,
+              width: 10, height: 10,
+              background: 'radial-gradient(circle, #fde047, #facc15)',
+              boxShadow: '0 0 12px 4px rgba(250,204,21,0.7)',
+              animation: `electric-flicker ${arc.duration * 1.3}s step-end infinite`,
+              animationDelay: `${arc.delay + 0.05}s`,
+            }} />
+          ))}
+        </>
+      )}
+
+      {/* INDOOR — zone6 Sylphe SARL office building */}
+      {cfg.particles === 'indoor' && (
+        <>
+          {/* Ceiling */}
+          <div className="absolute pointer-events-none w-full" style={{
+            top: 0, height: '8%',
+            background: 'linear-gradient(to bottom, #1a1a2e, #16213e)',
+            borderBottom: '2px solid #2a2a4e',
+          }} />
+          {/* Back wall with windows */}
+          <div className="absolute pointer-events-none w-full" style={{
+            top: '8%', bottom: '25%',
+            background: 'linear-gradient(180deg, #16213e 0%, #1a2040 60%, #141830 100%)',
+          }} />
+          {/* Windows row 1 */}
+          {[8, 26, 44, 62, 80].map((x, i) => (
+            <div key={`win1-${i}`} className="absolute pointer-events-none" style={{
+              left: `${x}%`, top: '12%', width: '12%', height: '18%',
+              background: i % 3 === 0
+                ? 'linear-gradient(135deg, rgba(100,150,255,0.35), rgba(150,200,255,0.2))'
+                : 'linear-gradient(135deg, rgba(60,80,180,0.2), rgba(80,100,200,0.1))',
+              border: '1.5px solid #3a4060',
+              borderRadius: 2,
+              boxShadow: i % 3 === 0 ? '0 0 20px rgba(100,150,255,0.25) inset' : 'none',
+            }} />
+          ))}
+          {/* Windows row 2 */}
+          {[17, 35, 53, 71].map((x, i) => (
+            <div key={`win2-${i}`} className="absolute pointer-events-none" style={{
+              left: `${x}%`, top: '34%', width: '12%', height: '18%',
+              background: 'linear-gradient(135deg, rgba(60,80,180,0.15), rgba(80,100,200,0.08))',
+              border: '1.5px solid #2e3450',
+              borderRadius: 2,
+            }} />
+          ))}
+          {/* Floor line */}
+          <div className="absolute pointer-events-none w-full" style={{
+            bottom: '24%', height: 3,
+            background: 'linear-gradient(to right, transparent, #2a2a4e 20%, #3a3a5e 50%, #2a2a4e 80%, transparent)',
+          }} />
+          {/* Floor reflection */}
+          <div className="absolute pointer-events-none w-full" style={{
+            bottom: '18%', height: '8%',
+            background: 'linear-gradient(to top, transparent, rgba(30,40,90,0.3))',
+          }} />
+          {/* Floating psychic orbs / data screens */}
+          {[20, 50, 78].map((x, i) => (
+            <div key={`orb-${i}`} className="absolute pointer-events-none rounded-full" style={{
+              left: `${x}%`, top: `${38 + i * 8}%`,
+              width: 14 + i * 6, height: 14 + i * 6,
+              background: 'radial-gradient(circle, rgba(168,85,247,0.5), rgba(99,102,241,0.2), transparent)',
+              boxShadow: '0 0 20px rgba(168,85,247,0.3)',
+              animation: `ghost-drift ${4 + i * 1.5}s ease-in-out infinite`,
+              animationDelay: `${i * 1.2}s`,
+              '--gx': `${[-20,15,-10][i]}px`,
+              '--gx2': `${[10,-8,14][i]}px`,
+            } as React.CSSProperties} />
+          ))}
+        </>
+      )}
 
       {/* WISPS — ghost/psychic zone5 & zone6 */}
       {cfg.particles === 'wisps' && WISPS.map((w, i) => (
