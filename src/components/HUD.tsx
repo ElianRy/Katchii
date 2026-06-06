@@ -166,7 +166,7 @@ export function HUD({
         const cx = 32, cy = 34, r = 26;
         const circumference = 2 * Math.PI * r; // ~163
         const lineLen = r * 2; // 52
-        const elapsed = Math.min(1, Math.max(0, (60 - cooldownRemaining) / 60));
+        const elapsed = Math.min(1, Math.max(0, (30 - cooldownRemaining) / 30));
         // Phase 1 (0→50%): outer circle arc from top clockwise
         const p1 = Math.min(1, elapsed / 0.50);
         // Phase 2 (45%→72%): horizontal divider line

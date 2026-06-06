@@ -155,7 +155,17 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     });
     setLevelUps(ups);
     if (won) onBattleWin?.(selected);
-    setMode('result');
+    if (autoCombat) {
+      setBattleResult({ won, xpGains });
+      setMode('result');
+      setTimeout(() => {
+        setBattleResult(null);
+        startBattle();
+      }, 2000);
+    } else {
+      setBattleResult({ won, xpGains });
+      setMode('result');
+    }
   };
 
   // Dismiss level-up notifs after a few seconds
@@ -178,6 +188,8 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         enemyTeam={enemyTeam}
         bossName={`Dresseur ${chosenDifficulty.label}`}
         onBattleEnd={handleBattleEnd}
+        autoCombat={autoCombat}
+        onAutoCombatChange={setAutoCombat}
       />
     );
   }
@@ -361,36 +373,13 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
                 );
               })}
             </div>
-            {/* Auto-combat toggle */}
-            <div className="flex items-center justify-between bg-slate-800 rounded-xl px-3 py-2">
-              <span className="text-xs text-slate-400">Combat auto</span>
-              <button
-                onClick={() => setAutoCombat(v => !v)}
-                className={`w-10 h-5 rounded-full transition-colors relative ${autoCombat ? 'bg-indigo-500' : 'bg-slate-600'}`}
-              >
-                <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${autoCombat ? 'left-5' : 'left-0.5'}`} />
-              </button>
-            </div>
-            {autoCombat ? (
-              <button
-                onClick={() => {
-                  setBattleResult(null);
-                  startBattle();
-                }}
-                className="w-full py-3 rounded-2xl font-black text-white animate-pulse"
-                style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)' }}
-              >
-                ⚡ Prochain combat…
-              </button>
-            ) : (
-              <button
-                onClick={() => { setMode('team'); setBattleResult(null); }}
-                className="w-full py-3 rounded-2xl font-black text-black"
-                style={{ background: 'linear-gradient(90deg, #22c55e, #16a34a)' }}
-              >
-                Continuer
-              </button>
-            )}
+            <button
+              onClick={() => { setMode('team'); setBattleResult(null); }}
+              className="w-full py-3 rounded-2xl font-black text-black"
+              style={{ background: 'linear-gradient(90deg, #22c55e, #16a34a)' }}
+            >
+              Continuer
+            </button>
           </div>
         </div>
       )}

@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { GameState, RARITY_COLORS, RARITY_LABELS, Rarity } from '../types';
-import { GEN1_POKEMON } from '../data/gen1';
+import { GEN1_POKEMON, POKEMON_BY_ID } from '../data/gen1';
 import { BADGES } from '../data/badges';
 import { ZONES } from '../data/zones';
+import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
+import { xpToNextLevel } from '../data/combatEngine';
 
 interface Props {
   state: GameState;
@@ -27,6 +29,7 @@ export function Collection({ state, onClose }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('collection');
   const [filter, setFilter] = useState<FilterTab>('tous');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const totalCaught = GEN1_POKEMON.filter(p => (state.normalCollection[p.id] ?? 0) > 0).length;
   const totalShinyCaught = GEN1_POKEMON.filter(p => (state.shinyCollection[p.id] ?? 0) > 0).length;
@@ -135,7 +138,7 @@ export function Collection({ state, onClose }: Props) {
                 const rarityColor = RARITY_COLORS[pokemon.rarity];
 
                 return (
-                  <div key={pokemon.id} className="flex flex-col items-center gap-1 relative">
+                  <div key={pokemon.id} className="flex flex-col items-center gap-1 relative cursor-pointer" onClick={() => caught && setSelectedId(pokemon.id)}>
                     <div className={`relative${shinyCaught ? ' shiny-rainbow' : ''}`} style={{ display: 'inline-block' }}>
                       <img
                         src={
@@ -241,6 +244,73 @@ export function Collection({ state, onClose }: Props) {
           </div>
         </div>
       )}
+
+      {/* Pokemon detail modal */}
+      {selectedId !== null && (() => {
+        const p = POKEMON_BY_ID[selectedId];
+        if (!p) return null;
+        const caught = (state.normalCollection[selectedId] ?? 0) > 0;
+        if (!caught) return null;
+        const isShiny = (state.shinyCollection[selectedId] ?? 0) > 0;
+        const lvData = state.pokemonLevels?.[selectedId] ?? { level: 1, xp: 0 };
+        const xpPct = lvData.level >= 100 ? 100 : Math.min(100, Math.floor(lvData.xp / xpToNextLevel(lvData.level) * 100));
+        const wins = (state.pokemonWins ?? {})[selectedId] ?? 0;
+        const types = POKEMON_TYPE[selectedId] ?? ['normal'];
+        const rarityColor = RARITY_COLORS[p.rarity];
+        const normalCount = state.normalCollection[selectedId] ?? 0;
+        const shinyCount = state.shinyCollection[selectedId] ?? 0;
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setSelectedId(null)}>
+            <div
+              className="relative bg-slate-900 rounded-3xl p-6 w-72 flex flex-col items-center gap-4 border-2"
+              style={{ borderColor: rarityColor }}
+              onClick={e => e.stopPropagation()}
+            >
+              <button className="absolute top-3 right-4 text-slate-400 text-xl" onClick={() => setSelectedId(null)}>✕</button>
+              <div className={isShiny ? 'shiny-rainbow' : ''} style={{ display: 'inline-block' }}>
+                <img
+                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${isShiny ? 'shiny/' : ''}${selectedId}.png`}
+                  alt={p.name}
+                  width={80} height={80}
+                  style={{ imageRendering: 'pixelated', filter: `drop-shadow(0 0 8px ${rarityColor})` }}
+                />
+              </div>
+              <div className="text-center">
+                <div className="font-black text-xl text-white">{p.name}</div>
+                <div className="text-xs mt-0.5" style={{ color: rarityColor }}>{RARITY_LABELS[p.rarity]}</div>
+              </div>
+              <div className="flex gap-1.5">
+                {types.map(t => (
+                  <span key={t} className="text-white font-bold rounded px-2 py-0.5 text-xs"
+                    style={{ background: TYPE_COLORS[t as PokemonType] ?? '#888' }}>
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </span>
+                ))}
+              </div>
+              <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex flex-col gap-1">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400 font-bold">Niveau</span>
+                  <span className="text-white font-black">{lvData.level >= 100 ? 'MAX' : lvData.level}</span>
+                </div>
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div className="h-2 rounded-full transition-all" style={{ width: `${xpPct}%`, background: `linear-gradient(90deg, ${rarityColor}, #fbbf24)` }} />
+                </div>
+                {lvData.level < 100 && (
+                  <div className="text-right text-xs text-slate-500">{lvData.xp} / {xpToNextLevel(lvData.level)} XP</div>
+                )}
+              </div>
+              <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex justify-between items-center">
+                <span className="text-slate-400 text-sm font-bold">Victoires</span>
+                <span className="text-yellow-400 font-black text-lg">{wins}</span>
+              </div>
+              <div className="flex gap-3 text-xs text-slate-500">
+                <span>×{normalCount} normal</span>
+                {shinyCount > 0 && <span className="text-yellow-400">✨×{shinyCount} shiny</span>}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {mainTab === 'succes' && (
         <div className="flex-1 overflow-y-auto px-4 py-4">

@@ -721,6 +721,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [showRace, setShowRace] = useState(false);
   const [showDuel, setShowDuel] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [justPlaced, setJustPlaced] = useState(false);
   // mutedUsers: userId -> expiryMs (null = permanent) — persisted in localStorage
   const MUTE_KEY = 'katchii_muted_users';
   const loadMuted = (): Map<string, number | null> => {
@@ -1123,6 +1124,11 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
             );
           })}
 
+          {/* Gray overlay while picker is open */}
+          {showPicker && (
+            <div className="absolute inset-0 z-10 pointer-events-none" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'grayscale(0.8)' }} />
+          )}
+
           {/* My pokemon */}
           {myFav && (
             <div
@@ -1132,6 +1138,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                 top: `${myPos.y}%`,
                 transform: 'translate(-50%, -50%)',
                 transition: 'left 2s ease-in-out, top 2s ease-in-out',
+                zIndex: justPlaced ? 20 : undefined,
+                animation: justPlaced ? 'park-place-bounce 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' : undefined,
               }}
             >
               <ParkSprite
@@ -1248,6 +1256,9 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           state={state}
           onPick={(pokemonId, isShiny) => {
             onSetFavoritePokemon({ pokemonId, isShiny });
+            setShowPicker(false);
+            setJustPlaced(true);
+            setTimeout(() => setJustPlaced(false), 1500);
           }}
           onClose={() => setShowPicker(false)}
         />

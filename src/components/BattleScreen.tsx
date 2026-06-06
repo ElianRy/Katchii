@@ -17,6 +17,8 @@ interface Props {
   enemyTeam: TeamMember[];
   bossName?: string;
   onBattleEnd: (won: boolean, xpGains: Record<number, number>) => void;
+  autoCombat?: boolean;
+  onAutoCombatChange?: (v: boolean) => void;
 }
 
 interface FighterState extends TeamMember { currentHp: number; }
@@ -282,7 +284,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.maxHp }))
   );
@@ -354,7 +356,9 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
           if (newEHp <= 0) {
             addLog(`${eName} est K.O. !`, '#f87171');
-            const xpEarned = xpGainedFromBattle(eFighter.level, true);
+            const xpBase = xpGainedFromBattle(eFighter.level, true);
+            const levelBonus = 1 + pFighter.level * 0.015;
+            const xpEarned = Math.floor(xpBase * levelBonus);
             setXpGains(prev => ({ ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned }));
             const nextE = newEf.findIndex((f, i) => i > enemyIdx && f.currentHp > 0);
             if (nextE < 0 && newEf.every(f => f.currentHp <= 0)) {
@@ -735,7 +739,17 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             ))}
           </div>
           {phase === 'battle' && (
-            <div className="flex gap-2 ml-2 shrink-0">
+            <div className="flex gap-2 ml-2 shrink-0 items-center">
+              {/* Auto-combat toggle */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-slate-400">Auto</span>
+                <button
+                  onClick={() => onAutoCombatChange?.(!autoCombat)}
+                  className={`w-9 h-5 rounded-full transition-colors relative ${autoCombat ? 'bg-indigo-500' : 'bg-slate-600'}`}
+                >
+                  <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${autoCombat ? 'left-4' : 'left-0.5'}`} />
+                </button>
+              </div>
               <button
                 onClick={() => setSpeedLevel(v => (v + 1) % 4)}
                 className="px-3 py-1.5 rounded-xl font-black text-sm"
