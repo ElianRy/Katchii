@@ -119,7 +119,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [43,44,45,46,47,48,69,70, 2,12,15,114, 103,123,133, 3],
     maxLevel: 55,
     completionThreshold: 0.70,
-    unlockCondition: { type: 'training_battles', count: 30 },
+    unlockCondition: { type: 'capture_n_times', pokemonId: 3, count: 3 },
     boss: {
       name: 'Maître Erika',
       title: 'Gym Leader Plante',
@@ -143,7 +143,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [41,88,96,97,109,110, 24,89,92,93, 105,124,132, 94],
     maxLevel: 65,
     completionThreshold: 0.70,
-    unlockCondition: { type: 'duel_wins', count: 30 },
+    unlockCondition: { type: 'training_battles', count: 30 },
     boss: {
       name: 'Maître Koga',
       title: 'Gym Leader Poison',
