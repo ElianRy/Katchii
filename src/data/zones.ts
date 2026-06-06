@@ -143,7 +143,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [41,88,96,97,109,110, 24,89,92,93, 105,124,132, 94],
     maxLevel: 65,
     completionThreshold: 0.70,
-    unlockCondition: { type: 'training_battles', count: 30 },
+    unlockCondition: { type: 'training_battles', count: 15 },
     boss: {
       name: 'Maître Koga',
       title: 'Gym Leader Poison',
