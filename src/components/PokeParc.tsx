@@ -973,16 +973,6 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     return false;
   };
 
-  const sendSystemMessage = async (msg: string) => {
-    let uid = myUserId;
-    if (!uid) {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      uid = user.id;
-      setMyUserId(uid);
-    }
-    await supabase.from('pokepark_chat').insert({ user_id: uid, username, message: msg });
-  };
 
   const handleWave = () => {
     if (!interactionTarget) return;
@@ -990,7 +980,6 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     setWaveTarget(target.userId);
     setInteractionTarget(null);
     setTimeout(() => setWaveTarget(null), 2000);
-    sendSystemMessage(`👋 ${username} fait coucou à ${target.username} !`);
   };
 
   const handleRace = () => {
@@ -1218,13 +1207,13 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                   }}>
                     {msg.username}
                   </span>
-                  {canMute && msg.user_id !== myUserId && (
+                  {canMute && (
                     <span className="ml-auto flex items-center gap-1 shrink-0">
-                      {/* Delete — admin + pokelian */}
+                      {/* Delete — admin + pokelian (tous les messages y compris les leurs) */}
                       <button onClick={() => deleteMessage(msg.id)}
                         className="text-red-500 hover:text-red-400 px-1 rounded text-xs" title="Supprimer">🗑️</button>
-                      {/* Mute / unmute — admin + pokelian */}
-                      <div className="relative">
+                      {/* Mute / unmute — admin + pokelian (pas sur ses propres messages) */}
+                      {msg.user_id !== myUserId && <div className="relative">
                         {isMuted(msg.user_id) ? (
                           <button onClick={() => unmuteUser(msg.user_id)}
                             className="text-green-500 hover:text-green-400 px-1 rounded text-xs font-bold" title="Démuter">
@@ -1248,7 +1237,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                             ))}
                           </div>
                         )}
-                      </div>
+                      </div>}
                     </span>
                   )}
                 </div>
