@@ -801,3 +801,8 @@ button:active{transform:scale(.93);transition:transform .08s ease}
   70%  { transform:scale(1.04) translateY(-2px); }
   100% { opacity:1; transform:scale(1) translateY(0); filter:brightness(1); }
 }
+@keyframes alakazam-float {
+  0%,100% { transform: translateY(0px) rotate(-1deg); }
+  30%     { transform: translateY(-10px) rotate(1deg); }
+  60%     { transform: translateY(-6px) rotate(-0.5deg); }
+}

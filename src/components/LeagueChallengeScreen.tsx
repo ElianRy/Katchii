@@ -446,13 +446,14 @@ function DialogueScreen({ trainer, onDone }: {
         <div className="absolute bottom-0 w-full h-40 pointer-events-none" style={{
           background: `radial-gradient(ellipse at 50% 100%, ${trainer.color}35 0%, transparent 70%)`,
         }} />
-        {/* Trainer centered + companion to the RIGHT slightly behind */}
-        <div className="relative flex items-end justify-center w-full">
-          {/* Trainer — centered, in front */}
+        <div className="relative flex items-end justify-center w-full h-full">
+          {/* Trainer — centered */}
           <img src={trainer.image} alt={trainer.name} draggable={false}
-            className="relative z-10 select-none pointer-events-none shrink-0"
+            className="relative select-none pointer-events-none shrink-0"
             style={{
-              height: 'min(72vw, 300px)',
+              // Master bigger, others normal
+              height: isMaster ? 'min(85vw, 360px)' : 'min(72vw, 300px)',
+              zIndex: isMaster ? 10 : 9,
               objectFit: 'contain', objectPosition: 'bottom',
               filter: isMaster && lineIdx === 0
                 ? 'brightness(0) drop-shadow(0 0 24px rgba(168,85,247,0.3))'
@@ -463,19 +464,21 @@ function DialogueScreen({ trainer, onDone }: {
               animation: isMaster ? 'league-trainer-appear 0.6s ease-out' : 'badge-pop 0.5s ease-out',
             }}
           />
-          {/* Companion — right side, behind trainer */}
+          {/* Companion — right side */}
           {(!isMaster || lineIdx >= 3) && (
-            <div className="absolute bottom-0 right-0 z-[9] pointer-events-none"
+            <div className="absolute bottom-0 right-0 pointer-events-none"
               style={{
-                width: 'min(48vw, 200px)',
-                height: 'min(48vw, 200px)',
+                width: 'min(58vw, 240px)',
+                height: 'min(58vw, 240px)',
+                // Peter's Dragonite in FRONT (z-11), others behind (z-9)
+                zIndex: trainer.id === 'peter' ? 11 : 9,
                 animation: isMaster ? 'pokeball-release 0.7s ease-out both' : 'badge-pop 0.5s ease-out both',
               }}>
-              {/* Shiny aura glow behind for Alakazam */}
+              {/* Shiny aura glow for Alakazam */}
               {isMaster && (
-                <div className="absolute inset-0 rounded-full pointer-events-none"
+                <div className="absolute inset-0 pointer-events-none"
                   style={{
-                    background: 'radial-gradient(ellipse at 50% 60%, rgba(253,224,71,0.45) 0%, rgba(168,85,247,0.25) 45%, transparent 70%)',
+                    background: 'radial-gradient(ellipse at 50% 55%, rgba(253,224,71,0.5) 0%, rgba(168,85,247,0.3) 40%, transparent 70%)',
                     animation: 'aura-pulse 1.6s ease-in-out infinite',
                   }} />
               )}
@@ -487,30 +490,33 @@ function DialogueScreen({ trainer, onDone }: {
                 style={{
                   objectFit: 'contain',
                   objectPosition: 'bottom',
+                  // Alakazam floats
+                  animation: isMaster ? 'alakazam-float 3s ease-in-out infinite' : undefined,
                   filter: isMaster
-                    ? 'drop-shadow(0 0 8px #fde047) drop-shadow(0 0 18px #a855f7)'
+                    ? 'drop-shadow(0 0 10px #fde047) drop-shadow(0 0 22px #a855f7) drop-shadow(0 0 4px #fde047)'
                     : `drop-shadow(0 0 10px ${trainer.color}77)`,
                 }}
               />
-              {/* Shiny sparkles for Alakazam */}
+              {/* Shiny sparkles for Alakazam — more numerous */}
               {isMaster && [
-                { top: '8%',  left: '18%', size: 14, delay: '0s',    dur: '1.4s' },
-                { top: '20%', left: '72%', size: 10, delay: '0.4s',  dur: '1.1s' },
-                { top: '55%', left: '8%',  size: 12, delay: '0.7s',  dur: '1.3s' },
-                { top: '35%', left: '85%', size: 9,  delay: '0.2s',  dur: '1.6s' },
-                { top: '70%', left: '55%', size: 11, delay: '0.9s',  dur: '1.2s' },
-                { top: '12%', left: '50%', size: 8,  delay: '0.55s', dur: '1.5s' },
+                { top: '5%',  left: '15%', size: 16, delay: '0s',    dur: '1.3s' },
+                { top: '15%', left: '75%', size: 12, delay: '0.35s', dur: '1.0s' },
+                { top: '40%', left: '5%',  size: 14, delay: '0.6s',  dur: '1.4s' },
+                { top: '30%', left: '88%', size: 10, delay: '0.15s', dur: '1.7s' },
+                { top: '65%', left: '60%', size: 13, delay: '0.8s',  dur: '1.1s' },
+                { top: '10%', left: '48%', size: 9,  delay: '0.5s',  dur: '1.5s' },
+                { top: '55%', left: '25%', size: 11, delay: '0.95s', dur: '1.2s' },
+                { top: '75%', left: '80%', size: 8,  delay: '0.25s', dur: '1.6s' },
+                { top: '22%', left: '38%', size: 15, delay: '1.1s',  dur: '1.0s' },
+                { top: '82%', left: '42%', size: 10, delay: '0.7s',  dur: '1.3s' },
               ].map((s, i) => (
                 <div key={i} className="absolute pointer-events-none"
-                  style={{
-                    top: s.top, left: s.left,
-                    width: s.size, height: s.size,
-                    animation: `shiny-sparkle ${s.dur} ${s.delay} ease-in-out infinite`,
-                  }}>
+                  style={{ top: s.top, left: s.left, width: s.size, height: s.size,
+                    animation: `shiny-sparkle ${s.dur} ${s.delay} ease-in-out infinite` }}>
                   <svg viewBox="0 0 10 10" width={s.size} height={s.size}>
                     <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z"
                       fill="#fde047" stroke="#fbbf24" strokeWidth="0.3"
-                      style={{ filter: 'drop-shadow(0 0 2px #fde047)' }} />
+                      style={{ filter: 'drop-shadow(0 0 3px #fde047)' }} />
                   </svg>
                 </div>
               ))}
