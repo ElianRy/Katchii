@@ -130,7 +130,7 @@ function LegendaryCaptureModal({ pokemonId, pokemonName, isShiny, rarity, level,
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ zIndex: 10, gap: 0 }}>
         <div className="relative flex items-center justify-center" style={{ marginBottom: 20 }}>
           {ORBIT_STARS.map((s, i) => (
-            <div key={i} style={{ position: 'absolute', width: 0, height: 0,
+            <div key={i} style={{ position: 'absolute', top: '50%', left: '50%', width: 0, height: 0,
               animation: `capture-orbit ${s.dur} ${s.delay} linear infinite` }}>
               <svg viewBox="0 0 10 10" width={14} height={14} style={{
                 position: 'absolute', left: 72, top: -7,
@@ -159,7 +159,7 @@ function LegendaryCaptureModal({ pokemonId, pokemonName, isShiny, rarity, level,
             {RARITY_LABEL[rarity] ?? rarity}
           </div>
           {level !== undefined && (
-            <div className="text-slate-300 text-sm font-bold mt-1">Dresseur niv. {level}</div>
+            <div className="text-slate-300 text-sm font-bold mt-1">Niv. {level}</div>
           )}
           {totalCaught !== undefined && (
             <div className="text-slate-500 text-xs mt-0.5">#{totalCaught} capturé{totalCaught > 1 ? 's' : ''}</div>
@@ -252,7 +252,7 @@ function ShinyCaptureModal({ pokemonId, pokemonName, rarity, level, totalCaught,
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ zIndex: 10, gap: 0 }}>
         <div className="relative flex items-center justify-center" style={{ marginBottom: 20 }}>
           {SHINY_ORBIT.map((s, i) => (
-            <div key={i} style={{ position: 'absolute', width: 0, height: 0,
+            <div key={i} style={{ position: 'absolute', top: '50%', left: '50%', width: 0, height: 0,
               animation: `capture-orbit ${s.dur} ${s.delay} linear infinite` }}>
               <svg viewBox="0 0 10 10" width={12} height={12} style={{
                 position: 'absolute', left: 62, top: -6,
@@ -281,7 +281,7 @@ function ShinyCaptureModal({ pokemonId, pokemonName, rarity, level, totalCaught,
             {RARITY_LABEL[rarity] ?? rarity} · Shiny
           </div>
           {level !== undefined && (
-            <div className="text-slate-300 text-sm font-bold mt-1">Dresseur niv. {level}</div>
+            <div className="text-slate-300 text-sm font-bold mt-1">Niv. {level}</div>
           )}
           {totalCaught !== undefined && (
             <div className="text-slate-500 text-xs mt-0.5">#{totalCaught} capturé{totalCaught > 1 ? 's' : ''}</div>

@@ -261,20 +261,6 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               gap: 0,
             }}
           >
-            {/* Shiny — tight rainbow ring */}
-            {spawned.isShiny && (
-              <div
-                className="absolute pointer-events-none"
-                style={{
-                  inset: -3,
-                  borderRadius: '50%',
-                  background: 'conic-gradient(from 0deg, #f87171, #fb923c, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
-                  animation: 'rainbow-spin 2s linear infinite',
-                  opacity: 0.55,
-                  filter: 'blur(2px)',
-                }}
-              />
-            )}
 
             {/* Sprite + aura */}
             <div
