@@ -91,14 +91,16 @@ function getSpriteUrl(pokemonId: number, isShiny: boolean) {
 // ---- Shiny scattered stars around the 56×56 sprite ----
 // Each star orbits at its own radius + speed so they look scattered, not in a ring
 const PARK_STARS = [
-  { color: '#fde047', r: 28, dur: '3.2s', delay: '0s',    size: 10, sym: '✦' },
-  { color: '#f0abfc', r: 24, dur: '2.6s', delay: '-0.9s', size: 8,  sym: '✧' },
-  { color: '#a5f3fc', r: 32, dur: '4.0s', delay: '-1.7s', size: 9,  sym: '⋆' },
-  { color: '#fbbf24', r: 20, dur: '2.2s', delay: '-0.4s', size: 7,  sym: '✦' },
-  { color: '#ffffff', r: 30, dur: '3.6s', delay: '-2.1s', size: 8,  sym: '✧' },
-  { color: '#f472b6', r: 26, dur: '2.9s', delay: '-1.3s', size: 9,  sym: '⋆' },
-  { color: '#4ade80', r: 22, dur: '3.4s', delay: '-0.7s', size: 7,  sym: '✦' },
-  { color: '#60a5fa', r: 34, dur: '4.2s', delay: '-2.5s', size: 8,  sym: '✧' },
+  { color: '#fde047', r: 30, dur: '3.2s', delay: '0s',    size: 13, sym: '✦' },
+  { color: '#f0abfc', r: 25, dur: '2.6s', delay: '-0.9s', size: 11, sym: '✧' },
+  { color: '#a5f3fc', r: 34, dur: '4.0s', delay: '-1.7s', size: 12, sym: '⋆' },
+  { color: '#fbbf24', r: 22, dur: '2.2s', delay: '-0.4s', size: 10, sym: '✦' },
+  { color: '#ffffff', r: 32, dur: '3.6s', delay: '-2.1s', size: 11, sym: '✧' },
+  { color: '#f472b6', r: 27, dur: '2.9s', delay: '-1.3s', size: 12, sym: '⋆' },
+  { color: '#4ade80', r: 23, dur: '3.4s', delay: '-0.7s', size: 10, sym: '✦' },
+  { color: '#60a5fa', r: 36, dur: '4.2s', delay: '-2.5s', size: 11, sym: '✧' },
+  { color: '#c084fc', r: 28, dur: '2.4s', delay: '-1.5s', size: 12, sym: '⋆' },
+  { color: '#fb923c', r: 20, dur: '3.8s', delay: '-2.8s', size: 10, sym: '✦' },
 ];
 function ParkShinySparkles() {
   return (

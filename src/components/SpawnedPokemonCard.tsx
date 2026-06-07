@@ -32,13 +32,16 @@ const MOVE_ANIMS = [
 
 // Scattered shiny stars — each at different radius + speed so they're not in a ring
 const SHINY_ORBIT_STARS = [
-  { color: '#fde047', orbitDuration: '3.2s', delay: '0s',    orbitR: 36, sym: '✦', size: 10 },
-  { color: '#f472b6', orbitDuration: '2.6s', delay: '-0.9s', orbitR: 30, sym: '✧', size: 8  },
-  { color: '#60a5fa', orbitDuration: '4.0s', delay: '-1.7s', orbitR: 40, sym: '⋆', size: 9  },
-  { color: '#fbbf24', orbitDuration: '2.2s', delay: '-0.4s', orbitR: 26, sym: '✦', size: 7  },
-  { color: '#ffffff', orbitDuration: '3.6s', delay: '-2.1s', orbitR: 38, sym: '✧', size: 8  },
-  { color: '#4ade80', orbitDuration: '2.9s', delay: '-1.3s', orbitR: 32, sym: '⋆', size: 9  },
-  { color: '#a5f3fc', orbitDuration: '3.4s', delay: '-0.7s', orbitR: 28, sym: '✦', size: 7  },
+  { color: '#fde047', orbitDuration: '3.2s', delay: '0s',    orbitR: 38, sym: '✦', size: 14 },
+  { color: '#f472b6', orbitDuration: '2.6s', delay: '-0.9s', orbitR: 30, sym: '✧', size: 12 },
+  { color: '#60a5fa', orbitDuration: '4.0s', delay: '-1.7s', orbitR: 44, sym: '⋆', size: 13 },
+  { color: '#fbbf24', orbitDuration: '2.2s', delay: '-0.4s', orbitR: 26, sym: '✦', size: 11 },
+  { color: '#ffffff', orbitDuration: '3.6s', delay: '-2.1s', orbitR: 40, sym: '✧', size: 12 },
+  { color: '#4ade80', orbitDuration: '2.9s', delay: '-1.3s', orbitR: 34, sym: '⋆', size: 13 },
+  { color: '#a5f3fc', orbitDuration: '3.4s', delay: '-0.7s', orbitR: 28, sym: '✦', size: 11 },
+  { color: '#c084fc', orbitDuration: '2.4s', delay: '-1.5s', orbitR: 42, sym: '✧', size: 12 },
+  { color: '#fb923c', orbitDuration: '3.8s', delay: '-2.8s', orbitR: 32, sym: '⋆', size: 13 },
+  { color: '#34d399', orbitDuration: '2.8s', delay: '-0.6s', orbitR: 36, sym: '✦', size: 11 },
 ];
 
 function PokeballSVG({ spinning }: { spinning: boolean }) {

@@ -255,8 +255,16 @@ export function useGameState() {
           }
         } else {
           next.fragments = { ...prev.fragments, [pokemonId]: (prev.fragments[pokemonId] ?? 0) + 1 };
+          // Shiny duplicate: same XP bonus as normal duplicate
+          const current = next.pokemonLevels?.[pokemonId] ?? { level: 1, xp: 0 };
+          if (current.level < 100) {
+            let { level, xp } = current;
+            xp += current.level * current.level;
+            while (level < 100 && xp >= xpToNextLevel(level)) { xp -= xpToNextLevel(level); level++; }
+            next.pokemonLevels = { ...(next.pokemonLevels ?? {}), [pokemonId]: { level, xp } };
+          }
         }
-        // Level for shiny: use existing pokemonLevels entry (set when normal was caught), or derive from zone
+        // Level for shiny: read after potential XP update
         capturedLevel = next.pokemonLevels?.[pokemonId]?.level ?? prev.pokemonLevels?.[pokemonId]?.level ?? 1;
       } else {
         const alreadyCaught = (prev.normalCollection[pokemonId] ?? 0) > 0;
