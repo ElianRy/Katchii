@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { TeamMember } from './TeamBuilder';
@@ -330,13 +330,14 @@ function MasterPick3Screen({ survivors, onConfirm }: {
   survivors: TeamMember[];
   onConfirm: (team: TeamMember[]) => void;
 }) {
+  const maxPick = Math.min(3, survivors.length);
   const [selected, setSelected] = useState<number[]>([]);
   const masterColor = '#a855f7';
 
   const toggle = (i: number) => {
     setSelected(prev => {
       if (prev.includes(i)) return prev.filter(x => x !== i);
-      if (prev.length >= 3) return prev;
+      if (prev.length >= maxPick) return prev;
       return [...prev, i];
     });
   };
@@ -345,7 +346,9 @@ function MasterPick3Screen({ survivors, onConfirm }: {
     <div className="fixed inset-0 z-[210] flex flex-col" style={{ background: 'linear-gradient(160deg, #0a0010 0%, #000005 100%)' }}>
       <div className="px-4 pt-6 pb-3 shrink-0 border-b border-purple-900/50">
         <h2 className="text-white font-black text-xl">⚡ Combat Final</h2>
-        <p className="text-slate-300 text-sm mt-0.5">Choisissez <span className="text-purple-400 font-bold">3 Pokémon</span> pour affronter le Maître de la Ligue</p>
+        <p className="text-slate-300 text-sm mt-0.5">
+          Choisissez <span className="text-purple-400 font-bold">{maxPick} Pokémon</span> pour affronter le Maître de la Ligue
+        </p>
         <p className="text-slate-500 text-xs mt-0.5">HP non restaurés · uniquement vos survivants</p>
       </div>
       <div className="flex-1 overflow-y-auto px-3 py-3 pb-28">
@@ -388,16 +391,16 @@ function MasterPick3Screen({ survivors, onConfirm }: {
         </div>
       </div>
       <div className="fixed bottom-0 left-0 right-0 z-[220] p-4 bg-black/98 border-t border-purple-900/50">
-        <div className="text-center text-slate-500 text-xs mb-2">{selected.length}/3 Pokémon sélectionnés</div>
-        <button disabled={selected.length !== 3} onClick={() => onConfirm(selected.map(i => survivors[i]))}
+        <div className="text-center text-slate-500 text-xs mb-2">{selected.length}/{maxPick} Pokémon sélectionnés</div>
+        <button disabled={selected.length !== maxPick} onClick={() => onConfirm(selected.map(i => survivors[i]))}
           className="w-full py-4 rounded-2xl font-black text-lg text-white transition-all"
           style={{
-            background: selected.length === 3
+            background: selected.length === maxPick
               ? 'linear-gradient(90deg, #7c3aed, #a855f7, #c026d3)'
               : '#1f1f2e',
-            boxShadow: selected.length === 3 ? '0 0 20px rgba(168,85,247,0.5)' : 'none',
+            boxShadow: selected.length === maxPick ? '0 0 20px rgba(168,85,247,0.5)' : 'none',
           }}>
-          {selected.length === 3 ? '⚡ Affronter le Maître !' : `Choisissez ${3 - selected.length} Pokémon de plus`}
+          {selected.length === maxPick ? '⚡ Affronter le Maître !' : `Choisissez ${maxPick - selected.length} Pokémon de plus`}
         </button>
       </div>
     </div>
@@ -507,15 +510,72 @@ function DialogueScreen({ trainer, onDone }: {
   );
 }
 
+/* ── MASTER BATTLE SIDE EFFECTS — energy pillars left & right ── */
+function MasterSideEffects() {
+  const SPARKS = Array.from({ length: 7 }, (_, i) => ({
+    bottom: `${10 + i * 12}%`,
+    delay: `${(i * 0.31).toFixed(2)}s`,
+    dur: `${1.1 + (i % 3) * 0.4}s`,
+  }));
+  const BOLTS_L = ['18%','42%','65%','80%'];
+  const BOLTS_R = ['25%','50%','70%','88%'];
+
+  const pillar = (side: 'left' | 'right') => (
+    <div className="absolute top-0 bottom-0 pointer-events-none z-[215]"
+      style={{ [side]: 0, width: 28 }}>
+      {/* gradient bar */}
+      <div className="absolute inset-0"
+        style={{
+          background: side === 'left'
+            ? 'linear-gradient(to right, rgba(168,85,247,0.55), transparent)'
+            : 'linear-gradient(to left, rgba(168,85,247,0.55), transparent)',
+          animation: `side-energy-${side === 'left' ? 'l' : 'r'} ${side === 'left' ? '1.7s' : '2.1s'} ease-in-out infinite`,
+        }} />
+      {/* lightning bolts */}
+      {(side === 'left' ? BOLTS_L : BOLTS_R).map((top, i) => (
+        <div key={i} className="absolute text-purple-300 text-xs font-black select-none"
+          style={{
+            top, [side]: 2,
+            animation: `side-lightning-bolt ${1.8 + i * 0.6}s ${(i * 0.4).toFixed(1)}s ease-in-out infinite`,
+            textShadow: '0 0 8px #a855f7',
+          }}>
+          ⚡
+        </div>
+      ))}
+      {/* rising sparks */}
+      {SPARKS.map((s, i) => (
+        <div key={i} className="absolute w-1 h-1 rounded-full pointer-events-none"
+          style={{
+            bottom: s.bottom, [side]: 6,
+            background: i % 3 === 0 ? '#e879f9' : i % 3 === 1 ? '#a855f7' : '#c026d3',
+            animation: `side-spark ${s.dur} ${s.delay} ease-out infinite`,
+            boxShadow: '0 0 4px #a855f7',
+          }} />
+      ))}
+    </div>
+  );
+
+  return (
+    <>
+      {pillar('left')}
+      {pillar('right')}
+    </>
+  );
+}
+
 /* ── EPIC MASTER INTRO — slow cinematic reveal ── */
 function EpicIntroScreen({ onDone }: { onDone: () => void }) {
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
   useEffect(() => {
-    const t = setTimeout(onDone, 6000);
+    const t = setTimeout(() => onDoneRef.current(), 6000);
     return () => clearTimeout(t);
-  }, [onDone]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="fixed inset-0 z-[210] flex flex-col items-center justify-center overflow-hidden" style={{ background: '#000' }}>
+      <MasterSideEffects />
       {/* Radial purple glow — appears progressively */}
       <div className="absolute inset-0 pointer-events-none" style={{
         background: 'radial-gradient(ellipse 70% 70% at 50% 55%, rgba(120,40,200,0.4) 0%, transparent 70%)',
@@ -727,6 +787,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   if (phase === 'battle_master') {
     return (
       <div className="fixed inset-0 z-[210]">
+        <MasterSideEffects />
         <div className="absolute inset-0 pointer-events-none z-10"
           style={{ boxShadow: 'inset 0 0 50px rgba(168,85,247,0.4)', animation: 'aura-pulse 1.2s ease-in-out infinite' }} />
         <BattleScreen playerTeam={masterTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[2].teamSpec)}
