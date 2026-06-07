@@ -16,12 +16,13 @@ interface Props {
   playerTeam: TeamMember[];
   enemyTeam: TeamMember[];
   bossName?: string;
-  onBattleEnd: (won: boolean, xpGains: Record<number, number>, finalTeam?: TeamMember[]) => void;
+  onBattleEnd: (won: boolean, xpGains: Record<number, number>, finalTeam?: TeamMember[], enemyDmg?: Record<number, number>) => void;
   autoCombat?: boolean;
   onAutoCombatChange?: (v: boolean) => void;
   speedLevel?: number;
   onSpeedLevelChange?: (v: number) => void;
   onQuit?: () => void;
+  trainerBackground?: string;
 }
 
 interface FighterState extends TeamMember { currentHp: number; }
@@ -287,7 +288,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerBackground }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp }))
   );
@@ -311,6 +312,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const setSpeedLevel = (v: number) => { setSpeedLevelLocal(v); onSpeedLevelChange?.(v); };
   const won = useRef(false);
   const battleDone = useRef(false);
+  const enemyDmgRef = useRef<Record<number, number>>({});
 
   // Keep refs in sync
   useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
@@ -404,6 +406,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             addLog(`${eName} → ${eMove}${eEff >= 2 ? ' 💥 Super efficace !' : ''}`, eEff >= 2 ? '#f87171' : '#fca5a5');
 
             setPlayerFighters(pf2 => {
+              enemyDmgRef.current[eFighter.pokemonId] = (enemyDmgRef.current[eFighter.pokemonId] ?? 0) + eDmg;
               const newPHp = Math.max(0, pf2[pIdx2].currentHp - eDmg);
               const newPf = pf2.map((f, i) => i === pIdx2 ? { ...f, currentHp: newPHp } : f);
               if (newPHp <= 0) {
@@ -448,7 +451,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
         });
       }
       const finalTeam: TeamMember[] = playerFightersRef.current.map(f => ({ ...f }));
-      setTimeout(() => onBattleEnd(wonSnap, snap, finalTeam), 1800);
+      setTimeout(() => onBattleEnd(wonSnap, snap, finalTeam, enemyDmgRef.current), 1800);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
@@ -541,6 +544,16 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             animation: `arena-twinkle ${s.dur}s ease-in-out ${s.del}s infinite`,
           }} />
         ))}
+
+        {/* Background trainer (spectator) */}
+        {trainerBackground && (
+          <div className="absolute bottom-0 right-0 pointer-events-none" style={{ zIndex: 2 }}>
+            <img src={trainerBackground} alt="" draggable={false}
+              className="select-none"
+              style={{ height: 'min(38vh, 200px)', objectFit: 'contain', objectPosition: 'bottom',
+                opacity: 0.22, filter: 'brightness(0.4) saturate(0.3)' }} />
+          </div>
+        )}
 
         {/* Stadium arc */}
         <div className="absolute inset-x-0 top-0 pointer-events-none" style={{
@@ -736,7 +749,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
                     onClick={() => handleSwitch(i)}
                     className="flex flex-col items-center bg-slate-800/90 border-2 border-slate-500 hover:border-yellow-400 rounded-2xl px-4 py-3 transition-all hover:scale-105"
                   >
-                    <ShinySprite pokemonId={f.pokemonId} isShiny={f.isShiny ?? false} width={64} height={64}
+                    <ShinySprite pokemonId={f.pokemonId} isShiny={f.isShiny ?? false} width={64} height={64} compact
                       style={{ filter: spriteFilter(f.pokemonId, f.isShiny ?? false, 6) }} />
                     <span className="text-white font-bold text-sm mt-1">{p?.name}</span>
                     <span className="text-slate-400 text-xs">Nv.{f.level}</span>

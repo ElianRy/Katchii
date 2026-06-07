@@ -455,7 +455,7 @@ function DialogueScreen({ trainer, onDone }: {
           <img src={trainer.image} alt={trainer.name} draggable={false}
             className="relative select-none shrink-0"
             style={{
-              height: isMaster ? 'min(85vw, 360px)' : 'min(70vw, 290px)',
+              height: isMaster ? 'min(85vw, 360px)' : trainer.id === 'giovanni' ? 'min(80vw, 330px)' : 'min(70vw, 290px)',
               zIndex: 10,
               objectFit: 'contain', objectPosition: 'bottom',
               filter: isMaster && lineIdx === 0
@@ -463,83 +463,35 @@ function DialogueScreen({ trainer, onDone }: {
                 : isMaster
                   ? `brightness(1) drop-shadow(0 0 24px ${trainer.color}99)`
                   : `drop-shadow(0 0 14px ${trainer.color}55)`,
-              transition: isMaster ? 'filter 1.2s ease-out' : undefined,
+              transition: isMaster ? 'filter 1.2s ease-out, transform 0.8s cubic-bezier(0.34,1.56,0.64,1)' : undefined,
+              transform: isMaster && lineIdx === 0 ? 'scale(0.9)' : 'scale(1)',
               animation: isMaster ? 'league-trainer-appear 0.6s ease-out' : 'badge-pop 0.5s ease-out',
             }}
           />
         </div>
 
-        {/* Companion — absolute, in FRONT (z-11), right side, partially overlapping trainer edge */}
+        {/* Companion */}
         {(!isMaster || lineIdx >= 3) && (
-          <div className="absolute pointer-events-none"
-            style={{
-              right: trainer.id === 'peter' ? '1%' : trainer.id === 'giovanni' ? '2%' : '2%',
-              bottom: isMaster ? 'min(14vw, 60px)' : trainer.id === 'peter' ? '-4%' : '0',
-              width: trainer.id === 'peter'
-                ? 'min(66vw, 275px)'  // slightly bigger, same position
-                : trainer.id === 'giovanni'
-                  ? 'min(38vw, 150px)' // bigger persian
-                  : 'min(52vw, 215px)', // alakazam
-              height: trainer.id === 'peter'
-                ? 'min(66vw, 275px)'
-                : trainer.id === 'giovanni'
-                  ? 'min(38vw, 150px)'
-                  : 'min(52vw, 215px)',
-              zIndex: 11,
-              animation: isMaster ? 'pokeball-release 0.7s ease-out both' : 'badge-pop 0.5s ease-out both',
-            }}>
-              {/* Shiny aura glow for Alakazam */}
-              {isMaster && (
-                <div className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background: 'radial-gradient(ellipse at 50% 55%, rgba(253,224,71,0.2) 0%, rgba(96,165,250,0.15) 30%, rgba(168,85,247,0.12) 55%, transparent 75%)',
-                    animation: 'aura-pulse 1.6s ease-in-out infinite',
-                  }} />
-              )}
-              <img
-                src={trainer.companion.image}
+          isMaster ? (
+            <AlakazamReveal trainer={trainer} key="alakazam-reveal" />
+          ) : (
+            <div className="absolute pointer-events-none"
+              style={{
+                right: trainer.id === 'peter' ? '-6%' : '18%',
+                bottom: trainer.id === 'peter' ? '-4%' : '0',
+                width: trainer.id === 'peter' ? 'min(66vw, 275px)' : 'min(46vw, 185px)',
+                height: trainer.id === 'peter' ? 'min(66vw, 275px)' : 'min(46vw, 185px)',
+                zIndex: 11,
+                animation: 'badge-pop 0.5s ease-out both',
+              }}>
+              <img src={trainer.companion.image}
                 alt={POKEMON_BY_ID[trainer.companion.pokemonId]?.name ?? ''}
-                draggable={false}
-                className="w-full h-full select-none"
-                style={{
-                  objectFit: 'contain',
-                  objectPosition: 'bottom',
-                  // Alakazam floats
-                  animation: isMaster ? 'alakazam-float 3s ease-in-out infinite' : undefined,
-                  filter: isMaster
-                    ? 'drop-shadow(0 0 6px #fde047) drop-shadow(0 0 14px #a855f7)'
-                    : `drop-shadow(0 0 10px ${trainer.color}77)`,
-                }}
-              />
-              {/* Shiny sparkles for Alakazam — more numerous */}
-              {isMaster && [
-                { top: '3%',  left: '10%', size: 18, delay: '0s',    dur: '1.2s' },
-                { top: '12%', left: '78%', size: 14, delay: '0.3s',  dur: '1.0s' },
-                { top: '35%', left: '3%',  size: 16, delay: '0.55s', dur: '1.4s' },
-                { top: '25%', left: '90%', size: 12, delay: '0.1s',  dur: '1.7s' },
-                { top: '60%', left: '65%', size: 15, delay: '0.75s', dur: '1.1s' },
-                { top: '8%',  left: '45%', size: 11, delay: '0.45s', dur: '1.5s' },
-                { top: '50%', left: '20%', size: 13, delay: '0.9s',  dur: '1.2s' },
-                { top: '70%', left: '82%', size: 10, delay: '0.2s',  dur: '1.6s' },
-                { top: '18%', left: '35%', size: 17, delay: '1.0s',  dur: '1.0s' },
-                { top: '78%', left: '40%', size: 12, delay: '0.65s', dur: '1.3s' },
-                { top: '42%', left: '55%', size: 9,  delay: '1.2s',  dur: '1.1s' },
-                { top: '88%', left: '15%', size: 14, delay: '0.4s',  dur: '1.4s' },
-                { top: '55%', left: '92%', size: 11, delay: '0.85s', dur: '1.2s' },
-                { top: '28%', left: '60%', size: 13, delay: '1.35s', dur: '0.9s' },
-              ].map((s, i) => (
-                <div key={i} className="absolute pointer-events-none"
-                  style={{ top: s.top, left: s.left, width: s.size, height: s.size,
-                    animation: `shiny-sparkle ${s.dur} ${s.delay} ease-in-out infinite` }}>
-                  <svg viewBox="0 0 10 10" width={s.size} height={s.size}>
-                    <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z"
-                      fill="#fde047" stroke="#fbbf24" strokeWidth="0.3"
-                      style={{ filter: 'drop-shadow(0 0 3px #fde047)' }} />
-                  </svg>
-                </div>
-              ))}
+                draggable={false} className="w-full h-full select-none"
+                style={{ objectFit: 'contain', objectPosition: 'bottom',
+                  filter: `drop-shadow(0 0 10px ${trainer.color}77)` }} />
             </div>
-          )}
+          )
+        )}
       </div>
 
       <div className="px-4 pb-5 pt-3 shrink-0">
@@ -595,18 +547,18 @@ function DialogueScreen({ trainer, onDone }: {
 
 /* ── MASTER BATTLE SIDE EFFECTS — energy pillars left & right ── */
 function MasterSideEffects() {
-  const SPARKS = Array.from({ length: 7 }, (_, i) => ({
-    bottom: `${10 + i * 12}%`,
-    delay: `${(i * 0.31).toFixed(2)}s`,
-    dur: `${1.1 + (i % 3) * 0.4}s`,
+  const SPARKS = Array.from({ length: 10 }, (_, i) => ({
+    bottom: `${5 + i * 9}%`,
+    delay: `${(i * 0.25).toFixed(2)}s`,
+    dur: `${1.4 + (i % 3) * 0.5}s`,
   }));
-  const BOLTS_L = ['18%','42%','65%','80%'];
-  const BOLTS_R = ['25%','50%','70%','88%'];
+  const BOLTS_L = ['10%','28%','48%','65%','82%'];
+  const BOLTS_R = ['12%','32%','52%','68%','86%'];
+  const TOP_BOLTS = ['15%','32%','50%','68%','84%'];
 
   const pillar = (side: 'left' | 'right') => (
     <div className="absolute top-0 bottom-0 pointer-events-none z-[215]"
       style={{ [side]: 0, width: 28 }}>
-      {/* gradient bar */}
       <div className="absolute inset-0"
         style={{
           background: side === 'left'
@@ -614,18 +566,14 @@ function MasterSideEffects() {
             : 'linear-gradient(to left, rgba(168,85,247,0.55), transparent)',
           animation: `side-energy-${side === 'left' ? 'l' : 'r'} ${side === 'left' ? '1.7s' : '2.1s'} ease-in-out infinite`,
         }} />
-      {/* lightning bolts */}
       {(side === 'left' ? BOLTS_L : BOLTS_R).map((top, i) => (
         <div key={i} className="absolute text-purple-300 text-xs font-black select-none"
           style={{
             top, [side]: 2,
-            animation: `side-lightning-bolt ${1.8 + i * 0.6}s ${(i * 0.4).toFixed(1)}s ease-in-out infinite`,
+            animation: `side-lightning-bolt ${1.5 + i * 0.5}s ${(i * 0.35).toFixed(1)}s ease-in-out infinite`,
             textShadow: '0 0 8px #a855f7',
-          }}>
-          ⚡
-        </div>
+          }}>⚡</div>
       ))}
-      {/* rising sparks */}
       {SPARKS.map((s, i) => (
         <div key={i} className="absolute w-1 h-1 rounded-full pointer-events-none"
           style={{
@@ -642,7 +590,127 @@ function MasterSideEffects() {
     <>
       {pillar('left')}
       {pillar('right')}
+      {/* Top horizontal energy bar */}
+      <div className="absolute top-0 left-0 right-0 pointer-events-none z-[215]" style={{ height: 26 }}>
+        <div className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(to bottom, rgba(168,85,247,0.6), transparent)',
+            animation: 'side-energy-top 1.9s ease-in-out infinite',
+          }} />
+        {TOP_BOLTS.map((left, i) => (
+          <div key={i} className="absolute text-purple-300 text-xs font-black select-none"
+            style={{
+              top: 2, left,
+              animation: `side-lightning-bolt ${1.6 + i * 0.4}s ${(i * 0.28).toFixed(1)}s ease-in-out infinite`,
+              textShadow: '0 0 8px #a855f7',
+            }}>⚡</div>
+        ))}
+      </div>
     </>
+  );
+}
+
+/* ── ALAKAZAM POKEBALL REVEAL ── */
+function AlakazamReveal({ trainer }: { trainer: { companion: { image: string; pokemonId: number }; color: string } }) {
+  const [stage, setStage] = useState<'pokeball' | 'flash' | 'revealed'>('pokeball');
+  const [topOpen, setTopOpen] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setTopOpen(true), 600);
+    const t2 = setTimeout(() => setStage('flash'), 1300);
+    const t3 = setTimeout(() => setStage('revealed'), 2000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
+
+  const size = 'min(52vw, 215px)';
+  const sparkles = [
+    { top:'3%',left:'10%',sz:18,del:'0s',dur:'1.2s'},{ top:'12%',left:'78%',sz:14,del:'0.3s',dur:'1.0s'},
+    { top:'35%',left:'3%',sz:16,del:'0.55s',dur:'1.4s'},{ top:'25%',left:'90%',sz:12,del:'0.1s',dur:'1.7s'},
+    { top:'60%',left:'65%',sz:15,del:'0.75s',dur:'1.1s'},{ top:'8%',left:'45%',sz:11,del:'0.45s',dur:'1.5s'},
+    { top:'50%',left:'20%',sz:13,del:'0.9s',dur:'1.2s'},{ top:'70%',left:'82%',sz:10,del:'0.2s',dur:'1.6s'},
+    { top:'18%',left:'35%',sz:17,del:'1.0s',dur:'1.0s'},{ top:'78%',left:'40%',sz:12,del:'0.65s',dur:'1.3s'},
+    { top:'42%',left:'55%',sz:9,del:'1.2s',dur:'1.1s'},{ top:'88%',left:'15%',sz:14,del:'0.4s',dur:'1.4s'},
+    { top:'55%',left:'92%',sz:11,del:'0.85s',dur:'1.2s'},{ top:'28%',left:'60%',sz:13,del:'1.35s',dur:'0.9s'},
+  ];
+
+  return (
+    <div className="absolute pointer-events-none"
+      style={{ right: '2%', bottom: 'min(14vw, 60px)', width: size, height: size, zIndex: 11 }}>
+
+      {stage === 'pokeball' && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          {/* Pokeball SVG — top lifts on open */}
+          <svg viewBox="0 0 100 100" width="70%" height="70%" style={{ overflow: 'visible', filter: 'drop-shadow(0 0 12px #a855f7)' }}>
+            {/* Bottom half — static */}
+            <clipPath id="clip-bottom"><rect x="0" y="50" width="100" height="50"/></clipPath>
+            <g clipPath="url(#clip-bottom)">
+              <circle cx="50" cy="50" r="46" fill="white" stroke="#1a1a2e" strokeWidth="3"/>
+            </g>
+            {/* Top half — animates up when topOpen */}
+            <g style={{
+              transformOrigin: '50px 50px',
+              animation: topOpen ? 'pokeball-top-open 0.6s ease-out forwards' : undefined,
+            }}>
+              <clipPath id="clip-top"><rect x="0" y="0" width="100" height="50"/></clipPath>
+              <g clipPath="url(#clip-top)">
+                <circle cx="50" cy="50" r="46" fill="#dc2626" stroke="#1a1a2e" strokeWidth="3"/>
+              </g>
+            </g>
+            {/* Divider line */}
+            <line x1="4" y1="50" x2="96" y2="50" stroke="#1a1a2e" strokeWidth="3"/>
+            {/* Center button */}
+            <circle cx="50" cy="50" r="11" fill="white" stroke="#1a1a2e" strokeWidth="3"/>
+            <circle cx="50" cy="50" r="6" fill={topOpen ? '#c026d3' : '#9ca3af'} style={{ transition: 'fill 0.3s' }}/>
+          </svg>
+
+          {/* Energy burst when opening */}
+          {topOpen && (
+            <div className="absolute inset-0 rounded-full pointer-events-none"
+              style={{
+                background: 'radial-gradient(ellipse, rgba(168,85,247,0.8) 0%, rgba(253,224,71,0.4) 40%, transparent 70%)',
+                animation: 'pokeball-flash 0.8s ease-out forwards',
+              }} />
+          )}
+        </div>
+      )}
+
+      {stage === 'flash' && (
+        <div className="absolute inset-0 rounded-full pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse, rgba(253,224,71,1) 0%, rgba(168,85,247,0.8) 40%, transparent 70%)',
+            animation: 'pokeball-flash 0.7s ease-out forwards',
+          }} />
+      )}
+
+      {stage === 'revealed' && (
+        <>
+          {/* Shiny aura */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse at 50% 55%, rgba(253,224,71,0.2) 0%, rgba(96,165,250,0.15) 30%, rgba(168,85,247,0.12) 55%, transparent 75%)',
+              animation: 'aura-pulse 1.6s ease-in-out infinite',
+            }} />
+          <img src={trainer.companion.image} alt="" draggable={false}
+            className="w-full h-full select-none"
+            style={{
+              objectFit: 'contain', objectPosition: 'bottom',
+              animation: 'alakazam-float 3s ease-in-out infinite',
+              filter: 'drop-shadow(0 0 6px #fde047) drop-shadow(0 0 14px #a855f7)',
+            }} />
+          {sparkles.map((s, i) => (
+            <div key={i} className="absolute pointer-events-none"
+              style={{ top: s.top, left: s.left, width: s.sz, height: s.sz,
+                animation: `shiny-sparkle ${s.dur} ${s.del} ease-in-out infinite` }}>
+              <svg viewBox="0 0 10 10" width={s.sz} height={s.sz}>
+                <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z"
+                  fill="#fde047" stroke="#fbbf24" strokeWidth="0.3"
+                  style={{ filter: 'drop-shadow(0 0 3px #fde047)' }} />
+              </svg>
+            </div>
+          ))}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -705,10 +773,7 @@ function EpicIntroScreen({ onDone }: { onDone: () => void }) {
 interface DefeatStats {
   lostAgainst: string;
   trainerColor: string;
-  pokemonKO: number;
-  pokemonAlive: number;
-  totalXp: number;
-  teamSize: number;
+  damageByEnemy: Array<{ pokemonId: number; damage: number }>;
 }
 
 function DefeatScreen({ stats, onRetry, onClose }: {
@@ -719,55 +784,53 @@ function DefeatScreen({ stats, onRetry, onClose }: {
   return (
     <div className="fixed inset-0 z-[210] flex flex-col items-center justify-center overflow-y-auto px-4 py-8"
       style={{ background: 'radial-gradient(ellipse at 50% 0%, #1a0505 0%, #050000 60%, #000 100%)' }}>
-      {/* Skull */}
       <div style={{ fontSize: '5rem', animation: 'victory-trophy 0.7s cubic-bezier(0.175,0.885,0.32,1.275) forwards' }}>💀</div>
 
-      {/* Title */}
       <div className="text-center mt-3 mb-5" style={{ animation: 'victory-title 0.6s 0.2s ease-out both' }}>
-        <h2 className="font-black text-4xl text-red-400 mb-1"
-          style={{ textShadow: '0 0 30px rgba(239,68,68,0.6)' }}>
+        <h2 className="font-black text-4xl text-red-400 mb-1" style={{ textShadow: '0 0 30px rgba(239,68,68,0.6)' }}>
           Dommage…
         </h2>
         <p className="text-slate-400 text-base font-semibold">
-          Tu as été vaincu par{' '}
+          Vaincu par{' '}
           <span className="font-black" style={{ color: stats.trainerColor }}>{stats.lostAgainst}</span>
         </p>
       </div>
 
-      {/* Stats card */}
-      <div className="w-full max-w-sm rounded-2xl border border-red-900/40 bg-black/60 p-5 mb-4"
-        style={{ animation: 'badge-pop 0.5s 0.4s ease-out both', boxShadow: '0 0 20px rgba(239,68,68,0.1)' }}>
-        <div className="text-red-400 font-black text-sm mb-3 uppercase tracking-widest">Résumé du combat</div>
-        {[
-          { icon: '❤️', label: 'Pokémon K.O.',     value: `${stats.pokemonKO} / ${stats.teamSize}` },
-          { icon: '💚', label: 'Pokémon survivants', value: String(stats.pokemonAlive) },
-          { icon: '⭐', label: 'XP total gagné',    value: stats.totalXp > 0 ? `+${stats.totalXp.toLocaleString()}` : '–' },
-        ].map((row, i) => (
-          <div key={i} className="flex items-center justify-between py-2 border-b border-slate-800 last:border-0">
-            <div className="flex items-center gap-2 text-slate-300 text-sm">
-              <span>{row.icon}</span>
-              <span>{row.label}</span>
-            </div>
-            <span className="font-black text-white text-sm">{row.value}</span>
-          </div>
-        ))}
-      </div>
+      {/* Damage breakdown by enemy pokemon */}
+      {stats.damageByEnemy.length > 0 && (
+        <div className="w-full max-w-sm rounded-2xl border border-red-900/40 bg-black/60 p-5 mb-4"
+          style={{ animation: 'badge-pop 0.5s 0.4s ease-out both', boxShadow: '0 0 20px rgba(239,68,68,0.1)' }}>
+          <div className="text-red-400 font-black text-sm mb-3 uppercase tracking-widest">Dégâts reçus</div>
+          {stats.damageByEnemy
+            .sort((a, b) => b.damage - a.damage)
+            .map((row, i) => {
+              const pct = row.damage / stats.damageByEnemy.reduce((s, r) => s + r.damage, 0);
+              const pName = POKEMON_BY_ID[row.pokemonId]?.name ?? `#${row.pokemonId}`;
+              return (
+                <div key={i} className="py-2 border-b border-slate-800 last:border-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-slate-300 text-sm font-bold">{pName}</span>
+                    <span className="text-red-400 font-black text-sm">{row.damage.toLocaleString()} dmg</span>
+                  </div>
+                  <div className="w-full bg-slate-800 rounded-full h-1.5">
+                    <div className="h-1.5 rounded-full" style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg,#ef4444,#f97316)' }} />
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      )}
 
-      {/* Encouragement */}
-      <p className="text-slate-500 text-xs text-center max-w-xs mb-6"
-        style={{ animation: 'badge-pop 0.5s 0.6s ease-out both' }}>
-        Reviens plus fort — les HP de ton équipe seront restaurés pour le prochain essai.
+      <p className="text-slate-500 text-xs text-center max-w-xs mb-6" style={{ animation: 'badge-pop 0.5s 0.6s ease-out both' }}>
+        Reviens plus fort — les HP seront restaurés pour le prochain essai.
       </p>
 
-      {/* Buttons */}
       <div className="flex flex-col gap-3 w-full max-w-sm" style={{ animation: 'badge-pop 0.5s 0.7s ease-out both' }}>
-        <button onClick={onRetry}
-          className="w-full py-4 rounded-2xl font-black text-lg text-black"
+        <button onClick={onRetry} className="w-full py-4 rounded-2xl font-black text-lg text-black"
           style={{ background: 'linear-gradient(90deg, #ef4444, #f97316)', boxShadow: '0 0 20px rgba(239,68,68,0.4)' }}>
           🔄 Réessayer
         </button>
-        <button onClick={onClose}
-          className="w-full py-3 rounded-2xl font-bold text-base text-slate-400 border border-slate-700">
+        <button onClick={onClose} className="w-full py-3 rounded-2xl font-bold text-base text-slate-400 border border-slate-700">
           ✕ Quitter
         </button>
       </div>
@@ -884,18 +947,18 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
 
   const handleBattleEnd = useCallback(
     (nextPhase: Phase) =>
-      (won: boolean, xpGains: Record<number, number>, finalTeam?: TeamMember[]) => {
+      (won: boolean, xpGains: Record<number, number>, finalTeam?: TeamMember[], enemyDmg?: Record<number, number>) => {
         Object.entries(xpGains).forEach(([id, xp]) => onAddXp(Number(id), xp));
         if (!won) {
           const meta = OPPONENT_META[nextPhase] ?? { name: 'ton adversaire', color: '#ef4444' };
-          const team = finalTeam ?? currentTeam;
+          const damageByEnemy = Object.entries(enemyDmg ?? {}).map(([id, damage]) => ({
+            pokemonId: Number(id),
+            damage,
+          }));
           setDefeatStats({
             lostAgainst: meta.name,
             trainerColor: meta.color,
-            pokemonKO: team.filter(m => m.currentHp <= 0).length,
-            pokemonAlive: team.filter(m => m.currentHp > 0).length,
-            totalXp: Object.values(xpGains).reduce((a, b) => a + b, 0),
-            teamSize: team.length,
+            damageByEnemy,
           });
           setRetrying(true);
           setPhase('defeat');
@@ -928,7 +991,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     return (
       <div className="fixed inset-0 z-[210]">
         <BattleScreen playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
-          bossName="Peter" onBattleEnd={handleBattleEnd('dialogue_giovanni')}
+          bossName="Peter" trainerBackground="/trainers/master.png" onBattleEnd={handleBattleEnd('dialogue_giovanni')}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
     );
@@ -944,7 +1007,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     return (
       <div className="fixed inset-0 z-[210]">
         <BattleScreen playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
-          bossName="Giovanni" onBattleEnd={handleBattleEnd('dialogue_master')}
+          bossName="Giovanni" trainerBackground="/trainers/master.png" onBattleEnd={handleBattleEnd('dialogue_master')}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
     );

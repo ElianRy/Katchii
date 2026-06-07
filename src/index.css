@@ -785,14 +785,28 @@ button:active{transform:scale(.93);transition:transform .08s ease}
 }
 @keyframes side-spark {
   0%   { opacity:0; transform:translateY(0) scale(0.5); }
-  20%  { opacity:1; transform:translateY(-8px) scale(1); }
-  80%  { opacity:0.6; transform:translateY(-60px) scale(0.8); }
-  100% { opacity:0; transform:translateY(-90px) scale(0.3); }
+  15%  { opacity:1; transform:translateY(-10px) scale(1); }
+  70%  { opacity:0.5; transform:translateY(-120px) scale(0.7); }
+  100% { opacity:0; transform:translateY(-180px) scale(0.2); }
 }
 @keyframes side-lightning-bolt {
   0%,89%,100% { opacity:0; }
   90%,94%     { opacity:1; }
   92%,96%     { opacity:0; }
+}
+@keyframes side-energy-top {
+  0%,100% { opacity:0.55; transform:scaleX(1) translateY(0); }
+  35%     { opacity:0.9;  transform:scaleX(1.02) translateY(3px); }
+  65%     { opacity:0.4;  transform:scaleX(0.98) translateY(-2px); }
+}
+@keyframes pokeball-top-open {
+  0%   { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(-60px) rotate(-30deg); }
+}
+@keyframes pokeball-flash {
+  0%   { opacity:0; transform:scale(0.2); }
+  40%  { opacity:1; transform:scale(1.4); }
+  100% { opacity:0; transform:scale(2); }
 }
 @keyframes pokeball-release {
   0%   { opacity:0; transform:scale(0.1) translateY(40px); filter:brightness(3) blur(4px); }
@@ -805,4 +819,21 @@ button:active{transform:scale(.93);transition:transform .08s ease}
   0%,100% { transform: translateY(0px) rotate(-1.5deg); }
   35%     { transform: translateY(-18px) rotate(1.5deg); }
   65%     { transform: translateY(-10px) rotate(-0.8deg); }
+}
+@keyframes legendary-orb-pulse {
+  0%,100% { transform:scale(1); opacity:0.7; }
+  50%     { transform:scale(1.15); opacity:1; }
+}
+@keyframes legendary-ray {
+  0%   { opacity:0; transform:scaleY(0) rotate(var(--angle)); transform-origin:bottom center; }
+  30%  { opacity:0.8; transform:scaleY(1) rotate(var(--angle)); }
+  100% { opacity:0; transform:scaleY(1.2) rotate(var(--angle)); }
+}
+@keyframes legendary-confetti {
+  0%   { transform:translateY(0) rotate(0deg); opacity:1; }
+  100% { transform:translateY(110vh) rotate(var(--cr)); opacity:0.2; }
+}
+@keyframes legendary-sparkle {
+  0%,100% { opacity:0; transform:scale(0.5); }
+  50%     { opacity:1; transform:scale(1.2); }
 }
