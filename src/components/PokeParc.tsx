@@ -88,44 +88,17 @@ function getSpriteUrl(pokemonId: number, isShiny: boolean) {
   return isShiny ? `${base}/shiny/${pokemonId}.png` : `${base}/${pokemonId}.png`;
 }
 
-// ---- Shiny scattered stars around the 56×56 sprite ----
-// Each star orbits at its own radius + speed so they look scattered, not in a ring
-const PARK_STARS = [
-  { color: '#fde047', r: 30, dur: '3.2s', delay: '0s',    size: 13, sym: '✦' },
-  { color: '#f0abfc', r: 25, dur: '2.6s', delay: '-0.9s', size: 11, sym: '✧' },
-  { color: '#a5f3fc', r: 34, dur: '4.0s', delay: '-1.7s', size: 12, sym: '⋆' },
-  { color: '#fbbf24', r: 22, dur: '2.2s', delay: '-0.4s', size: 10, sym: '✦' },
-  { color: '#ffffff', r: 32, dur: '3.6s', delay: '-2.1s', size: 11, sym: '✧' },
-  { color: '#f472b6', r: 27, dur: '2.9s', delay: '-1.3s', size: 12, sym: '⋆' },
-  { color: '#4ade80', r: 23, dur: '3.4s', delay: '-0.7s', size: 10, sym: '✦' },
-  { color: '#60a5fa', r: 36, dur: '4.2s', delay: '-2.5s', size: 11, sym: '✧' },
-  { color: '#c084fc', r: 28, dur: '2.4s', delay: '-1.5s', size: 12, sym: '⋆' },
-  { color: '#fb923c', r: 20, dur: '3.8s', delay: '-2.8s', size: 10, sym: '✦' },
+// ---- Shiny perspective orbit stars (same system as wild spawn, less intense) ----
+const PARK_ORBIT_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string; layer: 'front' | 'back' }[] = [
+  { color: '#fde047', dur: '3.2s', delay: '0s',    sym: '✦', size: 14, anim: 'shiny-persp-a', layer: 'front' },
+  { color: '#f472b6', dur: '2.6s', delay: '-0.9s', sym: '★', size: 12, anim: 'shiny-persp-b', layer: 'back'  },
+  { color: '#60a5fa', dur: '4.0s', delay: '-1.7s', sym: '✦', size: 13, anim: 'shiny-persp-c', layer: 'front' },
+  { color: '#fbbf24', dur: '2.2s', delay: '-0.4s', sym: '✧', size: 11, anim: 'shiny-persp-d', layer: 'back'  },
+  { color: '#ffffff', dur: '3.6s', delay: '-2.1s', sym: '★', size: 12, anim: 'shiny-persp-e', layer: 'front' },
+  { color: '#4ade80', dur: '2.9s', delay: '-1.3s', sym: '✦', size: 13, anim: 'shiny-persp-a', layer: 'back'  },
+  { color: '#c084fc', dur: '2.4s', delay: '-1.5s', sym: '✧', size: 12, anim: 'shiny-persp-d', layer: 'front' },
+  { color: '#fb923c', dur: '3.8s', delay: '-2.8s', sym: '★', size: 11, anim: 'shiny-persp-b', layer: 'back'  },
 ];
-function ParkShinySparkles() {
-  return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
-      {PARK_STARS.map((s, i) => (
-        <div key={i} style={{
-          position: 'absolute', left: 28, top: 28,
-          width: 0, height: 0,
-          animation: `park-shiny-orbit ${s.dur} linear infinite`,
-          animationDelay: s.delay,
-        }}>
-          <div style={{
-            position: 'absolute',
-            left: s.r, top: -(s.size / 2),
-            color: s.color, fontSize: s.size, fontWeight: 900,
-            textShadow: `0 0 5px ${s.color}`,
-            animation: `park-shiny-orbit-counter ${s.dur} linear infinite`,
-            animationDelay: s.delay,
-            lineHeight: 1,
-          }}>{s.sym}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 // ---- Park Attack VFX ----
 // Minimal inline attack animations that don't need the full BattleScreen keyframes.
@@ -209,8 +182,11 @@ function ParkSprite({
   const spriteAnim = MOOD_ANIM[mood] ?? '';
 
   const filter = isShiny
-    ? 'drop-shadow(0 0 3px #fde047) drop-shadow(0 0 5px #f0abfc99)'
+    ? undefined
     : `drop-shadow(0 0 5px ${rarityColor})`;
+  const imgAnimation = isShiny
+    ? `${spriteAnim ? spriteAnim + ', ' : ''}shiny-img-rainbow 2.5s linear infinite`
+    : spriteAnim || undefined;
 
   return (
     <div
@@ -250,28 +226,63 @@ function ParkSprite({
         <ParkAttackVfx pokemonId={pokemonId} facingRight={!isMine} />
       )}
 
-      {/* Sprite + shiny sparkles centered on it */}
+      {/* Sprite + shiny orbit stars */}
       <div style={{ position: 'relative', width: 56, height: 56, display: 'inline-block' }}>
+        {/* Shiny stars BEHIND sprite */}
+        {isShiny && PARK_ORBIT_STARS.filter(s => s.layer === 'back').map((star, i) => (
+          <div key={`b${i}`} style={{
+            position: 'absolute', left: 28, top: 28, width: 0, height: 0, zIndex: 0,
+            animation: `${star.anim} ${star.dur} ${star.delay} linear infinite`,
+          } as React.CSSProperties}>
+            <span style={{
+              position: 'absolute', transform: 'translate(-50%,-50%)',
+              color: star.color, fontSize: star.size, fontWeight: 900,
+              textShadow: `0 0 6px ${star.color}, 0 0 12px ${star.color}88`,
+              lineHeight: 1, userSelect: 'none',
+            }}>{star.sym}</span>
+          </div>
+        ))}
+        {/* Rainbow ring aura — lighter than wild version */}
+        {isShiny && (
+          <div style={{
+            position: 'absolute', inset: -6, borderRadius: '50%',
+            background: 'conic-gradient(from 0deg, #f87171, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
+            animation: 'rainbow-spin 2.5s linear infinite',
+            opacity: 0.3, filter: 'blur(3px)', zIndex: 0,
+          }} />
+        )}
         {err ? (
           <div style={{
             width: 56, height: 56,
             background: `linear-gradient(135deg, ${rarityColor}33, ${rarityColor}11)`,
             border: `1px solid ${rarityColor}66`,
             borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 24, filter,
+            fontSize: 24, filter, position: 'relative', zIndex: 1,
           }}>?</div>
         ) : (
           <img
             src={getSpriteUrl(pokemonId, isShiny)}
             width={56} height={56}
-            style={{ imageRendering: 'pixelated', objectFit: 'contain', filter, animation: spriteAnim }}
+            style={{ imageRendering: 'pixelated', objectFit: 'contain', filter, animation: imgAnimation, position: 'relative', zIndex: 1 }}
             onError={() => setErr(true)}
             draggable={false}
             alt={data?.name ?? '?'}
           />
         )}
-        {/* Shiny sparkles — positioned relative to sprite center (28px) */}
-        {isShiny && <ParkShinySparkles />}
+        {/* Shiny stars IN FRONT of sprite */}
+        {isShiny && PARK_ORBIT_STARS.filter(s => s.layer === 'front').map((star, i) => (
+          <div key={`f${i}`} style={{
+            position: 'absolute', left: 28, top: 28, width: 0, height: 0, zIndex: 5,
+            animation: `${star.anim} ${star.dur} ${star.delay} linear infinite`,
+          } as React.CSSProperties}>
+            <span style={{
+              position: 'absolute', transform: 'translate(-50%,-50%)',
+              color: star.color, fontSize: star.size, fontWeight: 900,
+              textShadow: `0 0 6px ${star.color}, 0 0 12px ${star.color}88`,
+              lineHeight: 1, userSelect: 'none',
+            }}>{star.sym}</span>
+          </div>
+        ))}
       </div>
 
       {/* Username badge */}
