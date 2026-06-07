@@ -5,6 +5,7 @@ import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
 import { getPlayerGrade, PARK_XP_PER_TICK } from '../lib/playerLevel';
+import { xpToNextLevel } from '../data/combatEngine';
 
 type Mood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited' | 'scared' | 'proud' | 'hungry' | 'curious';
 
@@ -777,7 +778,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [justPlaced, setJustPlaced] = useState(false);
   const [parkRevealed, setParkRevealed] = useState(!!state.favoritePokemon);
   const [xpPop, setXpPop] = useState<{ xp: number; key: number } | null>(null);
-  const [offlineParkXp, setOfflineParkXp] = useState<{ xp: number; pokemonId: number; isShiny: boolean } | null>(null);
+  const [offlineParkXp, setOfflineParkXp] = useState<{ xp: number; pokemonId: number; isShiny: boolean; levelBefore: number; levelAfter: number; xpBefore: number; xpAfter: number } | null>(null);
   const [xpBarFill, setXpBarFill] = useState(0);
   // mutedUsers: userId -> expiryMs (null = permanent) — persisted in localStorage
   const MUTE_KEY = 'katchii_muted_users';
@@ -940,12 +941,18 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         const cappedElapsed = Math.min(elapsed, FIVE_HOURS);
         const ticks = Math.floor(cappedElapsed / TICK_MS);
         if (ticks > 0) {
-          const level = state.pokemonLevels?.[myFav.pokemonId]?.level ?? 1;
-          const xpPerTick = Math.floor(rarityBase * (1 + level * 0.4) * (myFav.isShiny ? 2 : 1));
+          const levelBefore = state.pokemonLevels?.[myFav.pokemonId]?.level ?? 1;
+          const xpBefore = state.pokemonLevels?.[myFav.pokemonId]?.xp ?? 0;
+          const xpPerTick = Math.floor(rarityBase * (1 + levelBefore * 0.4) * (myFav.isShiny ? 2 : 1));
           const totalXp = ticks * xpPerTick;
+          // Compute level after (simulate leveling)
+          let lAfter = levelBefore;
+          let xpAcc = xpBefore + totalXp;
+          while (lAfter < 100 && xpAcc >= xpToNextLevel(lAfter)) { xpAcc -= xpToNextLevel(lAfter); lAfter++; }
+          if (lAfter >= 100) xpAcc = 0;
           onAddPlayerXp(totalXp);
           onAddPokemonXp(myFav.pokemonId, totalXp);
-          setOfflineParkXp({ xp: totalXp, pokemonId: myFav.pokemonId, isShiny: myFav.isShiny ?? false });
+          setOfflineParkXp({ xp: totalXp, pokemonId: myFav.pokemonId, isShiny: myFav.isShiny ?? false, levelBefore, levelAfter: lAfter, xpBefore, xpAfter: xpAcc });
           setXpBarFill(0);
           setTimeout(() => setXpBarFill(100), 100);
         }
@@ -1128,6 +1135,10 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${offlineParkXp.pokemonId}.png`
           : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${offlineParkXp.pokemonId}.png`;
         const rarityColor = pkData ? RARITY_COLORS[pkData.rarity] : '#6b7280';
+        const { levelBefore, levelAfter, xpAfter } = offlineParkXp;
+        const levelsGained = levelAfter - levelBefore;
+        const xpNeeded = levelAfter >= 100 ? 1 : xpToNextLevel(levelAfter);
+        const xpPct = levelAfter >= 100 ? 100 : Math.min(100, Math.floor(xpAfter / xpNeeded * 100));
         return (
           <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70" onClick={() => setOfflineParkXp(null)}>
             <div className="bg-slate-900 border border-yellow-400/40 rounded-3xl px-8 py-6 text-center shadow-2xl max-w-xs w-full mx-4" onClick={e => e.stopPropagation()}>
@@ -1145,24 +1156,35 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                 }}
               />
               <div className="text-white font-black text-2xl mt-2">+{offlineParkXp.xp} XP</div>
-              <div className="text-slate-400 text-xs mt-1 mb-4">
+              {levelsGained > 0 && (
+                <div className="text-yellow-400 font-black text-sm mt-1">
+                  ⬆️ +{levelsGained} niveau{levelsGained > 1 ? 'x' : ''} ! (Niv. {levelBefore} → {levelAfter})
+                </div>
+              )}
+              <div className="text-slate-400 text-xs mt-1 mb-3">
                 {pkData?.name ?? 'Ton Pokémon'} s'est entraîné pendant ton absence !
               </div>
-              {/* Animated XP bar */}
-              <div className="w-full bg-slate-700 rounded-full h-3 mb-4 overflow-hidden">
-                <div
-                  className="h-3 rounded-full"
-                  style={{
-                    width: `${xpBarFill}%`,
-                    background: `linear-gradient(90deg, ${rarityColor}, #fde047)`,
-                    transition: 'width 1.8s cubic-bezier(0.4,0,0.2,1)',
-                    boxShadow: `0 0 8px ${rarityColor}`,
-                  }}
-                />
+              {/* XP bar — same as TeamBuilder */}
+              <div className="mb-1">
+                <div className="flex justify-between text-xs text-slate-400 mb-1">
+                  <span>Niv. {levelAfter}{levelAfter >= 100 ? ' MAX' : ''}</span>
+                  <span>{levelAfter >= 100 ? 'MAX' : `${xpAfter} / ${xpNeeded} XP`}</span>
+                </div>
+                <div className="w-full bg-slate-700/60 rounded-full overflow-hidden" style={{ height: 6 }}>
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${xpBarFill * xpPct / 100}%`,
+                      background: `linear-gradient(90deg, ${rarityColor}, #fbbf24)`,
+                      transition: 'width 1.8s cubic-bezier(0.4,0,0.2,1)',
+                      boxShadow: `0 0 6px ${rarityColor}88`,
+                    }}
+                  />
+                </div>
               </div>
               <button
                 onClick={() => setOfflineParkXp(null)}
-                className="px-8 py-2 rounded-xl font-black text-sm text-black"
+                className="mt-4 px-8 py-2 rounded-xl font-black text-sm text-black"
                 style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}
               >
                 Super !

@@ -8,6 +8,7 @@ interface Props {
   questsCompleted: number;
   favoritePokemon?: { pokemonId: number; isShiny?: boolean } | null;
   onOpenQuests?: () => void;
+  onShowPlayers?: () => void;
 }
 
 export const BOTTOM_NAV_HEIGHT = 72;
@@ -20,10 +21,11 @@ const MAIN_ITEMS = [
 ];
 
 const MENU_ITEMS = [
-  { view: 'lures' as View, icon: '🎣', label: 'Leurres', color: '#c084fc' },
-  { view: 'duels' as View, icon: '🥊', label: 'Duels',   color: '#f87171' },
-  { view: 'raid'  as View, icon: '🐉', label: 'Raid',    color: '#f87171' },
-  { view: 'clan'  as View, icon: '🛡️', label: 'Clan',    color: '#fbbf24' },
+  { view: 'lures'   as View, icon: '🎣', label: 'Leurres',    color: '#c084fc' },
+  { view: 'duels'   as View, icon: '🥊', label: 'Duels',      color: '#f87171' },
+  { view: 'raid'    as View, icon: '🐉', label: 'Raid',       color: '#f87171' },
+  { view: 'clan'    as View, icon: '🛡️', label: 'Clan',       color: '#fbbf24' },
+  { view: 'profile' as View, icon: '👤', label: 'Mon profil', color: '#60a5fa' },
 ];
 
 type NavMood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited';
@@ -238,7 +240,7 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
   );
 }
 
-export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePokemon, onOpenQuests }: Props) {
+export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePokemon, onOpenQuests, onShowPlayers }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const inMenu = MENU_ITEMS.some(i => i.view === currentView);
@@ -280,6 +282,15 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
                 <span className="text-xs font-bold" style={{ color: item.color }}>{item.label}</span>
               </button>
             ))}
+            {onShowPlayers && (
+              <button
+                onClick={() => { setMenuOpen(false); onShowPlayers(); }}
+                className="flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all bg-white/5 active:bg-white/10"
+              >
+                <span className="text-2xl leading-none">👥</span>
+                <span className="text-xs font-bold" style={{ color: '#34d399' }}>Joueurs</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

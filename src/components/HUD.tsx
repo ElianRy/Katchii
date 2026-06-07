@@ -175,11 +175,10 @@ export function HUD({
         const p3 = Math.min(1, Math.max(0, (elapsed - 0.68) / 0.17));
         // Phase 4 (83%→100%): fill with red/black
         const p4 = Math.min(1, Math.max(0, (elapsed - 0.83) / 0.17));
-        const nearlyDone = cooldownRemaining <= 5;
         return (
           <div className="absolute right-3 z-20" style={{ bottom: '84px' }}>
             <svg width="64" height="82" viewBox="0 0 64 82"
-              style={nearlyDone ? { filter: 'drop-shadow(0 0 8px #fbbf24cc)', transition: 'filter 0.5s ease' } : { transition: 'filter 0.5s ease' }}>
+              style={{ transition: 'filter 0.5s ease' }}>
               {/* Ghost — full pokeball shape in gray so player sees what's being drawn */}
               <circle cx={cx} cy={cy} r={r} fill="none" stroke="#374151" strokeWidth="2" />
               <line x1={cx-r} y1={cy} x2={cx+r} y2={cy} stroke="#374151" strokeWidth="2" />
@@ -241,7 +240,7 @@ export function HUD({
       {showImpact && (
         <div className="absolute right-3 z-20 animate-pokeball-impact" style={{ bottom: '84px' }}>
           <svg width="64" height="82" viewBox="0 0 64 82"
-            style={{ filter: 'drop-shadow(0 0 12px #fbbf24cc)' }}>
+            style={{}}>
             <path d="M 32 8 A 26 26 0 0 1 58 34 L 38 34 A 6 6 0 0 0 26 34 L 6 34 A 26 26 0 0 1 32 8 Z" fill="#dc2626" />
             <path d="M 6 34 A 26 26 0 0 0 58 34 L 38 34 A 6 6 0 0 1 26 34 Z" fill="white" />
             <circle cx="32" cy="34" r="26" fill="none" stroke="#000" strokeWidth="2.5" />

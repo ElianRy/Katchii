@@ -18,6 +18,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { PokeParc } from './components/PokeParc';
 import { SettingsPanel } from './components/SettingsPanel';
 import { ClanPanel } from './components/ClanPanel';
+import { PlayersPanel } from './components/PlayersPanel';
 import { useGameState } from './hooks/useGameState';
 import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
@@ -28,6 +29,7 @@ export function App() {
   const [userId, setUserId] = useState<string>('');
   const [authChecked, setAuthChecked] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [showPlayers, setShowPlayers] = useState(false);
   const gameState = useGameState();
 
   // Persist & restore last view
@@ -251,8 +253,11 @@ export function App() {
           questsCompleted={questsCompleted}
           favoritePokemon={gameState.state.favoritePokemon}
           onOpenQuests={() => persistView('quests')}
+          onShowPlayers={() => setShowPlayers(true)}
         />
       )}
+
+      {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} />}
 
       {/* Welcome animation — first session only */}
       {showWelcome && (

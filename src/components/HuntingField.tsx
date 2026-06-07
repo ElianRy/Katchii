@@ -310,6 +310,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
             fontSize: '1rem',
             textShadow: '0 0 8px rgba(0,0,0,0.9)',
             transform: 'translateX(-50%)',
+            whiteSpace: 'nowrap',
           }}
         >
           {n.text}
@@ -335,10 +336,16 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       {/* Zone info panel */}
       {showZoneInfo && <ZoneInfoPanel state={gameState.state} onClose={() => setShowZoneInfo(false)} />}
 
-      {/* Zone transition flash */}
+      {/* Zone transition overlay with directional slide */}
       {zoneTransition && (
-        <div className="absolute inset-0 z-50 pointer-events-none"
-          style={{ animation: 'zone-swipe-flash 0.4s ease-out forwards' }} />
+        <>
+          {/* Dark fade overlay */}
+          <div className="absolute inset-0 z-50 pointer-events-none bg-black"
+            style={{ animation: 'zone-fade-overlay 0.45s ease-out forwards' }} />
+          {/* Slide hint — subtle nudge in travel direction */}
+          <div className="absolute inset-0 z-49 pointer-events-none"
+            style={{ animation: `zone-slide-in-${zoneTransition === 'right' ? 'right' : 'left'} 0.45s ease-out forwards` }} />
+        </>
       )}
 
       {/* Zone nav arrows */}
