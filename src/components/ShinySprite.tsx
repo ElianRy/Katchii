@@ -1,22 +1,8 @@
 import React from 'react';
 
-export const SPARKLE_POSITIONS = [
-  { top: '-6px',   left: '50%',   color: '#fde047', duration: '1.0s',  delay: '0s' },
-  { top: '10%',    right: '-6px', color: '#f472b6', duration: '1.2s',  delay: '0.15s' },
-  { bottom: '-5px',left: '50%',   color: '#60a5fa', duration: '0.85s', delay: '0.3s' },
-  { top: '10%',    left: '-6px',  color: '#4ade80', duration: '1.3s',  delay: '0.45s' },
-  { top: '50%',    right: '-7px', color: '#fb923c', duration: '0.95s', delay: '0.6s' },
-  { top: '50%',    left: '-7px',  color: '#c084fc', duration: '1.1s',  delay: '0.75s' },
-  { top: '-5px',   right: '20%',  color: '#34d399', duration: '1.25s', delay: '0.9s' },
-  { bottom: '-4px',right: '20%',  color: '#f87171', duration: '1.05s', delay: '1.05s' },
-];
-
-export const ORBIT_POSITIONS = [
-  { top: '-4px',   left: '30%',   color: '#fde047', duration: '1.15s', delay: '0.5s' },
-  { top: '20%',    right: '-4px', color: '#60a5fa', duration: '0.9s',  delay: '0.7s' },
-  { bottom: '-3px',left: '70%',   color: '#f472b6', duration: '1.0s',  delay: '0.2s' },
-  { top: '70%',    left: '-4px',  color: '#fb923c', duration: '1.35s', delay: '0.95s' },
-];
+// kept for external consumers that import these arrays
+export const SPARKLE_POSITIONS: never[] = [];
+export const ORBIT_POSITIONS: never[] = [];
 
 interface Props {
   pokemonId: number;
@@ -26,9 +12,7 @@ interface Props {
   className?: string;
   style?: React.CSSProperties;
   alt?: string;
-  /** compact=true skips animated sparkle divs (use in grids with many pokemon) */
   compact?: boolean;
-  /** flip=true mirrors the whole sprite + aura horizontally */
   flip?: boolean;
 }
 
@@ -38,39 +22,7 @@ export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, class
     : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
 
   return (
-    <div className={`relative inline-flex items-center justify-center${isShiny && !compact ? ' shiny-rainbow' : ''}`} style={{ width, height, transform: flip ? 'scaleX(-1)' : undefined }}>
-      {/* Full sparkles only in non-compact mode */}
-      {isShiny && !compact && SPARKLE_POSITIONS.map((sp, i) => (
-        <div
-          key={i}
-          className="shiny-sparkle"
-          style={{
-            top: sp.top,
-            left: sp.left,
-            right: (sp as { right?: string }).right,
-            bottom: (sp as { bottom?: string }).bottom,
-            transform: sp.left === '50%' ? 'translateX(-50%)' : undefined,
-            '--sp-color': sp.color,
-            '--sp-duration': sp.duration,
-            '--sp-delay': sp.delay,
-          } as React.CSSProperties}
-        />
-      ))}
-      {isShiny && !compact && ORBIT_POSITIONS.map((sp, i) => (
-        <div
-          key={`o${i}`}
-          className="shiny-sparkle-orbit"
-          style={{
-            top: sp.top,
-            left: sp.left,
-            right: (sp as { right?: string }).right,
-            bottom: (sp as { bottom?: string }).bottom,
-            '--sp-color': sp.color,
-            '--sp-duration': sp.duration,
-            '--sp-delay': sp.delay,
-          } as React.CSSProperties}
-        />
-      ))}
+    <div className="relative inline-flex items-center justify-center" style={{ width, height, transform: flip ? 'scaleX(-1)' : undefined }}>
       <img
         src={src}
         alt={alt ?? ''}
@@ -79,13 +31,13 @@ export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, class
         className={className}
         style={{
           imageRendering: 'pixelated',
+          animation: isShiny && !compact ? 'shiny-img-rainbow 2.5s linear infinite' : undefined,
           ...style,
         }}
       />
       {isShiny && (
-        <span className="absolute -top-1 -right-1 text-xs pointer-events-none" style={{ filter: 'drop-shadow(0 0 3px #fde047)' }}>✨</span>
+        <span className="absolute -top-1 -right-1 text-xs pointer-events-none" style={{ filter: 'drop-shadow(0 0 2px #fde047)', fontSize: 10 }}>✨</span>
       )}
     </div>
   );
 }
-

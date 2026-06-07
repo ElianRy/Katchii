@@ -54,6 +54,8 @@ interface NewCaptureInfo {
   pokemonId: number;
   isShiny: boolean;
   rarity: string;
+  level: number;
+  totalCaught: number;
 }
 
 export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmin, onOpenLures, onOpenQuests, onOpenDuels, onOpenRaid, onOpenWrapped, onChangeUniverse, gameState }: Props) {
@@ -114,7 +116,9 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         if (pts > 0) {
           addNotification(`+${pts} pts !`, x, y, true);
           addNotification('Nouveau !', x, y - 8, true);
-          setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity });
+          const lvl = (gameState.state.pokemonLevels?.[pokemonId]?.level ?? 1);
+          const totalCaught = Object.values(gameState.state.normalCollection as Record<number,number>).filter(v => v > 0).length + (isShiny ? Object.values(gameState.state.shinyCollection as Record<number,number>).filter(v => v > 0).length : 0);
+          setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: lvl, totalCaught });
         } else if (isDoublon) {
           addNotification(`+${doublonXp} XP !`, x, y, true);
           addNotification('Doublon !', x, y - 8, false);
@@ -444,6 +448,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           pokemonId={newCaptureInfo.pokemonId}
           isShiny={newCaptureInfo.isShiny}
           rarity={newCaptureInfo.rarity as import('../types').Rarity}
+          level={newCaptureInfo.level}
+          totalCaught={newCaptureInfo.totalCaught}
           onDismiss={() => setNewCaptureInfo(null)}
         />
       )}

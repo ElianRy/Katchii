@@ -7,12 +7,15 @@ interface Props {
   isShiny: boolean;
   rarity: Rarity;
   onDismiss: () => void;
+  level?: number;
+  totalCaught?: number;
 }
 
+const AUTO_DISMISS_MS = 3000;
 const LEGENDARY_DISMISS_MS = 9000;
 const SHINY_DISMISS_MS = 6000;
 
-// ── Legendary ────────────────────────────────────────────────────────────────
+// ── Legendary full-screen ─────────────────────────────────────────────────────
 
 const CONFETTI = Array.from({ length: 36 }, (_, i) => ({
   color: ['#fbbf24','#f472b6','#60a5fa','#4ade80','#fb923c','#c084fc','#fde047','#34d399','#f87171','#38bdf8'][i % 10],
@@ -40,7 +43,6 @@ const STAR_POSITIONS = Array.from({ length: 20 }, (_, i) => ({
   color: ['#fde047','#f472b6','#60a5fa','#c084fc','#fb923c','#4ade80'][i % 6],
 }));
 
-// Orbiting stars around pokemon
 const ORBIT_STARS = [
   { color: '#fde047', dur: '2.8s', delay: '0s' },
   { color: '#f472b6', dur: '2.8s', delay: '-0.56s' },
@@ -49,37 +51,40 @@ const ORBIT_STARS = [
   { color: '#c084fc', dur: '2.8s', delay: '-2.24s' },
 ];
 
-function LegendaryCaptureModal({ pokemonId, isShiny, onDismiss }: { pokemonId: number; isShiny: boolean; onDismiss: () => void }) {
-  const ref = useRef(onDismiss);
-  ref.current = onDismiss;
-  useEffect(() => {
-    const t = setTimeout(() => ref.current(), LEGENDARY_DISMISS_MS);
-    return () => clearTimeout(t);
-  }, []);
+const RARITY_LABEL: Record<string, string> = {
+  commun: 'Commun', peu_commun: 'Peu commun', rare: 'Rare', elite: 'Élite', legendaire: '⭐ Légendaire',
+};
+
+function LegendaryCaptureModal({ pokemonId, pokemonName, isShiny, rarity, level, totalCaught, onDismiss }: {
+  pokemonId: number; pokemonName: string; isShiny: boolean; rarity: Rarity;
+  level?: number; totalCaught?: number; onDismiss: () => void;
+}) {
+  const ref = useRef(onDismiss); ref.current = onDismiss;
+  useEffect(() => { const t = setTimeout(() => ref.current(), LEGENDARY_DISMISS_MS); return () => clearTimeout(t); }, []);
 
   const src = isShiny
     ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${pokemonId}.png`
     : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
 
+  const rarityColor = RARITY_COLORS[rarity];
+
   return (
-    <div
-      className="fixed inset-0 z-[500] overflow-hidden cursor-pointer"
+    <div className="fixed inset-0 z-[500] overflow-hidden cursor-pointer"
       style={{ background: 'radial-gradient(ellipse at 50% 45%, #1a0830 0%, #080014 55%, #000 100%)' }}
-      onClick={onDismiss}
-    >
+      onClick={onDismiss}>
+
       {/* Slowly rotating rays */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none"
         style={{ animation: 'capture-rays-spin 18s linear infinite' }}>
         {RAYS.map((r, i) => (
-          <div key={i} className="absolute"
-            style={{
-              top: '50%', left: '50%',
-              width: r.width, height: r.height,
-              background: `linear-gradient(to top, rgba(251,191,36,${r.opacity}), rgba(168,85,247,0.3), transparent)`,
-              transformOrigin: 'bottom center',
-              transform: `translateX(-50%) rotate(${r.angle}deg)`,
-              animation: `capture-ray-fade 4s ${r.delay} ease-in-out infinite`,
-            }} />
+          <div key={i} className="absolute" style={{
+            top: '50%', left: '50%',
+            width: r.width, height: r.height,
+            background: `linear-gradient(to top, rgba(251,191,36,${r.opacity}), rgba(168,85,247,0.3), transparent)`,
+            transformOrigin: 'bottom center',
+            transform: `translateX(-50%) rotate(${r.angle}deg)`,
+            animation: `capture-ray-fade 4s ${r.delay} ease-in-out infinite`,
+          }} />
         ))}
       </div>
 
@@ -88,8 +93,7 @@ function LegendaryCaptureModal({ pokemonId, isShiny, onDismiss }: { pokemonId: n
         <div key={i} style={{
           position: 'fixed', top: '-12px', left: c.left,
           width: c.size, height: c.size, borderRadius: 2,
-          background: c.color,
-          '--cr': c.cr,
+          background: c.color, '--cr': c.cr,
           animation: `legendary-confetti ${c.dur} ${c.delay} ease-in both`,
           pointerEvents: 'none', zIndex: 2,
         } as React.CSSProperties} />
@@ -97,8 +101,7 @@ function LegendaryCaptureModal({ pokemonId, isShiny, onDismiss }: { pokemonId: n
 
       {/* Scattered sparkle stars */}
       {STAR_POSITIONS.map((s, i) => (
-        <div key={i} className="absolute pointer-events-none"
-          style={{ top: s.top, left: s.left, zIndex: 3 }}>
+        <div key={i} className="absolute pointer-events-none" style={{ top: s.top, left: s.left, zIndex: 3 }}>
           <svg viewBox="0 0 10 10" width={s.size} height={s.size}
             style={{ animation: `legendary-sparkle ${s.dur} ${s.delay} ease-in-out infinite` }}>
             <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z"
@@ -124,48 +127,56 @@ function LegendaryCaptureModal({ pokemonId, isShiny, onDismiss }: { pokemonId: n
       </div>
 
       {/* Pokemon + orbiting stars */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 10 }}>
-        <div className="relative flex items-center justify-center">
-          {/* Orbit stars */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ zIndex: 10, gap: 0 }}>
+        <div className="relative flex items-center justify-center" style={{ marginBottom: 20 }}>
           {ORBIT_STARS.map((s, i) => (
-            <div key={i} style={{
-              position: 'absolute',
-              width: 0, height: 0,
-              animation: `capture-orbit ${s.dur} ${s.delay} linear infinite`,
-            }}>
-              <svg viewBox="0 0 10 10" width={14} height={14}
-                style={{
-                  position: 'absolute',
-                  left: 72, top: -7,
-                  filter: `drop-shadow(0 0 4px ${s.color})`,
-                  animation: `capture-orbit-counter ${s.dur} ${s.delay} linear infinite`,
-                }}>
+            <div key={i} style={{ position: 'absolute', width: 0, height: 0,
+              animation: `capture-orbit ${s.dur} ${s.delay} linear infinite` }}>
+              <svg viewBox="0 0 10 10" width={14} height={14} style={{
+                position: 'absolute', left: 72, top: -7,
+                filter: `drop-shadow(0 0 4px ${s.color})`,
+                animation: `capture-orbit-counter ${s.dur} ${s.delay} linear infinite`,
+              }}>
                 <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z" fill={s.color} />
               </svg>
             </div>
           ))}
+          <img src={src} alt="" width={180} height={180} style={{
+            imageRendering: 'pixelated', objectFit: 'contain',
+            filter: 'drop-shadow(0 0 18px #fbbf24) drop-shadow(0 0 36px #a855f7) drop-shadow(0 0 6px #fde047)',
+            animation: 'capture-appear 0.9s cubic-bezier(0.34,1.56,0.64,1) both, capture-float 3s 1s ease-in-out infinite',
+          }} />
+        </div>
 
-          {/* Sprite */}
-          <img src={src} alt="" width={180} height={180}
-            style={{
-              imageRendering: 'pixelated', objectFit: 'contain',
-              filter: 'drop-shadow(0 0 18px #fbbf24) drop-shadow(0 0 36px #a855f7) drop-shadow(0 0 6px #fde047)',
-              animation: 'capture-appear 0.9s cubic-bezier(0.34,1.56,0.64,1) both, capture-float 3s 1s ease-in-out infinite',
-            }} />
+        {/* Info panel */}
+        <div className="flex flex-col items-center gap-1" style={{ animation: 'capture-appear 0.9s 0.3s both' }}>
+          <div className="font-black text-2xl text-white" style={{ textShadow: `0 0 12px ${rarityColor}` }}>
+            {isShiny && <span className="text-yellow-300">✨ </span>}{pokemonName}
+          </div>
+          <div className="px-3 py-0.5 rounded-full text-xs font-black" style={{
+            background: `${rarityColor}22`, color: rarityColor, border: `1px solid ${rarityColor}55`,
+          }}>
+            {RARITY_LABEL[rarity] ?? rarity}
+          </div>
+          {level !== undefined && (
+            <div className="text-slate-300 text-sm font-bold mt-1">Niv. {level}</div>
+          )}
+          {totalCaught !== undefined && (
+            <div className="text-slate-500 text-xs mt-0.5">#{totalCaught} capturé{totalCaught > 1 ? 's' : ''}</div>
+          )}
         </div>
       </div>
 
-      {/* Subtle vignette pulse at edges */}
-      <div className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.6) 100%)',
-          animation: 'capture-vignette 2s ease-in-out infinite',
-        }} />
+      {/* Vignette pulse */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.6) 100%)',
+        animation: 'capture-vignette 2s ease-in-out infinite',
+      }} />
     </div>
   );
 }
 
-// ── Shiny ─────────────────────────────────────────────────────────────────────
+// ── Shiny full-screen ─────────────────────────────────────────────────────────
 
 const SHINY_STARS = Array.from({ length: 16 }, (_, i) => ({
   top: `${(i * 47 + 13) % 85}%`,
@@ -184,30 +195,28 @@ const SHINY_ORBIT = [
   { color: '#c084fc', dur: '2.2s', delay: '-1.76s' },
 ];
 
-function ShinyCaptureModal({ pokemonId, onDismiss }: { pokemonId: number; onDismiss: () => void }) {
-  const ref = useRef(onDismiss);
-  ref.current = onDismiss;
-  useEffect(() => {
-    const t = setTimeout(() => ref.current(), SHINY_DISMISS_MS);
-    return () => clearTimeout(t);
-  }, []);
+function ShinyCaptureModal({ pokemonId, pokemonName, rarity, level, totalCaught, onDismiss }: {
+  pokemonId: number; pokemonName: string; rarity: Rarity;
+  level?: number; totalCaught?: number; onDismiss: () => void;
+}) {
+  const ref = useRef(onDismiss); ref.current = onDismiss;
+  useEffect(() => { const t = setTimeout(() => ref.current(), SHINY_DISMISS_MS); return () => clearTimeout(t); }, []);
 
   const src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${pokemonId}.png`;
+  const rarityColor = RARITY_COLORS[rarity];
 
   return (
-    <div
-      className="fixed inset-0 z-[500] overflow-hidden cursor-pointer"
+    <div className="fixed inset-0 z-[500] overflow-hidden cursor-pointer"
       style={{ background: 'radial-gradient(ellipse at 50% 45%, #0f1a2a 0%, #050a10 55%, #000 100%)' }}
-      onClick={onDismiss}
-    >
-      {/* Rainbow slowly rotating ring */}
+      onClick={onDismiss}>
+
+      {/* Rainbow rings */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div style={{
           width: 280, height: 280, borderRadius: '50%',
           background: 'conic-gradient(from 0deg, #f87171, #fb923c, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
           animation: 'rainbow-spin 4s linear infinite',
-          opacity: 0.18,
-          filter: 'blur(8px)',
+          opacity: 0.18, filter: 'blur(8px)',
         }} />
       </div>
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -215,15 +224,13 @@ function ShinyCaptureModal({ pokemonId, onDismiss }: { pokemonId: number; onDism
           width: 180, height: 180, borderRadius: '50%',
           background: 'conic-gradient(from 0deg, #f87171aa, #fde047aa, #60a5faaa, #c084fcaa, #4ade80aa, #f87171aa)',
           animation: 'rainbow-spin 2.5s linear infinite reverse',
-          opacity: 0.3,
-          filter: 'blur(4px)',
+          opacity: 0.3, filter: 'blur(4px)',
         }} />
       </div>
 
       {/* Scattered sparkle stars */}
       {SHINY_STARS.map((s, i) => (
-        <div key={i} className="absolute pointer-events-none"
-          style={{ top: s.top, left: s.left, zIndex: 3 }}>
+        <div key={i} className="absolute pointer-events-none" style={{ top: s.top, left: s.left, zIndex: 3 }}>
           <svg viewBox="0 0 10 10" width={s.size} height={s.size}
             style={{ animation: `legendary-sparkle ${s.dur} ${s.delay} ease-in-out infinite` }}>
             <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z"
@@ -242,52 +249,58 @@ function ShinyCaptureModal({ pokemonId, onDismiss }: { pokemonId: number; onDism
       </div>
 
       {/* Pokemon + orbiting stars */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 10 }}>
-        <div className="relative flex items-center justify-center">
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ zIndex: 10, gap: 0 }}>
+        <div className="relative flex items-center justify-center" style={{ marginBottom: 20 }}>
           {SHINY_ORBIT.map((s, i) => (
-            <div key={i} style={{
-              position: 'absolute',
-              width: 0, height: 0,
-              animation: `capture-orbit ${s.dur} ${s.delay} linear infinite`,
-            }}>
-              <svg viewBox="0 0 10 10" width={12} height={12}
-                style={{
-                  position: 'absolute',
-                  left: 62, top: -6,
-                  filter: `drop-shadow(0 0 4px ${s.color})`,
-                  animation: `capture-orbit-counter ${s.dur} ${s.delay} linear infinite`,
-                }}>
+            <div key={i} style={{ position: 'absolute', width: 0, height: 0,
+              animation: `capture-orbit ${s.dur} ${s.delay} linear infinite` }}>
+              <svg viewBox="0 0 10 10" width={12} height={12} style={{
+                position: 'absolute', left: 62, top: -6,
+                filter: `drop-shadow(0 0 4px ${s.color})`,
+                animation: `capture-orbit-counter ${s.dur} ${s.delay} linear infinite`,
+              }}>
                 <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z" fill={s.color} />
               </svg>
             </div>
           ))}
+          <img src={src} alt="" width={160} height={160} style={{
+            imageRendering: 'pixelated', objectFit: 'contain',
+            filter: 'drop-shadow(0 0 12px #fde047) drop-shadow(0 0 24px #f0abfc) drop-shadow(0 0 5px #fff)',
+            animation: 'capture-appear 0.9s cubic-bezier(0.34,1.56,0.64,1) both, capture-float 2.5s 1s ease-in-out infinite',
+          }} />
+        </div>
 
-          <img src={src} alt="" width={160} height={160}
-            style={{
-              imageRendering: 'pixelated', objectFit: 'contain',
-              filter: 'drop-shadow(0 0 12px #fde047) drop-shadow(0 0 24px #f0abfc) drop-shadow(0 0 5px #fff)',
-              animation: 'capture-appear 0.9s cubic-bezier(0.34,1.56,0.64,1) both, capture-float 2.5s 1s ease-in-out infinite',
-            }} />
+        {/* Info panel */}
+        <div className="flex flex-col items-center gap-1" style={{ animation: 'capture-appear 0.9s 0.3s both' }}>
+          <div className="font-black text-2xl text-yellow-300" style={{ textShadow: '0 0 12px #fde047' }}>
+            ✨ {pokemonName}
+          </div>
+          <div className="px-3 py-0.5 rounded-full text-xs font-black" style={{
+            background: `${rarityColor}22`, color: rarityColor, border: `1px solid ${rarityColor}55`,
+          }}>
+            {RARITY_LABEL[rarity] ?? rarity} · Shiny
+          </div>
+          {level !== undefined && (
+            <div className="text-slate-300 text-sm font-bold mt-1">Niv. {level}</div>
+          )}
+          {totalCaught !== undefined && (
+            <div className="text-slate-500 text-xs mt-0.5">#{totalCaught} capturé{totalCaught > 1 ? 's' : ''}</div>
+          )}
         </div>
       </div>
 
-      <div className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%)',
-          animation: 'capture-vignette 2s ease-in-out infinite',
-        }} />
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: 'radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%)',
+        animation: 'capture-vignette 2s ease-in-out infinite',
+      }} />
     </div>
   );
 }
 
 // ── Regular capture ───────────────────────────────────────────────────────────
 
-const AUTO_DISMISS_MS = 3000;
-
-export function NewCaptureModal({ pokemonName, pokemonId, isShiny, rarity, onDismiss }: Props) {
-  const onDismissRef = useRef(onDismiss);
-  onDismissRef.current = onDismiss;
-
+export function NewCaptureModal({ pokemonName, pokemonId, isShiny, rarity, onDismiss, level, totalCaught }: Props) {
+  const onDismissRef = useRef(onDismiss); onDismissRef.current = onDismiss;
   const isLegendary = rarity === 'legendaire';
 
   useEffect(() => {
@@ -296,8 +309,14 @@ export function NewCaptureModal({ pokemonName, pokemonId, isShiny, rarity, onDis
     return () => clearTimeout(t);
   }, [isLegendary, isShiny]);
 
-  if (isLegendary) return <LegendaryCaptureModal pokemonId={pokemonId} isShiny={isShiny} onDismiss={onDismiss} />;
-  if (isShiny) return <ShinyCaptureModal pokemonId={pokemonId} onDismiss={onDismiss} />;
+  if (isLegendary) return (
+    <LegendaryCaptureModal pokemonId={pokemonId} pokemonName={pokemonName} isShiny={isShiny}
+      rarity={rarity} level={level} totalCaught={totalCaught} onDismiss={onDismiss} />
+  );
+  if (isShiny) return (
+    <ShinyCaptureModal pokemonId={pokemonId} pokemonName={pokemonName} rarity={rarity}
+      level={level} totalCaught={totalCaught} onDismiss={onDismiss} />
+  );
 
   const rarityColor = RARITY_COLORS[rarity];
   const src = pokemonId > 0
@@ -317,13 +336,13 @@ export function NewCaptureModal({ pokemonName, pokemonId, isShiny, rarity, onDis
           <h2 className="text-white font-black text-xl">Nouveau Pokémon !</h2>
         </div>
         <div className="flex items-center justify-center" style={{ boxShadow: `0 0 20px 8px ${rarityColor}66`, borderRadius: '50%' }}>
-          {src ? (
-            <img src={src} alt={pokemonName} width={128} height={128} style={{ imageRendering: 'pixelated', objectFit: 'contain' }} />
-          ) : (
-            <div className="flex items-center justify-center font-bold text-sm" style={{ width: 128, height: 128, color: rarityColor }}>{pokemonName}</div>
-          )}
+          {src
+            ? <img src={src} alt={pokemonName} width={128} height={128} style={{ imageRendering: 'pixelated', objectFit: 'contain' }} />
+            : <div className="flex items-center justify-center font-bold text-sm" style={{ width: 128, height: 128, color: rarityColor }}>{pokemonName}</div>
+          }
         </div>
         <div className="font-black text-xl" style={{ color: rarityColor }}>{pokemonName}</div>
+        {level !== undefined && <div className="text-slate-400 text-sm">Niv. {level}</div>}
         <div className="text-slate-400 text-sm">Ajouté à ta collection !</div>
       </div>
     </div>

@@ -727,6 +727,16 @@ button:active{transform:scale(.93);transition:transform .08s ease}
   100% { filter: drop-shadow(0 0 3px #fde047); }
 }
 
+@keyframes shiny-img-rainbow {
+  0%   { filter: drop-shadow(0 0 3px #fde047) drop-shadow(0 0 2px #fde04788); }
+  16%  { filter: drop-shadow(0 0 3px #f472b6) drop-shadow(0 0 2px #f472b688); }
+  33%  { filter: drop-shadow(0 0 3px #60a5fa) drop-shadow(0 0 2px #60a5fa88); }
+  50%  { filter: drop-shadow(0 0 3px #4ade80) drop-shadow(0 0 2px #4ade8088); }
+  66%  { filter: drop-shadow(0 0 3px #fb923c) drop-shadow(0 0 2px #fb923c88); }
+  83%  { filter: drop-shadow(0 0 3px #c084fc) drop-shadow(0 0 2px #c084fc88); }
+  100% { filter: drop-shadow(0 0 3px #fde047) drop-shadow(0 0 2px #fde04788); }
+}
+
 /* Pokédex shiny rotating stars */
 @keyframes pokedex-star-orbit-a { 0%{transform:rotate(0deg) translate(10px) rotate(0deg)} 100%{transform:rotate(360deg) translate(10px) rotate(-360deg)} }
 @keyframes pokedex-star-orbit-b { 0%{transform:rotate(180deg) translate(10px) rotate(-180deg)} 100%{transform:rotate(540deg) translate(10px) rotate(-540deg)} }
