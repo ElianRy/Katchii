@@ -312,6 +312,15 @@ input, textarea, select {
 @keyframes park-star-orbit-2 { 0%{transform:rotate(180deg) translateX(24px)} 100%{transform:rotate(540deg) translateX(24px)} }
 @keyframes park-star-orbit-3 { 0%{transform:rotate(270deg) translateX(24px)} 100%{transform:rotate(630deg) translateX(24px)} }
 
+@keyframes park-shiny-orbit {
+  from { transform: rotate(0deg) translateX(26px); }
+  to   { transform: rotate(360deg) translateX(26px); }
+}
+@keyframes park-shiny-orbit-counter {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+
 @keyframes rainbow-pulse {
   0%, 100% { opacity: 0.55; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.08); }
