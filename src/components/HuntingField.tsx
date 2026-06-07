@@ -22,6 +22,7 @@ const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
 import { NewCaptureModal } from './NewCaptureModal';
 import { ZoneInfoPanel } from './ZoneInfoPanel';
 import { BossFightPanel } from './BossFightPanel';
+import { LeagueChallengeScreen } from './LeagueChallengeScreen';
 
 interface Notification {
   id: number;
@@ -379,8 +380,25 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         </button>
       )}
 
-      {/* Boss fight — fightZone figé au moment du démarrage du combat */}
-      {showBossFight && fightZone?.boss && (
+      {/* League challenge (zone8 boss → special 3-fight flow) */}
+      {showBossFight && fightZone?.id === 'zone8' && (
+        <LeagueChallengeScreen
+          state={gameState.state}
+          onClose={() => { setShowBossFight(false); setFightZone(null); }}
+          onAddXp={(pokemonId, xp) => gameState.addPokemonXp(pokemonId, xp)}
+          onVictory={() => {
+            gameState.defeatZoneBoss('zone8', 'zone_libre');
+            gameState.spendPoints(-100);
+          }}
+          onZoneDiscovered={() => {
+            const nz = ZONE_BY_ID['zone_libre'];
+            if (nz) { setDiscoveryZoneName(nz.name); setTimeout(() => setDiscoveryZoneName(null), 3500); }
+          }}
+        />
+      )}
+
+      {/* Regular boss fight — all zones except zone8 */}
+      {showBossFight && fightZone?.boss && fightZone.id !== 'zone8' && (
         <BossFightPanel
           zone={fightZone}
           state={gameState.state}

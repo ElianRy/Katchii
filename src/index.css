@@ -740,3 +740,26 @@ button:active{transform:scale(.93);transition:transform .08s ease}
   0%   { transform: translateX(-8%); opacity: 0; }
   100% { transform: translateX(0); opacity: 1; }
 }
+
+/* League Challenge epic animations */
+@keyframes league-lightning {
+  0%, 92%, 100% { opacity: 0; }
+  93%, 95%      { opacity: 1; }
+  94%, 96%      { opacity: 0; }
+}
+@keyframes league-flash {
+  0%   { background: rgba(168,85,247,0.5); }
+  8%   { background: rgba(168,85,247,0); }
+  15%  { background: rgba(168,85,247,0.25); }
+  22%  { background: rgba(168,85,247,0); }
+  100% { background: rgba(168,85,247,0); }
+}
+@keyframes league-title-enter {
+  0%   { opacity: 0; transform: scale(0.5) translateY(30px); }
+  70%  { opacity: 1; transform: scale(1.08) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes league-trainer-appear {
+  0%   { opacity: 0; transform: translateX(60px); }
+  100% { opacity: 1; transform: translateX(0); }
+}

@@ -1027,32 +1027,31 @@ export function ZoneBackground({ zoneId }: Props) {
         </>
       )}
 
-      {/* ZONE LIBRE — starfield + shooting stars */}
+      {/* ZONE LIBRE — dense starfield with varied twinkling intensities */}
       {zoneId === 'zone_libre' && (
         <>
           {starsEls}
-          {/* Shooting stars — different directions, staggered, never stay on screen */}
+          {/* Extra bright pulsing stars scattered across the sky */}
           {[
-            { left: '-8%',  top: '6%',  w: 110, anim: 'shooting-star-a', dur: '1.4s', delay: '0s',   total: '22s' },
-            { left: '78%',  top: '12%', w: 90,  anim: 'shooting-star-b', dur: '1.2s', delay: '6s',   total: '20s' },
-            { left: '20%',  top: '3%',  w: 70,  anim: 'shooting-star-c', dur: '1.0s', delay: '13s',  total: '18s' },
-            { left: '-5%',  top: '20%', w: 120, anim: 'shooting-star-d', dur: '1.5s', delay: '4s',   total: '24s' },
-            { left: '55%',  top: '8%',  w: 80,  anim: 'shooting-star-b', dur: '1.1s', delay: '17s',  total: '21s' },
-            { left: '5%',   top: '15%', w: 95,  anim: 'shooting-star-a', dur: '1.3s', delay: '9s',   total: '19s' },
+            { x: 12, y: 8,  size: 4, dur: 2.1, delay: 0    },
+            { x: 34, y: 14, size: 5, dur: 3.4, delay: 0.8  },
+            { x: 58, y: 6,  size: 3.5, dur: 1.8, delay: 1.5 },
+            { x: 78, y: 12, size: 4.5, dur: 2.8, delay: 0.4 },
+            { x: 90, y: 22, size: 3, dur: 4.1, delay: 2.2  },
+            { x: 22, y: 28, size: 5, dur: 2.5, delay: 1.1  },
+            { x: 68, y: 30, size: 3.5, dur: 3.0, delay: 0.7 },
+            { x: 45, y: 18, size: 4, dur: 1.6, delay: 3.0  },
           ].map((s, i) => (
-            <div
-              key={`shoot${i}`}
-              className="absolute pointer-events-none"
-              style={{
-                left: s.left, top: s.top,
-                width: s.w, height: 2,
-                background: 'linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 60%, rgba(220,210,255,0.5) 100%)',
-                borderRadius: 2,
-                animation: `${s.anim} ${s.total} linear infinite`,
-                animationDelay: s.delay,
-                boxShadow: '0 0 4px 1px rgba(220,210,255,0.3)',
-              }}
-            />
+            <div key={`bright-${i}`} className="absolute pointer-events-none rounded-full" style={{
+              left: `${s.x}%`, top: `${s.y}%`,
+              width: s.size, height: s.size,
+              background: i % 3 === 0 ? '#fff' : i % 3 === 1 ? '#e0d8ff' : '#ffeedd',
+              '--base-opacity': 0.9,
+              '--tw-duration': `${s.dur}s`,
+              '--tw-delay': `${s.delay}s`,
+              boxShadow: `0 0 ${s.size * 3}px ${s.size}px ${i % 3 === 0 ? 'rgba(255,255,255,0.5)' : i % 3 === 1 ? 'rgba(200,180,255,0.4)' : 'rgba(255,220,150,0.35)'}`,
+              animation: `twinkle ${s.dur}s ease-in-out ${s.delay}s infinite`,
+            } as React.CSSProperties} />
           ))}
         </>
       )}
