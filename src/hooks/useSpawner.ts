@@ -143,8 +143,8 @@ export function useSpawner(
         const rarity = weightedRarity(zoneWeights);
         pokemonId = pickPokemon(rarity, zoneIds, new Set());
         const shinyDepleted = gs.state.shinyDepleted;
-        const baseShinyRate = (1 / 250) * (151 / Math.max(1, 151 - shinyDepleted.length));
-        const shinyRate = baseShinyRate * mult.shinyRate;
+        const correctionFactor = 151 / Math.max(1, 151 - shinyDepleted.length);
+        const shinyRate = mult.shinyRate * correctionFactor;
         isShiny = !shinyDepleted.includes(pokemonId) && Math.random() < shinyRate;
 
         const pos = getValidPosition(active);
