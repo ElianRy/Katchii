@@ -9,6 +9,11 @@ interface Props {
 
 const RARITY_ORDER: Rarity[] = ['legendaire', 'elite', 'rare', 'peu_commun', 'commun'];
 
+const ZONE_EMOJI: Record<string, string> = {
+  zone1: '🌲', zone2: '🌊', zone3: '⚡', zone4: '🌸',
+  zone5: '👻', zone6: '🏢', zone7: '🌋', zone8: '🏟️', zone_libre: '🌟',
+};
+
 export function ZoneInfoPanel({ state, onClose }: Props) {
   const zoneId = state.zoneProgress?.currentZoneId ?? 'zone1';
   const zone = ZONE_BY_ID[zoneId];
@@ -63,7 +68,7 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-700">
           <div>
-            <h2 className="text-white font-black text-lg">🌲 {zone.name}</h2>
+            <h2 className="text-white font-black text-lg">{ZONE_EMOJI[zoneId] ?? '🗺️'} {zone.name}</h2>
             <p className="text-slate-400 text-xs mt-0.5">{zone.description}</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white text-xl px-2">✕</button>

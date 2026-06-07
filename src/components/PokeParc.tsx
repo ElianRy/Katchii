@@ -777,7 +777,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [justPlaced, setJustPlaced] = useState(false);
   const [parkRevealed, setParkRevealed] = useState(!!state.favoritePokemon);
   const [xpPop, setXpPop] = useState<{ xp: number; key: number } | null>(null);
-  const [offlineParkXp, setOfflineParkXp] = useState<number | null>(null);
+  const [offlineParkXp, setOfflineParkXp] = useState<{ xp: number; pokemonId: number; isShiny: boolean } | null>(null);
+  const [xpBarFill, setXpBarFill] = useState(0);
   // mutedUsers: userId -> expiryMs (null = permanent) — persisted in localStorage
   const MUTE_KEY = 'katchii_muted_users';
   const loadMuted = (): Map<string, number | null> => {
@@ -933,10 +934,10 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     if (lastAt) {
       const elapsed = Date.now() - lastAt;
       const ONE_HOUR = 60 * 60 * 1000;
-      const THIRTY_HOURS = 30 * ONE_HOUR;
+      const FIVE_HOURS = 5 * ONE_HOUR;
       const TICK_MS = 2 * 60 * 1000;
       if (elapsed >= ONE_HOUR) {
-        const cappedElapsed = Math.min(elapsed, THIRTY_HOURS);
+        const cappedElapsed = Math.min(elapsed, FIVE_HOURS);
         const ticks = Math.floor(cappedElapsed / TICK_MS);
         if (ticks > 0) {
           const level = state.pokemonLevels?.[myFav.pokemonId]?.level ?? 1;
@@ -944,8 +945,9 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           const totalXp = ticks * xpPerTick;
           onAddPlayerXp(totalXp);
           onAddPokemonXp(myFav.pokemonId, totalXp);
-          setOfflineParkXp(totalXp);
-          setTimeout(() => setOfflineParkXp(null), 6000);
+          setOfflineParkXp({ xp: totalXp, pokemonId: myFav.pokemonId, isShiny: myFav.isShiny ?? false });
+          setXpBarFill(0);
+          setTimeout(() => setXpBarFill(100), 100);
         }
       }
       onSetLastParkXpAt?.(Date.now());
@@ -1119,16 +1121,56 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         <div className="font-black text-yellow-400 text-sm flex-1">🌿 PokéParc</div>
       </div>
 
-      {/* Offline XP notification */}
-      {offlineParkXp !== null && (
-        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
-          <div className="bg-slate-900/90 border border-yellow-400/60 rounded-2xl px-5 py-3 text-center shadow-xl">
-            <div className="text-yellow-300 font-black text-sm">🌿 Bienvenue au PokéParc !</div>
-            <div className="text-white font-bold text-lg mt-1">+{offlineParkXp} XP ✨</div>
-            <div className="text-slate-400 text-xs mt-0.5">Ton Pokémon a entraîné pendant ton absence</div>
+      {/* Offline XP modal */}
+      {offlineParkXp !== null && (() => {
+        const pkData = POKEMON_BY_ID[offlineParkXp.pokemonId];
+        const spriteUrl = offlineParkXp.isShiny
+          ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${offlineParkXp.pokemonId}.png`
+          : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${offlineParkXp.pokemonId}.png`;
+        const rarityColor = pkData ? RARITY_COLORS[pkData.rarity] : '#6b7280';
+        return (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/70" onClick={() => setOfflineParkXp(null)}>
+            <div className="bg-slate-900 border border-yellow-400/40 rounded-3xl px-8 py-6 text-center shadow-2xl max-w-xs w-full mx-4" onClick={e => e.stopPropagation()}>
+              <div className="text-yellow-300 font-black text-base mb-3">🌿 Bienvenue au PokéParc !</div>
+              <img
+                src={spriteUrl} alt={pkData?.name ?? ''}
+                width={96} height={96}
+                className="mx-auto"
+                style={{
+                  imageRendering: 'pixelated',
+                  filter: offlineParkXp.isShiny
+                    ? 'drop-shadow(0 0 12px #fde047) drop-shadow(0 0 24px #f0abfc88)'
+                    : `drop-shadow(0 0 10px ${rarityColor})`,
+                  animation: 'bounce-pokemon 1.2s ease-in-out infinite',
+                }}
+              />
+              <div className="text-white font-black text-2xl mt-2">+{offlineParkXp.xp} XP</div>
+              <div className="text-slate-400 text-xs mt-1 mb-4">
+                {pkData?.name ?? 'Ton Pokémon'} s'est entraîné pendant ton absence !
+              </div>
+              {/* Animated XP bar */}
+              <div className="w-full bg-slate-700 rounded-full h-3 mb-4 overflow-hidden">
+                <div
+                  className="h-3 rounded-full"
+                  style={{
+                    width: `${xpBarFill}%`,
+                    background: `linear-gradient(90deg, ${rarityColor}, #fde047)`,
+                    transition: 'width 1.8s cubic-bezier(0.4,0,0.2,1)',
+                    boxShadow: `0 0 8px ${rarityColor}`,
+                  }}
+                />
+              </div>
+              <button
+                onClick={() => setOfflineParkXp(null)}
+                className="px-8 py-2 rounded-xl font-black text-sm text-black"
+                style={{ background: 'linear-gradient(135deg, #fbbf24, #f59e0b)' }}
+              >
+                Super !
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Mood bar */}
       <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 border-b border-slate-700/30 shrink-0 overflow-x-auto">

@@ -82,7 +82,7 @@ function parseState(raw: string): GameState {
   const today = todayDate();
   const currentZoneId = parsed.zoneProgress?.currentZoneId ?? 'zone1';
   let dailyQuests = parsed.dailyQuests ?? null;
-  if (!dailyQuests || dailyQuests.date !== today || (dailyQuests as typeof dailyQuests & { zoneId?: string }).zoneId !== currentZoneId) {
+  if (!dailyQuests || dailyQuests.date !== today) {
     dailyQuests = buildDailyQuests(currentZoneId);
   }
   return {
