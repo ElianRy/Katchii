@@ -20,6 +20,7 @@ const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
   zone_libre: { ground: 'linear-gradient(to top, #1e1b4b 0%, #312e81 40%, transparent 100%)', bush: 'linear-gradient(to top, #4f46e5, #818cf8)' },
 };
 import { NewCaptureModal } from './NewCaptureModal';
+import { playerLevelFromXp } from '../lib/playerLevel';
 import { ZoneInfoPanel } from './ZoneInfoPanel';
 import { BossFightPanel } from './BossFightPanel';
 import { LeagueChallengeScreen } from './LeagueChallengeScreen';
@@ -116,9 +117,9 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         if (pts > 0) {
           addNotification(`+${pts} pts !`, x, y, true);
           addNotification('Nouveau !', x, y - 8, true);
-          const lvl = (gameState.state.pokemonLevels?.[pokemonId]?.level ?? 1);
-          const totalCaught = Object.values(gameState.state.normalCollection as Record<number,number>).filter(v => v > 0).length + (isShiny ? Object.values(gameState.state.shinyCollection as Record<number,number>).filter(v => v > 0).length : 0);
-          setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: lvl, totalCaught });
+          const playerLevel = playerLevelFromXp(gameState.state.playerXp as number ?? 0);
+          const totalCaught = Object.values(gameState.state.normalCollection as Record<number,number>).filter(v => v > 0).length + Object.values(gameState.state.shinyCollection as Record<number,number>).filter(v => v > 0).length;
+          setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: playerLevel, totalCaught });
         } else if (isDoublon) {
           addNotification(`+${doublonXp} XP !`, x, y, true);
           addNotification('Doublon !', x, y - 8, false);

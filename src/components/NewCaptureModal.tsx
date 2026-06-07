@@ -159,7 +159,7 @@ function LegendaryCaptureModal({ pokemonId, pokemonName, isShiny, rarity, level,
             {RARITY_LABEL[rarity] ?? rarity}
           </div>
           {level !== undefined && (
-            <div className="text-slate-300 text-sm font-bold mt-1">Niv. {level}</div>
+            <div className="text-slate-300 text-sm font-bold mt-1">Dresseur niv. {level}</div>
           )}
           {totalCaught !== undefined && (
             <div className="text-slate-500 text-xs mt-0.5">#{totalCaught} capturé{totalCaught > 1 ? 's' : ''}</div>
@@ -281,7 +281,7 @@ function ShinyCaptureModal({ pokemonId, pokemonName, rarity, level, totalCaught,
             {RARITY_LABEL[rarity] ?? rarity} · Shiny
           </div>
           {level !== undefined && (
-            <div className="text-slate-300 text-sm font-bold mt-1">Niv. {level}</div>
+            <div className="text-slate-300 text-sm font-bold mt-1">Dresseur niv. {level}</div>
           )}
           {totalCaught !== undefined && (
             <div className="text-slate-500 text-xs mt-0.5">#{totalCaught} capturé{totalCaught > 1 ? 's' : ''}</div>
