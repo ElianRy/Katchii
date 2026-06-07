@@ -16,7 +16,7 @@ interface Props {
   playerTeam: TeamMember[];
   enemyTeam: TeamMember[];
   bossName?: string;
-  onBattleEnd: (won: boolean, xpGains: Record<number, number>) => void;
+  onBattleEnd: (won: boolean, xpGains: Record<number, number>, finalTeam?: TeamMember[]) => void;
   autoCombat?: boolean;
   onAutoCombatChange?: (v: boolean) => void;
   speedLevel?: number;
@@ -289,8 +289,9 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 // ── Main component ───────────────────────────────────────────────────────
 export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
-    playerTeam.map(m => ({ ...m, currentHp: m.maxHp }))
+    playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp }))
   );
+  const playerFightersRef = useRef<FighterState[]>(playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp })));
   const [enemyFighters, setEnemyFighters] = useState<FighterState[]>(
     enemyTeam.map(m => ({ ...m, currentHp: m.maxHp }))
   );
@@ -307,6 +308,9 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const won = useRef(false);
   const battleDone = useRef(false);
   const paused = useRef(false); // paused while player chooses switch
+
+  // Keep ref in sync so onBattleEnd can read final HP state
+  useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
 
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
     setLog(prev => [...prev.slice(-5), { text, color }]);
@@ -430,7 +434,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           if (!snap[m.pokemonId]) snap[m.pokemonId] = benchXp;
         });
       }
-      setTimeout(() => onBattleEnd(wonSnap, snap), 1800);
+      const finalTeam: TeamMember[] = playerFightersRef.current.map(f => ({ ...f }));
+      setTimeout(() => onBattleEnd(wonSnap, snap, finalTeam), 1800);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
