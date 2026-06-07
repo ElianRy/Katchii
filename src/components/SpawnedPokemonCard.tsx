@@ -35,16 +35,18 @@ const MOVE_ANIMS = [
 // anim = one of the shiny-persp-* keyframes defined in index.css
 // layer: 'back' renders behind the sprite, 'front' renders in front
 const SHINY_ORBIT_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string; layer: 'front' | 'back' }[] = [
-  { color: '#fde047', dur: '3.2s', delay: '0s',    sym: '✦', size: 18, anim: 'shiny-persp-a', layer: 'front' },
-  { color: '#f472b6', dur: '2.6s', delay: '-0.9s', sym: '✧', size: 16, anim: 'shiny-persp-b', layer: 'back'  },
-  { color: '#60a5fa', dur: '4.0s', delay: '-1.7s', sym: '⋆', size: 17, anim: 'shiny-persp-c', layer: 'front' },
-  { color: '#fbbf24', dur: '2.2s', delay: '-0.4s', sym: '✦', size: 15, anim: 'shiny-persp-d', layer: 'back'  },
-  { color: '#ffffff', dur: '3.6s', delay: '-2.1s', sym: '✧', size: 16, anim: 'shiny-persp-e', layer: 'front' },
-  { color: '#4ade80', dur: '2.9s', delay: '-1.3s', sym: '⋆', size: 17, anim: 'shiny-persp-a', layer: 'back'  },
-  { color: '#a5f3fc', dur: '3.4s', delay: '-0.7s', sym: '✦', size: 15, anim: 'shiny-persp-c', layer: 'front' },
-  { color: '#c084fc', dur: '2.4s', delay: '-1.5s', sym: '✧', size: 16, anim: 'shiny-persp-d', layer: 'back'  },
-  { color: '#fb923c', dur: '3.8s', delay: '-2.8s', sym: '⋆', size: 17, anim: 'shiny-persp-b', layer: 'front' },
-  { color: '#34d399', dur: '2.8s', delay: '-0.6s', sym: '✦', size: 15, anim: 'shiny-persp-e', layer: 'back'  },
+  { color: '#fde047', dur: '3.2s', delay: '0s',    sym: '✦', size: 22, anim: 'shiny-persp-a', layer: 'front' },
+  { color: '#f472b6', dur: '2.6s', delay: '-0.9s', sym: '★', size: 20, anim: 'shiny-persp-b', layer: 'back'  },
+  { color: '#60a5fa', dur: '4.0s', delay: '-1.7s', sym: '✦', size: 22, anim: 'shiny-persp-c', layer: 'front' },
+  { color: '#fbbf24', dur: '2.2s', delay: '-0.4s', sym: '✧', size: 18, anim: 'shiny-persp-d', layer: 'back'  },
+  { color: '#ffffff', dur: '3.6s', delay: '-2.1s', sym: '★', size: 20, anim: 'shiny-persp-e', layer: 'front' },
+  { color: '#4ade80', dur: '2.9s', delay: '-1.3s', sym: '✦', size: 21, anim: 'shiny-persp-a', layer: 'back'  },
+  { color: '#a5f3fc', dur: '3.4s', delay: '-0.7s', sym: '✧', size: 19, anim: 'shiny-persp-c', layer: 'front' },
+  { color: '#c084fc', dur: '2.4s', delay: '-1.5s', sym: '★', size: 20, anim: 'shiny-persp-d', layer: 'back'  },
+  { color: '#fb923c', dur: '3.8s', delay: '-2.8s', sym: '✦', size: 21, anim: 'shiny-persp-b', layer: 'front' },
+  { color: '#34d399', dur: '2.8s', delay: '-0.6s', sym: '✧', size: 18, anim: 'shiny-persp-e', layer: 'back'  },
+  { color: '#f87171', dur: '3.0s', delay: '-1.1s', sym: '★', size: 20, anim: 'shiny-persp-a', layer: 'front' },
+  { color: '#fde68a', dur: '2.5s', delay: '-2.4s', sym: '✦', size: 19, anim: 'shiny-persp-c', layer: 'back'  },
 ];
 
 function PokeballSVG({ spinning }: { spinning: boolean }) {
@@ -130,8 +132,8 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
     spriteFilter = `drop-shadow(0 0 10px ${rarityColor}) drop-shadow(0 0 20px ${rarityColor}88)`;
     spriteAnimation = 'aura-pulse 2s ease-in-out infinite';
   } else if (spawned.isShiny) {
-    spriteFilter = `drop-shadow(0 0 3px #fde047) drop-shadow(0 0 4px #f0abfc88)`;
-    spriteAnimation = undefined;
+    spriteFilter = `drop-shadow(0 0 8px #fde047) drop-shadow(0 0 16px #f0abfc) drop-shadow(0 0 28px #60a5fa66)`;
+    spriteAnimation = 'shiny-img-rainbow 2.5s linear infinite';
   } else {
     spriteFilter = `drop-shadow(0 0 6px ${rarityColor})`;
     spriteAnimation = undefined;
@@ -285,11 +287,29 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                   <span style={{
                     position: 'absolute', transform: 'translate(-50%,-50%)',
                     color: star.color, fontSize: star.size, fontWeight: 900,
-                    textShadow: `0 0 6px ${star.color}, 0 0 12px ${star.color}88`,
+                    textShadow: `0 0 8px ${star.color}, 0 0 18px ${star.color}, 0 0 30px ${star.color}88`,
                     lineHeight: 1, userSelect: 'none',
                   }}>{star.sym}</span>
                 </div>
               ))}
+
+              {/* Shiny — spinning rainbow ring */}
+              {spawned.isShiny && (
+                <>
+                  <div className="absolute pointer-events-none" style={{
+                    inset: -8, borderRadius: '50%',
+                    background: 'conic-gradient(from 0deg, #f87171, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
+                    animation: 'rainbow-spin 2s linear infinite',
+                    opacity: 0.55, filter: 'blur(3px)',
+                  }} />
+                  <div className="absolute pointer-events-none" style={{
+                    inset: -3, borderRadius: '50%',
+                    background: 'conic-gradient(from 180deg, #60a5fa, #c084fc, #fde047, #4ade80, #f472b6, #60a5fa)',
+                    animation: 'rainbow-spin 3s linear infinite reverse',
+                    opacity: 0.4, filter: 'blur(2px)',
+                  }} />
+                </>
+              )}
 
               {/* Legendary — golden pulsing aura */}
               {isLegendary && (
@@ -360,7 +380,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                   <span style={{
                     position: 'absolute', transform: 'translate(-50%,-50%)',
                     color: star.color, fontSize: star.size, fontWeight: 900,
-                    textShadow: `0 0 6px ${star.color}, 0 0 12px ${star.color}88`,
+                    textShadow: `0 0 8px ${star.color}, 0 0 18px ${star.color}, 0 0 30px ${star.color}88`,
                     lineHeight: 1, userSelect: 'none',
                   }}>{star.sym}</span>
                 </div>

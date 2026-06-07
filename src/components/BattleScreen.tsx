@@ -811,11 +811,11 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
       </div>
 
       {/* Battle log */}
-      <div className="shrink-0 bg-black/90 border-t border-slate-700/50 px-4 py-2" style={{ minHeight: 80 }}>
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
+      <div className="shrink-0 bg-black/90 border-t border-slate-700/50 px-4 py-2" style={{ height: 80, overflow: 'hidden' }}>
+        <div className="flex justify-between items-start h-full">
+          <div className="flex-1 overflow-hidden">
             {log.slice(-3).map((entry, i) => (
-              <div key={i} className="text-xs font-medium" style={{ color: entry.color, opacity: 0.4 + i * 0.3 }}>
+              <div key={i} className="text-xs font-medium truncate" style={{ color: entry.color, opacity: 0.4 + i * 0.3 }}>
                 {entry.text}
               </div>
             ))}

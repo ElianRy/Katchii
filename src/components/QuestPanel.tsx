@@ -34,22 +34,22 @@ function getPermanentQuests(state: GameState): PermanentQuest[] {
 
   return [
     {
-      id: 'pokedex_complete',
-      label: 'Pokédex Complet',
-      desc: 'Capture les 151 Pokémon de la première génération',
-      icon: '📖',
-      progress: caughtNormal,
-      target: 151,
-      reward: 'Taux Shiny +14%',
-    },
-    {
       id: 'level_100',
       label: 'Niveau 100',
       desc: 'Fais atteindre le niveau 100 à un de tes Pokémon',
       icon: '⭐',
       progress: Math.min(maxLevel, 100),
       target: 100,
-      reward: 'Taux Shiny +16%',
+      reward: 'Taux Shiny +15%',
+    },
+    {
+      id: 'pokedex_complete',
+      label: 'Pokédex Complet',
+      desc: 'Capture les 151 Pokémon de la première génération',
+      icon: '📖',
+      progress: caughtNormal,
+      target: 151,
+      reward: 'Taux Shiny +20%',
     },
     {
       id: 'shiny_100',
@@ -58,7 +58,7 @@ function getPermanentQuests(state: GameState): PermanentQuest[] {
       icon: '💎',
       progress: uniqueShinies,
       target: 100,
-      reward: 'Taux Shiny +19%',
+      reward: 'Taux Shiny +25%',
     },
   ];
 }

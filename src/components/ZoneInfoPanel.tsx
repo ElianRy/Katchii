@@ -118,7 +118,17 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
         <div className="px-5 py-4 pb-6">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-white font-bold text-sm">Pokémon disponibles dans cette zone</h3>
-            <span className="text-yellow-400 text-xs font-bold bg-yellow-400/10 border border-yellow-400/30 rounded-full px-2 py-0.5">✨ ~0.4% shiny</span>
+            {(() => {
+              const RATES = [250, 217, 185, 156];
+              const achCount = Math.min((state.achievementsCompleted ?? []).length, 3);
+              const pct = (1 / RATES[achCount] * 100).toFixed(2);
+              const bonus = achCount > 0 ? ` (+${[15,35,60][achCount-1]}%)` : '';
+              return (
+                <span className="text-yellow-400 text-xs font-bold bg-yellow-400/10 border border-yellow-400/30 rounded-full px-2 py-0.5">
+                  ✨ ~{pct}% shiny{bonus}
+                </span>
+              );
+            })()}
           </div>
           {RARITY_ORDER.map(rarity => {
             const ids = byRarity[rarity];

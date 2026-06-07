@@ -49,7 +49,13 @@ const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legend
 
 export function Collection({ state, onClose }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('collection');
-  const [filter, setFilter] = useState<FilterTab>('tous');
+  const [filter, setFilter] = useState<FilterTab>(() => {
+    try { return (localStorage.getItem('katchii_pokedex_filter') as FilterTab) ?? 'tous'; } catch { return 'tous'; }
+  });
+  const applyFilter = (f: FilterTab) => {
+    setFilter(f);
+    try { localStorage.setItem('katchii_pokedex_filter', f); } catch {}
+  };
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
@@ -136,7 +142,7 @@ export function Collection({ state, onClose }: Props) {
               <span style={{ transform: filterOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>▾</span>
             </button>
             {filter !== 'tous' && (
-              <button onClick={() => setFilter('tous')} className="text-slate-400 hover:text-white text-xs">✕ Réinitialiser</button>
+              <button onClick={() => applyFilter('tous')} className="text-slate-400 hover:text-white text-xs">✕ Réinitialiser</button>
             )}
           </div>
 
@@ -146,7 +152,7 @@ export function Collection({ state, onClose }: Props) {
               {filterTabs.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => { setFilter(tab.id); setFilterOpen(false); }}
+                  onClick={() => { applyFilter(tab.id); setFilterOpen(false); }}
                   className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
                     filter === tab.id ? 'text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                   }`}

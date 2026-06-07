@@ -187,12 +187,20 @@ const SHINY_STARS = Array.from({ length: 16 }, (_, i) => ({
   color: ['#fde047','#f472b6','#60a5fa','#4ade80','#fb923c','#c084fc'][i % 6],
 }));
 
-const SHINY_ORBIT = [
-  { color: '#fde047', dur: '2.2s', delay: '0s' },
-  { color: '#f472b6', dur: '2.2s', delay: '-0.44s' },
-  { color: '#60a5fa', dur: '2.2s', delay: '-0.88s' },
-  { color: '#4ade80', dur: '2.2s', delay: '-1.32s' },
-  { color: '#c084fc', dur: '2.2s', delay: '-1.76s' },
+// Same perspective orbit stars as wild shiny spawn
+const SHINY_CAPTURE_ORBIT: { color: string; dur: string; delay: string; sym: string; size: number; anim: string; layer: 'front' | 'back' }[] = [
+  { color: '#fde047', dur: '3.2s', delay: '0s',    sym: '✦', size: 26, anim: 'shiny-persp-a', layer: 'front' },
+  { color: '#f472b6', dur: '2.6s', delay: '-0.9s', sym: '★', size: 24, anim: 'shiny-persp-b', layer: 'back'  },
+  { color: '#60a5fa', dur: '4.0s', delay: '-1.7s', sym: '✦', size: 26, anim: 'shiny-persp-c', layer: 'front' },
+  { color: '#fbbf24', dur: '2.2s', delay: '-0.4s', sym: '✧', size: 22, anim: 'shiny-persp-d', layer: 'back'  },
+  { color: '#ffffff', dur: '3.6s', delay: '-2.1s', sym: '★', size: 24, anim: 'shiny-persp-e', layer: 'front' },
+  { color: '#4ade80', dur: '2.9s', delay: '-1.3s', sym: '✦', size: 25, anim: 'shiny-persp-a', layer: 'back'  },
+  { color: '#a5f3fc', dur: '3.4s', delay: '-0.7s', sym: '✧', size: 23, anim: 'shiny-persp-c', layer: 'front' },
+  { color: '#c084fc', dur: '2.4s', delay: '-1.5s', sym: '★', size: 24, anim: 'shiny-persp-d', layer: 'back'  },
+  { color: '#fb923c', dur: '3.8s', delay: '-2.8s', sym: '✦', size: 25, anim: 'shiny-persp-b', layer: 'front' },
+  { color: '#34d399', dur: '2.8s', delay: '-0.6s', sym: '✧', size: 22, anim: 'shiny-persp-e', layer: 'back'  },
+  { color: '#f87171', dur: '3.0s', delay: '-1.1s', sym: '★', size: 24, anim: 'shiny-persp-a', layer: 'front' },
+  { color: '#fde68a', dur: '2.5s', delay: '-2.4s', sym: '✦', size: 23, anim: 'shiny-persp-c', layer: 'back'  },
 ];
 
 function ShinyCaptureModal({ pokemonId, pokemonName, rarity, level, totalCaught, onDismiss }: {
@@ -248,26 +256,43 @@ function ShinyCaptureModal({ pokemonId, pokemonName, rarity, level, totalCaught,
         }} />
       </div>
 
-      {/* Pokemon + orbiting stars */}
+      {/* Pokemon + perspective orbit stars (back layer) */}
       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ zIndex: 10, gap: 0 }}>
         <div className="relative flex items-center justify-center" style={{ marginBottom: 20 }}>
-          {SHINY_ORBIT.map((s, i) => (
-            <div key={i} style={{ position: 'absolute', top: '50%', left: '50%', width: 0, height: 0,
-              animation: `capture-orbit ${s.dur} ${s.delay} linear infinite` }}>
-              <svg viewBox="0 0 10 10" width={12} height={12} style={{
-                position: 'absolute', left: 62, top: -6,
-                filter: `drop-shadow(0 0 4px ${s.color})`,
-                animation: `capture-orbit-counter ${s.dur} ${s.delay} linear infinite`,
-              }}>
-                <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z" fill={s.color} />
-              </svg>
+          {/* Stars behind sprite */}
+          {SHINY_CAPTURE_ORBIT.filter(s => s.layer === 'back').map((star, i) => (
+            <div key={`b${i}`} style={{ position: 'absolute', left: '50%', top: '50%', width: 0, height: 0, zIndex: 0,
+              animation: `${star.anim} ${star.dur} ${star.delay} linear infinite` } as React.CSSProperties}>
+              <span style={{ position: 'absolute', transform: 'translate(-50%,-50%)', color: star.color,
+                fontSize: star.size, fontWeight: 900,
+                textShadow: `0 0 10px ${star.color}, 0 0 22px ${star.color}, 0 0 40px ${star.color}88`,
+                lineHeight: 1, userSelect: 'none' }}>{star.sym}</span>
             </div>
           ))}
+          {/* Spinning rainbow rings behind sprite */}
+          <div style={{ position: 'absolute', inset: -14, borderRadius: '50%',
+            background: 'conic-gradient(from 0deg, #f87171, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
+            animation: 'rainbow-spin 2s linear infinite',
+            opacity: 0.5, filter: 'blur(4px)', zIndex: 0 }} />
+          <div style={{ position: 'absolute', inset: -5, borderRadius: '50%',
+            background: 'conic-gradient(from 180deg, #60a5fa, #c084fc, #fde047, #4ade80, #f472b6, #60a5fa)',
+            animation: 'rainbow-spin 3s linear infinite reverse',
+            opacity: 0.35, filter: 'blur(2px)', zIndex: 0 }} />
           <img src={src} alt="" width={160} height={160} style={{
-            imageRendering: 'pixelated', objectFit: 'contain',
-            filter: 'drop-shadow(0 0 12px #fde047) drop-shadow(0 0 24px #f0abfc) drop-shadow(0 0 5px #fff)',
-            animation: 'capture-appear 0.9s cubic-bezier(0.34,1.56,0.64,1) both, capture-float 2.5s 1s ease-in-out infinite',
+            imageRendering: 'pixelated', objectFit: 'contain', position: 'relative', zIndex: 2,
+            filter: 'drop-shadow(0 0 14px #fde047) drop-shadow(0 0 28px #f0abfc) drop-shadow(0 0 8px #fff)',
+            animation: 'capture-appear 0.9s cubic-bezier(0.34,1.56,0.64,1) both, capture-float 2.5s 1s ease-in-out infinite, shiny-img-rainbow 2.5s linear infinite',
           }} />
+          {/* Stars in front of sprite */}
+          {SHINY_CAPTURE_ORBIT.filter(s => s.layer === 'front').map((star, i) => (
+            <div key={`f${i}`} style={{ position: 'absolute', left: '50%', top: '50%', width: 0, height: 0, zIndex: 5,
+              animation: `${star.anim} ${star.dur} ${star.delay} linear infinite` } as React.CSSProperties}>
+              <span style={{ position: 'absolute', transform: 'translate(-50%,-50%)', color: star.color,
+                fontSize: star.size, fontWeight: 900,
+                textShadow: `0 0 10px ${star.color}, 0 0 22px ${star.color}, 0 0 40px ${star.color}88`,
+                lineHeight: 1, userSelect: 'none' }}>{star.sym}</span>
+            </div>
+          ))}
         </div>
 
         {/* Info panel */}
