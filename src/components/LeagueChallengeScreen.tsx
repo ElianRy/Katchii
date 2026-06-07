@@ -434,8 +434,10 @@ function DialogueScreen({ trainer, onDone }: {
         <div className="absolute inset-0 pointer-events-none"
           style={{ animation: 'league-lightning 4s ease-in-out infinite', background: 'rgba(168,85,247,0.05)' }} />
       )}
+      {/* Side effects cover the ENTIRE screen including header */}
+      {isMaster && <MasterSideEffects />}
 
-      <div className="px-5 pt-5 pb-2 shrink-0">
+      <div className="px-5 pt-5 pb-2 shrink-0" style={{ position: 'relative', zIndex: 5 }}>
         <div className="font-black text-2xl tracking-wide" style={{ color: trainer.color, textShadow: `0 0 20px ${trainer.color}66` }}>
           {trainer.name}
         </div>
@@ -443,8 +445,6 @@ function DialogueScreen({ trainer, onDone }: {
       </div>
 
       <div className="flex-1 relative overflow-hidden min-h-0">
-        {/* Master dialogue side animations */}
-        {isMaster && <MasterSideEffects />}
 
         <div className="absolute bottom-0 w-full h-40 pointer-events-none" style={{
           background: `radial-gradient(ellipse at 50% 100%, ${trainer.color}35 0%, transparent 70%)`,
@@ -610,101 +610,79 @@ function MasterSideEffects() {
   );
 }
 
-/* ── ALAKAZAM POKEBALL REVEAL ── */
+/* ── ALAKAZAM STAR-BURST REVEAL ── */
+const ALAKA_SPARKLES = [
+  { top:'3%',left:'10%',sz:20,del:'0.1s',dur:'1.2s'},{ top:'8%',left:'78%',sz:16,del:'0s',dur:'1.0s'},
+  { top:'30%',left:'2%',sz:18,del:'0.2s',dur:'1.4s'},{ top:'20%',left:'88%',sz:14,del:'0.05s',dur:'1.7s'},
+  { top:'55%',left:'62%',sz:16,del:'0.35s',dur:'1.1s'},{ top:'6%',left:'44%',sz:13,del:'0.15s',dur:'1.5s'},
+  { top:'45%',left:'18%',sz:15,del:'0.4s',dur:'1.2s'},{ top:'65%',left:'80%',sz:12,del:'0.08s',dur:'1.6s'},
+  { top:'15%',left:'33%',sz:19,del:'0.5s',dur:'1.0s'},{ top:'72%',left:'38%',sz:14,del:'0.28s',dur:'1.3s'},
+  { top:'38%',left:'52%',sz:11,del:'0.6s',dur:'1.1s'},{ top:'82%',left:'14%',sz:16,del:'0.18s',dur:'1.4s'},
+  { top:'50%',left:'90%',sz:13,del:'0.42s',dur:'1.2s'},{ top:'25%',left:'58%',sz:15,del:'0.65s',dur:'0.9s'},
+];
+
 function AlakazamReveal({ trainer }: { trainer: { companion: { image: string; pokemonId: number }; color: string } }) {
-  const [stage, setStage] = useState<'pokeball' | 'flash' | 'revealed'>('pokeball');
-  const [topOpen, setTopOpen] = useState(false);
+  const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setTopOpen(true), 600);
-    const t2 = setTimeout(() => setStage('flash'), 1300);
-    const t3 = setTimeout(() => setStage('revealed'), 2000);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    const t = setTimeout(() => setRevealed(true), 800);
+    return () => clearTimeout(t);
   }, []);
 
   const size = 'min(52vw, 215px)';
-  const sparkles = [
-    { top:'3%',left:'10%',sz:18,del:'0s',dur:'1.2s'},{ top:'12%',left:'78%',sz:14,del:'0.3s',dur:'1.0s'},
-    { top:'35%',left:'3%',sz:16,del:'0.55s',dur:'1.4s'},{ top:'25%',left:'90%',sz:12,del:'0.1s',dur:'1.7s'},
-    { top:'60%',left:'65%',sz:15,del:'0.75s',dur:'1.1s'},{ top:'8%',left:'45%',sz:11,del:'0.45s',dur:'1.5s'},
-    { top:'50%',left:'20%',sz:13,del:'0.9s',dur:'1.2s'},{ top:'70%',left:'82%',sz:10,del:'0.2s',dur:'1.6s'},
-    { top:'18%',left:'35%',sz:17,del:'1.0s',dur:'1.0s'},{ top:'78%',left:'40%',sz:12,del:'0.65s',dur:'1.3s'},
-    { top:'42%',left:'55%',sz:9,del:'1.2s',dur:'1.1s'},{ top:'88%',left:'15%',sz:14,del:'0.4s',dur:'1.4s'},
-    { top:'55%',left:'92%',sz:11,del:'0.85s',dur:'1.2s'},{ top:'28%',left:'60%',sz:13,del:'1.35s',dur:'0.9s'},
-  ];
 
   return (
     <div className="absolute pointer-events-none"
       style={{ right: '2%', bottom: 'min(14vw, 60px)', width: size, height: size, zIndex: 11 }}>
 
-      {stage === 'pokeball' && (
+      {/* Initial starburst flash */}
+      {!revealed && (
         <div className="absolute inset-0 flex items-center justify-center">
-          {/* Pokeball SVG — top lifts on open */}
-          <svg viewBox="0 0 100 100" width="70%" height="70%" style={{ overflow: 'visible', filter: 'drop-shadow(0 0 12px #a855f7)' }}>
-            {/* Bottom half — static */}
-            <clipPath id="clip-bottom"><rect x="0" y="50" width="100" height="50"/></clipPath>
-            <g clipPath="url(#clip-bottom)">
-              <circle cx="50" cy="50" r="46" fill="white" stroke="#1a1a2e" strokeWidth="3"/>
-            </g>
-            {/* Top half — animates up when topOpen */}
-            <g style={{
-              transformOrigin: '50px 50px',
-              animation: topOpen ? 'pokeball-top-open 0.6s ease-out forwards' : undefined,
-            }}>
-              <clipPath id="clip-top"><rect x="0" y="0" width="100" height="50"/></clipPath>
-              <g clipPath="url(#clip-top)">
-                <circle cx="50" cy="50" r="46" fill="#dc2626" stroke="#1a1a2e" strokeWidth="3"/>
-              </g>
-            </g>
-            {/* Divider line */}
-            <line x1="4" y1="50" x2="96" y2="50" stroke="#1a1a2e" strokeWidth="3"/>
-            {/* Center button */}
-            <circle cx="50" cy="50" r="11" fill="white" stroke="#1a1a2e" strokeWidth="3"/>
-            <circle cx="50" cy="50" r="6" fill={topOpen ? '#c026d3' : '#9ca3af'} style={{ transition: 'fill 0.3s' }}/>
-          </svg>
-
-          {/* Energy burst when opening */}
-          {topOpen && (
-            <div className="absolute inset-0 rounded-full pointer-events-none"
+          {/* 8 rays expanding outward */}
+          {Array.from({ length: 8 }, (_, i) => (
+            <div key={i} className="absolute pointer-events-none"
               style={{
-                background: 'radial-gradient(ellipse, rgba(168,85,247,0.8) 0%, rgba(253,224,71,0.4) 40%, transparent 70%)',
-                animation: 'pokeball-flash 0.8s ease-out forwards',
-              }} />
-          )}
+                width: 3, height: '55%',
+                background: 'linear-gradient(to top, #fde047, rgba(168,85,247,0.6), transparent)',
+                transformOrigin: 'bottom center',
+                transform: `rotate(${i * 45}deg) translateX(-50%)`,
+                top: '0%', left: '50%',
+                animation: 'legendary-ray 0.8s ease-out forwards',
+                '--angle': `${i * 45}deg`,
+              } as React.CSSProperties} />
+          ))}
+          {/* Central glow */}
+          <div className="absolute inset-0 rounded-full"
+            style={{
+              background: 'radial-gradient(ellipse, rgba(253,224,71,0.9) 0%, rgba(168,85,247,0.5) 40%, transparent 70%)',
+              animation: 'pokeball-flash 0.8s ease-out forwards',
+            }} />
         </div>
       )}
 
-      {stage === 'flash' && (
-        <div className="absolute inset-0 rounded-full pointer-events-none"
-          style={{
-            background: 'radial-gradient(ellipse, rgba(253,224,71,1) 0%, rgba(168,85,247,0.8) 40%, transparent 70%)',
-            animation: 'pokeball-flash 0.7s ease-out forwards',
-          }} />
-      )}
-
-      {stage === 'revealed' && (
+      {/* Alakazam — appears with scale-in when revealed */}
+      {revealed && (
         <>
-          {/* Shiny aura */}
           <div className="absolute inset-0 pointer-events-none"
             style={{
-              background: 'radial-gradient(ellipse at 50% 55%, rgba(253,224,71,0.2) 0%, rgba(96,165,250,0.15) 30%, rgba(168,85,247,0.12) 55%, transparent 75%)',
+              background: 'radial-gradient(ellipse at 50% 55%, rgba(253,224,71,0.2) 0%, rgba(96,165,250,0.12) 35%, rgba(168,85,247,0.1) 60%, transparent 80%)',
               animation: 'aura-pulse 1.6s ease-in-out infinite',
             }} />
           <img src={trainer.companion.image} alt="" draggable={false}
             className="w-full h-full select-none"
             style={{
               objectFit: 'contain', objectPosition: 'bottom',
-              animation: 'alakazam-float 3s ease-in-out infinite',
-              filter: 'drop-shadow(0 0 6px #fde047) drop-shadow(0 0 14px #a855f7)',
+              animation: 'alakazam-appear 0.6s cubic-bezier(0.34,1.56,0.64,1) both, alakazam-float 3s 0.6s ease-in-out infinite',
+              filter: 'drop-shadow(0 0 8px #fde047) drop-shadow(0 0 18px #a855f7)',
             }} />
-          {sparkles.map((s, i) => (
+          {ALAKA_SPARKLES.map((s, i) => (
             <div key={i} className="absolute pointer-events-none"
               style={{ top: s.top, left: s.left, width: s.sz, height: s.sz,
                 animation: `shiny-sparkle ${s.dur} ${s.del} ease-in-out infinite` }}>
               <svg viewBox="0 0 10 10" width={s.sz} height={s.sz}>
                 <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z"
                   fill="#fde047" stroke="#fbbf24" strokeWidth="0.3"
-                  style={{ filter: 'drop-shadow(0 0 3px #fde047)' }} />
+                  style={{ filter: 'drop-shadow(0 0 4px #fde047)' }} />
               </svg>
             </div>
           ))}
@@ -991,7 +969,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     return (
       <div className="fixed inset-0 z-[210]">
         <BattleScreen playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
-          bossName="Peter" trainerBackground="/trainers/master.png" onBattleEnd={handleBattleEnd('dialogue_giovanni')}
+          bossName="Peter" trainerImage="/trainers/peter.png" onBattleEnd={handleBattleEnd('dialogue_giovanni')}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
     );
@@ -1007,7 +985,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     return (
       <div className="fixed inset-0 z-[210]">
         <BattleScreen playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
-          bossName="Giovanni" trainerBackground="/trainers/master.png" onBattleEnd={handleBattleEnd('dialogue_master')}
+          bossName="Giovanni" trainerImage="/trainers/giovanni.webp" onBattleEnd={handleBattleEnd('dialogue_master')}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
     );
@@ -1025,11 +1003,12 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   if (phase === 'battle_master') {
     return (
       <div className="fixed inset-0 z-[210]">
-        <MasterSideEffects />
         <div className="absolute inset-0 pointer-events-none z-10"
           style={{ boxShadow: 'inset 0 0 50px rgba(168,85,247,0.4)', animation: 'aura-pulse 1.2s ease-in-out infinite' }} />
         <BattleScreen playerTeam={masterTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[2].teamSpec)}
-          bossName="⚡ Le Maître ⚡" onBattleEnd={handleBattleEnd('victory')}
+          bossName="⚡ Le Maître ⚡"
+          sideOverlay={<div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}><MasterSideEffects /></div>}
+          onBattleEnd={handleBattleEnd('victory')}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
     );

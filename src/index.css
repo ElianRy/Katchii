@@ -820,6 +820,11 @@ button:active{transform:scale(.93);transition:transform .08s ease}
   35%     { transform: translateY(-18px) rotate(1.5deg); }
   65%     { transform: translateY(-10px) rotate(-0.8deg); }
 }
+@keyframes alakazam-appear {
+  0%   { opacity:0; transform:scale(0.1) rotate(-10deg); filter:brightness(3) blur(6px); }
+  60%  { opacity:1; transform:scale(1.08) rotate(2deg); filter:brightness(1.4) blur(0px); }
+  100% { opacity:1; transform:scale(1) rotate(0deg); filter:brightness(1); }
+}
 @keyframes legendary-orb-pulse {
   0%,100% { transform:scale(1); opacity:0.7; }
   50%     { transform:scale(1.15); opacity:1; }

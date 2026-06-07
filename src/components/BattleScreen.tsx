@@ -22,7 +22,8 @@ interface Props {
   speedLevel?: number;
   onSpeedLevelChange?: (v: number) => void;
   onQuit?: () => void;
-  trainerBackground?: string;
+  trainerImage?: string;
+  sideOverlay?: React.ReactNode;
 }
 
 interface FighterState extends TeamMember { currentHp: number; }
@@ -288,7 +289,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerBackground }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, sideOverlay }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp }))
   );
@@ -545,15 +546,16 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           }} />
         ))}
 
-        {/* Background trainer (spectator) */}
-        {trainerBackground && (
-          <div className="absolute bottom-0 right-0 pointer-events-none" style={{ zIndex: 2 }}>
-            <img src={trainerBackground} alt="" draggable={false}
-              className="select-none"
-              style={{ height: 'min(38vh, 200px)', objectFit: 'contain', objectPosition: 'bottom',
-                opacity: 0.22, filter: 'brightness(0.4) saturate(0.3)' }} />
+        {/* Trainer spectator — top right, next to enemy pokemon */}
+        {trainerImage && (
+          <div className="absolute pointer-events-none" style={{ top: '5%', right: 0, zIndex: 3, display: 'flex', alignItems: 'flex-start' }}>
+            <img src={trainerImage} alt="" draggable={false} className="select-none"
+              style={{ height: 'min(28vh, 160px)', objectFit: 'contain', objectPosition: 'top',
+                filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.7))' }} />
           </div>
         )}
+        {/* Side overlay (e.g. master energy effects during final battle) */}
+        {sideOverlay}
 
         {/* Stadium arc */}
         <div className="absolute inset-x-0 top-0 pointer-events-none" style={{
