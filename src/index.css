@@ -794,3 +794,10 @@ button:active{transform:scale(.93);transition:transform .08s ease}
   90%,94%     { opacity:1; }
   92%,96%     { opacity:0; }
 }
+@keyframes pokeball-release {
+  0%   { opacity:0; transform:scale(0.1) translateY(40px); filter:brightness(3) blur(4px); }
+  30%  { opacity:1; transform:scale(1.15) translateY(-8px); filter:brightness(1.5) blur(0px); }
+  55%  { transform:scale(0.95) translateY(4px); }
+  70%  { transform:scale(1.04) translateY(-2px); }
+  100% { opacity:1; transform:scale(1) translateY(0); filter:brightness(1); }
+}

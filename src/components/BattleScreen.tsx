@@ -297,8 +297,12 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   );
   const [playerIdx, setPlayerIdx] = useState(0);
   const [enemyIdx, setEnemyIdx] = useState(0);
+  // Refs that stay in sync with state — used inside interval to avoid stale closures
+  const playerIdxRef = useRef(0);
+  const enemyIdxRef = useRef(0);
   const [log, setLog] = useState<LogEntry[]>([]);
   const [phase, setPhase] = useState<'intro' | 'battle' | 'switch' | 'end'>('intro');
+  const phaseRef = useRef<'intro' | 'battle' | 'switch' | 'end'>('intro');
   const [attackEvt, setAttackEvt] = useState<AttackEvent | null>(null);
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [xpGains, setXpGains] = useState<Record<number, number>>({});
@@ -307,10 +311,12 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const setSpeedLevel = (v: number) => { setSpeedLevelLocal(v); onSpeedLevelChange?.(v); };
   const won = useRef(false);
   const battleDone = useRef(false);
-  const paused = useRef(false); // paused while player chooses switch
 
-  // Keep ref in sync so onBattleEnd can read final HP state
+  // Keep refs in sync
   useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
+  useEffect(() => { playerIdxRef.current = playerIdx; }, [playerIdx]);
+  useEffect(() => { enemyIdxRef.current = enemyIdx; }, [enemyIdx]);
+  useEffect(() => { phaseRef.current = phase; }, [phase]);
 
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
     setLog(prev => [...prev.slice(-5), { text, color }]);
@@ -334,12 +340,15 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     const intervalMs = speedLevel === 3 ? 160 : speedLevel === 2 ? 400 : speedLevel === 1 ? 800 : 1600;
 
     const runTurn = () => {
-      if (battleDone.current || paused.current) return;
+      // Use refs so we always read current values, never stale closures
+      if (battleDone.current || phaseRef.current !== 'battle') return;
+      const pIdx = playerIdxRef.current;
+      const eIdx = enemyIdxRef.current;
 
       setPlayerFighters(pf => {
         setEnemyFighters(ef => {
-          const pFighter = pf[playerIdx];
-          const eFighter = ef[enemyIdx];
+          const pFighter = pf[pIdx];
+          const eFighter = ef[eIdx];
           if (!pFighter || !eFighter || pFighter.currentHp <= 0 || eFighter.currentHp <= 0) return ef;
 
           const pName = POKEMON_BY_ID[pFighter.pokemonId]?.name ?? '???';
@@ -360,7 +369,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             pEff >= 2 ? '#4ade80' : '#fde68a');
 
           const newEHp = Math.max(0, eFighter.currentHp - pDmg);
-          const newEf = ef.map((f, i) => i === enemyIdx ? { ...f, currentHp: newEHp } : f);
+          const newEf = ef.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
 
           if (newEHp <= 0) {
             addLog(`${eName} est K.O. !`, '#f87171');
@@ -368,18 +377,21 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             const levelBonus = 1 + pFighter.level * 0.025;
             const xpEarned = Math.floor(xpBase * levelBonus);
             setXpGains(prev => ({ ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned }));
-            const nextE = newEf.findIndex((f, i) => i > enemyIdx && f.currentHp > 0);
+            const nextE = newEf.findIndex((f, i) => i > eIdx && f.currentHp > 0);
             if (nextE < 0 && newEf.every(f => f.currentHp <= 0)) {
-              battleDone.current = true; won.current = true; setPhase('end');
+              battleDone.current = true; won.current = true;
+              phaseRef.current = 'end'; setPhase('end');
             } else if (nextE >= 0) {
+              enemyIdxRef.current = nextE;
               setTimeout(() => setEnemyIdx(nextE), 200);
             }
             return newEf;
           }
 
-          // Enemy counter — always via setTimeout to avoid setState-inside-setState
+          // Enemy counter
           setTimeout(() => {
-            if (battleDone.current || paused.current) return;
+            if (battleDone.current || phaseRef.current !== 'battle') return;
+            const pIdx2 = playerIdxRef.current;
             setAttackEvt({ attacker: 'enemy', type: eType, uid: dmgCounter++ });
             setTimeout(() => setHitFlash('player'), 120);
             setTimeout(() => setHitFlash(null), 280);
@@ -392,16 +404,16 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             addLog(`${eName} → ${eMove}${eEff >= 2 ? ' 💥 Super efficace !' : ''}`, eEff >= 2 ? '#f87171' : '#fca5a5');
 
             setPlayerFighters(pf2 => {
-              const newPHp = Math.max(0, pf2[playerIdx].currentHp - eDmg);
-              const newPf = pf2.map((f, i) => i === playerIdx ? { ...f, currentHp: newPHp } : f);
+              const newPHp = Math.max(0, pf2[pIdx2].currentHp - eDmg);
+              const newPf = pf2.map((f, i) => i === pIdx2 ? { ...f, currentHp: newPHp } : f);
               if (newPHp <= 0) {
                 addLog(`${pName} est K.O. !`, '#f87171');
-                const nextP = newPf.findIndex((f, i) => i > playerIdx && f.currentHp > 0);
+                const nextP = newPf.findIndex((f, i) => i > pIdx2 && f.currentHp > 0);
                 if (nextP < 0 && newPf.every(f => f.currentHp <= 0)) {
-                  battleDone.current = true; won.current = false; setPhase('end');
+                  battleDone.current = true; won.current = false;
+                  phaseRef.current = 'end'; setPhase('end');
                 } else {
-                  paused.current = true;
-                  setPhase('switch');
+                  phaseRef.current = 'switch'; setPhase('switch');
                 }
               }
               return newPf;
@@ -414,8 +426,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
       });
     };
 
-    // Keep interval alive during 'switch' too — paused.current gates runTurn
-    if ((phase !== 'battle' && phase !== 'switch') || battleDone.current) return;
+    if (phase !== 'battle' || battleDone.current) return;
     const timer = setInterval(() => {
       if (battleDone.current) { clearInterval(timer); return; }
       runTurn();
@@ -443,8 +454,10 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   }, [phase]);
 
   const handleSwitch = useCallback((idx: number) => {
+    // Update refs immediately so the interval reads correct values on next tick
+    playerIdxRef.current = idx;
+    phaseRef.current = 'battle';
     setPlayerIdx(idx);
-    paused.current = false;
     setPhase('battle');
     const name = POKEMON_BY_ID[playerFighters[idx]?.pokemonId]?.name ?? '???';
     addLog(`Allez ${name} !`, '#4ade80');

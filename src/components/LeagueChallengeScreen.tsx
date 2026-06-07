@@ -446,27 +446,9 @@ function DialogueScreen({ trainer, onDone }: {
         <div className="absolute bottom-0 w-full h-40 pointer-events-none" style={{
           background: `radial-gradient(ellipse at 50% 100%, ${trainer.color}35 0%, transparent 70%)`,
         }} />
-        {/* Trainer + companion side by side, bottom-aligned */}
+        {/* Trainer centered + companion to the RIGHT slightly behind */}
         <div className="relative flex items-end justify-center w-full">
-          {/* Companion — behind the trainer, left side, slightly smaller */}
-          <div className="relative z-[9] pointer-events-none shrink-0"
-            style={{
-              marginRight: '-18%',
-              animation: 'badge-pop 0.5s 0.25s ease-out both',
-              filter: isMaster && lineIdx === 0
-                ? 'brightness(0)'
-                : `drop-shadow(0 0 10px ${trainer.color}77)`,
-              transition: isMaster ? 'filter 1.2s ease-out' : undefined,
-            }}>
-            <ShinySprite
-              pokemonId={trainer.companion.pokemonId}
-              isShiny={trainer.companion.isShiny}
-              width={Math.round(Math.min(window.innerWidth * 0.52, 220))}
-              height={Math.round(Math.min(window.innerWidth * 0.52, 220))}
-              alt={POKEMON_BY_ID[trainer.companion.pokemonId]?.name ?? ''}
-            />
-          </div>
-          {/* Trainer — in front */}
+          {/* Trainer — centered, in front */}
           <img src={trainer.image} alt={trainer.name} draggable={false}
             className="relative z-10 select-none pointer-events-none shrink-0"
             style={{
@@ -481,6 +463,22 @@ function DialogueScreen({ trainer, onDone }: {
               animation: isMaster ? 'league-trainer-appear 0.6s ease-out' : 'badge-pop 0.5s ease-out',
             }}
           />
+          {/* Companion — right side, behind trainer */}
+          {(!isMaster || lineIdx >= 3) && (
+            <div className="absolute bottom-0 right-0 z-[9] pointer-events-none"
+              style={{
+                animation: isMaster ? 'pokeball-release 0.7s ease-out both' : 'badge-pop 0.5s ease-out both',
+                filter: `drop-shadow(0 0 12px ${trainer.color}88)`,
+              }}>
+              <ShinySprite
+                pokemonId={trainer.companion.pokemonId}
+                isShiny={trainer.companion.isShiny}
+                width={Math.round(Math.min(window.innerWidth * 0.48, 200))}
+                height={Math.round(Math.min(window.innerWidth * 0.48, 200))}
+                alt={POKEMON_BY_ID[trainer.companion.pokemonId]?.name ?? ''}
+              />
+            </div>
+          )}
         </div>
       </div>
 
