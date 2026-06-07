@@ -321,6 +321,43 @@ input, textarea, select {
   to   { transform: rotate(-360deg); }
 }
 
+/* Elliptical perspective orbits for shiny stars — simulate 3D planes */
+@keyframes shiny-persp-a {
+  0%   { transform: translate(42px,  2px)  scale(1.5); }
+  25%  { transform: translate( 0px,-14px)  scale(1.1); }
+  50%  { transform: translate(-42px,  2px) scale(0.55); }
+  75%  { transform: translate( 0px, 16px)  scale(1.1); }
+  100% { transform: translate(42px,  2px)  scale(1.5); }
+}
+@keyframes shiny-persp-b {
+  0%   { transform: translate(26px,-28px) scale(1.4); }
+  25%  { transform: translate(26px, 28px) scale(1.0); }
+  50%  { transform: translate(-26px,28px) scale(0.6); }
+  75%  { transform: translate(-26px,-28px)scale(1.0); }
+  100% { transform: translate(26px,-28px) scale(1.4); }
+}
+@keyframes shiny-persp-c {
+  0%   { transform: translate(14px,-36px) scale(1.3); }
+  25%  { transform: translate(14px, 36px) scale(0.75); }
+  50%  { transform: translate(-14px,36px) scale(0.5); }
+  75%  { transform: translate(-14px,-36px)scale(0.75); }
+  100% { transform: translate(14px,-36px) scale(1.3); }
+}
+@keyframes shiny-persp-d {
+  0%   { transform: translate(38px, 18px) scale(1.45); }
+  25%  { transform: translate(-10px,-30px)scale(1.0); }
+  50%  { transform: translate(-38px,-18px)scale(0.55); }
+  75%  { transform: translate(10px, 30px) scale(1.0); }
+  100% { transform: translate(38px, 18px) scale(1.45); }
+}
+@keyframes shiny-persp-e {
+  0%   { transform: translate(-20px,-32px)scale(0.6); }
+  25%  { transform: translate(38px, -8px) scale(1.45); }
+  50%  { transform: translate(20px, 32px) scale(1.1); }
+  75%  { transform: translate(-38px, 8px) scale(0.65); }
+  100% { transform: translate(-20px,-32px)scale(0.6); }
+}
+
 @keyframes rainbow-pulse {
   0%, 100% { opacity: 0.55; transform: scale(1); }
   50% { opacity: 0.85; transform: scale(1.08); }

@@ -30,18 +30,21 @@ const MOVE_ANIMS = [
   { animation: 'wiggle 2.4s ease-in-out infinite' },
 ];
 
-// Scattered shiny stars — each at different radius + speed so they're not in a ring
-const SHINY_ORBIT_STARS = [
-  { color: '#fde047', orbitDuration: '3.2s', delay: '0s',    orbitR: 38, sym: '✦', size: 14 },
-  { color: '#f472b6', orbitDuration: '2.6s', delay: '-0.9s', orbitR: 30, sym: '✧', size: 12 },
-  { color: '#60a5fa', orbitDuration: '4.0s', delay: '-1.7s', orbitR: 44, sym: '⋆', size: 13 },
-  { color: '#fbbf24', orbitDuration: '2.2s', delay: '-0.4s', orbitR: 26, sym: '✦', size: 11 },
-  { color: '#ffffff', orbitDuration: '3.6s', delay: '-2.1s', orbitR: 40, sym: '✧', size: 12 },
-  { color: '#4ade80', orbitDuration: '2.9s', delay: '-1.3s', orbitR: 34, sym: '⋆', size: 13 },
-  { color: '#a5f3fc', orbitDuration: '3.4s', delay: '-0.7s', orbitR: 28, sym: '✦', size: 11 },
-  { color: '#c084fc', orbitDuration: '2.4s', delay: '-1.5s', orbitR: 42, sym: '✧', size: 12 },
-  { color: '#fb923c', orbitDuration: '3.8s', delay: '-2.8s', orbitR: 32, sym: '⋆', size: 13 },
-  { color: '#34d399', orbitDuration: '2.8s', delay: '-0.6s', orbitR: 36, sym: '✦', size: 11 },
+// Stars use elliptical "perspective" orbits — different tilt per star so they
+// appear to orbit in 3D planes, passing in front AND behind the sprite.
+// anim = one of the shiny-persp-* keyframes defined in index.css
+// layer: 'back' renders behind the sprite, 'front' renders in front
+const SHINY_ORBIT_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string; layer: 'front' | 'back' }[] = [
+  { color: '#fde047', dur: '3.2s', delay: '0s',    sym: '✦', size: 18, anim: 'shiny-persp-a', layer: 'front' },
+  { color: '#f472b6', dur: '2.6s', delay: '-0.9s', sym: '✧', size: 16, anim: 'shiny-persp-b', layer: 'back'  },
+  { color: '#60a5fa', dur: '4.0s', delay: '-1.7s', sym: '⋆', size: 17, anim: 'shiny-persp-c', layer: 'front' },
+  { color: '#fbbf24', dur: '2.2s', delay: '-0.4s', sym: '✦', size: 15, anim: 'shiny-persp-d', layer: 'back'  },
+  { color: '#ffffff', dur: '3.6s', delay: '-2.1s', sym: '✧', size: 16, anim: 'shiny-persp-e', layer: 'front' },
+  { color: '#4ade80', dur: '2.9s', delay: '-1.3s', sym: '⋆', size: 17, anim: 'shiny-persp-a', layer: 'back'  },
+  { color: '#a5f3fc', dur: '3.4s', delay: '-0.7s', sym: '✦', size: 15, anim: 'shiny-persp-c', layer: 'front' },
+  { color: '#c084fc', dur: '2.4s', delay: '-1.5s', sym: '✧', size: 16, anim: 'shiny-persp-d', layer: 'back'  },
+  { color: '#fb923c', dur: '3.8s', delay: '-2.8s', sym: '⋆', size: 17, anim: 'shiny-persp-b', layer: 'front' },
+  { color: '#34d399', dur: '2.8s', delay: '-0.6s', sym: '✦', size: 15, anim: 'shiny-persp-e', layer: 'back'  },
 ];
 
 function PokeballSVG({ spinning }: { spinning: boolean }) {
@@ -273,22 +276,18 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               className="relative flex items-center justify-center"
               style={{ borderRadius: narutoSpriteUrl ? '8px' : '50%', padding: 0 }}
             >
-              {/* Shiny scattered stars */}
-              {spawned.isShiny && SHINY_ORBIT_STARS.map((star, i) => (
-                <div key={i} className="absolute pointer-events-none" style={{
-                  left: '50%', top: '50%', width: 0, height: 0,
-                  animation: `shiny-orbit ${star.orbitDuration} linear infinite`,
-                  animationDelay: star.delay,
+              {/* Shiny stars BEHIND sprite */}
+              {spawned.isShiny && SHINY_ORBIT_STARS.filter(s => s.layer === 'back').map((star, i) => (
+                <div key={`b${i}`} className="absolute pointer-events-none" style={{
+                  left: '50%', top: '50%', width: 0, height: 0, zIndex: 0,
+                  animation: `${star.anim} ${star.dur} ${star.delay} linear infinite`,
                 } as React.CSSProperties}>
-                  <div style={{
-                    position: 'absolute',
-                    left: star.orbitR, top: -(star.size / 2),
+                  <span style={{
+                    position: 'absolute', transform: 'translate(-50%,-50%)',
                     color: star.color, fontSize: star.size, fontWeight: 900,
-                    textShadow: `0 0 5px ${star.color}`,
-                    animation: `shiny-orbit-rev ${star.orbitDuration} linear infinite`,
-                    animationDelay: star.delay,
-                    lineHeight: 1,
-                  }}>{star.sym}</div>
+                    textShadow: `0 0 6px ${star.color}, 0 0 12px ${star.color}88`,
+                    lineHeight: 1, userSelect: 'none',
+                  }}>{star.sym}</span>
                 </div>
               ))}
 
@@ -351,6 +350,21 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                   onError={() => setSpriteError(true)}
                 />
               )}
+
+              {/* Shiny stars IN FRONT of sprite */}
+              {spawned.isShiny && SHINY_ORBIT_STARS.filter(s => s.layer === 'front').map((star, i) => (
+                <div key={`f${i}`} className="absolute pointer-events-none" style={{
+                  left: '50%', top: '50%', width: 0, height: 0, zIndex: 5,
+                  animation: `${star.anim} ${star.dur} ${star.delay} linear infinite`,
+                } as React.CSSProperties}>
+                  <span style={{
+                    position: 'absolute', transform: 'translate(-50%,-50%)',
+                    color: star.color, fontSize: star.size, fontWeight: 900,
+                    textShadow: `0 0 6px ${star.color}, 0 0 12px ${star.color}88`,
+                    lineHeight: 1, userSelect: 'none',
+                  }}>{star.sym}</span>
+                </div>
+              ))}
             </div>
 
             {/* Name badge */}
