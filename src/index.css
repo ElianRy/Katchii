@@ -862,3 +862,37 @@ button:active{transform:scale(.93);transition:transform .08s ease}
   0%,100% { opacity:0; transform:scale(0.5); }
   50%     { opacity:1; transform:scale(1.2); }
 }
+
+/* ── Epic capture modal ── */
+@keyframes capture-appear {
+  from { opacity:0; transform:scale(0.2); }
+  to   { opacity:1; transform:scale(1); }
+}
+@keyframes capture-float {
+  0%,100% { transform:translateY(0); }
+  50%     { transform:translateY(-12px); }
+}
+@keyframes capture-orb-pulse {
+  0%,100% { transform:scale(1);    opacity:0.8; }
+  50%     { transform:scale(1.18); opacity:1; }
+}
+@keyframes capture-rays-spin {
+  from { transform:rotate(0deg); }
+  to   { transform:rotate(360deg); }
+}
+@keyframes capture-ray-fade {
+  0%,100% { opacity:0; }
+  40%,60% { opacity:1; }
+}
+@keyframes capture-vignette {
+  0%,100% { opacity:0.7; }
+  50%     { opacity:1; }
+}
+@keyframes capture-orbit {
+  from { transform:rotate(0deg); }
+  to   { transform:rotate(360deg); }
+}
+@keyframes capture-orbit-counter {
+  from { transform:rotate(0deg); }
+  to   { transform:rotate(-360deg); }
+}
