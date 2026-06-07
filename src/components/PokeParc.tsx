@@ -1197,14 +1197,18 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                   animation: 'bounce-pokemon 1.2s ease-in-out infinite',
                 }}
               />
-              <div className="text-white font-black text-2xl mt-2">+{offlineParkXp.xp} XP</div>
-              {levelsGained > 0 && (
-                <div className="text-yellow-400 font-black text-sm mt-1">
-                  ⬆️ +{levelsGained} niveau{levelsGained > 1 ? 'x' : ''} ! (Niv. {levelBefore} → {levelAfter})
+              {levelsGained > 0 ? (
+                <div className="text-yellow-400 font-black text-3xl mt-2">
+                  ⬆️ +{levelsGained} niveau{levelsGained > 1 ? 'x' : ''} !
                 </div>
+              ) : (
+                <div className="text-white font-black text-xl mt-2">{pkData?.name ?? 'Ton Pokémon'} a progressé !</div>
               )}
+              <div className="text-white/70 font-bold text-base mt-1">+{offlineParkXp.xp} XP</div>
               <div className="text-slate-400 text-xs mt-1 mb-3">
-                {pkData?.name ?? 'Ton Pokémon'} s'est entraîné pendant ton absence !
+                {levelsGained > 0
+                  ? `Niv. ${levelBefore} → ${levelAfter} · ${pkData?.name ?? 'Ton Pokémon'} s'est entraîné !`
+                  : `${pkData?.name ?? 'Ton Pokémon'} s'est entraîné pendant ton absence !`}
               </div>
               {/* XP bar — same as TeamBuilder */}
               <div className="mb-1">
@@ -1401,14 +1405,28 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
             </div>
           )}
 
-          {/* Change pokemon button */}
+          {/* Change / remove pokemon buttons */}
           {myFav && (
-            <button
-              onClick={() => setShowPicker(true)}
-              className="absolute bottom-2 right-2 text-xs px-2 py-1 rounded-lg bg-black/50 text-slate-400 border border-slate-700/60"
-            >
-              Changer
-            </button>
+            <div className="absolute bottom-2 right-2 flex gap-1">
+              <button
+                onClick={async () => {
+                  onSetFavoritePokemon(null);
+                  setParkRevealed(false);
+                  if (myUserId) {
+                    await supabase.from('pokepark_presence').delete().eq('user_id', myUserId);
+                  }
+                }}
+                className="text-xs px-2 py-1 rounded-lg bg-black/50 text-red-400 border border-red-900/60"
+              >
+                Retirer
+              </button>
+              <button
+                onClick={() => setShowPicker(true)}
+                className="text-xs px-2 py-1 rounded-lg bg-black/50 text-slate-400 border border-slate-700/60"
+              >
+                Changer
+              </button>
+            </div>
           )}
         </div>
 
