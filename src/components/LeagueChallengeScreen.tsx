@@ -19,7 +19,7 @@ type Phase =
   | 'dialogue_peter'    | 'starter_peter'    | 'battle_peter'
   | 'dialogue_giovanni' | 'starter_giovanni' | 'battle_giovanni'
   | 'dialogue_master'   | 'master_pick3'     | 'epic_intro' | 'battle_master'
-  | 'victory';
+  | 'victory' | 'defeat';
 
 const TRAINER_CONFIGS = [
   {
@@ -466,11 +466,22 @@ function DialogueScreen({ trainer, onDone }: {
           />
           {/* Companion — right side */}
           {(!isMaster || lineIdx >= 3) && (
-            <div className="absolute bottom-0 right-0 pointer-events-none"
+            <div className="absolute right-0 pointer-events-none"
               style={{
-                width: 'min(58vw, 240px)',
-                height: 'min(58vw, 240px)',
-                // Peter's Dragonite in FRONT (z-11), others behind (z-9)
+                // Dragonite same height as Peter, bottom-aligned (in front)
+                // Persian smaller, bottom-aligned (behind)
+                // Alakazam floats higher (bottom: 10%)
+                bottom: isMaster ? '10%' : '0',
+                width: trainer.id === 'peter'
+                  ? 'min(72vw, 300px)'   // same as trainer
+                  : trainer.id === 'giovanni'
+                    ? 'min(28vw, 110px)'  // smaller
+                    : 'min(55vw, 230px)', // master
+                height: trainer.id === 'peter'
+                  ? 'min(72vw, 300px)'
+                  : trainer.id === 'giovanni'
+                    ? 'min(28vw, 110px)'
+                    : 'min(55vw, 230px)',
                 zIndex: trainer.id === 'peter' ? 11 : 9,
                 animation: isMaster ? 'pokeball-release 0.7s ease-out both' : 'badge-pop 0.5s ease-out both',
               }}>
@@ -499,16 +510,20 @@ function DialogueScreen({ trainer, onDone }: {
               />
               {/* Shiny sparkles for Alakazam — more numerous */}
               {isMaster && [
-                { top: '5%',  left: '15%', size: 16, delay: '0s',    dur: '1.3s' },
-                { top: '15%', left: '75%', size: 12, delay: '0.35s', dur: '1.0s' },
-                { top: '40%', left: '5%',  size: 14, delay: '0.6s',  dur: '1.4s' },
-                { top: '30%', left: '88%', size: 10, delay: '0.15s', dur: '1.7s' },
-                { top: '65%', left: '60%', size: 13, delay: '0.8s',  dur: '1.1s' },
-                { top: '10%', left: '48%', size: 9,  delay: '0.5s',  dur: '1.5s' },
-                { top: '55%', left: '25%', size: 11, delay: '0.95s', dur: '1.2s' },
-                { top: '75%', left: '80%', size: 8,  delay: '0.25s', dur: '1.6s' },
-                { top: '22%', left: '38%', size: 15, delay: '1.1s',  dur: '1.0s' },
-                { top: '82%', left: '42%', size: 10, delay: '0.7s',  dur: '1.3s' },
+                { top: '3%',  left: '10%', size: 18, delay: '0s',    dur: '1.2s' },
+                { top: '12%', left: '78%', size: 14, delay: '0.3s',  dur: '1.0s' },
+                { top: '35%', left: '3%',  size: 16, delay: '0.55s', dur: '1.4s' },
+                { top: '25%', left: '90%', size: 12, delay: '0.1s',  dur: '1.7s' },
+                { top: '60%', left: '65%', size: 15, delay: '0.75s', dur: '1.1s' },
+                { top: '8%',  left: '45%', size: 11, delay: '0.45s', dur: '1.5s' },
+                { top: '50%', left: '20%', size: 13, delay: '0.9s',  dur: '1.2s' },
+                { top: '70%', left: '82%', size: 10, delay: '0.2s',  dur: '1.6s' },
+                { top: '18%', left: '35%', size: 17, delay: '1.0s',  dur: '1.0s' },
+                { top: '78%', left: '40%', size: 12, delay: '0.65s', dur: '1.3s' },
+                { top: '42%', left: '55%', size: 9,  delay: '1.2s',  dur: '1.1s' },
+                { top: '88%', left: '15%', size: 14, delay: '0.4s',  dur: '1.4s' },
+                { top: '55%', left: '92%', size: 11, delay: '0.85s', dur: '1.2s' },
+                { top: '28%', left: '60%', size: 13, delay: '1.35s', dur: '0.9s' },
               ].map((s, i) => (
                 <div key={i} className="absolute pointer-events-none"
                   style={{ top: s.top, left: s.left, width: s.size, height: s.size,
@@ -684,6 +699,80 @@ function EpicIntroScreen({ onDone }: { onDone: () => void }) {
   );
 }
 
+/* ── DEFEAT SCREEN ── */
+interface DefeatStats {
+  lostAgainst: string;
+  trainerColor: string;
+  pokemonKO: number;
+  pokemonAlive: number;
+  totalXp: number;
+  teamSize: number;
+}
+
+function DefeatScreen({ stats, onRetry, onClose }: {
+  stats: DefeatStats;
+  onRetry: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[210] flex flex-col items-center justify-center overflow-y-auto px-4 py-8"
+      style={{ background: 'radial-gradient(ellipse at 50% 0%, #1a0505 0%, #050000 60%, #000 100%)' }}>
+      {/* Skull */}
+      <div style={{ fontSize: '5rem', animation: 'victory-trophy 0.7s cubic-bezier(0.175,0.885,0.32,1.275) forwards' }}>💀</div>
+
+      {/* Title */}
+      <div className="text-center mt-3 mb-5" style={{ animation: 'victory-title 0.6s 0.2s ease-out both' }}>
+        <h2 className="font-black text-4xl text-red-400 mb-1"
+          style={{ textShadow: '0 0 30px rgba(239,68,68,0.6)' }}>
+          Dommage…
+        </h2>
+        <p className="text-slate-400 text-base font-semibold">
+          Tu as été vaincu par{' '}
+          <span className="font-black" style={{ color: stats.trainerColor }}>{stats.lostAgainst}</span>
+        </p>
+      </div>
+
+      {/* Stats card */}
+      <div className="w-full max-w-sm rounded-2xl border border-red-900/40 bg-black/60 p-5 mb-4"
+        style={{ animation: 'badge-pop 0.5s 0.4s ease-out both', boxShadow: '0 0 20px rgba(239,68,68,0.1)' }}>
+        <div className="text-red-400 font-black text-sm mb-3 uppercase tracking-widest">Résumé du combat</div>
+        {[
+          { icon: '❤️', label: 'Pokémon K.O.',     value: `${stats.pokemonKO} / ${stats.teamSize}` },
+          { icon: '💚', label: 'Pokémon survivants', value: String(stats.pokemonAlive) },
+          { icon: '⭐', label: 'XP total gagné',    value: stats.totalXp > 0 ? `+${stats.totalXp.toLocaleString()}` : '–' },
+        ].map((row, i) => (
+          <div key={i} className="flex items-center justify-between py-2 border-b border-slate-800 last:border-0">
+            <div className="flex items-center gap-2 text-slate-300 text-sm">
+              <span>{row.icon}</span>
+              <span>{row.label}</span>
+            </div>
+            <span className="font-black text-white text-sm">{row.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Encouragement */}
+      <p className="text-slate-500 text-xs text-center max-w-xs mb-6"
+        style={{ animation: 'badge-pop 0.5s 0.6s ease-out both' }}>
+        Reviens plus fort — les HP de ton équipe seront restaurés pour le prochain essai.
+      </p>
+
+      {/* Buttons */}
+      <div className="flex flex-col gap-3 w-full max-w-sm" style={{ animation: 'badge-pop 0.5s 0.7s ease-out both' }}>
+        <button onClick={onRetry}
+          className="w-full py-4 rounded-2xl font-black text-lg text-black"
+          style={{ background: 'linear-gradient(90deg, #ef4444, #f97316)', boxShadow: '0 0 20px rgba(239,68,68,0.4)' }}>
+          🔄 Réessayer
+        </button>
+        <button onClick={onClose}
+          className="w-full py-3 rounded-2xl font-bold text-base text-slate-400 border border-slate-700">
+          ✕ Quitter
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* ── VICTORY FINAL ── */
 function VictoryFinalScreen({ onClose, onZoneDiscovered }: { onClose: () => void; onZoneDiscovered?: () => void }) {
   const CONFETTI = Array.from({ length: 24 }, (_, i) => ({
@@ -770,6 +859,13 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   const [masterTeam, setMasterTeam] = useState<TeamMember[]>([]);
   const [retrying, setRetrying] = useState(false);
   const [victoryHandled, setVictoryHandled] = useState(false);
+  const [defeatStats, setDefeatStats] = useState<DefeatStats | null>(null);
+
+  const OPPONENT_META: Record<string, { name: string; color: string }> = {
+    dialogue_giovanni: { name: 'Peter',      color: '#ef4444' },
+    dialogue_master:   { name: 'Giovanni',   color: '#9ca3af' },
+    victory:           { name: 'Le Maître',  color: '#a855f7' },
+  };
 
   const handleTeamConfirm = useCallback((ids: number[]) => {
     const team: TeamMember[] = ids.map(id => {
@@ -780,6 +876,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     });
     setCurrentTeam(team);
     setRetrying(false);
+    setDefeatStats(null);
     setPhase('dialogue_peter');
   }, [state]);
 
@@ -788,8 +885,18 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
       (won: boolean, xpGains: Record<number, number>, finalTeam?: TeamMember[]) => {
         Object.entries(xpGains).forEach(([id, xp]) => onAddXp(Number(id), xp));
         if (!won) {
+          const meta = OPPONENT_META[nextPhase] ?? { name: 'ton adversaire', color: '#ef4444' };
+          const team = finalTeam ?? currentTeam;
+          setDefeatStats({
+            lostAgainst: meta.name,
+            trainerColor: meta.color,
+            pokemonKO: team.filter(m => m.currentHp <= 0).length,
+            pokemonAlive: team.filter(m => m.currentHp > 0).length,
+            totalXp: Object.values(xpGains).reduce((a, b) => a + b, 0),
+            teamSize: team.length,
+          });
           setRetrying(true);
-          setPhase('team_select');
+          setPhase('defeat');
           return;
         }
         if (finalTeam) {
@@ -861,6 +968,11 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
     );
+  }
+  if (phase === 'defeat' && defeatStats) {
+    return <DefeatScreen stats={defeatStats}
+      onRetry={() => { setPhase('team_select'); }}
+      onClose={onClose} />;
   }
   if (phase === 'victory') {
     return <VictoryFinalScreen onClose={onClose} onZoneDiscovered={onZoneDiscovered} />;
