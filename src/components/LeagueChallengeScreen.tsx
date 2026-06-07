@@ -27,7 +27,7 @@ const TRAINER_CONFIGS = [
     name: 'Peter',
     title: "Maître d'Arène",
     image: '/trainers/peter.png',
-    companion: { pokemonId: 149, isShiny: false },
+    companion: { pokemonId: 149, isShiny: false, image: '/trainers/dragonite.png' },
     dialogues: [
       "Hm... un nouveau challenger.",
       "Tu es arrivé jusqu'ici. C'est déjà une prouesse.",
@@ -48,7 +48,7 @@ const TRAINER_CONFIGS = [
     name: 'Giovanni',
     title: 'Chef de la Team Rocket',
     image: '/trainers/giovanni.webp',
-    companion: { pokemonId: 53, isShiny: false },
+    companion: { pokemonId: 53, isShiny: false, image: '/trainers/persian.png' },
     dialogues: [
       "...",
       "Tu as réussi à battre Peter. Impressionnant.",
@@ -70,7 +70,7 @@ const TRAINER_CONFIGS = [
     name: 'Le Maître',
     title: 'Champion de la Ligue',
     image: '/trainers/master.png',
-    companion: { pokemonId: 65, isShiny: true },
+    companion: { pokemonId: 65, isShiny: true, image: '/trainers/alakazam.png' },
     dialogues: [
       "...",
       "Tiens, tiens.",
@@ -467,16 +467,53 @@ function DialogueScreen({ trainer, onDone }: {
           {(!isMaster || lineIdx >= 3) && (
             <div className="absolute bottom-0 right-0 z-[9] pointer-events-none"
               style={{
+                width: 'min(48vw, 200px)',
+                height: 'min(48vw, 200px)',
                 animation: isMaster ? 'pokeball-release 0.7s ease-out both' : 'badge-pop 0.5s ease-out both',
-                filter: `drop-shadow(0 0 12px ${trainer.color}88)`,
               }}>
-              <ShinySprite
-                pokemonId={trainer.companion.pokemonId}
-                isShiny={trainer.companion.isShiny}
-                width={Math.round(Math.min(window.innerWidth * 0.48, 200))}
-                height={Math.round(Math.min(window.innerWidth * 0.48, 200))}
+              {/* Shiny aura glow behind for Alakazam */}
+              {isMaster && (
+                <div className="absolute inset-0 rounded-full pointer-events-none"
+                  style={{
+                    background: 'radial-gradient(ellipse at 50% 60%, rgba(253,224,71,0.45) 0%, rgba(168,85,247,0.25) 45%, transparent 70%)',
+                    animation: 'aura-pulse 1.6s ease-in-out infinite',
+                  }} />
+              )}
+              <img
+                src={trainer.companion.image}
                 alt={POKEMON_BY_ID[trainer.companion.pokemonId]?.name ?? ''}
+                draggable={false}
+                className="w-full h-full select-none"
+                style={{
+                  objectFit: 'contain',
+                  objectPosition: 'bottom',
+                  filter: isMaster
+                    ? 'drop-shadow(0 0 8px #fde047) drop-shadow(0 0 18px #a855f7)'
+                    : `drop-shadow(0 0 10px ${trainer.color}77)`,
+                }}
               />
+              {/* Shiny sparkles for Alakazam */}
+              {isMaster && [
+                { top: '8%',  left: '18%', size: 14, delay: '0s',    dur: '1.4s' },
+                { top: '20%', left: '72%', size: 10, delay: '0.4s',  dur: '1.1s' },
+                { top: '55%', left: '8%',  size: 12, delay: '0.7s',  dur: '1.3s' },
+                { top: '35%', left: '85%', size: 9,  delay: '0.2s',  dur: '1.6s' },
+                { top: '70%', left: '55%', size: 11, delay: '0.9s',  dur: '1.2s' },
+                { top: '12%', left: '50%', size: 8,  delay: '0.55s', dur: '1.5s' },
+              ].map((s, i) => (
+                <div key={i} className="absolute pointer-events-none"
+                  style={{
+                    top: s.top, left: s.left,
+                    width: s.size, height: s.size,
+                    animation: `shiny-sparkle ${s.dur} ${s.delay} ease-in-out infinite`,
+                  }}>
+                  <svg viewBox="0 0 10 10" width={s.size} height={s.size}>
+                    <path d="M5 0 L5.6 4.4 L10 5 L5.6 5.6 L5 10 L4.4 5.6 L0 5 L4.4 4.4 Z"
+                      fill="#fde047" stroke="#fbbf24" strokeWidth="0.3"
+                      style={{ filter: 'drop-shadow(0 0 2px #fde047)' }} />
+                  </svg>
+                </div>
+              ))}
             </div>
           )}
         </div>
