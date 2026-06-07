@@ -414,7 +414,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
       });
     };
 
-    if (phase !== 'battle' || battleDone.current) return;
+    // Keep interval alive during 'switch' too — paused.current gates runTurn
+    if ((phase !== 'battle' && phase !== 'switch') || battleDone.current) return;
     const timer = setInterval(() => {
       if (battleDone.current) { clearInterval(timer); return; }
       runTurn();

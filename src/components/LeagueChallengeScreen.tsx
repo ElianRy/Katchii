@@ -27,6 +27,7 @@ const TRAINER_CONFIGS = [
     name: 'Peter',
     title: "Maître d'Arène",
     image: '/trainers/peter.png',
+    companion: { pokemonId: 149, isShiny: false },
     dialogues: [
       "Hm... un nouveau challenger.",
       "Tu es arrivé jusqu'ici. C'est déjà une prouesse.",
@@ -47,6 +48,7 @@ const TRAINER_CONFIGS = [
     name: 'Giovanni',
     title: 'Chef de la Team Rocket',
     image: '/trainers/giovanni.webp',
+    companion: { pokemonId: 53, isShiny: false },
     dialogues: [
       "...",
       "Tu as réussi à battre Peter. Impressionnant.",
@@ -68,6 +70,7 @@ const TRAINER_CONFIGS = [
     name: 'Le Maître',
     title: 'Champion de la Ligue',
     image: '/trainers/master.png',
+    companion: { pokemonId: 65, isShiny: true },
     dialogues: [
       "...",
       "Tiens, tiens.",
@@ -440,13 +443,23 @@ function DialogueScreen({ trainer, onDone }: {
       </div>
 
       <div className="flex-1 flex items-end justify-center relative overflow-hidden min-h-0">
-        <div className="absolute bottom-0 w-72 h-56 pointer-events-none" style={{
-          background: `radial-gradient(ellipse at 50% 100%, ${trainer.color}2a 0%, transparent 70%)`,
+        <div className="absolute bottom-0 w-full h-40 pointer-events-none" style={{
+          background: `radial-gradient(ellipse at 50% 100%, ${trainer.color}35 0%, transparent 70%)`,
         }} />
+        {/* Companion pokemon — bottom corner opposite to trainer */}
+        <div className="absolute bottom-0 left-3 z-10 pointer-events-none"
+          style={{ animation: 'badge-pop 0.6s 0.3s ease-out both' }}>
+          <ShinySprite
+            pokemonId={trainer.companion.pokemonId}
+            isShiny={trainer.companion.isShiny}
+            width={80} height={80}
+            alt={POKEMON_BY_ID[trainer.companion.pokemonId]?.name ?? ''}
+          />
+        </div>
         <img src={trainer.image} alt={trainer.name} draggable={false}
           className="relative z-10 select-none pointer-events-none"
           style={{
-            height: 'min(62vw, 260px)',
+            height: 'min(75vw, 320px)',
             objectFit: 'contain', objectPosition: 'bottom',
             filter: isMaster && lineIdx === 0
               ? 'brightness(0) drop-shadow(0 0 24px rgba(168,85,247,0.3))'
