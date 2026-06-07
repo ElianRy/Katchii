@@ -232,8 +232,9 @@ export function useGameState() {
     return { ...newState, achievementsCompleted: [...(newState.achievementsCompleted ?? []), ...earned] };
   }, []);
 
-  const addCapture = useCallback((pokemonId: number, isShiny: boolean, rarity: Rarity): number => {
+  const addCapture = useCallback((pokemonId: number, isShiny: boolean, rarity: Rarity): { pts: number; level: number } => {
     let pointsEarned = 0;
+    let capturedLevel = 1;
 
     update(prev => {
       let next = { ...prev };
@@ -271,6 +272,7 @@ export function useGameState() {
           const zoneId = prev.zoneProgress?.currentZoneId ?? 'zone1';
           const zoneCap = ZONE_BY_ID[zoneId]?.maxLevel;
           const lvl = naturalLevel(rarity, zoneCap);
+          capturedLevel = lvl;
           next.pokemonLevels = { ...(next.pokemonLevels ?? {}), [pokemonId]: { level: lvl, xp: 0 } };
         } else if (alreadyCaught) {
           // Re-capture: grant XP bonus
@@ -318,7 +320,7 @@ export function useGameState() {
       return next;
     });
 
-    return pointsEarned;
+    return { pts: pointsEarned, level: capturedLevel };
   }, [update, awardBadges, awardAchievements]);
 
   const buyLure = useCallback((type: LureType): boolean => {

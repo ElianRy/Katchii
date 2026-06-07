@@ -88,46 +88,37 @@ function getSpriteUrl(pokemonId: number, isShiny: boolean) {
   return isShiny ? `${base}/shiny/${pokemonId}.png` : `${base}/${pokemonId}.png`;
 }
 
-// ---- Shiny orbit stars + sparkle dots centered on the 56×56 sprite ----
-const STAR_EMOJIS = ['✦', '✧', '⋆', '✦', '✧'];
-const STAR_COLORS = ['#fde047', '#f0abfc', '#a5f3fc', '#fbbf24', '#ffffff'];
+// ---- Shiny scattered stars around the 56×56 sprite ----
+// Each star orbits at its own radius + speed so they look scattered, not in a ring
+const PARK_STARS = [
+  { color: '#fde047', r: 28, dur: '3.2s', delay: '0s',    size: 10, sym: '✦' },
+  { color: '#f0abfc', r: 24, dur: '2.6s', delay: '-0.9s', size: 8,  sym: '✧' },
+  { color: '#a5f3fc', r: 32, dur: '4.0s', delay: '-1.7s', size: 9,  sym: '⋆' },
+  { color: '#fbbf24', r: 20, dur: '2.2s', delay: '-0.4s', size: 7,  sym: '✦' },
+  { color: '#ffffff', r: 30, dur: '3.6s', delay: '-2.1s', size: 8,  sym: '✧' },
+  { color: '#f472b6', r: 26, dur: '2.9s', delay: '-1.3s', size: 9,  sym: '⋆' },
+  { color: '#4ade80', r: 22, dur: '3.4s', delay: '-0.7s', size: 7,  sym: '✦' },
+  { color: '#60a5fa', r: 34, dur: '4.2s', delay: '-2.5s', size: 8,  sym: '✧' },
+];
 function ParkShinySparkles() {
-  // 5 stars that orbit the sprite center (28,28) at radius ~28px
-  const stars = React.useMemo(() => Array.from({ length: 5 }, (_, i) => ({
-    id: i,
-    color: STAR_COLORS[i],
-    emoji: STAR_EMOJIS[i],
-    delay: `${-(i * (3.6 / 5)).toFixed(2)}s`, // stagger evenly around orbit
-    size: i % 2 === 0 ? 10 : 8,
-  })), []);
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
-      {/* Orbit ring — each star animates its own orbit offset via delay */}
-      {stars.map(s => (
-        <div
-          key={s.id}
-          style={{
-            position: 'absolute',
-            left: 28, top: 28,
-            width: 0, height: 0,
-            animation: `park-shiny-orbit 3.6s linear infinite`,
-            animationDelay: s.delay,
-          }}
-        >
-          {/* The star sits at the orbit radius, counter-rotated so it stays upright */}
+      {PARK_STARS.map((s, i) => (
+        <div key={i} style={{
+          position: 'absolute', left: 28, top: 28,
+          width: 0, height: 0,
+          animation: `park-shiny-orbit ${s.dur} linear infinite`,
+          animationDelay: s.delay,
+        }}>
           <div style={{
             position: 'absolute',
-            left: 26, top: -4,
-            color: s.color,
-            fontSize: s.size,
-            fontWeight: 900,
-            textShadow: `0 0 4px ${s.color}`,
-            animation: `park-shiny-orbit-counter 3.6s linear infinite`,
+            left: s.r, top: -(s.size / 2),
+            color: s.color, fontSize: s.size, fontWeight: 900,
+            textShadow: `0 0 5px ${s.color}`,
+            animation: `park-shiny-orbit-counter ${s.dur} linear infinite`,
             animationDelay: s.delay,
             lineHeight: 1,
-          }}>
-            {s.emoji}
-          </div>
+          }}>{s.sym}</div>
         </div>
       ))}
     </div>

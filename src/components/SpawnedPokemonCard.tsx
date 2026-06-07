@@ -30,12 +30,15 @@ const MOVE_ANIMS = [
   { animation: 'wiggle 2.4s ease-in-out infinite' },
 ];
 
-// Orbiting star positions for shiny pokemon
+// Scattered shiny stars — each at different radius + speed so they're not in a ring
 const SHINY_ORBIT_STARS = [
-  { color: '#fde047', orbitDuration: '2.4s', delay: '0s',    orbitR: 36 },
-  { color: '#f472b6', orbitDuration: '2.4s', delay: '-0.6s', orbitR: 36 },
-  { color: '#60a5fa', orbitDuration: '2.4s', delay: '-1.2s', orbitR: 36 },
-  { color: '#4ade80', orbitDuration: '2.4s', delay: '-1.8s', orbitR: 36 },
+  { color: '#fde047', orbitDuration: '3.2s', delay: '0s',    orbitR: 36, sym: '✦', size: 10 },
+  { color: '#f472b6', orbitDuration: '2.6s', delay: '-0.9s', orbitR: 30, sym: '✧', size: 8  },
+  { color: '#60a5fa', orbitDuration: '4.0s', delay: '-1.7s', orbitR: 40, sym: '⋆', size: 9  },
+  { color: '#fbbf24', orbitDuration: '2.2s', delay: '-0.4s', orbitR: 26, sym: '✦', size: 7  },
+  { color: '#ffffff', orbitDuration: '3.6s', delay: '-2.1s', orbitR: 38, sym: '✧', size: 8  },
+  { color: '#4ade80', orbitDuration: '2.9s', delay: '-1.3s', orbitR: 32, sym: '⋆', size: 9  },
+  { color: '#a5f3fc', orbitDuration: '3.4s', delay: '-0.7s', orbitR: 28, sym: '✦', size: 7  },
 ];
 
 function PokeballSVG({ spinning }: { spinning: boolean }) {
@@ -267,27 +270,22 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               className="relative flex items-center justify-center"
               style={{ borderRadius: narutoSpriteUrl ? '8px' : '50%', padding: 0 }}
             >
-              {/* Shiny orbiting stars */}
+              {/* Shiny scattered stars */}
               {spawned.isShiny && SHINY_ORBIT_STARS.map((star, i) => (
-                <div
-                  key={i}
-                  className="absolute pointer-events-none"
-                  style={{
-                    left: '50%', top: '50%',
-                    width: star.orbitR * 2, height: star.orbitR * 2,
-                    marginLeft: -star.orbitR, marginTop: -star.orbitR,
-                    animation: `shiny-orbit ${star.orbitDuration} linear infinite`,
-                    animationDelay: star.delay,
-                  } as React.CSSProperties}
-                >
-                  <div className="shiny-sparkle" style={{
+                <div key={i} className="absolute pointer-events-none" style={{
+                  left: '50%', top: '50%', width: 0, height: 0,
+                  animation: `shiny-orbit ${star.orbitDuration} linear infinite`,
+                  animationDelay: star.delay,
+                } as React.CSSProperties}>
+                  <div style={{
                     position: 'absolute',
-                    left: star.orbitR - 4,
-                    top: -4,
-                    '--sp-color': star.color,
-                    '--sp-duration': '0.8s',
-                    '--sp-delay': '0s',
-                  } as React.CSSProperties} />
+                    left: star.orbitR, top: -(star.size / 2),
+                    color: star.color, fontSize: star.size, fontWeight: 900,
+                    textShadow: `0 0 5px ${star.color}`,
+                    animation: `shiny-orbit-rev ${star.orbitDuration} linear infinite`,
+                    animationDelay: star.delay,
+                    lineHeight: 1,
+                  }}>{star.sym}</div>
                 </div>
               ))}
 
