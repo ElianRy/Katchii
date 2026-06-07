@@ -122,10 +122,9 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
               const RATES = [250, 217, 185, 156];
               const achCount = Math.min((state.achievementsCompleted ?? []).length, 3);
               const pct = (1 / RATES[achCount] * 100).toFixed(2);
-              const bonus = achCount > 0 ? ` (+${[15,35,60][achCount-1]}%)` : '';
               return (
                 <span className="text-yellow-400 text-xs font-bold bg-yellow-400/10 border border-yellow-400/30 rounded-full px-2 py-0.5">
-                  ✨ ~{pct}% shiny{bonus}
+                  ✨ ~{pct}% shiny
                 </span>
               );
             })()}
