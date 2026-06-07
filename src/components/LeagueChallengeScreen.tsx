@@ -473,17 +473,17 @@ function DialogueScreen({ trainer, onDone }: {
         {(!isMaster || lineIdx >= 3) && (
           <div className="absolute pointer-events-none"
             style={{
-              right: trainer.id === 'peter' ? '1%' : trainer.id === 'giovanni' ? '3%' : '2%',
-              bottom: isMaster ? 'min(14vw, 60px)' : '0',
+              right: trainer.id === 'peter' ? '1%' : trainer.id === 'giovanni' ? '2%' : '2%',
+              bottom: isMaster ? 'min(14vw, 60px)' : trainer.id === 'peter' ? '-4%' : '0',
               width: trainer.id === 'peter'
-                ? 'min(58vw, 240px)'  // large, covers only cape edge
+                ? 'min(66vw, 275px)'  // slightly bigger, same position
                 : trainer.id === 'giovanni'
-                  ? 'min(32vw, 125px)' // knee-chest height
+                  ? 'min(38vw, 150px)' // bigger persian
                   : 'min(52vw, 215px)', // alakazam
               height: trainer.id === 'peter'
-                ? 'min(58vw, 240px)'
+                ? 'min(66vw, 275px)'
                 : trainer.id === 'giovanni'
-                  ? 'min(32vw, 125px)'
+                  ? 'min(38vw, 150px)'
                   : 'min(52vw, 215px)',
               zIndex: 11,
               animation: isMaster ? 'pokeball-release 0.7s ease-out both' : 'badge-pop 0.5s ease-out both',
@@ -492,7 +492,7 @@ function DialogueScreen({ trainer, onDone }: {
               {isMaster && (
                 <div className="absolute inset-0 pointer-events-none"
                   style={{
-                    background: 'radial-gradient(ellipse at 50% 55%, rgba(253,224,71,0.5) 0%, rgba(168,85,247,0.3) 40%, transparent 70%)',
+                    background: 'radial-gradient(ellipse at 50% 55%, rgba(253,224,71,0.2) 0%, rgba(96,165,250,0.15) 30%, rgba(168,85,247,0.12) 55%, transparent 75%)',
                     animation: 'aura-pulse 1.6s ease-in-out infinite',
                   }} />
               )}
@@ -507,7 +507,7 @@ function DialogueScreen({ trainer, onDone }: {
                   // Alakazam floats
                   animation: isMaster ? 'alakazam-float 3s ease-in-out infinite' : undefined,
                   filter: isMaster
-                    ? 'drop-shadow(0 0 10px #fde047) drop-shadow(0 0 22px #a855f7) drop-shadow(0 0 4px #fde047)'
+                    ? 'drop-shadow(0 0 6px #fde047) drop-shadow(0 0 14px #a855f7)'
                     : `drop-shadow(0 0 10px ${trainer.color}77)`,
                 }}
               />
