@@ -323,8 +323,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     return () => clearTimeout(t);
   }, [phase]);
 
-  const addDmg = useCallback((value: number, target: 'player' | 'enemy', effectiveness: number, fast: boolean) => {
-    if (fast) return;
+  const addDmg = useCallback((value: number, target: 'player' | 'enemy', effectiveness: number) => {
     const id = dmgCounter++;
     setFloatingDmg(prev => [...prev, { id, value, target, effectiveness }]);
     setTimeout(() => setFloatingDmg(prev => prev.filter(d => d.id !== id)), 1100);
@@ -333,8 +332,6 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   useEffect(() => {
     if (battleDone.current) return;
     const intervalMs = speedLevel === 3 ? 160 : speedLevel === 2 ? 400 : speedLevel === 1 ? 800 : 1600;
-
-    const fast = speedLevel >= 3;
 
     const runTurn = () => {
       if (battleDone.current || paused.current) return;
@@ -354,13 +351,11 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level
           );
 
-          if (!fast) {
-            setAttackEvt({ attacker: 'player', type: pType, uid: dmgCounter++ });
-            setTimeout(() => setHitFlash('enemy'), 350);
-            setTimeout(() => setHitFlash(null), 600);
-            setTimeout(() => setAttackEvt(null), 700);
-          }
-          addDmg(pDmg, 'enemy', pEff, fast);
+          setAttackEvt({ attacker: 'player', type: pType, uid: dmgCounter++ });
+          setTimeout(() => setHitFlash('enemy'), 120);
+          setTimeout(() => setHitFlash(null), 280);
+          setTimeout(() => setAttackEvt(null), 300);
+          addDmg(pDmg, 'enemy', pEff);
           addLog(`${pName} → ${pMove}${pEff >= 2 ? ' 💥 Super efficace !' : pEff === 0 ? ' (sans effet)' : pEff < 1 ? ' (peu efficace)' : ''}`,
             pEff >= 2 ? '#4ade80' : '#fde68a');
 
@@ -377,25 +372,23 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             if (nextE < 0 && newEf.every(f => f.currentHp <= 0)) {
               battleDone.current = true; won.current = true; setPhase('end');
             } else if (nextE >= 0) {
-              if (fast) setEnemyIdx(nextE); else setTimeout(() => setEnemyIdx(nextE), 600);
+              setTimeout(() => setEnemyIdx(nextE), 200);
             }
             return newEf;
           }
 
-          // Enemy counter
-          const doEnemyAttack = () => {
+          // Enemy counter — always via setTimeout to avoid setState-inside-setState
+          setTimeout(() => {
             if (battleDone.current || paused.current) return;
-            if (!fast) {
-              setAttackEvt({ attacker: 'enemy', type: eType, uid: dmgCounter++ });
-              setTimeout(() => setHitFlash('player'), 350);
-              setTimeout(() => setHitFlash(null), 600);
-              setTimeout(() => setAttackEvt(null), 700);
-            }
+            setAttackEvt({ attacker: 'enemy', type: eType, uid: dmgCounter++ });
+            setTimeout(() => setHitFlash('player'), 120);
+            setTimeout(() => setHitFlash(null), 280);
+            setTimeout(() => setAttackEvt(null), 300);
 
             const { damage: eDmg, effectiveness: eEff, moveName: eMove } = calcDamage(
               eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level
             );
-            addDmg(eDmg, 'player', eEff, fast);
+            addDmg(eDmg, 'player', eEff);
             addLog(`${eName} → ${eMove}${eEff >= 2 ? ' 💥 Super efficace !' : ''}`, eEff >= 2 ? '#f87171' : '#fca5a5');
 
             setPlayerFighters(pf2 => {
@@ -413,9 +406,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
               }
               return newPf;
             });
-          };
-
-          if (fast) doEnemyAttack(); else setTimeout(doEnemyAttack, intervalMs / 2);
+          }, Math.max(60, intervalMs / 2));
 
           return newEf;
         });

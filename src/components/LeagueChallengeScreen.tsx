@@ -445,7 +445,12 @@ function DialogueScreen({ trainer, onDone }: {
           style={{
             height: 'min(62vw, 260px)',
             objectFit: 'contain', objectPosition: 'bottom',
-            filter: isMaster ? `drop-shadow(0 0 24px ${trainer.color}99)` : `drop-shadow(0 0 14px ${trainer.color}55)`,
+            filter: isMaster && lineIdx === 0
+              ? 'brightness(0) drop-shadow(0 0 24px rgba(168,85,247,0.3))'
+              : isMaster
+                ? `brightness(1) drop-shadow(0 0 24px ${trainer.color}99)`
+                : `drop-shadow(0 0 14px ${trainer.color}55)`,
+            transition: isMaster ? 'filter 1.2s ease-out' : undefined,
             animation: isMaster ? 'league-trainer-appear 0.6s ease-out' : 'badge-pop 0.5s ease-out',
           }}
         />
