@@ -44,7 +44,7 @@ export const ZONES: Zone[] = [
     description: 'La forêt des débuts, pleine de Pokémon communs.',
     background: 'linear-gradient(180deg, #0a1a0a 0%, #1a3a1a 50%, #0f2a0f 100%)',
     // C: 10,11,13,14,16,17,19,20,23,29,32,46 | PC: 1,63 | R: 25
-    pokemonIds: [10,11,13,14,16,17,19,20,23,29,32,46, 1,63, 25],
+    pokemonIds: [10,11,13,14,16,17,19,20,21,22,23,29,32,46, 1,63, 25,39,52,74,83,95,108],
     maxLevel: 25,
     completionThreshold: 0.70,
     unlockCondition: { type: 'total_pokemon', count: 10 },
@@ -68,7 +68,7 @@ export const ZONES: Zone[] = [
     description: 'Les côtes de Kanto, territoire des Pokémon aquatiques.',
     background: 'linear-gradient(180deg, #0a1a2e 0%, #0d2a4a 50%, #0a1a3a 100%)',
     // C: 30,33,54,55,60,61,72,98,116,118 | PC: 7,18,79,90 | R: 115,121
-    pokemonIds: [30,33,54,55,60,61,72,98,116,118, 7,18,79,90, 115,121],
+    pokemonIds: [30,33,54,55,60,61,72,98,116,118, 7,18,79,90, 62,73,86,87,91,99,117,119,120,139,141, 115,121],
     maxLevel: 35,
     completionThreshold: 0.70,
     unlockCondition: { type: 'daily_quests_completed', count: 3 },
@@ -92,7 +92,7 @@ export const ZONES: Zone[] = [
     description: 'Une zone industrielle chargée d\'électricité.',
     background: 'linear-gradient(180deg, #1a1a0a 0%, #2a2a00 50%, #1a1800 100%)',
     // C: 41,42,84,85,96,97,100,101,109 | PC: 8,81,82 | R: 26,125
-    pokemonIds: [41,42,84,85,96,97,100,101,109, 8,81,82, 26,125],
+    pokemonIds: [41,42,84,85,96,97,100,101,109, 8,81,82, 26,50,53,75,125],
     maxLevel: 45,
     completionThreshold: 0.70,
     unlockCondition: { type: 'capture_n_times', pokemonId: 82, count: 10 },
@@ -116,7 +116,7 @@ export const ZONES: Zone[] = [
     description: 'Une forêt fleurie peuplée de Pokémon Plante et Insecte.',
     background: 'linear-gradient(180deg, #0a1a10 0%, #1a3a20 50%, #0a2010 100%)',
     // C: 43,44,45,46,47,48,69,70 | PC: 2,12,15,114 | R: 103,123,133 | E: 3
-    pokemonIds: [43,44,45,46,47,48,69,70, 2,12,15,114, 103,123,133, 3],
+    pokemonIds: [43,44,45,46,47,48,49,69,70,71, 2,12,15,114, 102,103,123,133, 3],
     maxLevel: 55,
     completionThreshold: 0.70,
     unlockCondition: { type: 'capture_n_times', pokemonId: 3, count: 3 },
@@ -140,7 +140,7 @@ export const ZONES: Zone[] = [
     description: 'Une tour hantée où les esprits errent.',
     background: 'linear-gradient(180deg, #0a0a1a 0%, #1a0a2a 50%, #0f0a1a 100%)',
     // C: 41,88,96,97,109,110 | PC: 24,89,92,93 | R: 105,124,132 | E: 94
-    pokemonIds: [41,88,96,97,109,110, 24,89,92,93, 105,124,132, 94],
+    pokemonIds: [41,88,96,97,109,110, 24,89,92,93, 104,105,124,132, 94],
     maxLevel: 65,
     completionThreshold: 0.70,
     unlockCondition: { type: 'training_battles', count: 15 },
@@ -164,7 +164,7 @@ export const ZONES: Zone[] = [
     description: 'Le QG de Sylphe SARL, plein de mystères psychiques.',
     background: 'linear-gradient(180deg, #1a0a1a 0%, #2a1a3a 50%, #1a0a2a 100%)',
     // C: 35,64,122,138,140 | PC: 36,40,63,79 | R: 38,51,113,137 | E: 9,31,65
-    pokemonIds: [35,64,122,138,140, 36,40,63,79, 38,51,113,137, 9,31,65],
+    pokemonIds: [35,64,122,138,140, 36,40,63,79,80, 38,51,113,137, 9,31,65],
     maxLevel: 72,
     completionThreshold: 0.70,
     unlockCondition: { type: 'pokemon_level_in_team', level: 60 },
@@ -188,7 +188,7 @@ export const ZONES: Zone[] = [
     description: 'Une île volcanique habitée par des Pokémon Feu.',
     background: 'linear-gradient(180deg, #1a0a0a 0%, #3a1a0a 50%, #2a0a0a 100%)',
     // C: 37,58,129 | PC: 4,5,78 | R: 126,128,133,147,148 | E: 6,34,59,134,135
-    pokemonIds: [37,58,129, 4,5,78, 126,128,133,147,148, 6,34,59,134,135],
+    pokemonIds: [37,58,77,129, 4,5,78, 111,112,126,128,147,148, 6,34,59,133,134,135],
     maxLevel: 80,
     completionThreshold: 0.70,
     unlockCondition: { type: 'total_pokemon', count: 80 },
@@ -212,7 +212,7 @@ export const ZONES: Zone[] = [
     description: 'Un chemin de montagne mystérieux menant à la Ligue Pokémon.',
     background: 'linear-gradient(180deg, #0a0808 0%, #1a1210 50%, #0f0a08 100%)',
     // C: 27,66 | PC: 28,67 | R: 76,105,106,107,127,142 | E: 68,130,131,136,143,149
-    pokemonIds: [27,66, 28,67, 76,105,106,107,127,142, 68,130,131,136,143,149],
+    pokemonIds: [27,56,66, 28,57,67, 76,106,107,127,142, 68,130,131,136,143,149],
     maxLevel: 88,
     completionThreshold: 0.70,
     unlockCondition: { type: 'shiny_captures', count: 1 },
