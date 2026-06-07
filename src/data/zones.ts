@@ -191,7 +191,7 @@ export const ZONES: Zone[] = [
     pokemonIds: [37,58,129, 4,5,78, 126,128,133,147,148, 6,34,59,134,135],
     maxLevel: 80,
     completionThreshold: 0.70,
-    unlockCondition: { type: 'total_pokemon', count: 120 },
+    unlockCondition: { type: 'total_pokemon', count: 80 },
     boss: {
       name: 'Maître Blaine',
       title: 'Gym Leader Feu',
