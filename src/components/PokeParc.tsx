@@ -1553,14 +1553,15 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         />
       )}
 
-      {interactionTarget && !showRace && !showDuel && (
+      {interactionTarget && !showRace && !showDuel && createPortal(
         <InteractionModal
           target={interactionTarget}
           onWave={handleWave}
           onRace={handleRace}
           onDuel={handleDuel}
           onClose={() => setInteractionTarget(null)}
-        />
+        />,
+        document.body
       )}
 
       {showRace && interactionTarget && myFav && createPortal(<RaceModal
