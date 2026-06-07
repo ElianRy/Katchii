@@ -246,6 +246,11 @@ export function useGameState() {
       if (isShiny) {
         const alreadyCaughtShiny = (prev.shinyCollection[pokemonId] ?? 0) > 0;
         next.shinyCollection = { ...prev.shinyCollection, [pokemonId]: (prev.shinyCollection[pokemonId] ?? 0) + 1 };
+        // Also add to normal collection if not already caught normally
+        const alreadyCaughtNormal = (prev.normalCollection[pokemonId] ?? 0) > 0;
+        if (!alreadyCaughtNormal) {
+          next.normalCollection = { ...prev.normalCollection, [pokemonId]: 1 };
+        }
         if (!alreadyCaughtShiny) {
           pointsEarned = rarity === 'legendaire' ? 50 : 20;
           next.points = prev.points + pointsEarned;
@@ -264,8 +269,15 @@ export function useGameState() {
             next.pokemonLevels = { ...(next.pokemonLevels ?? {}), [pokemonId]: { level, xp } };
           }
         }
+        // Initialize level if not set yet (e.g. first shiny before any normal catch)
+        if (!next.pokemonLevels?.[pokemonId]) {
+          const zoneId = prev.zoneProgress?.currentZoneId ?? 'zone1';
+          const zoneCap = ZONE_BY_ID[zoneId]?.maxLevel;
+          const lvl = naturalLevel(rarity, zoneCap);
+          next.pokemonLevels = { ...(next.pokemonLevels ?? {}), [pokemonId]: { level: lvl, xp: 0 } };
+        }
         // Level for shiny: read after potential XP update
-        capturedLevel = next.pokemonLevels?.[pokemonId]?.level ?? prev.pokemonLevels?.[pokemonId]?.level ?? 1;
+        capturedLevel = next.pokemonLevels?.[pokemonId]?.level ?? 1;
       } else {
         const alreadyCaught = (prev.normalCollection[pokemonId] ?? 0) > 0;
         next.normalCollection = { ...prev.normalCollection, [pokemonId]: (prev.normalCollection[pokemonId] ?? 0) + 1 };
