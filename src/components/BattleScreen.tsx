@@ -23,6 +23,7 @@ interface Props {
   onSpeedLevelChange?: (v: number) => void;
   onQuit?: () => void;
   trainerImage?: string;
+  trainerColor?: string;
   sideOverlay?: React.ReactNode;
 }
 
@@ -289,7 +290,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, sideOverlay }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp }))
   );
@@ -314,12 +315,27 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const won = useRef(false);
   const battleDone = useRef(false);
   const enemyDmgRef = useRef<Record<number, number>>({});
+  const [trainerKoAnim, setTrainerKoAnim] = useState(false);
+  const prevEfHp = useRef<number | null>(null);
+  const isMasterTrainer = trainerColor === '#a855f7';
 
   // Keep refs in sync
   useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
   useEffect(() => { playerIdxRef.current = playerIdx; }, [playerIdx]);
   useEffect(() => { enemyIdxRef.current = enemyIdx; }, [enemyIdx]);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
+
+  // Trainer KO reaction when enemy pokemon HP hits 0
+  useEffect(() => {
+    const hp = enemyFighters[enemyIdx]?.currentHp ?? null;
+    if (hp !== null && prevEfHp.current !== null && prevEfHp.current > 0 && hp === 0) {
+      setTrainerKoAnim(true);
+      const t = setTimeout(() => setTrainerKoAnim(false), 900);
+      return () => clearTimeout(t);
+    }
+    prevEfHp.current = hp;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enemyFighters, enemyIdx]);
 
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
     setLog(prev => [...prev.slice(-5), { text, color }]);
@@ -475,6 +491,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   if (phase === 'intro') {
     return (
       <div className="fixed inset-0 z-[400] flex flex-col" style={{ background: '#020617' }}>
+        {/* sideOverlay visible during intro too */}
+        {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
         <div className="relative flex-1 overflow-hidden">
           <div className="absolute inset-0" style={{
             background: 'radial-gradient(ellipse at 50% 20%, #1e1b4b 0%, #0f0720 55%, #020617 100%)',
@@ -483,9 +501,18 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           {/* Enemy pokemon slides in from top-right */}
           <div className="absolute" style={{ top:'5%', right:'7%', animation:'battle-enter-enemy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
             <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-white font-black text-sm">{POKEMON_BY_ID[enemyFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
-                <span className="text-slate-400 text-xs">Nv.{enemyFighters[0]?.level}</span>
+              <div className="flex items-center gap-1.5 mb-1">
+                {trainerImage && (
+                  <img src={trainerImage} alt="" draggable={false}
+                    style={{ width: 30, height: 40, objectFit: 'contain', objectPosition: 'top center', flexShrink: 0,
+                      filter: isMasterTrainer ? `drop-shadow(0 0 6px ${trainerColor})` : 'drop-shadow(0 1px 4px rgba(0,0,0,0.8))',
+                      animation: isMasterTrainer ? 'trainer-master-float 2s ease-in-out infinite' : undefined,
+                    }} />
+                )}
+                <div className="flex flex-1 justify-between items-center">
+                  <span className="text-white font-black text-sm">{POKEMON_BY_ID[enemyFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
+                  <span className="text-slate-400 text-xs">Nv.{enemyFighters[0]?.level}</span>
+                </div>
               </div>
               <div className="w-full bg-slate-700 rounded-full h-2.5">
                 <div className="h-2.5 rounded-full" style={{ width:'100%', background:'#22c55e' }} />
@@ -529,6 +556,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
   return (
     <div className="fixed inset-0 z-[400] flex flex-col" style={{ background: '#020617' }}>
+      {/* Side overlay at root level — covers full screen, not clipped by arena overflow */}
+      {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
 
       {/* ── Arena ── */}
       <div className="relative flex-1 overflow-hidden">
@@ -545,17 +574,6 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             animation: `arena-twinkle ${s.dur}s ease-in-out ${s.del}s infinite`,
           }} />
         ))}
-
-        {/* Trainer spectator — top right, next to enemy pokemon */}
-        {trainerImage && (
-          <div className="absolute pointer-events-none" style={{ top: '5%', right: 0, zIndex: 3, display: 'flex', alignItems: 'flex-start' }}>
-            <img src={trainerImage} alt="" draggable={false} className="select-none"
-              style={{ height: 'min(28vh, 160px)', objectFit: 'contain', objectPosition: 'top',
-                filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.7))' }} />
-          </div>
-        )}
-        {/* Side overlay (e.g. master energy effects during final battle) */}
-        {sideOverlay}
 
         {/* Stadium arc */}
         <div className="absolute inset-x-0 top-0 pointer-events-none" style={{
@@ -628,10 +646,35 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
         {/* Enemy info + sprite */}
         <div className="absolute" style={{ top: '5%', right: '7%' }}>
-          <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-white font-black text-sm">{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
-              <span className="text-slate-400 text-xs">Nv.{activeEF?.level}</span>
+          <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]"
+            style={{ borderColor: isMasterTrainer ? `${trainerColor}55` : undefined, boxShadow: isMasterTrainer ? `0 0 12px ${trainerColor}33` : undefined }}>
+            <div className="flex items-center gap-1.5 mb-1">
+              {trainerImage && (
+                <div style={{ flexShrink: 0, position: 'relative' }}>
+                  {isMasterTrainer && (
+                    <div style={{
+                      position: 'absolute', inset: -3, borderRadius: 4,
+                      background: `radial-gradient(ellipse, ${trainerColor}55 0%, transparent 70%)`,
+                      animation: 'trainer-master-float 2s ease-in-out infinite',
+                    }} />
+                  )}
+                  <img src={trainerImage} alt="" draggable={false}
+                    style={{
+                      width: 28, height: 38, objectFit: 'contain', objectPosition: 'top center',
+                      display: 'block', position: 'relative',
+                      filter: isMasterTrainer
+                        ? `drop-shadow(0 0 5px ${trainerColor}) drop-shadow(0 0 10px ${trainerColor}88)`
+                        : 'drop-shadow(0 1px 4px rgba(0,0,0,0.9))',
+                      animation: trainerKoAnim ? 'trainer-ko-react 0.9s ease-out'
+                        : isMasterTrainer ? 'trainer-master-float 2s ease-in-out infinite'
+                        : undefined,
+                    }} />
+                </div>
+              )}
+              <div className="flex flex-1 justify-between items-center min-w-0">
+                <span className="text-white font-black text-sm truncate">{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-slate-400 text-xs ml-1 shrink-0">Nv.{activeEF?.level}</span>
+              </div>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-2.5">
               <div className="h-2.5 rounded-full transition-all duration-300"
