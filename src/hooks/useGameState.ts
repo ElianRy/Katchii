@@ -256,6 +256,8 @@ export function useGameState() {
         } else {
           next.fragments = { ...prev.fragments, [pokemonId]: (prev.fragments[pokemonId] ?? 0) + 1 };
         }
+        // Level for shiny: use existing pokemonLevels entry (set when normal was caught), or derive from zone
+        capturedLevel = next.pokemonLevels?.[pokemonId]?.level ?? prev.pokemonLevels?.[pokemonId]?.level ?? 1;
       } else {
         const alreadyCaught = (prev.normalCollection[pokemonId] ?? 0) > 0;
         next.normalCollection = { ...prev.normalCollection, [pokemonId]: (prev.normalCollection[pokemonId] ?? 0) + 1 };
