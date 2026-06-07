@@ -30,12 +30,18 @@ type Tab = 'stats' | 'collection';
 export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose }: Props) {
   const [state, setState] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fallbackLastSeen, setFallbackLastSeen] = useState<string | undefined>(undefined);
+  const effectiveLastSeen = lastSeen ?? fallbackLastSeen;
   const [tab, setTab] = useState<Tab>('stats');
 
   useEffect(() => {
-    supabase.from('game_saves').select('state').eq('user_id', userId).single()
+    supabase.from('game_saves').select('state, updated_at').eq('user_id', userId).single()
       .then(({ data }) => {
         setState(data?.state as Record<string, unknown> ?? null);
+        // If no lastSeen from presence, use updated_at from game_saves as fallback
+        if (!lastSeen && data?.updated_at) {
+          setFallbackLastSeen(data.updated_at as string);
+        }
         setLoading(false);
       });
   }, [userId]);
@@ -91,8 +97,8 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose }:
             <p className="text-xs mt-0.5">
               {isOnline
                 ? <span className="text-green-400 font-semibold">🟢 En ligne maintenant</span>
-                : lastSeen
-                  ? <span className="text-slate-400">Connecté il y a {formatLastSeen(lastSeen)}</span>
+                : effectiveLastSeen
+                  ? <span className="text-slate-400">Connecté il y a {formatLastSeen(effectiveLastSeen)}</span>
                   : <span className="text-slate-600">Jamais connecté</span>}
             </p>
           </div>
@@ -226,8 +232,8 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose }:
           <div className="text-center py-1">
             {isOnline
               ? <span className="text-green-400 text-sm font-semibold">🟢 Actif maintenant</span>
-              : lastSeen
-                ? <span className="text-slate-500 text-sm">Dernière connexion : {formatLastSeen(lastSeen)}</span>
+              : effectiveLastSeen
+                ? <span className="text-slate-500 text-sm">Dernière connexion : {formatLastSeen(effectiveLastSeen)}</span>
                 : null}
           </div>
         </div>

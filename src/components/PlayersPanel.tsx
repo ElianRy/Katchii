@@ -42,7 +42,7 @@ export function PlayersPanel({ onClose }: Props) {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('game_saves').select('state, user_id'),
+      supabase.from('game_saves').select('state, user_id, updated_at'),
       supabase.from('pokepark_presence').select('user_id, last_seen'),
     ]).then(([savesRes, presenceRes]) => {
       const { data, error } = savesRes;
@@ -86,6 +86,8 @@ export function PlayersPanel({ onClose }: Props) {
         const badgeCount = Array.isArray(s.badges) ? (s.badges as string[]).length : 0;
 
         const presence = presenceMap.get(row.user_id);
+        // Use presence last_seen if available, otherwise fall back to game_saves updated_at
+        const lastSeen = presence?.lastSeen ?? (row as Record<string, unknown>).updated_at as string | undefined;
         return {
           user_id: row.user_id,
           username: (s.username as string) ?? '?',
@@ -96,7 +98,7 @@ export function PlayersPanel({ onClose }: Props) {
           duelWins:   duels?.wins ?? 0,
           duelLosses: duels?.losses ?? 0,
           rankingPoints: duels?.rankingPoints ?? 0,
-          lastSeen: presence?.lastSeen,
+          lastSeen,
           isOnline: presence?.isOnline ?? false,
           favoritePokemon,
           showcase,
