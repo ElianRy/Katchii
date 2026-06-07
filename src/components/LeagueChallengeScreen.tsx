@@ -442,7 +442,7 @@ function DialogueScreen({ trainer, onDone }: {
         <div className="text-slate-400 text-sm font-semibold">{trainer.title}</div>
       </div>
 
-      <div className="flex-1 flex items-end justify-center relative overflow-hidden min-h-0">
+      <div className="flex-1 relative overflow-hidden min-h-0">
         {/* Master dialogue side animations */}
         {isMaster && <MasterSideEffects />}
 
@@ -450,13 +450,12 @@ function DialogueScreen({ trainer, onDone }: {
           background: `radial-gradient(ellipse at 50% 100%, ${trainer.color}35 0%, transparent 70%)`,
         }} />
 
-        {/* Trainer + companion in a flex row, bottom-aligned */}
-        <div className="absolute bottom-0 flex items-end justify-center w-full pointer-events-none">
-          {/* Trainer in front */}
+        {/* Trainer always centered */}
+        <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center pointer-events-none">
           <img src={trainer.image} alt={trainer.name} draggable={false}
             className="relative select-none shrink-0"
             style={{
-              height: isMaster ? 'min(85vw, 360px)' : 'min(68vw, 280px)',
+              height: isMaster ? 'min(85vw, 360px)' : 'min(70vw, 290px)',
               zIndex: 10,
               objectFit: 'contain', objectPosition: 'bottom',
               filter: isMaster && lineIdx === 0
@@ -468,28 +467,27 @@ function DialogueScreen({ trainer, onDone }: {
               animation: isMaster ? 'league-trainer-appear 0.6s ease-out' : 'badge-pop 0.5s ease-out',
             }}
           />
-          {/* Companion — right of trainer, bottom-aligned */}
-          {(!isMaster || lineIdx >= 3) && (
-            <div className="relative shrink-0"
-              style={{
-                // Peter: Dragonite same height, slightly behind
-                // Giovanni: Persian knee-height (35% of trainer)
-                // Master: Alakazam floats up via margin
-                height: trainer.id === 'peter'
-                  ? 'min(63vw, 260px)'
-                  : trainer.id === 'giovanni'
-                    ? 'min(24vw, 95px)'
-                    : 'min(52vw, 215px)',
-                width: trainer.id === 'peter'
-                  ? 'min(63vw, 260px)'
-                  : trainer.id === 'giovanni'
-                    ? 'min(24vw, 95px)'
-                    : 'min(52vw, 215px)',
-                marginBottom: isMaster ? 'min(12vw, 50px)' : '0',
-                marginLeft: trainer.id === 'peter' ? '-6px' : trainer.id === 'giovanni' ? '-4px' : '-8px',
-                zIndex: trainer.id === 'peter' ? 9 : 9,
-                animation: isMaster ? 'pokeball-release 0.7s ease-out both' : 'badge-pop 0.5s ease-out both',
-              }}>
+        </div>
+
+        {/* Companion — absolute, in FRONT (z-11), right side, partially overlapping trainer edge */}
+        {(!isMaster || lineIdx >= 3) && (
+          <div className="absolute pointer-events-none"
+            style={{
+              right: trainer.id === 'peter' ? '1%' : trainer.id === 'giovanni' ? '3%' : '2%',
+              bottom: isMaster ? 'min(14vw, 60px)' : '0',
+              width: trainer.id === 'peter'
+                ? 'min(58vw, 240px)'  // large, covers only cape edge
+                : trainer.id === 'giovanni'
+                  ? 'min(32vw, 125px)' // knee-chest height
+                  : 'min(52vw, 215px)', // alakazam
+              height: trainer.id === 'peter'
+                ? 'min(58vw, 240px)'
+                : trainer.id === 'giovanni'
+                  ? 'min(32vw, 125px)'
+                  : 'min(52vw, 215px)',
+              zIndex: 11,
+              animation: isMaster ? 'pokeball-release 0.7s ease-out both' : 'badge-pop 0.5s ease-out both',
+            }}>
               {/* Shiny aura glow for Alakazam */}
               {isMaster && (
                 <div className="absolute inset-0 pointer-events-none"
@@ -542,7 +540,6 @@ function DialogueScreen({ trainer, onDone }: {
               ))}
             </div>
           )}
-        </div>
       </div>
 
       <div className="px-4 pb-5 pt-3 shrink-0">
