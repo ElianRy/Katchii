@@ -9,6 +9,7 @@ interface Props {
   narutoSpriteUrl?: string;
   leaving?: boolean;
   facingRight?: boolean;
+  alreadyCaught?: boolean;
 }
 
 interface Particle {
@@ -55,7 +56,7 @@ function PokeballSVG({ spinning }: { spinning: boolean }) {
   );
 }
 
-export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, narutoSpriteUrl, leaving, facingRight = true }: Props) {
+export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, narutoSpriteUrl, leaving, facingRight = true, alreadyCaught }: Props) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showParticles, setShowParticles] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
@@ -379,7 +380,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
 
             {/* Name badge */}
             <div
-              className="font-bold rounded"
+              className="font-bold rounded flex items-center gap-0.5"
               style={{
                 background: 'rgba(0,0,0,0.75)',
                 color: rarityColor,
@@ -390,6 +391,15 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                 margin: 0,
               }}
             >
+              {alreadyCaught && (
+                <svg width="9" height="9" viewBox="0 0 20 20" style={{ flexShrink: 0, opacity: 0.85 }}>
+                  <path d="M 10 2 A 8 8 0 0 1 18 10 L 12.5 10 A 2.5 2.5 0 0 0 7.5 10 L 2 10 A 8 8 0 0 1 10 2 Z" fill="#ef4444"/>
+                  <path d="M 2 10 A 8 8 0 0 0 18 10 L 12.5 10 A 2.5 2.5 0 0 1 7.5 10 Z" fill="white"/>
+                  <circle cx="10" cy="10" r="8" fill="none" stroke="#555" strokeWidth="2"/>
+                  <line x1="2" y1="10" x2="18" y2="10" stroke="#555" strokeWidth="2"/>
+                  <circle cx="10" cy="10" r="3.5" fill="white" stroke="#555" strokeWidth="1.5"/>
+                </svg>
+              )}
               {pokemonData.name}
             </div>
           </div>

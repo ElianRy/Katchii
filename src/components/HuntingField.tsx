@@ -259,6 +259,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
             disabled={gameState.isOnCooldown()}
             leaving={spawner.leavingUids.has(s.uid)}
             facingRight={s.vx >= 0}
+            alreadyCaught={!!gameState.state.normalCollection[s.pokemonId]}
           />
         );
       })}

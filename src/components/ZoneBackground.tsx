@@ -129,10 +129,10 @@ const ZONE_CONFIGS: Record<string, {
     ambientLight: 'radial-gradient(ellipse 60% 40% at 50% 20%, rgba(255,80,0,0.1) 0%, transparent 100%)',
   },
   zone8: {
-    sky: 'linear-gradient(180deg, #080415 0%, #100828 30%, #0c0620 60%, #181030 100%)',
+    sky: 'linear-gradient(180deg, #0a0d10 0%, #121820 30%, #181e24 60%, #0a0d10 100%)',
     particles: 'none',
-    fog: 'radial-gradient(ellipse 100% 40% at 50% 80%, rgba(20,10,40,0.7) 0%, transparent 100%)',
-    ambientLight: 'radial-gradient(ellipse 60% 40% at 50% 30%, rgba(120,80,200,0.06) 0%, transparent 100%)',
+    fog: 'radial-gradient(ellipse 100% 40% at 50% 80%, rgba(10,12,16,0.7) 0%, transparent 100%)',
+    ambientLight: 'radial-gradient(ellipse 60% 40% at 50% 30%, rgba(150,160,180,0.04) 0%, transparent 100%)',
   },
   ligue: {
     sky: 'linear-gradient(180deg, #000008 0%, #080818 35%, #0a0820 65%, #050510 100%)',
@@ -909,170 +909,151 @@ export function ZoneBackground({ zoneId }: Props) {
         </>
       )}
 
-      {/* ZONE 8 — Route Victoire : epic mountain path */}
+      {/* ZONE 8 — Route Victoire : mountain path */}
       {zoneId === 'zone8' && (
         <>
-          {/* Stars in sky */}
           {starsEls}
           <svg className="absolute inset-0 w-full h-full pointer-events-none"
             viewBox="0 0 100 100" preserveAspectRatio="none">
             <defs>
               <filter id="z8glow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="2" result="b"/>
+                <feGaussianBlur stdDeviation="1.5" result="b"/>
                 <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
               </filter>
               <linearGradient id="z8cliff" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1a1430"/>
-                <stop offset="60%" stopColor="#120e22"/>
-                <stop offset="100%" stopColor="#0a0818"/>
+                <stop offset="0%" stopColor="#2e2a26"/>
+                <stop offset="60%" stopColor="#1e1c18"/>
+                <stop offset="100%" stopColor="#111010"/>
               </linearGradient>
               <linearGradient id="z8cliffR" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#1e1838"/>
-                <stop offset="60%" stopColor="#140e26"/>
-                <stop offset="100%" stopColor="#0c0a1a"/>
+                <stop offset="0%" stopColor="#282520"/>
+                <stop offset="60%" stopColor="#1a1814"/>
+                <stop offset="100%" stopColor="#100f0e"/>
               </linearGradient>
               <linearGradient id="z8path" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2a2048"/>
-                <stop offset="100%" stopColor="#1a1430"/>
+                <stop offset="0%" stopColor="#3a3530"/>
+                <stop offset="100%" stopColor="#252220"/>
               </linearGradient>
-              <radialGradient id="z8fog" cx="50%" cy="50%" r="60%">
-                <stop offset="0%" stopColor="rgba(80,60,140,0.3)"/>
-                <stop offset="100%" stopColor="rgba(20,10,40,0)"/>
-              </radialGradient>
             </defs>
 
             {/* ── FAR MOUNTAIN PEAKS ── */}
-            <polygon points="-5,60 10,30 25,55 40,20 55,48 70,15 85,42 100,25 105,60"
-              fill="#0e0820" opacity="0.9"/>
-            <polygon points="-5,65 8,40 18,60 32,28 46,55 60,22 74,48 90,18 100,38 105,65"
-              fill="#130c28" opacity="0.8"/>
+            <polygon points="-5,62 10,32 25,57 40,22 55,50 70,18 85,44 100,27 105,62"
+              fill="#141210" opacity="0.95"/>
+            <polygon points="-5,68 8,42 18,62 32,30 46,57 60,24 74,50 90,20 100,40 105,68"
+              fill="#1c1a16" opacity="0.85"/>
+            {/* Snow caps on peaks */}
+            {[[10,32],[40,22],[70,18],[90,20]].map(([x,y],i) => (
+              <polygon key={i} points={`${x-4},${y+8} ${x},${y} ${x+4},${y+8}`} fill="#d0cec8" opacity="0.35"/>
+            ))}
 
             {/* ── LEFT CLIFF WALL ── */}
-            <path d="M -5 100 L -5 35 C 2 30 5 25 8 22 C 11 20 13 24 15 20 C 17 16 19 18 21 14 C 23 10 25 20 28 16 C 30 12 32 22 35 18 L 35 78 C 28 76 20 78 10 80 Z"
+            <path d="M -5 100 L -5 32 C 3 27 6 22 9 19 C 12 16 14 21 16 17 C 18 13 20 16 23 12 C 25 8 27 18 30 14 C 32 10 34 20 36 16 L 36 78 C 28 76 18 78 8 80 Z"
               fill="url(#z8cliff)"/>
-            {/* Cliff ledge detail */}
-            <path d="M -5 42 C 2 38 8 36 14 38 C 18 40 22 36 26 34"
-              fill="none" stroke="#2a2040" strokeWidth="0.5" opacity="0.7"/>
-            <path d="M 0 55 C 6 52 12 54 18 50"
-              fill="none" stroke="#2a2040" strokeWidth="0.4" opacity="0.5"/>
-            {/* Cracks in cliff */}
-            <line x1="10" y1="35" x2="8" y2="48" stroke="#0a0818" strokeWidth="0.4" opacity="0.6"/>
-            <line x1="22" y1="28" x2="20" y2="45" stroke="#0a0818" strokeWidth="0.3" opacity="0.5"/>
+            {/* Rock strata lines */}
+            <path d="M -5 44 C 4 40 10 38 16 40 C 20 42 24 38 28 36"
+              fill="none" stroke="#2a2820" strokeWidth="0.5" opacity="0.6"/>
+            <path d="M 0 57 C 7 54 14 56 20 52"
+              fill="none" stroke="#252220" strokeWidth="0.4" opacity="0.5"/>
+            <path d="M 2 68 C 10 65 18 67 24 63"
+              fill="none" stroke="#202018" strokeWidth="0.35" opacity="0.4"/>
+            {/* Cracks */}
+            <line x1="12" y1="35" x2="9" y2="50" stroke="#0c0b0a" strokeWidth="0.4" opacity="0.7"/>
+            <line x1="24" y1="26" x2="22" y2="44" stroke="#0c0b0a" strokeWidth="0.3" opacity="0.5"/>
 
             {/* ── RIGHT CLIFF WALL ── */}
-            <path d="M 105 100 L 105 28 C 98 24 95 20 92 17 C 89 14 87 18 84 15 C 81 12 79 20 76 18 C 73 16 71 22 68 20 C 65 18 64 26 65 32 L 65 78 C 72 76 82 78 92 82 Z"
+            <path d="M 105 100 L 105 26 C 97 22 94 18 91 15 C 88 12 86 16 83 13 C 80 10 78 18 75 16 C 72 14 70 20 67 18 C 64 16 63 24 64 30 L 64 78 C 72 76 84 78 94 82 Z"
               fill="url(#z8cliffR)"/>
-            <path d="M 105 40 C 98 36 92 38 86 34 C 82 32 78 36 74 32"
-              fill="none" stroke="#2a2040" strokeWidth="0.5" opacity="0.7"/>
-            <line x1="90" y1="30" x2="92" y2="44" stroke="#0a0818" strokeWidth="0.4" opacity="0.6"/>
-            <line x1="78" y1="25" x2="80" y2="40" stroke="#0a0818" strokeWidth="0.3" opacity="0.5"/>
+            <path d="M 105 42 C 97 38 91 40 85 36 C 81 34 77 38 73 34"
+              fill="none" stroke="#2a2820" strokeWidth="0.5" opacity="0.6"/>
+            <path d="M 100 55 C 92 52 86 54 80 50"
+              fill="none" stroke="#252220" strokeWidth="0.4" opacity="0.5"/>
+            <line x1="92" y1="30" x2="94" y2="46" stroke="#0c0b0a" strokeWidth="0.4" opacity="0.7"/>
+            <line x1="78" y1="24" x2="80" y2="42" stroke="#0c0b0a" strokeWidth="0.3" opacity="0.5"/>
 
             {/* ── STONE PATH ── */}
-            {/* Path receding into distance */}
-            <path d="M 35 100 C 38 88 42 82 44 75 C 46 68 47 62 48 56 C 49 50 49.5 44 50 38 L 50 38 C 50.5 44 51 50 52 56 C 53 62 54 68 56 75 C 58 82 62 88 65 100 Z"
-              fill="url(#z8path)" opacity="0.8"/>
-            {/* Stone slabs */}
-            {[88, 82, 76, 70, 65, 61, 57].map((y, i) => {
-              const w = 30 - i * 3.5;
-              const cx = 50;
-              return <line key={i} x1={cx - w/2} y1={y} x2={cx + w/2} y2={y}
-                stroke="#1a1438" strokeWidth={0.6 - i*0.06} opacity={0.8 - i*0.08}/>;
+            <path d="M 36 100 C 39 88 43 82 45 75 C 47 68 48 62 49 56 C 49.5 50 50 44 50 38 L 50 38 C 50 44 50.5 50 51 56 C 52 62 53 68 55 75 C 57 82 61 88 64 100 Z"
+              fill="url(#z8path)" opacity="0.9"/>
+            {/* Stone slab lines */}
+            {[90, 84, 78, 72, 67, 62, 58].map((y, i) => {
+              const w = 28 - i * 3.2;
+              return <line key={i} x1={50 - w/2} y1={y} x2={50 + w/2} y2={y}
+                stroke="#1c1a18" strokeWidth={0.55 - i*0.05} opacity={0.7 - i*0.07}/>;
             })}
-            {/* Path edge glow */}
-            <path d="M 35 100 C 38 88 42 82 44 75 C 46 68 47 62 48 56 C 49 50 49.5 44 50 38"
-              fill="none" stroke="rgba(120,80,200,0.3)" strokeWidth="0.5"/>
-            <path d="M 65 100 C 62 88 58 82 56 75 C 54 68 53 62 52 56 C 51 50 50.5 44 50 38"
-              fill="none" stroke="rgba(120,80,200,0.3)" strokeWidth="0.5"/>
+            {/* Path side cracks/moss */}
+            <path d="M 36 100 C 39 88 43 82 45 75 C 47 68 48 62 49 56 C 49.5 50 50 44 50 38"
+              fill="none" stroke="rgba(80,90,70,0.2)" strokeWidth="0.5"/>
+            <path d="M 64 100 C 61 88 57 82 55 75 C 53 68 52 62 51 56 C 50.5 50 50 44 50 38"
+              fill="none" stroke="rgba(80,90,70,0.2)" strokeWidth="0.5"/>
 
-            {/* ── ANCIENT STONE PILLARS ── */}
-            {[[20, 72, 8, 28], [26, 65, 7, 22], [74, 65, 7, 22], [80, 70, 8, 26]].map(([x, y, w, h], i) => (
+            {/* ── STONE PILLARS ── */}
+            {[[20,72,7,26],[26,64,6,20],[74,64,6,20],[80,70,7,24]].map(([x,y,w,h],i) => (
               <g key={i}>
-                <rect x={x - w/2} y={y - h} width={w} height={h} fill="#1a1438" stroke="#2a2050" strokeWidth="0.3"/>
-                <rect x={x - w/2 - 1} y={y - h - 2} width={w + 2} height={3} fill="#221850" stroke="#2a2050" strokeWidth="0.3"/>
-                {/* Rune glows on pillars */}
-                <ellipse cx={x} cy={y - h/2} rx={1.5} ry={1}
-                  fill="rgba(160,100,255,0.6)" filter="url(#z8glow)"
-                  style={{ animation: `warning-blink ${2+i*0.5}s ease-in-out infinite`, animationDelay: `${i*0.6}s` }}/>
+                <rect x={x-w/2} y={y-h} width={w} height={h} fill="#201e1a" stroke="#2e2c28" strokeWidth="0.4"/>
+                {/* Strata on pillar */}
+                {[0.3,0.55,0.75].map((t,j) => (
+                  <line key={j} x1={x-w/2+0.5} y1={y-h+h*t} x2={x+w/2-0.5} y2={y-h+h*t}
+                    stroke="#181614" strokeWidth="0.25" opacity="0.6"/>
+                ))}
+                <rect x={x-w/2-1} y={y-h-2} width={w+2} height={3} fill="#282420" stroke="#2e2c28" strokeWidth="0.3"/>
+                {/* Faint lichen/moss glow */}
+                <ellipse cx={x} cy={y-h*0.5} rx={1.2} ry={0.8}
+                  fill="rgba(140,160,100,0.4)" filter="url(#z8glow)"
+                  style={{ animation: `warning-blink ${2.5+i*0.6}s ease-in-out infinite`, animationDelay: `${i*0.7}s` }}/>
               </g>
             ))}
 
-            {/* ── MYSTICAL ENERGY WISPS on path ── */}
-            {[[42, 80], [50, 65], [58, 72], [46, 90]].map(([x, y], i) => (
-              <ellipse key={i} cx={x} cy={y} rx="2.5" ry="1.5"
-                fill="rgba(160,100,255,0.35)" filter="url(#z8glow)"
-                style={{ animation: `ghost-drift ${3+i}s ease-in-out infinite`, animationDelay: `${i*0.8}s` }}/>
+            {/* ── GROUND MIST ── */}
+            {[[42,82],[50,67],[58,74],[46,91]].map(([x,y],i) => (
+              <ellipse key={i} cx={x} cy={y} rx="3" ry="1.5"
+                fill="rgba(180,180,160,0.15)" filter="url(#z8glow)"
+                style={{ animation: `ghost-drift ${4+i}s ease-in-out infinite`, animationDelay: `${i*0.9}s` }}/>
             ))}
 
             {/* ── GROUND ── */}
-            <rect x="0" y="80" width="100" height="25" fill="#0a0818"/>
-            <line x1="0" y1="80" x2="100" y2="80" stroke="#1a1438" strokeWidth="0.4"/>
+            <rect x="0" y="80" width="100" height="25" fill="#0e0d0c"/>
+            <line x1="0" y1="80" x2="100" y2="80" stroke="#222018" strokeWidth="0.4"/>
           </svg>
-          {/* Fog wisps */}
+          {/* Ground fog */}
           {WISPS.map((w, i) => (
             <div key={i} className="absolute pointer-events-none rounded-full" style={{
               left: `${w.x}%`, top: `${w.y}%`,
-              width: 30 + (i % 3) * 15, height: 20 + (i % 3) * 10,
-              background: 'radial-gradient(circle, rgba(100,60,180,0.12), transparent)',
+              width: 35 + (i % 3) * 18, height: 22 + (i % 3) * 10,
+              background: 'radial-gradient(circle, rgba(160,155,140,0.08), transparent)',
               '--gx': `${w.gx}px`, '--gx2': `${w.gx2}px`,
-              animation: `ghost-drift ${w.duration * 1.4}s ease-in-out infinite`,
+              animation: `ghost-drift ${w.duration * 1.5}s ease-in-out infinite`,
               animationDelay: `${w.delay}s`,
             } as React.CSSProperties} />
           ))}
         </>
       )}
 
-      {/* ZONE LIBRE — shooting stars + secrets */}
+      {/* ZONE LIBRE — starfield + shooting stars */}
       {zoneId === 'zone_libre' && (
         <>
           {starsEls}
-          {/* Shooting stars */}
-          {[0, 1, 2, 3].map(i => (
+          {/* Shooting stars — different directions, staggered, never stay on screen */}
+          {[
+            { left: '-8%',  top: '6%',  w: 110, anim: 'shooting-star-a', dur: '1.4s', delay: '0s',   total: '22s' },
+            { left: '78%',  top: '12%', w: 90,  anim: 'shooting-star-b', dur: '1.2s', delay: '6s',   total: '20s' },
+            { left: '20%',  top: '3%',  w: 70,  anim: 'shooting-star-c', dur: '1.0s', delay: '13s',  total: '18s' },
+            { left: '-5%',  top: '20%', w: 120, anim: 'shooting-star-d', dur: '1.5s', delay: '4s',   total: '24s' },
+            { left: '55%',  top: '8%',  w: 80,  anim: 'shooting-star-b', dur: '1.1s', delay: '17s',  total: '21s' },
+            { left: '5%',   top: '15%', w: 95,  anim: 'shooting-star-a', dur: '1.3s', delay: '9s',   total: '19s' },
+          ].map((s, i) => (
             <div
               key={`shoot${i}`}
               className="absolute pointer-events-none"
               style={{
-                left: `${(i * 27 + 5) % 90}%`,
-                top: `${(i * 19 + 3) % 40}%`,
-                width: '80px',
-                height: '2px',
-                background: 'linear-gradient(to right, rgba(255,255,255,0), rgba(255,255,255,0.9), rgba(200,180,255,0.6))',
-                borderRadius: '2px',
-                transform: 'rotate(-20deg)',
-                animation: `shooting-star ${6 + i * 4}s ease-in infinite`,
-                animationDelay: `${i * 3.5}s`,
-                boxShadow: '0 0 6px 1px rgba(200,180,255,0.4)',
+                left: s.left, top: s.top,
+                width: s.w, height: 2,
+                background: 'linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 60%, rgba(220,210,255,0.5) 100%)',
+                borderRadius: 2,
+                animation: `${s.anim} ${s.total} linear infinite`,
+                animationDelay: s.delay,
+                boxShadow: '0 0 4px 1px rgba(220,210,255,0.3)',
               }}
             />
           ))}
-          {/* Secret 1 — faint Mew silhouette */}
-          <div className="absolute pointer-events-none" style={{
-            right: '8%', top: '25%', opacity: 0.06,
-            animation: 'ghost-drift 12s ease-in-out infinite',
-            fontSize: 28,
-          }}>
-            🐱
-          </div>
-          {/* Secret 2 — mysterious floating question */}
-          <div className="absolute pointer-events-none" style={{
-            left: '4%', top: '35%', opacity: 0.05,
-            animation: 'float 7s ease-in-out infinite',
-            color: '#c084fc', fontWeight: 900, fontSize: 18,
-          }}>?</div>
-          {/* Secret 3 — ancient symbols */}
-          <div className="absolute pointer-events-none" style={{
-            left: '12%', bottom: '28%', opacity: 0.07,
-            fontSize: 11, color: '#818cf8', letterSpacing: 2,
-            animation: 'ghost-drift 9s ease-in-out infinite',
-            animationDelay: '2s',
-          }}>◈ ✦ ◈</div>
-          {/* Secret 4 — distant orb */}
-          <div className="absolute pointer-events-none rounded-full" style={{
-            right: '15%', bottom: '32%',
-            width: 8, height: 8,
-            background: 'radial-gradient(circle, rgba(240,171,252,0.5), transparent)',
-            animation: 'aura-pulse 4s ease-in-out infinite',
-            animationDelay: '1s',
-          }} />
         </>
       )}
 

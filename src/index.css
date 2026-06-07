@@ -141,11 +141,29 @@ input, textarea, select {
   from { transform: rotate(0deg); }
   to   { transform: rotate(-360deg); }
 }
-@keyframes shooting-star {
-  0%   { transform: translateX(0) translateY(0) rotate(-20deg); opacity: 0; }
-  5%   { opacity: 1; }
-  25%  { transform: translateX(200px) translateY(80px) rotate(-20deg); opacity: 0; }
-  100% { transform: translateX(200px) translateY(80px) rotate(-20deg); opacity: 0; }
+@keyframes shooting-star-a {
+  0%   { transform: translateX(0) translateY(0); opacity: 0; }
+  4%   { opacity: 1; }
+  22%  { opacity: 0; }
+  100% { transform: translateX(350px) translateY(140px); opacity: 0; }
+}
+@keyframes shooting-star-b {
+  0%   { transform: translateX(0) translateY(0); opacity: 0; }
+  4%   { opacity: 1; }
+  22%  { opacity: 0; }
+  100% { transform: translateX(-350px) translateY(130px); opacity: 0; }
+}
+@keyframes shooting-star-c {
+  0%   { transform: translateX(0) translateY(0); opacity: 0; }
+  3%   { opacity: 1; }
+  16%  { opacity: 0; }
+  100% { transform: translateX(180px) translateY(320px); opacity: 0; }
+}
+@keyframes shooting-star-d {
+  0%   { transform: translateX(0) translateY(0); opacity: 0; }
+  4%   { opacity: 1; }
+  25%  { opacity: 0; }
+  100% { transform: translateX(400px) translateY(60px); opacity: 0; }
 }
 
 @keyframes bush-rustle {
