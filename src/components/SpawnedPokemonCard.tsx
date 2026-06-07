@@ -120,7 +120,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
     spriteFilter = `drop-shadow(0 0 10px ${rarityColor}) drop-shadow(0 0 20px ${rarityColor}88)`;
     spriteAnimation = 'aura-pulse 2s ease-in-out infinite';
   } else if (spawned.isShiny) {
-    spriteFilter = `drop-shadow(0 0 4px #fde047)`;
+    spriteFilter = `drop-shadow(0 0 2px #fde047)`;
     spriteAnimation = undefined;
   } else {
     spriteFilter = `drop-shadow(0 0 6px ${rarityColor})`;
