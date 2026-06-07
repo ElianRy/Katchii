@@ -217,8 +217,8 @@ export const ZONES: Zone[] = [
     completionThreshold: 0.70,
     unlockCondition: { type: 'shiny_captures', count: 1 },
     boss: {
-      name: 'Maître Giovanni',
-      title: 'Gym Leader Sol',
+      name: 'Défi de la Ligue Pokémon',
+      title: 'Affronte les 3 champions',
       team: [
         { pokemonId: 34, isShiny: false },
         { pokemonId: 31, isShiny: false },
