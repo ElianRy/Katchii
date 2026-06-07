@@ -201,15 +201,15 @@ export const ZONES: Zone[] = [
         { pokemonId: 59, isShiny: false },
       ],
       badge: 'Badge Volcan',
-      reward: 'Débloque la Zone 8 — Arène de Jadielle',
+      reward: 'Débloque la Route Victoire !',
     },
     unlockRequirement: 'zone6',
     includesLegendaries: false,
   },
   {
     id: 'zone8',
-    name: 'Arène de Jadielle',
-    description: 'L\'arène finale avant la Ligue Pokémon.',
+    name: 'Route Victoire',
+    description: 'Un chemin de montagne mystérieux menant à la Ligue Pokémon.',
     background: 'linear-gradient(180deg, #0a0808 0%, #1a1210 50%, #0f0a08 100%)',
     // C: 27,66 | PC: 28,67 | R: 76,105,106,107,127,142 | E: 68,130,131,136,143,149
     pokemonIds: [27,66, 28,67, 76,105,106,107,127,142, 68,130,131,136,143,149],

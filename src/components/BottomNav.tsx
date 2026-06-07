@@ -39,43 +39,105 @@ const TYPE_ATTACK_EMOJI: Record<string, string> = {
 interface FloatingHeart { id: number; x: number }
 interface AttackEmoji { id: number; emoji: string }
 
-const SPARKLE_COLORS = ['#fde047', '#f0abfc', '#ffffff', '#fbbf24', '#a5f3fc'];
+const ORBIT_COLORS_A = ['#fde047', '#f472b6', '#60a5fa', '#4ade80', '#fb923c', '#c084fc'];
+const ORBIT_COLORS_B = ['#f0abfc', '#fbbf24', '#a5f3fc', '#fde047', '#86efac', '#f472b6'];
 
 function NavShinySparkles({ spriteSize = 52 }: { spriteSize?: number }) {
-  // 4 orbiting stars evenly spaced, centered on the sprite
-  const center = spriteSize / 2;
-  const r = center + 10; // orbit radius — just outside the sprite
-  const sparkles = useMemo(() => [0, 1, 2, 3].map(i => ({
+  const cx = spriteSize / 2;
+  const cy = spriteSize / 2;
+
+  // Inner orbit: 6 stars close to sprite, fast
+  const innerR = 18;
+  const innerStars = useMemo(() => [0,1,2,3,4,5].map(i => ({
     id: i,
-    color: SPARKLE_COLORS[i % SPARKLE_COLORS.length],
-    orbitDelay: `${-(i / 4 * 2.4).toFixed(2)}s`,
+    color: ORBIT_COLORS_A[i],
+    delay: `${-(i / 6 * 1.8).toFixed(2)}s`,
   })), []);
+
+  // Outer orbit: 4 larger stars, slower, opposite direction
+  const outerR = 30;
+  const outerStars = useMemo(() => [0,1,2,3].map(i => ({
+    id: i,
+    color: ORBIT_COLORS_B[i],
+    delay: `${-(i / 4 * 3.0).toFixed(2)}s`,
+  })), []);
+
+  // Scattered random twinkling stars at fixed positions (deterministic)
+  const twinkleStars = useMemo(() => [
+    { x: cx - 22, y: cy - 18, color: '#fde047', dur: '1.1s', delay: '0s' },
+    { x: cx + 20, y: cy - 20, color: '#f472b6', dur: '1.4s', delay: '0.3s' },
+    { x: cx + 24, y: cy + 10, color: '#60a5fa', dur: '0.9s', delay: '0.6s' },
+    { x: cx - 20, y: cy + 16, color: '#4ade80', dur: '1.2s', delay: '0.9s' },
+    { x: cx - 8,  y: cy - 28, color: '#c084fc', dur: '1.5s', delay: '0.4s' },
+    { x: cx + 10, y: cy - 26, color: '#fbbf24', dur: '1.0s', delay: '1.1s' },
+    { x: cx + 28, y: cy - 4,  color: '#a5f3fc', dur: '1.3s', delay: '0.7s' },
+    { x: cx - 26, y: cy - 2,  color: '#fb923c', dur: '0.8s', delay: '1.4s' },
+  ], [cx, cy]);
 
   return (
     <div style={{ position: 'absolute', left: 0, top: 0, width: spriteSize, height: spriteSize, pointerEvents: 'none', overflow: 'visible' }}>
-      {sparkles.map(sp => (
-        <div
-          key={sp.id}
-          style={{
-            position: 'absolute',
-            left: center - r,
-            top: center - r,
-            width: r * 2,
-            height: r * 2,
-            animation: `shiny-orbit 2.4s linear infinite`,
-            animationDelay: sp.orbitDelay,
-            pointerEvents: 'none',
-          }}
-        >
+      {/* Rainbow shimmer underneath */}
+      <div style={{
+        position: 'absolute',
+        left: cx - 30, top: cy - 30,
+        width: 60, height: 60,
+        borderRadius: '50%',
+        background: 'conic-gradient(from 0deg, #fde04788, #f472b688, #60a5fa88, #4ade8088, #c084fc88, #fbbf2488, #fde04788)',
+        animation: 'shiny-orbit 3s linear infinite',
+        opacity: 0.22,
+        filter: 'blur(4px)',
+      }} />
+
+      {/* Inner fast orbit — 6 stars */}
+      {innerStars.map(sp => (
+        <div key={`in${sp.id}`} style={{
+          position: 'absolute',
+          left: cx - innerR, top: cy - innerR,
+          width: innerR * 2, height: innerR * 2,
+          animation: 'shiny-orbit 1.8s linear infinite',
+          animationDelay: sp.delay,
+          pointerEvents: 'none',
+        }}>
           <div className="shiny-sparkle" style={{
-            position: 'absolute',
-            left: r - 8,
-            top: -8,
+            position: 'absolute', width: 10, height: 10,
+            left: innerR - 5, top: -5,
             '--sp-color': sp.color,
-            '--sp-duration': '0.9s',
-            '--sp-delay': '0s',
+            '--sp-duration': '0.7s',
+            '--sp-delay': sp.delay,
           } as React.CSSProperties} />
         </div>
+      ))}
+
+      {/* Outer slower orbit — 4 bigger stars, reverse */}
+      {outerStars.map(sp => (
+        <div key={`out${sp.id}`} style={{
+          position: 'absolute',
+          left: cx - outerR, top: cy - outerR,
+          width: outerR * 2, height: outerR * 2,
+          animation: 'shiny-orbit-rev 3s linear infinite',
+          animationDelay: sp.delay,
+          pointerEvents: 'none',
+        }}>
+          <div className="shiny-sparkle" style={{
+            position: 'absolute', width: 14, height: 14,
+            left: outerR - 7, top: -7,
+            '--sp-color': sp.color,
+            '--sp-duration': '1.1s',
+            '--sp-delay': sp.delay,
+          } as React.CSSProperties} />
+        </div>
+      ))}
+
+      {/* Scattered twinkling at various positions */}
+      {twinkleStars.map((sp, i) => (
+        <div key={`tw${i}`} className="shiny-sparkle" style={{
+          position: 'absolute',
+          width: 8, height: 8,
+          left: sp.x - 4, top: sp.y - 4,
+          '--sp-color': sp.color,
+          '--sp-duration': sp.dur,
+          '--sp-delay': sp.delay,
+        } as React.CSSProperties} />
       ))}
     </div>
   );

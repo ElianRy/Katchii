@@ -137,6 +137,16 @@ input, textarea, select {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
 }
+@keyframes shiny-orbit-rev {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(-360deg); }
+}
+@keyframes shooting-star {
+  0%   { transform: translateX(0) translateY(0) rotate(-20deg); opacity: 0; }
+  5%   { opacity: 1; }
+  25%  { transform: translateX(200px) translateY(80px) rotate(-20deg); opacity: 0; }
+  100% { transform: translateX(200px) translateY(80px) rotate(-20deg); opacity: 0; }
+}
 
 @keyframes bush-rustle {
   0%, 100% { transform: skewX(0deg); }
