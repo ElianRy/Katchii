@@ -443,17 +443,21 @@ function DialogueScreen({ trainer, onDone }: {
       </div>
 
       <div className="flex-1 flex items-end justify-center relative overflow-hidden min-h-0">
+        {/* Master dialogue side animations */}
+        {isMaster && <MasterSideEffects />}
+
         <div className="absolute bottom-0 w-full h-40 pointer-events-none" style={{
           background: `radial-gradient(ellipse at 50% 100%, ${trainer.color}35 0%, transparent 70%)`,
         }} />
-        <div className="relative flex items-end justify-center w-full h-full">
-          {/* Trainer — centered */}
+
+        {/* Trainer + companion in a flex row, bottom-aligned */}
+        <div className="absolute bottom-0 flex items-end justify-center w-full pointer-events-none">
+          {/* Trainer in front */}
           <img src={trainer.image} alt={trainer.name} draggable={false}
-            className="relative select-none pointer-events-none shrink-0"
+            className="relative select-none shrink-0"
             style={{
-              // Master bigger, others normal
-              height: isMaster ? 'min(85vw, 360px)' : 'min(72vw, 300px)',
-              zIndex: isMaster ? 10 : 9,
+              height: isMaster ? 'min(85vw, 360px)' : 'min(68vw, 280px)',
+              zIndex: 10,
               objectFit: 'contain', objectPosition: 'bottom',
               filter: isMaster && lineIdx === 0
                 ? 'brightness(0) drop-shadow(0 0 24px rgba(168,85,247,0.3))'
@@ -464,25 +468,26 @@ function DialogueScreen({ trainer, onDone }: {
               animation: isMaster ? 'league-trainer-appear 0.6s ease-out' : 'badge-pop 0.5s ease-out',
             }}
           />
-          {/* Companion — right side */}
+          {/* Companion — right of trainer, bottom-aligned */}
           {(!isMaster || lineIdx >= 3) && (
-            <div className="absolute right-0 pointer-events-none"
+            <div className="relative shrink-0"
               style={{
-                // Dragonite same height as Peter, bottom-aligned (in front)
-                // Persian smaller, bottom-aligned (behind)
-                // Alakazam floats higher (bottom: 10%)
-                bottom: isMaster ? '10%' : '0',
-                width: trainer.id === 'peter'
-                  ? 'min(72vw, 300px)'   // same as trainer
-                  : trainer.id === 'giovanni'
-                    ? 'min(28vw, 110px)'  // smaller
-                    : 'min(55vw, 230px)', // master
+                // Peter: Dragonite same height, slightly behind
+                // Giovanni: Persian knee-height (35% of trainer)
+                // Master: Alakazam floats up via margin
                 height: trainer.id === 'peter'
-                  ? 'min(72vw, 300px)'
+                  ? 'min(63vw, 260px)'
                   : trainer.id === 'giovanni'
-                    ? 'min(28vw, 110px)'
-                    : 'min(55vw, 230px)',
-                zIndex: trainer.id === 'peter' ? 11 : 9,
+                    ? 'min(24vw, 95px)'
+                    : 'min(52vw, 215px)',
+                width: trainer.id === 'peter'
+                  ? 'min(63vw, 260px)'
+                  : trainer.id === 'giovanni'
+                    ? 'min(24vw, 95px)'
+                    : 'min(52vw, 215px)',
+                marginBottom: isMaster ? 'min(12vw, 50px)' : '0',
+                marginLeft: trainer.id === 'peter' ? '-6px' : trainer.id === 'giovanni' ? '-4px' : '-8px',
+                zIndex: trainer.id === 'peter' ? 9 : 9,
                 animation: isMaster ? 'pokeball-release 0.7s ease-out both' : 'badge-pop 0.5s ease-out both',
               }}>
               {/* Shiny aura glow for Alakazam */}
