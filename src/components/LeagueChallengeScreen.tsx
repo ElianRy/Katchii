@@ -446,30 +446,42 @@ function DialogueScreen({ trainer, onDone }: {
         <div className="absolute bottom-0 w-full h-40 pointer-events-none" style={{
           background: `radial-gradient(ellipse at 50% 100%, ${trainer.color}35 0%, transparent 70%)`,
         }} />
-        {/* Companion pokemon — bottom corner opposite to trainer */}
-        <div className="absolute bottom-0 left-3 z-10 pointer-events-none"
-          style={{ animation: 'badge-pop 0.6s 0.3s ease-out both' }}>
-          <ShinySprite
-            pokemonId={trainer.companion.pokemonId}
-            isShiny={trainer.companion.isShiny}
-            width={80} height={80}
-            alt={POKEMON_BY_ID[trainer.companion.pokemonId]?.name ?? ''}
+        {/* Trainer + companion side by side, bottom-aligned */}
+        <div className="relative flex items-end justify-center w-full">
+          {/* Companion — behind the trainer, left side, slightly smaller */}
+          <div className="relative z-[9] pointer-events-none shrink-0"
+            style={{
+              marginRight: '-18%',
+              animation: 'badge-pop 0.5s 0.25s ease-out both',
+              filter: isMaster && lineIdx === 0
+                ? 'brightness(0)'
+                : `drop-shadow(0 0 10px ${trainer.color}77)`,
+              transition: isMaster ? 'filter 1.2s ease-out' : undefined,
+            }}>
+            <ShinySprite
+              pokemonId={trainer.companion.pokemonId}
+              isShiny={trainer.companion.isShiny}
+              width={Math.round(Math.min(window.innerWidth * 0.52, 220))}
+              height={Math.round(Math.min(window.innerWidth * 0.52, 220))}
+              alt={POKEMON_BY_ID[trainer.companion.pokemonId]?.name ?? ''}
+            />
+          </div>
+          {/* Trainer — in front */}
+          <img src={trainer.image} alt={trainer.name} draggable={false}
+            className="relative z-10 select-none pointer-events-none shrink-0"
+            style={{
+              height: 'min(72vw, 300px)',
+              objectFit: 'contain', objectPosition: 'bottom',
+              filter: isMaster && lineIdx === 0
+                ? 'brightness(0) drop-shadow(0 0 24px rgba(168,85,247,0.3))'
+                : isMaster
+                  ? `brightness(1) drop-shadow(0 0 24px ${trainer.color}99)`
+                  : `drop-shadow(0 0 14px ${trainer.color}55)`,
+              transition: isMaster ? 'filter 1.2s ease-out' : undefined,
+              animation: isMaster ? 'league-trainer-appear 0.6s ease-out' : 'badge-pop 0.5s ease-out',
+            }}
           />
         </div>
-        <img src={trainer.image} alt={trainer.name} draggable={false}
-          className="relative z-10 select-none pointer-events-none"
-          style={{
-            height: 'min(75vw, 320px)',
-            objectFit: 'contain', objectPosition: 'bottom',
-            filter: isMaster && lineIdx === 0
-              ? 'brightness(0) drop-shadow(0 0 24px rgba(168,85,247,0.3))'
-              : isMaster
-                ? `brightness(1) drop-shadow(0 0 24px ${trainer.color}99)`
-                : `drop-shadow(0 0 14px ${trainer.color}55)`,
-            transition: isMaster ? 'filter 1.2s ease-out' : undefined,
-            animation: isMaster ? 'league-trainer-appear 0.6s ease-out' : 'badge-pop 0.5s ease-out',
-          }}
-        />
       </div>
 
       <div className="px-4 pb-5 pt-3 shrink-0">
