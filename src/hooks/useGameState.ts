@@ -581,10 +581,14 @@ export function useGameState() {
     return success;
   }, [update]);
 
-  const addTrainingWin = useCallback((zoneId?: string) => {
+  const addTrainingWin = useCallback((_zoneId?: string) => {
     update(prev => {
-      const zone = zoneId ?? prev.zoneProgress?.currentZoneId ?? 'zone1';
-      const byZone = { ...(prev.trainingBattlesByZone ?? {}), [zone]: ((prev.trainingBattlesByZone ?? {})[zone] ?? 0) + 1 };
+      const unlockedZones = prev.zoneProgress?.unlockedZones ?? [];
+      // Only count toward zone-specific challenge if that zone is unlocked
+      const byZone = { ...(prev.trainingBattlesByZone ?? {}) };
+      for (const zid of unlockedZones) {
+        byZone[zid] = (byZone[zid] ?? 0) + 1;
+      }
       return {
         ...prev,
         trainingBattlesTotal: (prev.trainingBattlesTotal ?? 0) + 1,

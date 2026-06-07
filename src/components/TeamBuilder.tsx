@@ -68,6 +68,7 @@ interface Props {
   onConfirm?: (team: TeamMember[]) => void;
   onAddXp?: (pokemonId: number, xp: number) => void;
   onBattleWin?: (pokemonIds: number[]) => void;
+  onTrainingBattle?: () => void;
   onClose: () => void;
   title?: string;
   savedTeams?: Array<{ id: string; name: string; members: TeamMember[] }>;
@@ -75,7 +76,7 @@ interface Props {
   onDeleteTeam?: (id: string) => void;
 }
 
-export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattleWin, onClose, title = 'Mon équipe', savedTeams, onSaveTeam, onDeleteTeam }: Props) {
+export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattleWin, onTrainingBattle, onClose, title = 'Mon équipe', savedTeams, onSaveTeam, onDeleteTeam }: Props) {
   const [selected, setSelected] = useState<number[]>([]);
   const [sort, setSort] = useState<'level' | 'rarity'>('level');
   const [mode, setMode] = useState<'team' | 'battle' | 'result' | 'savedTeams'>('team');
@@ -156,6 +157,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     });
     setLevelUps(ups);
     if (won) onBattleWin?.(selected);
+    onTrainingBattle?.();
     if (autoCombat) {
       setBattleResult({ won, xpGains });
       setMode('result');
