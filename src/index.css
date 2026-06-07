@@ -465,12 +465,12 @@ input, textarea, select {
 
 .shiny-sparkle {
   position: absolute;
-  width: 16px;
-  height: 16px;
+  width: 8px;
+  height: 8px;
   pointer-events: none;
   animation: shiny-sparkle var(--sp-duration, 1.2s) ease-in-out infinite;
   animation-delay: var(--sp-delay, 0s);
-  filter: drop-shadow(0 0 4px var(--sp-color, #fde047));
+  filter: drop-shadow(0 0 2px var(--sp-color, #fde047));
 }
 .shiny-sparkle::before,
 .shiny-sparkle::after {
@@ -487,12 +487,12 @@ input, textarea, select {
 /* Second smaller orbiting sparkle per slot */
 .shiny-sparkle-orbit {
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   pointer-events: none;
   animation: shiny-sparkle var(--sp-duration, 1.2s) ease-in-out infinite;
   animation-delay: calc(var(--sp-delay, 0s) + 0.5s);
-  filter: drop-shadow(0 0 3px var(--sp-color, #fde047));
+  filter: drop-shadow(0 0 2px var(--sp-color, #fde047));
 }
 .shiny-sparkle-orbit::before {
   content: '';
@@ -718,13 +718,13 @@ button:active{transform:scale(.93);transition:transform .08s ease}
 /* Shiny rainbow aura — cycles through 6 colors */
 .shiny-rainbow { animation: shiny-rainbow-aura 2.5s linear infinite; }
 @keyframes shiny-rainbow-aura {
-  0%   { filter: drop-shadow(0 0 5px #fde047); }
-  16%  { filter: drop-shadow(0 0 5px #f472b6); }
-  33%  { filter: drop-shadow(0 0 5px #60a5fa); }
-  50%  { filter: drop-shadow(0 0 5px #4ade80); }
-  66%  { filter: drop-shadow(0 0 5px #fb923c); }
-  83%  { filter: drop-shadow(0 0 5px #c084fc); }
-  100% { filter: drop-shadow(0 0 5px #fde047); }
+  0%   { filter: drop-shadow(0 0 3px #fde047); }
+  16%  { filter: drop-shadow(0 0 3px #f472b6); }
+  33%  { filter: drop-shadow(0 0 3px #60a5fa); }
+  50%  { filter: drop-shadow(0 0 3px #4ade80); }
+  66%  { filter: drop-shadow(0 0 3px #fb923c); }
+  83%  { filter: drop-shadow(0 0 3px #c084fc); }
+  100% { filter: drop-shadow(0 0 3px #fde047); }
 }
 
 /* Pokédex shiny rotating stars */

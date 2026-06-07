@@ -32,10 +32,10 @@ const MOVE_ANIMS = [
 
 // Orbiting star positions for shiny pokemon
 const SHINY_ORBIT_STARS = [
-  { color: '#fde047', orbitDuration: '2.4s', delay: '0s',    orbitR: 28 },
-  { color: '#f472b6', orbitDuration: '2.4s', delay: '-0.6s', orbitR: 28 },
-  { color: '#60a5fa', orbitDuration: '2.4s', delay: '-1.2s', orbitR: 28 },
-  { color: '#4ade80', orbitDuration: '2.4s', delay: '-1.8s', orbitR: 28 },
+  { color: '#fde047', orbitDuration: '2.4s', delay: '0s',    orbitR: 36 },
+  { color: '#f472b6', orbitDuration: '2.4s', delay: '-0.6s', orbitR: 36 },
+  { color: '#60a5fa', orbitDuration: '2.4s', delay: '-1.2s', orbitR: 36 },
+  { color: '#4ade80', orbitDuration: '2.4s', delay: '-1.8s', orbitR: 36 },
 ];
 
 function PokeballSVG({ spinning }: { spinning: boolean }) {
@@ -121,7 +121,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
     spriteFilter = `drop-shadow(0 0 10px ${rarityColor}) drop-shadow(0 0 20px ${rarityColor}88)`;
     spriteAnimation = 'aura-pulse 2s ease-in-out infinite';
   } else if (spawned.isShiny) {
-    spriteFilter = `drop-shadow(0 0 2px #fde047)`;
+    spriteFilter = `drop-shadow(0 0 3px #fde047) drop-shadow(0 0 4px #f0abfc88)`;
     spriteAnimation = undefined;
   } else {
     spriteFilter = `drop-shadow(0 0 6px ${rarityColor})`;
@@ -261,31 +261,19 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               gap: 0,
             }}
           >
-            {/* Shiny — rotating rainbow aura */}
+            {/* Shiny — tight rainbow ring */}
             {spawned.isShiny && (
-              <>
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    inset: -10,
-                    borderRadius: '50%',
-                    background: 'conic-gradient(from 0deg, #f87171, #fb923c, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
-                    animation: 'rainbow-spin 2s linear infinite',
-                    opacity: 0.7,
-                    filter: 'blur(6px)',
-                  }}
-                />
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    inset: -4,
-                    borderRadius: '50%',
-                    background: 'conic-gradient(from 0deg, #f87171aa, #fb923caa, #fde047aa, #4ade80aa, #60a5faaa, #c084fcaa, #f472b6aa, #f87171aa)',
-                    animation: 'rainbow-spin 2s linear infinite',
-                    opacity: 0.5,
-                  }}
-                />
-              </>
+              <div
+                className="absolute pointer-events-none"
+                style={{
+                  inset: -3,
+                  borderRadius: '50%',
+                  background: 'conic-gradient(from 0deg, #f87171, #fb923c, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
+                  animation: 'rainbow-spin 2s linear infinite',
+                  opacity: 0.55,
+                  filter: 'blur(2px)',
+                }}
+              />
             )}
 
             {/* Sprite + aura */}

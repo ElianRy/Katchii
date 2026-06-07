@@ -1,21 +1,21 @@
 import React from 'react';
 
 export const SPARKLE_POSITIONS = [
-  { top: '-16px',  left: '50%',    color: '#fde047', duration: '1.0s', delay: '0s' },
-  { top: '5%',     right: '-16px', color: '#f472b6', duration: '1.2s', delay: '0.15s' },
-  { bottom: '-14px',left: '50%',   color: '#60a5fa', duration: '0.85s', delay: '0.3s' },
-  { top: '5%',     left: '-16px',  color: '#4ade80', duration: '1.3s', delay: '0.45s' },
-  { top: '50%',    right: '-18px', color: '#fb923c', duration: '0.95s', delay: '0.6s' },
-  { top: '50%',    left: '-18px',  color: '#c084fc', duration: '1.1s', delay: '0.75s' },
-  { top: '-14px',  right: '20%',   color: '#34d399', duration: '1.25s', delay: '0.9s' },
-  { bottom: '-12px',right: '20%',  color: '#f87171', duration: '1.05s', delay: '1.05s' },
+  { top: '-6px',   left: '50%',   color: '#fde047', duration: '1.0s',  delay: '0s' },
+  { top: '10%',    right: '-6px', color: '#f472b6', duration: '1.2s',  delay: '0.15s' },
+  { bottom: '-5px',left: '50%',   color: '#60a5fa', duration: '0.85s', delay: '0.3s' },
+  { top: '10%',    left: '-6px',  color: '#4ade80', duration: '1.3s',  delay: '0.45s' },
+  { top: '50%',    right: '-7px', color: '#fb923c', duration: '0.95s', delay: '0.6s' },
+  { top: '50%',    left: '-7px',  color: '#c084fc', duration: '1.1s',  delay: '0.75s' },
+  { top: '-5px',   right: '20%',  color: '#34d399', duration: '1.25s', delay: '0.9s' },
+  { bottom: '-4px',right: '20%',  color: '#f87171', duration: '1.05s', delay: '1.05s' },
 ];
 
 export const ORBIT_POSITIONS = [
-  { top: '-8px',   left: '30%',   color: '#fde047', duration: '1.15s', delay: '0.5s' },
-  { top: '20%',    right: '-10px',color: '#60a5fa', duration: '0.9s',  delay: '0.7s' },
-  { bottom: '-6px',left: '70%',   color: '#f472b6', duration: '1.0s',  delay: '0.2s' },
-  { top: '70%',    left: '-10px', color: '#fb923c', duration: '1.35s', delay: '0.95s' },
+  { top: '-4px',   left: '30%',   color: '#fde047', duration: '1.15s', delay: '0.5s' },
+  { top: '20%',    right: '-4px', color: '#60a5fa', duration: '0.9s',  delay: '0.7s' },
+  { bottom: '-3px',left: '70%',   color: '#f472b6', duration: '1.0s',  delay: '0.2s' },
+  { top: '70%',    left: '-4px',  color: '#fb923c', duration: '1.35s', delay: '0.95s' },
 ];
 
 interface Props {
