@@ -52,11 +52,13 @@ export function Collection({ state, onClose }: Props) {
   const [filter, setFilter] = useState<FilterTab>('tous');
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
 
   const totalCaught = GEN1_POKEMON.filter(p => (state.normalCollection[p.id] ?? 0) > 0).length;
   const totalShinyCaught = GEN1_POKEMON.filter(p => (state.shinyCollection[p.id] ?? 0) > 0).length;
 
   const filteredPokemon = GEN1_POKEMON.filter((p) => {
+    if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
     if (filter === 'tous') return true;
     if (filter === 'captures') return (state.normalCollection[p.id] ?? 0) > 0;
     if (filter === 'shinies') return (state.shinyCollection[p.id] ?? 0) > 0;
@@ -106,6 +108,17 @@ export function Collection({ state, onClose }: Props) {
 
       {mainTab === 'collection' && (
         <>
+          {/* Search bar */}
+          <div className="px-4 pt-2 pb-1 shrink-0">
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher un Pokémon…"
+              className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
           {/* Filter button */}
           <div className="flex items-center gap-2 px-4 py-2 border-b border-slate-700 shrink-0">
             <button

@@ -29,14 +29,12 @@ const MOVE_ANIMS = [
   { animation: 'wiggle 2.4s ease-in-out infinite' },
 ];
 
-// Shiny sparkle positions around the sprite
-const SPARKLE_POSITIONS = [
-  { top: '-12px', left: '50%', color: '#fde047', duration: '1.1s', delay: '0s' },
-  { top: '10%', right: '-12px', color: '#f472b6', duration: '1.3s', delay: '0.2s' },
-  { bottom: '-10px', left: '50%', color: '#60a5fa', duration: '0.9s', delay: '0.4s' },
-  { top: '10%', left: '-12px', color: '#4ade80', duration: '1.4s', delay: '0.6s' },
-  { top: '50%', right: '-14px', color: '#fb923c', duration: '1.0s', delay: '0.8s' },
-  { top: '50%', left: '-14px', color: '#c084fc', duration: '1.2s', delay: '1.0s' },
+// Orbiting star positions for shiny pokemon
+const SHINY_ORBIT_STARS = [
+  { color: '#fde047', orbitDuration: '2.4s', delay: '0s',    orbitR: 28 },
+  { color: '#f472b6', orbitDuration: '2.4s', delay: '-0.6s', orbitR: 28 },
+  { color: '#60a5fa', orbitDuration: '2.4s', delay: '-1.2s', orbitR: 28 },
+  { color: '#4ade80', orbitDuration: '2.4s', delay: '-1.8s', orbitR: 28 },
 ];
 
 function PokeballSVG({ spinning }: { spinning: boolean }) {
@@ -122,7 +120,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
     spriteFilter = `drop-shadow(0 0 10px ${rarityColor}) drop-shadow(0 0 20px ${rarityColor}88)`;
     spriteAnimation = 'aura-pulse 2s ease-in-out infinite';
   } else if (spawned.isShiny) {
-    spriteFilter = `drop-shadow(0 0 8px #fde047) drop-shadow(0 0 16px #f0abfc88)`;
+    spriteFilter = `drop-shadow(0 0 4px #fde047)`;
     spriteAnimation = undefined;
   } else {
     spriteFilter = `drop-shadow(0 0 6px ${rarityColor})`;
@@ -294,22 +292,28 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               className="relative flex items-center justify-center"
               style={{ borderRadius: narutoSpriteUrl ? '8px' : '50%', padding: 0 }}
             >
-              {/* Shiny sparkles — always visible for shiny */}
-              {spawned.isShiny && SPARKLE_POSITIONS.map((sp, i) => (
+              {/* Shiny orbiting stars */}
+              {spawned.isShiny && SHINY_ORBIT_STARS.map((star, i) => (
                 <div
                   key={i}
-                  className="shiny-sparkle"
+                  className="absolute pointer-events-none"
                   style={{
-                    top: sp.top,
-                    left: sp.left,
-                    right: (sp as { right?: string }).right,
-                    bottom: (sp as { bottom?: string }).bottom,
-                    transform: sp.left === '50%' ? 'translateX(-50%)' : undefined,
-                    '--sp-color': sp.color,
-                    '--sp-duration': sp.duration,
-                    '--sp-delay': sp.delay,
+                    left: '50%', top: '50%',
+                    width: star.orbitR * 2, height: star.orbitR * 2,
+                    marginLeft: -star.orbitR, marginTop: -star.orbitR,
+                    animation: `shiny-orbit ${star.orbitDuration} linear infinite`,
+                    animationDelay: star.delay,
                   } as React.CSSProperties}
-                />
+                >
+                  <div className="shiny-sparkle" style={{
+                    position: 'absolute',
+                    left: star.orbitR - 4,
+                    top: -4,
+                    '--sp-color': star.color,
+                    '--sp-duration': '0.8s',
+                    '--sp-delay': '0s',
+                  } as React.CSSProperties} />
+                </div>
               ))}
 
               {/* Legendary — golden pulsing aura */}

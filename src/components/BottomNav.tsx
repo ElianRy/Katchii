@@ -41,36 +41,41 @@ interface AttackEmoji { id: number; emoji: string }
 
 const SPARKLE_COLORS = ['#fde047', '#f0abfc', '#ffffff', '#fbbf24', '#a5f3fc'];
 
-function NavShinySparkles() {
-  // Generate random scattered sparkle positions (relative to pokemon center, in px)
-  const sparkles = useMemo(() => Array.from({ length: 5 }, (_, i) => {
-    const angle = (i / 5) * Math.PI * 2 + Math.random() * 0.8;
-    const r = 22 + Math.random() * 18;
-    return {
-      id: i,
-      x: Math.cos(angle) * r + 26, // center at ~26px (half of 52px sprite)
-      y: Math.sin(angle) * r + 26,
-      color: SPARKLE_COLORS[i % SPARKLE_COLORS.length],
-      delay: `${(i * 0.22).toFixed(2)}s`,
-      duration: `${(1.1 + Math.random() * 0.7).toFixed(2)}s`,
-    };
-  }), []);
+function NavShinySparkles({ spriteSize = 52 }: { spriteSize?: number }) {
+  // 4 orbiting stars evenly spaced, centered on the sprite
+  const center = spriteSize / 2;
+  const r = center + 10; // orbit radius — just outside the sprite
+  const sparkles = useMemo(() => [0, 1, 2, 3].map(i => ({
+    id: i,
+    color: SPARKLE_COLORS[i % SPARKLE_COLORS.length],
+    orbitDelay: `${-(i / 4 * 2.4).toFixed(2)}s`,
+  })), []);
 
   return (
-    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
+    <div style={{ position: 'absolute', left: 0, top: 0, width: spriteSize, height: spriteSize, pointerEvents: 'none', overflow: 'visible' }}>
       {sparkles.map(sp => (
         <div
           key={sp.id}
-          className="shiny-sparkle"
           style={{
             position: 'absolute',
-            left: sp.x,
-            top: sp.y,
+            left: center - r,
+            top: center - r,
+            width: r * 2,
+            height: r * 2,
+            animation: `shiny-orbit 2.4s linear infinite`,
+            animationDelay: sp.orbitDelay,
+            pointerEvents: 'none',
+          }}
+        >
+          <div className="shiny-sparkle" style={{
+            position: 'absolute',
+            left: r - 8,
+            top: -8,
             '--sp-color': sp.color,
-            '--sp-duration': sp.duration,
-            '--sp-delay': sp.delay,
-          } as React.CSSProperties}
-        />
+            '--sp-duration': '0.9s',
+            '--sp-delay': '0s',
+          } as React.CSSProperties} />
+        </div>
       ))}
     </div>
   );
@@ -219,7 +224,8 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
       )}
 
       {/* Flip wrapper — direction; inner img handles bounce/wiggle animation */}
-      <div style={{ transform: flipTransform, transition: 'transform 0.3s ease', display: 'inline-block', position: 'relative' }}>
+      <div style={{ transform: flipTransform, transition: 'transform 0.3s ease', display: 'inline-block', position: 'relative', width: 52, height: 52 }}>
+        {isShiny && <NavShinySparkles spriteSize={52} />}
         <img
           src={spriteUrl}
           width={52}
@@ -228,13 +234,11 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
             imageRendering: 'pixelated',
             animation: spriteAnim,
             display: 'block',
-            filter: isShiny ? 'drop-shadow(0 0 5px #fde047) drop-shadow(0 0 10px #f0abfc88)' : 'drop-shadow(0 0 3px rgba(255,255,255,0.3))',
+            filter: isShiny ? 'drop-shadow(0 0 4px #fde047)' : 'drop-shadow(0 0 3px rgba(255,255,255,0.3))',
           }}
           draggable={false}
           alt=""
         />
-        {/* Shiny aura — inside flip wrapper so it's always centered on the sprite */}
-        {isShiny && <NavShinySparkles />}
       </div>
     </div>
   );

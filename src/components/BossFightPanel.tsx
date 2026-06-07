@@ -163,6 +163,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
         enemyTeam={enemyTeam}
         bossName={boss.name}
         onBattleEnd={handleBattleEnd}
+        onQuit={onClose}
       />
     );
   }

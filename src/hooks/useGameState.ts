@@ -666,21 +666,9 @@ export function useGameState() {
   const setCurrentZone = useCallback((zoneId: string) => {
     update(prev => {
       if (prev.zoneProgress.currentZoneId === zoneId) return prev;
-      const date = todayDate();
-      const defs = pickDailyQuests(date, zoneId, zoneRarities(zoneId));
-      const newDailyQuests = {
-        date,
-        zoneId,
-        quests: defs.map((d: QuestDefinition) => ({
-          id: d.id, label: d.label, type: d.type, rarity: d.rarity,
-          target: d.target, progress: 0, completed: false,
-          reward: d.reward, rewardClaimed: false,
-        })),
-      };
       return {
         ...prev,
         zoneProgress: { ...prev.zoneProgress, currentZoneId: zoneId },
-        dailyQuests: newDailyQuests,
       };
     });
   }, [update]);

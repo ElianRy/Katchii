@@ -79,14 +79,6 @@ const GROUND_FLOWERS = Array.from({ length: 32 }, (_, i) => ({
   delay: (i * 0.3) % 3,
 }));
 
-// Trees for zone4
-const ZONE4_TREES = [
-  { x: 3,  h: 38, w: 14, trunkH: 10 },
-  { x: 18, h: 44, w: 18, trunkH: 12 },
-  { x: 72, h: 40, w: 16, trunkH: 11 },
-  { x: 86, h: 46, w: 14, trunkH: 13 },
-  { x: 50, h: 32, w: 12, trunkH: 8  },
-];
 
 const ZONE_CONFIGS: Record<string, {
   sky: string;
@@ -246,75 +238,55 @@ export function ZoneBackground({ zoneId }: Props) {
         />
       ))}
 
-      {/* LEAVES + FLOWERS — zone4 Bois aux Fleurs */}
-      {cfg.particles === 'leaves_flowers' && (
+      {/* ZONE 4 — Bois aux Fleurs : flowering forest */}
+      {zoneId === 'zone4' && (
         <>
-          {/* Trees — large leafy silhouettes */}
-          {ZONE4_TREES.map((t, i) => (
-            <div key={`tree-${i}`} className="absolute pointer-events-none" style={{ left: `${t.x}%`, bottom: '16%' }}>
-              {/* Trunk */}
-              <div style={{
-                width: t.w * 0.22,
-                height: t.trunkH,
-                background: '#5c3a1e',
-                margin: '0 auto',
-                borderRadius: '2px 2px 0 0',
-              }} />
-              {/* Foliage layers */}
-              {[1, 0.78, 0.58].map((scale, li) => (
-                <div key={li} style={{
-                  width: t.w * scale,
-                  height: t.h * scale * 0.55,
-                  marginLeft: `${(t.w - t.w * scale) / 2}px`,
-                  marginTop: li === 0 ? 0 : -(t.h * scale * 0.2),
-                  background: [
-                    'radial-gradient(ellipse at 50% 80%, #22863a, #16a34a, #4ade80)',
-                    'radial-gradient(ellipse at 50% 80%, #15803d, #16a34a)',
-                    'radial-gradient(ellipse at 50% 80%, #166534, #15803d)',
-                  ][li],
-                  borderRadius: '50% 50% 40% 40%',
-                  animation: `sway ${4 + i * 0.8}s ease-in-out infinite`,
-                  animationDelay: `${i * 0.5}s`,
-                }} />
-              ))}
-            </div>
-          ))}
-          {/* Scattered flowers at multiple heights */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none"
+            viewBox="0 0 100 100" preserveAspectRatio="none">
+            {/* Far tree canopy band */}
+            <path d="M -5 55 C 0 40 8 32 15 38 C 20 44 22 35 28 30 C 34 25 36 36 42 32 C 48 28 50 38 56 33 C 62 28 65 36 70 31 C 75 26 78 35 84 30 C 90 25 93 38 100 35 L 105 55 Z"
+              fill="#2d7a1e" opacity="0.85"/>
+            {/* Mid tree canopy */}
+            <path d="M -5 72 C 2 52 10 44 18 50 C 24 55 26 43 33 38 C 40 33 42 47 49 43 C 56 39 58 50 64 44 C 70 38 73 52 80 46 C 87 40 90 55 100 50 L 105 72 Z"
+              fill="#22a040" opacity="0.9"/>
+            {/* Near tree band */}
+            <path d="M -5 88 C 4 68 12 58 20 65 C 27 71 30 57 38 52 C 46 47 48 63 55 58 C 62 53 66 67 73 61 C 80 55 84 70 92 64 C 98 59 100 72 105 68 L 105 88 Z"
+              fill="#16863a" opacity="1"/>
+            {/* Ground */}
+            <rect x="-5" y="85" width="110" height="20" fill="#15803d"/>
+            {/* Flowers on ground - scattered positions */}
+            {[4,11,19,27,33,40,47,54,60,68,75,82,89,95].map((x, i) => (
+              <ellipse key={`fp${i}`} cx={x} cy={87 + (i%3)*2} rx="1.8" ry="1.2"
+                fill={['#f9a8d4','#fde68a','#f472b6','#fbbf24','#c084fc','#86efac','#f87171'][i%7]}
+                opacity="0.9"/>
+            ))}
+          </svg>
+          {/* Scattered flowers — ground level */}
           {GROUND_FLOWERS.map((f, i) => (
             <div key={`flower-${i}`} className="absolute pointer-events-none" style={{
               left: `${f.x}%`,
-              bottom: `${f.bottomPct}%`,
+              bottom: `${14 + (i % 6) * 2}%`,
               fontSize: f.size,
               animation: `sway ${2 + (i % 4) * 0.5}s ease-in-out infinite`,
               animationDelay: `${f.delay}s`,
               userSelect: 'none',
               lineHeight: 1,
-              opacity: 0.75 + (i % 4) * 0.06,
+              opacity: 0.85,
             }}>
-              {['🌸','🌼','🌺','💐','🌷','🌻','🌹','🌿'][i % 8]}
+              {['🌸','🌼','🌺','🌷','🌻','🌹','💐'][i % 7]}
             </div>
           ))}
-          {/* Falling petals / leaves */}
+          {/* Falling petals */}
           {LEAVES.map((leaf, i) => (
-            <div key={`leaf-${i}`} className="absolute pointer-events-none rounded-full" style={{
+            <div key={`petal-${i}`} className="absolute pointer-events-none rounded-full" style={{
               left: `${leaf.x}%`, top: '-12px',
-              width: leaf.size, height: leaf.size * 0.6,
-              background: i % 3 === 0 ? '#f9a8d4' : i % 3 === 1 ? leaf.color : '#fde68a',
-              opacity: 0.75,
+              width: leaf.size * 0.7, height: leaf.size * 0.5,
+              background: i % 4 === 0 ? '#f9a8d4' : i % 4 === 1 ? '#fde68a' : i % 4 === 2 ? '#f472b6' : '#bbf7d0',
+              opacity: 0.8,
               '--leaf-x': `${leaf.leafX}px`, '--leaf-rot': `${leaf.leafRot}deg`,
               animation: `leaf-fall ${leaf.duration}s linear infinite`,
               animationDelay: `${leaf.delay}s`,
             } as React.CSSProperties} />
-          ))}
-          {/* Tall grass / bush clumps */}
-          {[12, 30, 48, 65, 82].map((x, i) => (
-            <div key={`bush-${i}`} className="absolute pointer-events-none" style={{
-              left: `${x}%`, bottom: '16%',
-              fontSize: 18 + (i % 3) * 6,
-              animation: `sway ${3 + i * 0.6}s ease-in-out infinite`,
-              animationDelay: `${i * 0.4}s`,
-              userSelect: 'none',
-            }}>🌿</div>
           ))}
         </>
       )}
@@ -337,6 +309,74 @@ export function ZoneBackground({ zoneId }: Props) {
           } as React.CSSProperties}
         />
       ))}
+
+      {/* ZONE 2 — Bords de Mer : underwater ocean */}
+      {zoneId === 'zone2' && (
+        <>
+          {/* Light rays from above */}
+          {[15, 32, 50, 68, 85].map((x, i) => (
+            <div key={`ray-${i}`} className="absolute pointer-events-none" style={{
+              left: `${x}%`, top: 0,
+              width: `${4 + i % 3}%`, height: '65%',
+              background: 'linear-gradient(to bottom, rgba(80,180,255,0.18) 0%, transparent 100%)',
+              transform: `rotate(${(i - 2) * 4}deg)`,
+              transformOrigin: 'top center',
+              animation: `sway ${5 + i * 0.8}s ease-in-out infinite`,
+              animationDelay: `${i * 0.6}s`,
+            }} />
+          ))}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none"
+            viewBox="0 0 100 100" preserveAspectRatio="none">
+            {/* Sandy/rocky seabed */}
+            <path d="M 0 82 Q 12 78 25 82 Q 38 86 52 80 Q 65 74 78 80 Q 90 86 100 82 L 100 100 L 0 100 Z"
+              fill="#0c3a5e"/>
+            <path d="M 0 85 Q 15 81 30 85 Q 45 89 60 83 Q 75 77 90 83 Q 96 85 100 84 L 100 100 L 0 100 Z"
+              fill="#0a2e4a"/>
+
+            {/* Coral clusters */}
+            {/* Left coral */}
+            <line x1="5" y1="82" x2="5" y2="70" stroke="#ef4444" strokeWidth="1.2" strokeLinecap="round"/>
+            <line x1="5" y1="75" x2="2" y2="68" stroke="#ef4444" strokeWidth="0.9" strokeLinecap="round"/>
+            <line x1="5" y1="75" x2="8" y2="67" stroke="#ef4444" strokeWidth="0.9" strokeLinecap="round"/>
+            <circle cx="5" cy="70" r="2" fill="#f87171"/>
+            <circle cx="2" cy="68" r="1.5" fill="#fca5a5"/>
+            <circle cx="8" cy="67" r="1.5" fill="#f87171"/>
+            <line x1="10" y1="82" x2="10" y2="72" stroke="#f97316" strokeWidth="1" strokeLinecap="round"/>
+            <line x1="10" y1="76" x2="7.5" y2="70" stroke="#f97316" strokeWidth="0.8" strokeLinecap="round"/>
+            <line x1="10" y1="76" x2="12.5" y2="69" stroke="#f97316" strokeWidth="0.8" strokeLinecap="round"/>
+
+            {/* Right coral */}
+            <line x1="88" y1="82" x2="88" y2="69" stroke="#a855f7" strokeWidth="1.3" strokeLinecap="round"/>
+            <line x1="88" y1="74" x2="85" y2="66" stroke="#a855f7" strokeWidth="0.9" strokeLinecap="round"/>
+            <line x1="88" y1="74" x2="91" y2="65" stroke="#a855f7" strokeWidth="0.9" strokeLinecap="round"/>
+            <circle cx="88" cy="69" r="2.2" fill="#c084fc"/>
+            <circle cx="85" cy="66" r="1.5" fill="#d8b4fe"/>
+            <circle cx="91" cy="65" r="1.5" fill="#c084fc"/>
+            <line x1="94" y1="82" x2="94" y2="73" stroke="#ec4899" strokeWidth="1" strokeLinecap="round"/>
+            <circle cx="94" cy="73" r="1.8" fill="#f9a8d4"/>
+
+            {/* Seaweed — swaying */}
+            {[20, 28, 72, 80].map((x, i) => (
+              <g key={`sw${i}`}>
+                <path d={`M ${x} 85 C ${x+3} 78 ${x-3} 70 ${x+2} 63 C ${x+5} 56 ${x-2} 50 ${x+1} 44`}
+                  fill="none" stroke={i%2===0 ? '#16a34a' : '#15803d'} strokeWidth={1.5 - i*0.1}
+                  strokeLinecap="round"
+                  style={{ animation: `sway ${3+i*0.5}s ease-in-out infinite`, animationDelay: `${i*0.4}s`, transformOrigin: `${x}px 85px` }}/>
+              </g>
+            ))}
+
+            {/* Small fish silhouettes */}
+            {[30, 55, 65].map((x, i) => (
+              <g key={`fish${i}`} style={{ animation: `cloud-drift ${8+i*3}s linear infinite`, animationDelay: `${-i*2}s` }}>
+                <ellipse cx={x} cy={40+i*10} rx="4" ry="2" fill={['rgba(100,200,255,0.5)','rgba(255,180,100,0.45)','rgba(100,255,200,0.5)'][i]}/>
+                <polygon points={`${x-4},${40+i*10} ${x-8},${38+i*10} ${x-8},${42+i*10}`}
+                  fill={['rgba(80,180,255,0.4)','rgba(230,150,80,0.4)','rgba(80,230,180,0.4)'][i]}/>
+                <circle cx={x+2} cy={39+i*10} r="0.6" fill="rgba(0,0,0,0.5)"/>
+              </g>
+            ))}
+          </svg>
+        </>
+      )}
 
       {/* BUBBLES — ocean zone2 */}
       {cfg.particles === 'bubbles' && BUBBLES.map((b, i) => (
@@ -523,23 +563,15 @@ export function ZoneBackground({ zoneId }: Props) {
         </>
       )}
 
-      {/* ZONE 5 — Tour Fantôme : haunted Gothic tower, moon, gravestones */}
+      {/* ZONE 5 — Tour Fantôme : single haunted Gothic tower */}
       {zoneId === 'zone5' && (
         <>
           {/* Moon */}
           <div className="absolute pointer-events-none" style={{
-            right: '15%', top: '6%',
-            width: 52, height: 52,
+            right: '12%', top: '5%', width: 52, height: 52,
             borderRadius: '50%',
             background: 'radial-gradient(circle at 38% 38%, #f1f5f9 0%, #cbd5e1 60%, #94a3b8 100%)',
-            boxShadow: '0 0 40px 15px rgba(200,210,255,0.18)',
-          }} />
-          {/* Moon glow */}
-          <div className="absolute pointer-events-none" style={{
-            right: '12%', top: '3%',
-            width: 120, height: 120,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(180,190,255,0.12) 0%, transparent 70%)',
+            boxShadow: '0 0 50px 20px rgba(200,210,255,0.16)',
           }} />
           <svg className="absolute inset-0 w-full h-full pointer-events-none"
             viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -559,83 +591,65 @@ export function ZoneBackground({ zoneId }: Props) {
               </linearGradient>
             </defs>
 
-            {/* ── MAIN TOWER ── */}
-            {/* Tower base */}
-            <rect x="35" y="40" width="30" height="38" fill="url(#z5stoneV)" stroke="#3a3050" strokeWidth="0.3"/>
-            {/* Stone texture lines */}
-            {[48, 56, 64, 72].map((y, i) => (
-              <line key={`st${i}`} x1="35" y1={y} x2="65" y2={y} stroke="#282040" strokeWidth="0.4" opacity="0.7"/>
+            {/* ── SINGLE TALL TOWER — centered ── */}
+            {/* Tower body */}
+            <rect x="38" y="25" width="24" height="53" fill="url(#z5stoneV)" stroke="#3a3050" strokeWidth="0.3"/>
+            {/* Stone block texture */}
+            {[35, 43, 51, 59, 67].map((y, i) => (
+              <line key={`sh${i}`} x1="38" y1={y} x2="62" y2={y} stroke="#282040" strokeWidth="0.35" opacity="0.6"/>
             ))}
-            {[40, 47, 54, 61].map((y, i) => (
-              <line key={`sv${i}`} x1={i % 2 === 0 ? 50 : 42.5} y1={y} x2={i % 2 === 0 ? 50 : 42.5} y2={y + 7} stroke="#282040" strokeWidth="0.3" opacity="0.5"/>
+            {[38, 46, 54, 62].map((y, i) => (
+              <line key={`sv${i}`} x1={i % 2 === 0 ? 50 : 44} y1={y} x2={i % 2 === 0 ? 50 : 44} y2={y + 8} stroke="#282040" strokeWidth="0.25" opacity="0.4"/>
             ))}
-            {/* Tower top / battlements */}
-            <rect x="33" y="30" width="34" height="12" fill="url(#z5stone)" stroke="#3a3050" strokeWidth="0.3"/>
-            {/* Merlons (crenellations) */}
-            {[33, 39.5, 46, 52.5, 59].map((x, i) => (
-              <rect key={`m${i}`} x={x} y="24" width="4.5" height="8" fill="url(#z5stone)" stroke="#3a3050" strokeWidth="0.3"/>
+            {/* Wide battlements at top */}
+            <rect x="35" y="15" width="30" height="12" fill="url(#z5stone)" stroke="#3a3050" strokeWidth="0.3"/>
+            {[35, 41.5, 48, 54.5, 61].map((x, i) => (
+              <rect key={`m${i}`} x={x} y="8" width="5" height="9" fill="url(#z5stone)" stroke="#3a3050" strokeWidth="0.3"/>
             ))}
-            {/* Tower windows — glowing purple */}
-            <rect x="45" y="44" width="10" height="12" rx="5" fill="#0a0818" stroke="#4c1d95" strokeWidth="0.5"/>
-            <rect x="45" y="44" width="10" height="12" rx="5" fill="rgba(168,85,247,0.12)"/>
-            <rect x="46" y="58" width="8" height="9" rx="4" fill="#0a0818" stroke="#4c1d95" strokeWidth="0.4"/>
-            <rect x="46" y="58" width="8" height="9" rx="4" fill="rgba(139,92,246,0.1)"/>
-            {/* Window glow */}
-            <ellipse cx="50" cy="50" rx="8" ry="6" fill="rgba(168,85,247,0.08)" filter="url(#z5glow)"/>
+            {/* Pointed spire on top center */}
+            <polygon points="50,2 53,10 47,10" fill="#1a1628" stroke="#3a3050" strokeWidth="0.3"/>
 
-            {/* ── SMALL SIDE TOWER LEFT ── */}
-            <rect x="20" y="55" width="18" height="23" fill="url(#z5stoneV)" stroke="#3a3050" strokeWidth="0.3"/>
-            <rect x="18" y="47" width="22" height="10" fill="url(#z5stone)" stroke="#3a3050" strokeWidth="0.3"/>
-            {[18, 23, 28, 33].map((x, i) => (
-              <rect key={`ml${i}`} x={x} y="42" width="4" height="6.5" fill="url(#z5stone)" stroke="#3a3050" strokeWidth="0.3"/>
-            ))}
-            <rect x="24" y="58" width="8" height="10" rx="4" fill="#0a0818" stroke="#4c1d95" strokeWidth="0.4"/>
-            <rect x="24" y="58" width="8" height="10" rx="4" fill="rgba(168,85,247,0.1)"/>
+            {/* ── WINDOWS ── */}
+            {/* Upper arch window */}
+            <rect x="46" y="28" width="8" height="11" rx="4" fill="#060412" stroke="#4c1d95" strokeWidth="0.5"/>
+            <rect x="46" y="28" width="8" height="11" rx="4" fill="rgba(168,85,247,0.18)"/>
+            {/* Middle arch window */}
+            <rect x="46" y="44" width="8" height="11" rx="4" fill="#060412" stroke="#4c1d95" strokeWidth="0.5"/>
+            <rect x="46" y="44" width="8" height="11" rx="4" fill="rgba(139,92,246,0.14)"/>
+            {/* Lower arch window */}
+            <rect x="47" y="60" width="6" height="8" rx="3" fill="#060412" stroke="#4c1d95" strokeWidth="0.4"/>
+            <rect x="47" y="60" width="6" height="8" rx="3" fill="rgba(168,85,247,0.1)"/>
+            {/* Window glows */}
+            <ellipse cx="50" cy="33" rx="6" ry="4" fill="rgba(168,85,247,0.1)" filter="url(#z5glow)" className="warning-blink-2"/>
+            <ellipse cx="50" cy="49" rx="6" ry="4" fill="rgba(139,92,246,0.08)" filter="url(#z5glow)" className="warning-blink"/>
 
-            {/* ── SMALL SIDE TOWER RIGHT ── */}
-            <rect x="62" y="57" width="18" height="21" fill="url(#z5stoneV)" stroke="#3a3050" strokeWidth="0.3"/>
-            <rect x="60" y="49" width="22" height="10" fill="url(#z5stone)" stroke="#3a3050" strokeWidth="0.3"/>
-            {[60, 65, 70, 75].map((x, i) => (
-              <rect key={`mr${i}`} x={x} y="44" width="4" height="6.5" fill="url(#z5stone)" stroke="#3a3050" strokeWidth="0.3"/>
-            ))}
-            <rect x="66" y="61" width="8" height="10" rx="4" fill="#0a0818" stroke="#4c1d95" strokeWidth="0.4"/>
-            <rect x="66" y="61" width="8" height="10" rx="4" fill="rgba(168,85,247,0.1)"/>
-
-            {/* ── CONNECTING WALL ── */}
-            <rect x="38" y="65" width="24" height="13" fill="url(#z5stoneV)" stroke="#3a3050" strokeWidth="0.3"/>
-            {/* Arched gate */}
-            <path d="M 46 78 L 46 70 A 4 4 0 0 1 54 70 L 54 78 Z" fill="#060412" stroke="#3a3050" strokeWidth="0.3"/>
+            {/* ── ENTRANCE ARCH ── */}
+            <path d="M 44 78 L 44 70 A 6 6 0 0 1 56 70 L 56 78 Z" fill="#060412" stroke="#3a3050" strokeWidth="0.3"/>
 
             {/* ── GRAVESTONES ── */}
-            {[8, 16, 76, 88].map((x, i) => (
+            {[6, 14, 22, 70, 80, 90].map((x, i) => (
               <g key={`grave${i}`}>
-                <rect x={x} y={72 + (i % 2) * 3} width={5.5} height={7} rx={2.5} fill="#1a1628" stroke="#3a3050" strokeWidth="0.4"/>
-                <line x1={x+2.75} y1={73 + (i % 2) * 3} x2={x+2.75} y2={77 + (i % 2) * 3} stroke="#2e2840" strokeWidth="0.5"/>
-                <line x1={x+1} y1={75 + (i % 2) * 3} x2={x+4.5} y2={75 + (i % 2) * 3} stroke="#2e2840" strokeWidth="0.5"/>
+                <rect x={x} y={74 - (i % 2) * 2} width={5} height={6.5} rx={2.5} fill="#1a1628" stroke="#3a3050" strokeWidth="0.4"/>
+                <line x1={x+2.5} y1={75 - (i%2)*2} x2={x+2.5} y2={79 - (i%2)*2} stroke="#2e2840" strokeWidth="0.45"/>
+                <line x1={x+0.8} y1={77 - (i%2)*2} x2={x+4.2} y2={77 - (i%2)*2} stroke="#2e2840" strokeWidth="0.45"/>
               </g>
             ))}
 
             {/* ── DEAD TREES ── */}
-            {/* Left dead tree */}
-            <line x1="7" y1="78" x2="7" y2="35" stroke="#1a1628" strokeWidth="1.2"/>
-            <line x1="7" y1="50" x2="1" y2="40" stroke="#1a1628" strokeWidth="0.8"/>
-            <line x1="7" y1="43" x2="14" y2="34" stroke="#1a1628" strokeWidth="0.7"/>
-            <line x1="7" y1="38" x2="3" y2="32" stroke="#1a1628" strokeWidth="0.6"/>
-            {/* Right dead tree */}
-            <line x1="93" y1="78" x2="93" y2="38" stroke="#1a1628" strokeWidth="1.2"/>
-            <line x1="93" y1="52" x2="99" y2="42" stroke="#1a1628" strokeWidth="0.8"/>
-            <line x1="93" y1="45" x2="86" y2="36" stroke="#1a1628" strokeWidth="0.7"/>
-            <line x1="93" y1="40" x2="97" y2="33" stroke="#1a1628" strokeWidth="0.6"/>
+            <line x1="10" y1="78" x2="10" y2="32" stroke="#1a1628" strokeWidth="1.3"/>
+            <line x1="10" y1="48" x2="3" y2="37" stroke="#1a1628" strokeWidth="0.9"/>
+            <line x1="10" y1="40" x2="17" y2="30" stroke="#1a1628" strokeWidth="0.8"/>
+            <line x1="10" y1="35" x2="5" y2="28" stroke="#1a1628" strokeWidth="0.6"/>
+            <line x1="90" y1="78" x2="90" y2="36" stroke="#1a1628" strokeWidth="1.3"/>
+            <line x1="90" y1="52" x2="97" y2="40" stroke="#1a1628" strokeWidth="0.9"/>
+            <line x1="90" y1="43" x2="83" y2="33" stroke="#1a1628" strokeWidth="0.8"/>
+            <line x1="90" y1="38" x2="95" y2="30" stroke="#1a1628" strokeWidth="0.6"/>
 
             {/* ── GROUND ── */}
             <rect x="0" y="78" width="100" height="22" fill="#0d0b18"/>
-            <path d="M 0 78 Q 25 75 50 78 Q 75 81 100 78 L 100 82 Q 75 85 50 82 Q 25 79 0 82 Z" fill="#181428" opacity="0.6"/>
-
-            {/* ── PURPLE GLOW on windows ── */}
-            <ellipse cx="50" cy="48" rx="6" ry="4" fill="none" stroke="rgba(168,85,247,0.4)" strokeWidth="0.5" filter="url(#z5glow)" className="warning-blink-2"/>
-            <ellipse cx="29" cy="62" rx="5" ry="3.5" fill="none" stroke="rgba(139,92,246,0.3)" strokeWidth="0.5" filter="url(#z5glow)" className="warning-blink"/>
+            <path d="M 0 78 Q 25 75 50 78 Q 75 81 100 78 L 100 83 Q 75 86 50 83 Q 25 80 0 83 Z" fill="#181428" opacity="0.5"/>
           </svg>
-          {/* Ghost wisps floating */}
+          {/* Ghost wisps */}
           {WISPS.map((w, i) => (
             <div key={i} className="absolute pointer-events-none rounded-full" style={{
               left: `${w.x}%`, top: `${w.y}%`,

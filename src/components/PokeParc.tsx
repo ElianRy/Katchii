@@ -729,6 +729,7 @@ function DuelModal({
 function PokemonPicker({ state, onPick, onClose }: {
   state: GameState; onPick: (pokemonId: number, isShiny: boolean) => void; onClose: () => void;
 }) {
+  const [search, setSearch] = React.useState('');
   const owned = Object.entries(state.normalCollection)
     .filter(([, count]) => count > 0)
     .map(([id]) => Number(id))
@@ -736,22 +737,63 @@ function PokemonPicker({ state, onPick, onClose }: {
 
   const shinyOwned = new Set(Object.entries(state.shinyCollection).filter(([, c]) => c > 0).map(([id]) => Number(id)));
 
+  const filtered = owned.filter(id => {
+    if (!search) return true;
+    return (POKEMON_BY_ID[id]?.name ?? '').toLowerCase().includes(search.toLowerCase());
+  });
+
   return (
     <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70" onClick={onClose}>
-      <div className="bg-slate-800 rounded-2xl border border-slate-600 p-4 w-80 max-w-[95vw] max-h-[70vh] flex flex-col" onClick={e => e.stopPropagation()}>
-        <div className="font-black text-white mb-3 text-center">Choisir ton Pokémon</div>
+      <div className="bg-slate-800 rounded-2xl border border-slate-600 p-4 w-80 max-w-[95vw] max-h-[75vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="font-black text-white mb-2 text-center">Choisir ton Pokémon</div>
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Rechercher…"
+          className="mb-2 bg-slate-700 border border-slate-500 rounded-xl px-3 py-1.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+        />
         <div className="overflow-y-auto flex-1 grid grid-cols-4 gap-2 pb-2">
-          {owned.map(id => {
+          {filtered.map(id => {
             const data = POKEMON_BY_ID[id];
             const isShiny = shinyOwned.has(id);
+            const rarityColor = data ? RARITY_COLORS[data.rarity] : '#6b7280';
             return (
               <button
                 key={id}
                 onClick={() => { onPick(id, isShiny); onClose(); }}
-                className="flex flex-col items-center gap-0.5 p-1 rounded-lg bg-slate-700/50 hover:bg-slate-600/50"
+                className="relative flex flex-col items-center gap-0.5 p-1 rounded-lg bg-slate-700/50 hover:bg-slate-600/50"
               >
-                <img src={getSpriteUrl(id, isShiny)} width={36} height={36} style={{ imageRendering: 'pixelated' }} alt={data?.name} />
+                <div className="relative">
+                  <img
+                    src={getSpriteUrl(id, isShiny)} width={36} height={36}
+                    style={{
+                      imageRendering: 'pixelated',
+                      filter: isShiny ? 'drop-shadow(0 0 4px #fde047)' : `drop-shadow(0 0 3px ${rarityColor})`,
+                    }}
+                    alt={data?.name}
+                  />
+                  {isShiny && (
+                    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'visible' }}>
+                      {[0,1,2,3].map(i => {
+                        const angle = (i / 4) * Math.PI * 2;
+                        const r = 20;
+                        return (
+                          <div key={i} className="shiny-sparkle" style={{
+                            position: 'absolute',
+                            left: Math.cos(angle) * r + 18,
+                            top: Math.sin(angle) * r + 18,
+                            '--sp-color': ['#fde047','#f472b6','#60a5fa','#4ade80'][i],
+                            '--sp-duration': `${1.0 + i * 0.2}s`,
+                            '--sp-delay': `${i * 0.25}s`,
+                          } as React.CSSProperties} />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
                 <span className="text-[0.45rem] text-slate-300 truncate w-full text-center">{data?.name}</span>
+                {isShiny && <span className="text-[0.4rem] text-yellow-400 font-bold">✨ Shiny</span>}
               </button>
             );
           })}
