@@ -505,36 +505,36 @@ function DialogueScreen({ trainer, onDone }: {
 /* ── EPIC MASTER INTRO — slow cinematic reveal ── */
 function EpicIntroScreen({ onDone }: { onDone: () => void }) {
   useEffect(() => {
-    const t = setTimeout(onDone, 5500);
+    const t = setTimeout(onDone, 6000);
     return () => clearTimeout(t);
   }, [onDone]);
 
   return (
-    <div className="fixed inset-0 z-[210] flex flex-col items-center justify-end overflow-hidden" style={{ background: '#000' }}>
-      {/* Slow purple atmosphere glow — appears after 1.5s */}
+    <div className="fixed inset-0 z-[210] flex flex-col items-center justify-center overflow-hidden" style={{ background: '#000' }}>
+      {/* Radial purple glow — appears progressively */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        background: 'radial-gradient(ellipse 80% 60% at 50% 80%, rgba(120,40,200,0.35) 0%, transparent 70%)',
-        animation: 'league-flash 5.5s ease-out forwards',
+        background: 'radial-gradient(ellipse 70% 70% at 50% 55%, rgba(120,40,200,0.4) 0%, transparent 70%)',
+        animation: 'master-reveal 5s 0.3s ease-out forwards',
+        opacity: 0,
       }} />
 
-      {/* Trainer image — fades in slowly from darkness */}
-      <div className="relative z-10 flex items-end justify-center w-full"
-        style={{ height: 'min(85vw, 360px)' }}>
+      {/* Trainer image — centered, fades in slowly from pure black */}
+      <div className="relative z-10 flex items-center justify-center w-full flex-1">
         <img src="/trainers/master.png" alt="Le Maître" draggable={false}
           className="select-none pointer-events-none"
           style={{
-            height: '100%',
-            objectFit: 'contain', objectPosition: 'bottom',
-            animation: 'master-reveal 4s 0.5s ease-out forwards',
+            maxHeight: 'min(68vh, 400px)',
+            maxWidth: '80vw',
+            objectFit: 'contain',
+            animation: 'master-reveal 4.5s 0.5s ease-out forwards',
             opacity: 0,
-            filter: 'drop-shadow(0 0 30px rgba(168,85,247,0.6))',
           }}
         />
       </div>
 
-      {/* Title — appears after image is visible */}
-      <div className="z-10 text-center px-8 pb-12 pt-6"
-        style={{ animation: 'league-title-enter 0.9s 3s cubic-bezier(0.175,0.885,0.32,1.275) both' }}>
+      {/* Title — slides up after image is visible */}
+      <div className="z-10 text-center px-8 pb-10 shrink-0"
+        style={{ animation: 'league-title-enter 0.9s 3.5s cubic-bezier(0.175,0.885,0.32,1.275) both' }}>
         <div className="text-slate-400 text-xs font-bold tracking-widest uppercase mb-2">Combat Final</div>
         <div className="font-black mb-1"
           style={{
