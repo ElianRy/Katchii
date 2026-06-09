@@ -132,7 +132,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
     spriteFilter = `drop-shadow(0 0 10px ${rarityColor}) drop-shadow(0 0 20px ${rarityColor}88)`;
     spriteAnimation = 'aura-pulse 2s ease-in-out infinite';
   } else if (spawned.isShiny) {
-    spriteFilter = `drop-shadow(0 0 8px #fde047) drop-shadow(0 0 16px #f0abfc) drop-shadow(0 0 28px #60a5fa66)`;
+    spriteFilter = undefined;
     spriteAnimation = 'shiny-img-rainbow 2.5s linear infinite';
   } else {
     spriteFilter = `drop-shadow(0 0 6px ${rarityColor})`;
@@ -292,24 +292,6 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                   }}>{star.sym}</span>
                 </div>
               ))}
-
-              {/* Shiny — spinning rainbow ring */}
-              {spawned.isShiny && (
-                <>
-                  <div className="absolute pointer-events-none" style={{
-                    inset: -8, borderRadius: '50%',
-                    background: 'conic-gradient(from 0deg, #f87171, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
-                    animation: 'rainbow-spin 2s linear infinite',
-                    opacity: 0.55, filter: 'blur(3px)',
-                  }} />
-                  <div className="absolute pointer-events-none" style={{
-                    inset: -3, borderRadius: '50%',
-                    background: 'conic-gradient(from 180deg, #60a5fa, #c084fc, #fde047, #4ade80, #f472b6, #60a5fa)',
-                    animation: 'rainbow-spin 3s linear infinite reverse',
-                    opacity: 0.4, filter: 'blur(2px)',
-                  }} />
-                </>
-              )}
 
               {/* Legendary — golden pulsing aura */}
               {isLegendary && (

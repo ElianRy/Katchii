@@ -181,11 +181,9 @@ function ParkSprite({
   };
   const spriteAnim = MOOD_ANIM[mood] ?? '';
 
-  const filter = isShiny
-    ? undefined
-    : `drop-shadow(0 0 5px ${rarityColor})`;
+  const filter = isShiny ? undefined : `drop-shadow(0 0 5px ${rarityColor})`;
   const imgAnimation = isShiny
-    ? `${spriteAnim ? spriteAnim + ', ' : ''}shiny-img-rainbow 2.5s linear infinite`
+    ? `shiny-img-rainbow 3s linear infinite${spriteAnim ? ', ' + spriteAnim : ''}`
     : spriteAnim || undefined;
 
   return (
@@ -242,15 +240,6 @@ function ParkSprite({
             }}>{star.sym}</span>
           </div>
         ))}
-        {/* Rainbow ring aura — lighter than wild version */}
-        {isShiny && (
-          <div style={{
-            position: 'absolute', inset: -6, borderRadius: '50%',
-            background: 'conic-gradient(from 0deg, #f87171, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
-            animation: 'rainbow-spin 2.5s linear infinite',
-            opacity: 0.3, filter: 'blur(3px)', zIndex: 0,
-          }} />
-        )}
         {err ? (
           <div style={{
             width: 56, height: 56,
