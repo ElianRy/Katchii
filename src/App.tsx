@@ -221,6 +221,7 @@ export function App() {
           onAddPokemonXp={gameState.addPokemonXp}
           onSetLastParkXpAt={gameState.setLastParkXpAt}
           onTrainingWin={gameState.addTrainingWin}
+          onParkDuelResult={gameState.addParkDuelResult}
         />
       )}
 

@@ -123,7 +123,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
   const isEpic = pokemonData.rarity === 'elite';
   const isLegendary = pokemonData.rarity === 'legendaire';
 
-  let spriteFilter: string;
+  let spriteFilter: string | undefined;
   let spriteAnimation: string | undefined;
   if (isLegendary) {
     spriteFilter = `drop-shadow(0 0 14px #fbbf24) drop-shadow(0 0 28px #f59e0b88) drop-shadow(0 0 42px #d97706aa)`;

@@ -50,6 +50,7 @@ interface Props {
   onAddPokemonXp: (pokemonId: number, xp: number) => void;
   onSetLastParkXpAt?: (ts: number) => void;
   onTrainingWin?: () => void;
+  onParkDuelResult?: (won: boolean, eloDelta: number) => void;
 }
 
 function getPokemonTitle(wins: number): string | null {
@@ -495,241 +496,90 @@ function InteractionModal({
 
 // ---- Duel Modal ----
 function DuelModal({
-  myPokemonId, myIsShiny, myLevel, myRarity,
+  myPokemonId, myIsShiny, myLevel, myRarity, myElo,
   opponentPokemonId, opponentIsShiny, opponentLevel, opponentRarity, opponentName,
-  onClose, onResult, onExitParc,
+  onClose, onResult,
 }: {
-  myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity: string;
+  myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity: string; myElo: number;
   opponentPokemonId: number; opponentIsShiny: boolean; opponentLevel: number; opponentRarity: string;
-  opponentName: string; onClose: () => void; onResult: (won: boolean) => void; onExitParc?: () => void;
+  opponentName: string; onClose: () => void; onResult: (won: boolean, eloDelta: number) => void;
 }) {
   const myData = POKEMON_BY_ID[myPokemonId];
   const oppData = POKEMON_BY_ID[opponentPokemonId];
   const myScore = myLevel * (RARITY_SCORE[myRarity] ?? 1);
   const oppScore = opponentLevel * (RARITY_SCORE[opponentRarity] ?? 1);
-  // Single random draw at mount to decide winner, weighted by score
-  const wonRef = useRef(Math.random() < myScore / (myScore + oppScore));
+  const won = useRef(Math.random() < myScore / (myScore + oppScore)).current;
 
-  const myMaxHp = Math.round(50 + myLevel * 2.5);
-  const oppMaxHp = Math.round(50 + opponentLevel * 2.5);
-  const [myHp, setMyHp] = useState(myMaxHp);
-  const [oppHp, setOppHp] = useState(oppMaxHp);
-  const myHpRef = useRef(myMaxHp);
-  const oppHpRef = useRef(oppMaxHp);
-  const [log, setLog] = useState<Array<{ text: string; color: string }>>([]);
-  const [phase, setPhase] = useState<'battle' | 'result'>('battle');
-  const [winner, setWinner] = useState<'me' | 'opponent' | null>(null);
-  const [hitFlash, setHitFlash] = useState<'me' | 'opp' | null>(null);
-  const [shakeMe, setShakeMe] = useState(false);
-  const [shakeOpp, setShakeOpp] = useState(false);
-  const [attackMe, setAttackMe] = useState(false);
-  const [attackOpp, setAttackOpp] = useState(false);
-  const [hitKeyMe, setHitKeyMe] = useState(0);
-  const [hitKeyOpp, setHitKeyOpp] = useState(0);
+  // Elo calculation
+  const oppElo = 600 + opponentLevel * 8 * ((RARITY_SCORE[opponentRarity] ?? 1) / 4);
+  const expected = 1 / (1 + Math.pow(10, (oppElo - myElo) / 400));
+  const rawDelta = Math.round(32 * ((won ? 1 : 0) - expected));
+  const eloDelta = Math.max(-20, Math.min(20, rawDelta));
+  const newElo = Math.max(100, myElo + eloDelta);
+
+  const [phase, setPhase] = useState<'flash' | 'result'>('flash');
   const resultSent = useRef(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setPhase('result');
+      if (!resultSent.current) { resultSent.current = true; onResult(won, eloDelta); }
+    }, 1500);
+    return () => clearTimeout(t);
+  }, []);
 
   const myRarityColor = myData ? RARITY_COLORS[myData.rarity] : '#6b7280';
   const oppRarityColor = oppData ? RARITY_COLORS[oppData.rarity] : '#6b7280';
-  const hpColor = (pct: number) => pct > 0.5 ? '#4ade80' : pct > 0.25 ? '#facc15' : '#ef4444';
-
-  // Attack VFX emoji — picks based on pokemon type hint from rarity
-  const getAttackEmoji = (pokemonId: number) => {
-    const id = pokemonId % 5;
-    return ['⚡','🔥','💧','🌿','💥'][id];
-  };
-  const myAtkEmoji = getAttackEmoji(myPokemonId);
-  const oppAtkEmoji = getAttackEmoji(opponentPokemonId);
-
-  useEffect(() => {
-    const won = wonRef.current;
-    // Animate HP bars depleting toward the final state over ~3s
-    // Loser drops to 0, winner keeps some HP
-    const targetOppHp = won ? 0 : Math.round(oppMaxHp * (0.3 + Math.random() * 0.3));
-    const targetMyHp  = won ? Math.round(myMaxHp * (0.3 + Math.random() * 0.3)) : 0;
-    const DURATION = 3500;
-    const TICK = 120;
-    const steps = Math.floor(DURATION / TICK);
-    let step = 0;
-    let ended = false;
-
-    const endBattle = () => {
-      if (ended) return;
-      ended = true;
-      clearInterval(tickId);
-      setOppHp(targetOppHp);
-      setMyHp(targetMyHp);
-      oppHpRef.current = targetOppHp;
-      myHpRef.current = targetMyHp;
-      setWinner(won ? 'me' : 'opponent');
-      setPhase('result');
-      resultSent.current = true;
-      onResult(won);
-    };
-
-    const tickId = setInterval(() => {
-      step++;
-      const t = Math.min(step / steps, 1);
-      // Ease-out: slower at the end
-      const ease = 1 - Math.pow(1 - t, 2);
-
-      // Opponent HP
-      const newOppHp = Math.round(oppMaxHp + (targetOppHp - oppMaxHp) * ease);
-      oppHpRef.current = newOppHp;
-      setOppHp(newOppHp);
-
-      // My HP
-      const newMyHp = Math.round(myMaxHp + (targetMyHp - myMaxHp) * ease);
-      myHpRef.current = newMyHp;
-      setMyHp(newMyHp);
-
-      // Alternate attack VFX
-      if (step % 3 === 1) {
-        setAttackMe(true);
-        setHitFlash('opp'); setShakeOpp(true); setHitKeyOpp(k => k + 1);
-        setLog(prev => [...prev.slice(-5), {
-          text: `${myData?.name ?? 'Toi'} attaque !`,
-          color: '#4ade80',
-        }]);
-        setTimeout(() => { setAttackMe(false); setHitFlash(null); setShakeOpp(false); }, 220);
-      } else if (step % 3 === 2) {
-        setAttackOpp(true);
-        setHitFlash('me'); setShakeMe(true); setHitKeyMe(k => k + 1);
-        setLog(prev => [...prev.slice(-5), {
-          text: `${oppData?.name ?? opponentName} contre-attaque !`,
-          color: '#f87171',
-        }]);
-        setTimeout(() => { setAttackOpp(false); setHitFlash(null); setShakeMe(false); }, 220);
-      }
-
-      if (step >= steps) endBattle();
-    }, TICK);
-
-    return () => { ended = true; clearInterval(tickId); };
-  }, []);
-
-  // Stars background (precomputed)
-  const stars = React.useMemo(() => Array.from({ length: 28 }, (_, i) => ({
-    w: 1 + (i * 0.5) % 2, top: (i * 37 + 7) % 55, left: (i * 53 + 11) % 100,
-    op: 0.2 + (i * 0.23) % 0.6, dur: 1.5 + (i * 0.4) % 2.5, del: (i * 0.37) % 2.5,
-  })), []);
 
   return (
-    <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617', height: '100dvh' }}>
-      {/* Starfield background */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 20%, #1e1b4b 0%, #0f0720 55%, #020617 100%)' }} />
-        {stars.map((s, i) => (
-          <div key={i} className="absolute rounded-full bg-white" style={{
-            width: s.w, height: s.w, top: `${s.top}%`, left: `${s.left}%`,
-            opacity: s.op, animation: `arena-twinkle ${s.dur}s ease-in-out ${s.del}s infinite`,
-          }} />
-        ))}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 130, background: 'linear-gradient(to top, rgba(30,27,75,0.9) 0%, transparent 100%)' }} />
-        <div style={{ position: 'absolute', top: '50%', left: '5%', right: '5%', height: 1, background: 'linear-gradient(90deg, transparent, rgba(148,163,184,0.15), transparent)' }} />
-        {/* Ground circle glow under each pokemon */}
-        <div style={{ position: 'absolute', top: '32%', left: '18%', width: 80, height: 18, borderRadius: '50%', background: 'rgba(99,102,241,0.18)', filter: 'blur(6px)' }} />
-        <div style={{ position: 'absolute', top: '60%', right: '18%', width: 80, height: 18, borderRadius: '50%', background: 'rgba(248,113,113,0.18)', filter: 'blur(6px)' }} />
-      </div>
-
-      {/* Battle area */}
-      <div className="relative flex-1 flex flex-col">
-        {/* Attack VFX — flying emoji */}
-        {attackMe && (
-          <div className="absolute pointer-events-none z-20" style={{
-            left: '30%', top: '55%',
-            fontSize: '2.2rem', filter: 'drop-shadow(0 0 8px #fbbf24)',
-            animation: 'duel-attack-r 0.45s ease-in forwards',
-          }}>{myAtkEmoji}</div>
-        )}
-        {attackOpp && (
-          <div className="absolute pointer-events-none z-20" style={{
-            right: '30%', top: '35%',
-            fontSize: '2.2rem', filter: 'drop-shadow(0 0 8px #f87171)',
-            animation: 'duel-attack-l 0.45s ease-in forwards',
-          }}>{oppAtkEmoji}</div>
-        )}
-
-        {/* Enemy side — top right */}
-        <div className="flex-1 flex items-center justify-end pr-10 pt-6 relative">
-          <div className="absolute top-4 left-4 bg-black/80 rounded-xl px-3 py-2 border border-slate-600/50 min-w-[150px]">
-            <div className="text-xs font-black text-white mb-1 truncate">{opponentName} — {oppData?.name ?? `#${opponentPokemonId}`}</div>
-            <div className="flex justify-between text-[0.6rem] mb-1">
-              <span style={{ color: oppRarityColor }}>HP</span>
-              <span className="text-slate-300">{oppHp}/{oppMaxHp}</span>
-            </div>
-            <div className="w-full bg-slate-700 rounded-full h-2">
-              <div className="h-2 rounded-full transition-all duration-300" style={{ width: `${(oppHp / oppMaxHp) * 100}%`, background: hpColor(oppHp / oppMaxHp) }} />
-            </div>
+    <div className="fixed inset-0 z-[600] flex items-center justify-center bg-black/85">
+      <div className="bg-slate-800 rounded-2xl border border-slate-600 shadow-2xl p-5 w-80 max-w-[95vw]">
+        {/* Sprites */}
+        <div className="flex justify-around items-end mb-4">
+          <div className="flex flex-col items-center gap-1">
+            <img src={getSpriteUrl(myPokemonId, myIsShiny)} width={56} height={56}
+              style={{ imageRendering: 'pixelated', filter: `drop-shadow(0 0 8px ${myRarityColor})` }} alt="me" />
+            <span className="text-xs text-yellow-400 font-bold truncate max-w-[80px] text-center">Toi</span>
           </div>
-          <div style={{
-            filter: hitFlash === 'opp' ? 'brightness(5) saturate(0)' : `drop-shadow(0 0 14px ${oppRarityColor})`,
-            transition: 'filter 0.15s, transform 0.22s ease-out',
-            opacity: oppHp <= 0 ? 0.25 : 1,
-            transform: attackOpp ? 'translateX(-40px) scale(1.1)' : 'translateX(0px) scale(1)',
-          }}>
-            <img key={hitKeyOpp} src={getSpriteUrl(opponentPokemonId, opponentIsShiny)} width={88} height={88}
-              style={{ imageRendering: 'pixelated', transform: 'scaleX(-1)', animation: shakeOpp ? 'wiggle 0.35s ease-in-out' : 'none' }} alt="" />
+          <div className="text-3xl font-black text-white">VS</div>
+          <div className="flex flex-col items-center gap-1">
+            <img src={getSpriteUrl(opponentPokemonId, opponentIsShiny)} width={56} height={56}
+              style={{ imageRendering: 'pixelated', transform: 'scaleX(-1)', filter: `drop-shadow(0 0 8px ${oppRarityColor})` }} alt="opp" />
+            <span className="text-xs text-slate-300 font-bold truncate max-w-[80px] text-center">{opponentName}</span>
           </div>
         </div>
 
-        {/* Player side — bottom left */}
-        <div className="flex-1 flex items-center justify-start pl-10 pb-6 relative">
-          <div style={{
-            filter: hitFlash === 'me' ? 'brightness(5) saturate(0)' : `drop-shadow(0 0 14px ${myRarityColor})`,
-            transition: 'filter 0.15s, transform 0.22s ease-out',
-            opacity: myHp <= 0 ? 0.25 : 1,
-            transform: attackMe ? 'translateX(40px) scale(1.1)' : 'translateX(0px) scale(1)',
-          }}>
-            <img key={hitKeyMe} src={getSpriteUrl(myPokemonId, myIsShiny)} width={88} height={88}
-              style={{ imageRendering: 'pixelated', animation: shakeMe ? 'wiggle 0.35s ease-in-out' : 'none' }} alt="" />
+        {phase === 'flash' && (
+          <div className="text-center py-4">
+            <div className="text-4xl animate-pulse">⚔️</div>
+            <div className="text-sm text-slate-400 mt-2 animate-pulse">Combat en cours…</div>
           </div>
-          <div className="absolute bottom-4 right-4 bg-black/80 rounded-xl px-3 py-2 border border-slate-600/50 min-w-[150px]">
-            <div className="text-xs font-black text-yellow-400 mb-1 truncate">Toi — {myData?.name ?? `#${myPokemonId}`}</div>
-            <div className="flex justify-between text-[0.6rem] mb-1">
-              <span style={{ color: myRarityColor }}>HP</span>
-              <span className="text-slate-300">{myHp}/{myMaxHp}</span>
-            </div>
-            <div className="w-full bg-slate-700 rounded-full h-2">
-              <div className="h-2 rounded-full transition-all duration-300" style={{ width: `${(myHp / myMaxHp) * 100}%`, background: hpColor(myHp / myMaxHp) }} />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom panel — log + result */}
-      <div className="shrink-0 bg-slate-900/95 border-t border-slate-700 px-4 py-3" style={{ minHeight: 110 }}>
-        {phase === 'battle' && (
-          <>
-            <div className="h-14 overflow-hidden mb-2 space-y-0.5">
-              {log.length === 0
-                ? <div className="text-xs text-slate-500 animate-pulse">Le combat commence…</div>
-                : log.slice(-3).map((l, i) => (
-                    <div key={i} className="text-xs" style={{ color: l.color }}>{l.text}</div>
-                  ))
-              }
-            </div>
-            <div className="text-center text-xs text-slate-600 animate-pulse">Combat en cours…</div>
-          </>
         )}
+
         {phase === 'result' && (
-          <div className="flex flex-col items-center gap-1 py-1">
-            <div className="text-4xl">{winner === 'me' ? '🏆' : '💀'}</div>
-            <div className="font-black text-lg" style={{ color: winner === 'me' ? '#fbbf24' : '#ef4444' }}>
-              {winner === 'me' ? 'VICTOIRE !' : 'Défaite…'}
+          <div className="text-center">
+            <div className="text-5xl mb-2">{won ? '🏆' : '💀'}</div>
+            <div className="font-black text-xl mb-1" style={{ color: won ? '#fbbf24' : '#ef4444' }}>
+              {won ? 'VICTOIRE !' : 'Défaite…'}
             </div>
-            <div className="text-xs text-slate-400 mb-2">
-              {winner === 'me' ? `Tu as battu ${opponentName} !` : `${opponentName} était trop fort.`}
+            <div className="text-xs text-slate-400 mb-3">
+              {won ? `Tu as battu ${opponentName} !` : `${opponentName} était trop fort.`}
             </div>
-            <div className="flex gap-2">
-              <button onClick={onClose} className="px-6 py-2 rounded-xl bg-slate-700 text-white font-black text-sm">
-                Retour
-              </button>
-              {onExitParc && (
-                <button onClick={() => { onClose(); onExitParc(); }} className="px-6 py-2 rounded-xl bg-yellow-500 text-black font-black text-sm">
-                  Quitter
-                </button>
-              )}
+
+            {/* Elo change */}
+            <div className="bg-slate-700/60 rounded-xl px-4 py-3 mb-4 text-center">
+              <div className="text-xs text-slate-400 mb-1">Elo PokéParc</div>
+              <div className="flex items-center justify-center gap-2">
+                <span className="font-black text-lg text-white">{newElo}</span>
+                <span className="font-bold text-sm" style={{ color: eloDelta >= 0 ? '#4ade80' : '#f87171' }}>
+                  {eloDelta >= 0 ? '+' : ''}{eloDelta}
+                </span>
+              </div>
             </div>
+
+            <button onClick={onClose} className="w-full py-2 rounded-xl bg-slate-600 text-white font-black text-sm">
+              Fermer
+            </button>
           </div>
         )}
       </div>
@@ -817,7 +667,7 @@ function PokemonPicker({ state, onPick, onClose }: {
 
 
 // ---- Main Component ----
-export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt, onTrainingWin }: Props) {
+export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt, onTrainingWin, onParkDuelResult }: Props) {
   const [presence, setPresence] = useState<PresenceRow[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -1573,13 +1423,16 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           myIsShiny={myFav.isShiny ?? false}
           myLevel={getPokemonLevelFromState(state, myFav.pokemonId)}
           myRarity={mySpriteData?.rarity ?? 'commun'}
+          myElo={state.parkElo ?? 1000}
           opponentPokemonId={interactionTarget.pokemonId}
           opponentIsShiny={interactionTarget.isShiny}
           opponentLevel={interactionTarget.level}
           opponentRarity={interactionTarget.rarity}
           opponentName={interactionTarget.username}
-          onResult={(won) => { if (won) onTrainingWin?.(); }}
-          onExitParc={onClose}
+          onResult={(won, eloDelta) => {
+            if (won) onTrainingWin?.();
+            onParkDuelResult?.(won, eloDelta);
+          }}
           onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
         />,
         document.body

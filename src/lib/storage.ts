@@ -75,6 +75,8 @@ export const DEFAULT_STATE: GameState = {
   questsBaselineAtUnlock: {},
   achievementsCompleted: [],
   lastParkXpAt: null,
+  parkElo: 1000,
+  parkDuelRecord: { totalWins: 0, totalLosses: 0 },
 };
 
 function parseState(raw: string): GameState {
@@ -117,6 +119,8 @@ function parseState(raw: string): GameState {
     questsCompletedTotal: parsed.questsCompletedTotal ?? 0,
     achievementsCompleted: parsed.achievementsCompleted ?? [],
     lastParkXpAt: parsed.lastParkXpAt ?? null,
+    parkElo: parsed.parkElo ?? 1000,
+    parkDuelRecord: parsed.parkDuelRecord ?? { totalWins: 0, totalLosses: 0 },
     questsBaselineAtUnlock: (() => {
       const baseline = parsed.questsBaselineAtUnlock ?? {};
       // Migration: for already-unlocked zones without a baseline, set baseline to current total

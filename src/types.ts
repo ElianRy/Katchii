@@ -112,6 +112,8 @@ export interface GameState {
   questsBaselineAtUnlock?: Record<string, number>;
   achievementsCompleted?: string[];
   lastParkXpAt?: number | null;
+  parkElo?: number;
+  parkDuelRecord?: { totalWins: number; totalLosses: number };
 }
 
 export type ZoneUnlockCondition =

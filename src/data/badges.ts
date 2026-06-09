@@ -17,9 +17,7 @@ export const BADGES: BadgeDefinition[] = [
   { id: 'first_legendary', label: 'Légendaire !', desc: 'Capture ton premier Légendaire', icon: '⚡', secret: false },
   { id: 'first_shiny', label: 'Brillant !', desc: 'Capture ton premier Shiny', icon: '✨', secret: false },
   { id: 'shiny_3', label: 'Chasseur de Shinies', desc: '3 Pokémon Shinies capturés', icon: '🌟', secret: false },
-  { id: 'first_evolution', label: 'Évolution !', desc: 'Fais évoluer ton premier Pokémon', icon: '🔄', secret: false },
   { id: 'first_lure', label: 'Stratège', desc: 'Active ton premier leurre', icon: '🎣', secret: false },
-  { id: 'magicarpe', label: '...', desc: '???', icon: '❓', secret: true },
   { id: 'full_starter', label: 'Starter complet', desc: 'Capture les 3 starters', icon: '🌿', secret: false },
 ];
 

@@ -90,6 +90,27 @@ export function ProfileScreen({ username, state, onClose, onLogout }: Props) {
               </div>
             </div>
 
+            {/* PokéParc Elo */}
+            {(state.parkDuelRecord?.totalWins !== undefined || state.parkElo !== undefined) && (
+              <div className="w-full max-w-sm bg-slate-800/60 rounded-2xl border border-slate-700/40 p-4">
+                <div className="text-slate-300 font-bold text-sm mb-3">🌿 PokéParc — Duels</div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center">
+                    <div className="text-yellow-400 font-black text-xl">{state.parkElo ?? 1000}</div>
+                    <div className="text-slate-400 text-xs">Elo</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-green-400 font-black text-xl">{state.parkDuelRecord?.totalWins ?? 0}</div>
+                    <div className="text-slate-400 text-xs">Victoires</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-red-400 font-black text-xl">{state.parkDuelRecord?.totalLosses ?? 0}</div>
+                    <div className="text-slate-400 text-xs">Défaites</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Succès section */}
             {earnedBadges.length > 0 && (
               <div className="w-full max-w-sm">

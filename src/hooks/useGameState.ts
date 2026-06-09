@@ -81,9 +81,6 @@ function checkBadges(state: GameState): string[] {
     // first_lure is awarded on activateLure, checked separately — but keep here as fallback
     false);
 
-  // Magicarpe secret: caught Magicarpe (129) 10+ times
-  check('magicarpe', (state.normalCollection[129] ?? 0) >= 10);
-
   // Starter complet: catch 1, 4, 7
   check('full_starter',
     (state.normalCollection[1] ?? 0) > 0 &&
@@ -745,6 +742,20 @@ export function useGameState() {
     update(prev => ({ ...prev, lastParkXpAt: ts }));
   }, [update]);
 
+  const addParkDuelResult = useCallback((won: boolean, eloDelta: number) => {
+    update(prev => {
+      const rec = prev.parkDuelRecord ?? { totalWins: 0, totalLosses: 0 };
+      return {
+        ...prev,
+        parkElo: Math.max(100, (prev.parkElo ?? 1000) + eloDelta),
+        parkDuelRecord: {
+          totalWins: rec.totalWins + (won ? 1 : 0),
+          totalLosses: rec.totalLosses + (won ? 0 : 1),
+        },
+      };
+    });
+  }, [update]);
+
   const saveTeam = useCallback((name: string, members: TeamMember[]) => {
     update(prev => ({
       ...prev,
@@ -809,6 +820,7 @@ export function useGameState() {
     addPokemonXp,
     addPlayerXp,
     setLastParkXpAt,
+    addParkDuelResult,
     adminGiveAllMax,
     saveTeam,
     deleteTeam,

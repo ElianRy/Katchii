@@ -218,24 +218,6 @@ function ShinyCaptureModal({ pokemonId, pokemonName, rarity, level, totalCaught,
       style={{ background: 'radial-gradient(ellipse at 50% 45%, #0f1a2a 0%, #050a10 55%, #000 100%)' }}
       onClick={onDismiss}>
 
-      {/* Rainbow rings */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div style={{
-          width: 280, height: 280, borderRadius: '50%',
-          background: 'conic-gradient(from 0deg, #f87171, #fb923c, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
-          animation: 'rainbow-spin 4s linear infinite',
-          opacity: 0.18, filter: 'blur(8px)',
-        }} />
-      </div>
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div style={{
-          width: 180, height: 180, borderRadius: '50%',
-          background: 'conic-gradient(from 0deg, #f87171aa, #fde047aa, #60a5faaa, #c084fcaa, #4ade80aa, #f87171aa)',
-          animation: 'rainbow-spin 2.5s linear infinite reverse',
-          opacity: 0.3, filter: 'blur(4px)',
-        }} />
-      </div>
-
       {/* Scattered sparkle stars */}
       {SHINY_STARS.map((s, i) => (
         <div key={i} className="absolute pointer-events-none" style={{ top: s.top, left: s.left, zIndex: 3 }}>
@@ -269,15 +251,6 @@ function ShinyCaptureModal({ pokemonId, pokemonName, rarity, level, totalCaught,
                 lineHeight: 1, userSelect: 'none' }}>{star.sym}</span>
             </div>
           ))}
-          {/* Spinning rainbow rings behind sprite */}
-          <div style={{ position: 'absolute', inset: -14, borderRadius: '50%',
-            background: 'conic-gradient(from 0deg, #f87171, #fde047, #4ade80, #60a5fa, #c084fc, #f472b6, #f87171)',
-            animation: 'rainbow-spin 2s linear infinite',
-            opacity: 0.5, filter: 'blur(4px)', zIndex: 0 }} />
-          <div style={{ position: 'absolute', inset: -5, borderRadius: '50%',
-            background: 'conic-gradient(from 180deg, #60a5fa, #c084fc, #fde047, #4ade80, #f472b6, #60a5fa)',
-            animation: 'rainbow-spin 3s linear infinite reverse',
-            opacity: 0.35, filter: 'blur(2px)', zIndex: 0 }} />
           <img src={src} alt="" width={160} height={160} style={{
             imageRendering: 'pixelated', objectFit: 'contain', position: 'relative', zIndex: 2,
             filter: 'drop-shadow(0 0 14px #fde047) drop-shadow(0 0 28px #f0abfc) drop-shadow(0 0 8px #fff)',
