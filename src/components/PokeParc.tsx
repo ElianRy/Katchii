@@ -388,7 +388,7 @@ function RaceModal({
 
   return (
     <div
-      className="fixed inset-0 z-[500] flex items-center justify-center bg-black/80"
+      className="fixed inset-0 z-[600] flex items-center justify-center bg-black/80"
       onClick={phase === 'tap' ? handleTap : undefined}
     >
       <div className="relative bg-slate-800 rounded-2xl border border-yellow-500/40 shadow-2xl p-5 w-80 max-w-[95vw]" onClick={e => e.stopPropagation()}>
@@ -474,7 +474,7 @@ function InteractionModal({
 }) {
   const data = POKEMON_BY_ID[target.pokemonId];
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div className="fixed inset-0 z-[550] flex items-center justify-center bg-black/50" onClick={onClose}>
       <div
         className="bg-slate-800 rounded-2xl border border-slate-600 shadow-2xl p-5 w-72 max-w-[90vw]"
         onClick={e => e.stopPropagation()}
@@ -625,7 +625,7 @@ function DuelModal({
   })), []);
 
   return (
-    <div className="fixed inset-0 z-[500] flex flex-col" style={{ background: '#020617', height: '100dvh' }}>
+    <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617', height: '100dvh' }}>
       {/* Starfield background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 20%, #1e1b4b 0%, #0f0720 55%, #020617 100%)' }} />
@@ -766,7 +766,7 @@ function PokemonPicker({ state, onPick, onClose }: {
   });
 
   return (
-    <div className="fixed inset-0 z-[400] flex items-center justify-center bg-black/70" onClick={onClose}>
+    <div className="fixed inset-0 z-[550] flex items-center justify-center bg-black/70" onClick={onClose}>
       <div className="bg-slate-800 rounded-2xl border border-slate-600 p-4 w-80 max-w-[95vw] max-h-[75vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="font-black text-white mb-2 text-center">Choisir ton Pokémon</div>
         <input

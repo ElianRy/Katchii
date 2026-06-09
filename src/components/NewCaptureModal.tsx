@@ -69,7 +69,7 @@ function LegendaryCaptureModal({ pokemonId, pokemonName, isShiny, rarity, level,
   const rarityColor = RARITY_COLORS[rarity];
 
   return (
-    <div className="fixed inset-0 z-[500] overflow-hidden cursor-pointer"
+    <div className="fixed inset-0 z-[600] overflow-hidden cursor-pointer"
       style={{ background: 'radial-gradient(ellipse at 50% 45%, #1a0830 0%, #080014 55%, #000 100%)' }}
       onClick={onDismiss}>
 
@@ -214,7 +214,7 @@ function ShinyCaptureModal({ pokemonId, pokemonName, rarity, level, totalCaught,
   const rarityColor = RARITY_COLORS[rarity];
 
   return (
-    <div className="fixed inset-0 z-[500] overflow-hidden cursor-pointer"
+    <div className="fixed inset-0 z-[600] overflow-hidden cursor-pointer"
       style={{ background: 'radial-gradient(ellipse at 50% 45%, #0f1a2a 0%, #050a10 55%, #000 100%)' }}
       onClick={onDismiss}>
 

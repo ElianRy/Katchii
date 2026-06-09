@@ -322,7 +322,7 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
 
       {/* Overflow menu sheet with slide-up animation */}
       <div
-        className="fixed inset-0 z-[190]"
+        className="fixed inset-0 z-[490]"
         style={{ pointerEvents: menuOpen ? 'auto' : 'none' }}
         onClick={() => setMenuOpen(false)}
       >
@@ -362,7 +362,7 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
       </div>
 
       {/* Main nav bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-[200] pointer-events-none" style={{ height: BOTTOM_NAV_HEIGHT }}>
+      <div className="fixed bottom-0 left-0 right-0 z-[500] pointer-events-none" style={{ height: BOTTOM_NAV_HEIGHT }}>
         {/* Favorite pokemon wandering above the nav */}
         {favoritePokemon && !hideCompanion && (
           <FavoritePokemon

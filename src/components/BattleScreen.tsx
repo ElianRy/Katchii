@@ -490,7 +490,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   // ── INTRO PHASE ──
   if (phase === 'intro') {
     return (
-      <div className="fixed inset-0 z-[400] flex flex-col" style={{ background: '#020617' }}>
+      <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617' }}>
         {/* sideOverlay visible during intro too */}
         {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
         <div className="relative flex-1 overflow-hidden">
@@ -555,7 +555,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   }
 
   return (
-    <div className="fixed inset-0 z-[400] flex flex-col" style={{ background: '#020617' }}>
+    <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617' }}>
       {/* Side overlay at root level — covers full screen, not clipped by arena overflow */}
       {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
 
