@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { GameState, Rarity, DuelEntry } from '../types';
 import { GEN1_POKEMON, POKEMON_BY_ID, POKEMON_BY_RARITY } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
+import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
 
 interface Props {
   state: GameState;
@@ -201,6 +202,14 @@ export function DuelPanel({ state, onClose, onDuelResult }: Props) {
                       </div>
                       <span className="text-xs text-slate-300" style={{ fontSize: '0.6rem' }}>{p.name}</span>
                       <span className="text-xs text-yellow-400" style={{ fontSize: '0.6rem' }}>{calcStat(pokemonId, isShiny)} pts</span>
+                      <div className="flex gap-0.5 flex-wrap justify-center">
+                        {(POKEMON_TYPE[pokemonId] ?? []).map(t => (
+                          <span key={t} className="text-white font-bold rounded px-0.5"
+                            style={{ background: TYPE_COLORS[t] ?? '#888', fontSize: '0.38rem' }}>
+                            {t.toUpperCase().slice(0,4)}
+                          </span>
+                        ))}
+                      </div>
                     </button>
                   );
                 });

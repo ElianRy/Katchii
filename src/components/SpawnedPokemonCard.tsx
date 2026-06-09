@@ -8,6 +8,7 @@ interface Props {
   disabled: boolean;
   narutoSpriteUrl?: string;
   leaving?: boolean;
+  fading?: boolean;
   facingRight?: boolean;
   alreadyCaught?: boolean;
 }
@@ -67,7 +68,7 @@ function PokeballSVG({ spinning }: { spinning: boolean }) {
   );
 }
 
-export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, narutoSpriteUrl, leaving, facingRight = true, alreadyCaught }: Props) {
+export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, narutoSpriteUrl, leaving, fading, facingRight = true, alreadyCaught }: Props) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showParticles, setShowParticles] = useState(false);
   const [showFlash, setShowFlash] = useState(false);
@@ -137,6 +138,11 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
   } else {
     spriteFilter = `drop-shadow(0 0 6px ${rarityColor})`;
     spriteAnimation = undefined;
+  }
+
+  // Fading warning — overrides sprite animation
+  if (fading && !leaving) {
+    spriteAnimation = (spriteAnimation ? spriteAnimation + ', ' : '') + 'pokemon-warn 0.6s ease-in-out infinite';
   }
 
   // During cooldown: grayscale + dim instead of black overlay

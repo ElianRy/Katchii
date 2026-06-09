@@ -56,6 +56,19 @@ function formatLureRemaining(expiresAt: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+const LURE_EMOJI: Record<string, string> = {
+  rare: '🔮', epique: '💜', legendaire: '⚡', shiny: '✨',
+};
+const LURE_NAME: Record<string, string> = {
+  rare: 'Leurre Rare', epique: 'Leurre Épique', legendaire: 'Leurre Légendaire', shiny: 'Leurre Shiny',
+};
+const LURE_DESC: Record<string, string> = {
+  rare: 'Multiplie ×4 les chances de rencontrer un Pokémon Rare',
+  epique: 'Multiplie ×4 les chances de rencontrer un Pokémon Élite',
+  legendaire: 'Multiplie ×4 les chances de rencontrer un Légendaire',
+  shiny: 'Multiplie ×4 les chances d\'apparition d\'un Shiny',
+};
+
 export function HUD({
   activeLure,
   cooldownRemaining,
@@ -81,6 +94,7 @@ export function HUD({
   onFightBoss,
 }: Props) {
   const [showConditionDetail, setShowConditionDetail] = useState(false);
+  const [showLureInfo, setShowLureInfo] = useState(false);
   // Impact animation when cooldown just finishes
   const [showImpact, setShowImpact] = useState(false);
   const prevCooldown = useRef(cooldownRemaining);
@@ -117,8 +131,29 @@ export function HUD({
 
           {/* Lure indicator */}
           {activeLure && Date.now() < activeLure.expiresAt && (
-            <div className="bg-purple-900/80 rounded-xl px-2 py-1.5 border border-purple-500/50 shrink-0">
-              <span className="text-purple-300 text-xs font-bold">✨ {formatLureRemaining(activeLure.expiresAt)}</span>
+            <div className="relative shrink-0">
+              <button
+                onClick={() => setShowLureInfo(v => !v)}
+                className="bg-purple-900/80 rounded-xl px-2 py-1.5 border border-purple-500/50 active:opacity-80"
+              >
+                <span className="text-purple-300 text-xs font-bold">
+                  {LURE_EMOJI[activeLure.type] ?? '✨'} {formatLureRemaining(activeLure.expiresAt)}
+                </span>
+              </button>
+              {showLureInfo && (
+                <div className="absolute top-10 right-0 z-50 bg-slate-900 border border-purple-500/50 rounded-2xl p-3 shadow-2xl w-56 pointer-events-auto"
+                  onClick={e => e.stopPropagation()}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-xl">{LURE_EMOJI[activeLure.type]}</span>
+                    <span className="text-white font-black text-sm">{LURE_NAME[activeLure.type]}</span>
+                    <button onClick={() => setShowLureInfo(false)} className="ml-auto text-slate-500 text-lg leading-none">✕</button>
+                  </div>
+                  <p className="text-slate-300 text-xs mb-2">{LURE_DESC[activeLure.type]}</p>
+                  <div className="text-purple-300 font-bold text-xs">
+                    ⏱ Expire dans {formatLureRemaining(activeLure.expiresAt)}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

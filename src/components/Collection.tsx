@@ -59,9 +59,12 @@ export function Collection({ state, onClose }: Props) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  const [sortMode, setSortMode] = useState<'id' | 'rarity_desc' | 'level_desc'>('id');
 
   const totalCaught = GEN1_POKEMON.filter(p => (state.normalCollection[p.id] ?? 0) > 0).length;
   const totalShinyCaught = GEN1_POKEMON.filter(p => (state.shinyCollection[p.id] ?? 0) > 0).length;
+
+  const rarityOrder = ['legendaire', 'elite', 'rare', 'peu_commun', 'commun'];
 
   const filteredPokemon = GEN1_POKEMON.filter((p) => {
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -69,7 +72,19 @@ export function Collection({ state, onClose }: Props) {
     if (filter === 'captures') return (state.normalCollection[p.id] ?? 0) > 0;
     if (filter === 'shinies') return (state.shinyCollection[p.id] ?? 0) > 0;
     return p.rarity === filter;
-  }).sort((a, b) => a.id - b.id);
+  }).sort((a, b) => {
+    if (sortMode === 'rarity_desc') {
+      const ra = rarityOrder.indexOf(a.rarity);
+      const rb = rarityOrder.indexOf(b.rarity);
+      return ra !== rb ? ra - rb : a.id - b.id;
+    }
+    if (sortMode === 'level_desc') {
+      const la = state.pokemonLevels?.[a.id]?.level ?? 0;
+      const lb = state.pokemonLevels?.[b.id]?.level ?? 0;
+      return lb !== la ? lb - la : a.id - b.id;
+    }
+    return a.id - b.id;
+  });
 
   const filterTabs: { id: FilterTab; label: string }[] = [
     { id: 'tous', label: 'Tous' },
@@ -114,15 +129,28 @@ export function Collection({ state, onClose }: Props) {
 
       {mainTab === 'collection' && (
         <>
-          {/* Search bar */}
-          <div className="px-4 pt-2 pb-1 shrink-0">
+          {/* Search bar + sort */}
+          <div className="px-4 pt-2 pb-1 shrink-0 flex gap-2">
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher un Pokémon…"
-              className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+              className="flex-1 bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
             />
+            <div className="flex gap-1 shrink-0">
+              {([['id', '#'], ['rarity_desc', '★'], ['level_desc', '↓Nv']] as const).map(([k, label]) => (
+                <button key={k} onClick={() => setSortMode(k)}
+                  className="px-2 py-1.5 rounded-lg text-xs font-bold transition-all"
+                  style={{
+                    background: sortMode === k ? '#6366f1' : 'rgba(255,255,255,0.06)',
+                    color: sortMode === k ? 'white' : '#94a3b8',
+                    border: sortMode === k ? '1px solid #818cf8' : '1px solid rgba(255,255,255,0.08)',
+                  }}>
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Filter button */}

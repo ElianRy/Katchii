@@ -56,7 +56,7 @@ export function PlayersPanel({ onClose }: Props) {
           const ms = new Date(p.last_seen).getTime();
           presenceMap.set(p.user_id, {
             lastSeen: p.last_seen,
-            isOnline: nowMs - ms < 3 * 60 * 1000, // online if seen <3min ago
+            isOnline: nowMs - ms < 60 * 1000, // online if seen <1min ago
           });
         }
       }

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
+import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
 import { TeamMember } from './TeamBuilder';
 import { BattleScreen } from './BattleScreen';
 import { ShinySprite } from './ShinySprite';
@@ -67,7 +68,7 @@ const TRAINER_CONFIGS = [
   },
   {
     id: 'master' as const,
-    name: 'Le Maître',
+    name: 'Maître Berix',
     title: 'Champion de la Ligue',
     image: '/trainers/master.png',
     companion: { pokemonId: 65, isShiny: true, image: '/trainers/alakazam.png' },
@@ -222,12 +223,18 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
                     <span className="text-white font-bold text-sm truncate">{p.name}</span>
                     {isShiny && <span className="text-xs font-bold text-yellow-400 shrink-0">SHINY</span>}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <span className="text-slate-400 text-xs">Nv.{lvData.level}</span>
                     <span className="text-xs font-bold px-1.5 py-0.5 rounded"
                       style={{ background: `${rarityColor}22`, color: rarityColor, fontSize: '0.55rem' }}>
                       {p.rarity.toUpperCase().replace('_', ' ')}
                     </span>
+                    {(POKEMON_TYPE[id] ?? []).map(t => (
+                      <span key={t} className="text-white font-bold rounded px-1 py-0.5"
+                        style={{ background: TYPE_COLORS[t] ?? '#888', fontSize: '0.48rem' }}>
+                        {t.toUpperCase()}
+                      </span>
+                    ))}
                   </div>
                 </div>
                 {/* Checkmark */}
@@ -739,7 +746,7 @@ function EpicIntroScreen({ onDone }: { onDone: () => void }) {
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             filter: 'drop-shadow(0 0 20px rgba(168,85,247,0.8))',
           }}>
-          LE MAÎTRE
+          MAÎTRE BERIX
         </div>
         <div className="text-purple-400 font-bold text-base tracking-wide">Champion de la Ligue</div>
       </div>
@@ -782,16 +789,26 @@ function DefeatScreen({ stats, onRetry, onClose }: {
           {stats.damageByEnemy
             .sort((a, b) => b.damage - a.damage)
             .map((row, i) => {
-              const pct = row.damage / stats.damageByEnemy.reduce((s, r) => s + r.damage, 0);
-              const pName = POKEMON_BY_ID[row.pokemonId]?.name ?? `#${row.pokemonId}`;
+              const totalDmg = stats.damageByEnemy.reduce((s, r) => s + r.damage, 0);
+              const pct = totalDmg > 0 ? row.damage / totalDmg : 0;
+              const pkData = POKEMON_BY_ID[row.pokemonId];
+              const pName = pkData?.name ?? `#${row.pokemonId}`;
+              const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${row.pokemonId}.png`;
+              const rarityColor = pkData ? RARITY_COLORS[pkData.rarity] : '#6b7280';
               return (
                 <div key={i} className="py-2 border-b border-slate-800 last:border-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-slate-300 text-sm font-bold">{pName}</span>
-                    <span className="text-red-400 font-black text-sm">{row.damage.toLocaleString()} dmg</span>
-                  </div>
-                  <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="h-1.5 rounded-full" style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg,#ef4444,#f97316)' }} />
+                  <div className="flex items-center gap-2 mb-1">
+                    <img src={spriteUrl} width={40} height={40}
+                      style={{ imageRendering: 'pixelated', filter: `drop-shadow(0 0 4px ${rarityColor})` }} alt={pName} />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-300 text-sm font-bold">{pName}</span>
+                        <span className="text-red-400 font-black text-sm">{row.damage > 0 ? `${row.damage.toLocaleString()} dmg` : '—'}</span>
+                      </div>
+                      <div className="w-full bg-slate-800 rounded-full h-1.5 mt-1">
+                        <div className="h-1.5 rounded-full" style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg,#ef4444,#f97316)' }} />
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
@@ -907,7 +924,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   const OPPONENT_META: Record<string, { name: string; color: string }> = {
     dialogue_giovanni: { name: 'Peter',      color: '#ef4444' },
     dialogue_master:   { name: 'Giovanni',   color: '#9ca3af' },
-    victory:           { name: 'Le Maître',  color: '#a855f7' },
+    victory:           { name: 'Maître Berix',  color: '#a855f7' },
   };
 
   const handleTeamConfirm = useCallback((ids: number[]) => {
@@ -1006,7 +1023,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
         <div className="absolute inset-0 pointer-events-none z-10"
           style={{ boxShadow: 'inset 0 0 50px rgba(168,85,247,0.4)', animation: 'aura-pulse 1.2s ease-in-out infinite' }} />
         <BattleScreen playerTeam={masterTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[2].teamSpec)}
-          bossName="⚡ Le Maître ⚡"
+          bossName="⚡ Maître Berix ⚡"
           trainerImage="/trainers/master.png" trainerColor="#a855f7"
           sideOverlay={<MasterSideEffects />}
           onBattleEnd={handleBattleEnd('victory')}

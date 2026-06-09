@@ -160,10 +160,10 @@ function ParkAttackVfx({ pokemonId, facingRight }: { pokemonId: number; facingRi
 }
 
 function ParkSprite({
-  pokemonId, isShiny, mood, username, isMine, onClick, waveTarget, wins,
+  pokemonId, isShiny, mood, username, isMine, onClick, waveTarget, wins, isOnline,
 }: {
   pokemonId: number; isShiny: boolean; mood: Mood; username: string;
-  isMine: boolean; onClick?: () => void; waveTarget?: boolean; wins?: number;
+  isMine: boolean; onClick?: () => void; waveTarget?: boolean; wins?: number; isOnline?: boolean;
 }) {
   const data = POKEMON_BY_ID[pokemonId];
   const rarityColor = data ? RARITY_COLORS[data.rarity] : '#6b7280';
@@ -284,7 +284,7 @@ function ParkSprite({
           fontWeight: 'bold',
           whiteSpace: 'nowrap',
         }}>
-          {isMine ? '★ ' : ''}<span style={username?.toLowerCase() === 'pokelian' && !isMine ? { color: '#ef4444' } : {}}>{username}</span>
+          {isMine ? '★ ' : ''}{isOnline && !isMine && <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: '#4ade80', marginRight: 2, verticalAlign: 'middle' }} />}<span style={username?.toLowerCase() === 'pokelian' && !isMine ? { color: '#ef4444' } : {}}>{username}</span>
         </div>
         {wins !== undefined && wins >= 10 && getPokemonTitle(wins) && (
           <div style={{ fontSize: '0.45rem', color: '#fbbf24', fontWeight: 'bold', textAlign: 'center' }}>
@@ -838,10 +838,10 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     const lastAt = state.lastParkXpAt;
     if (lastAt) {
       const elapsed = Date.now() - lastAt;
-      const ONE_HOUR = 60 * 60 * 1000;
-      const FIVE_HOURS = 5 * ONE_HOUR;
+      const THREE_MIN = 3 * 60 * 1000;
+      const FIVE_HOURS = 5 * 60 * 60 * 1000;
       const TICK_MS = 2 * 60 * 1000;
-      if (elapsed >= ONE_HOUR) {
+      if (elapsed >= THREE_MIN) {
         const cappedElapsed = Math.min(elapsed, FIVE_HOURS);
         const ticks = Math.floor(cappedElapsed / TICK_MS);
         if (ticks > 0) {
@@ -1202,6 +1202,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                   mood={p.mood}
                   username={p.username}
                   isMine={false}
+                  isOnline={Date.now() - new Date(p.updated_at).getTime() < 60000}
                   waveTarget={waveTarget === p.user_id}
                   onClick={() => {
                     setInteractionTarget({

@@ -14,6 +14,7 @@ const MAX_LIFETIME = 14000;
 const POKEBALL_SPIN_MS = 700;
 const POST_CAPTURE_MS = 400;
 const LEAVE_DURATION_MS = 800;
+const WARN_BEFORE_MS = 2500;
 const WANDER_SPEED = 0.10; // %/tick — visible drift
 
 function randomBetween(min: number, max: number): number {
@@ -85,6 +86,7 @@ export function useSpawner(
 ) {
   const [spawned, setSpawned] = useState<SpawnedPokemon[]>([]);
   const [leavingUids, setLeavingUids] = useState<Set<string>>(new Set());
+  const [fadingUids, setFadingUids] = useState<Set<string>>(new Set());
   const stateRef = useRef(gameState);
   stateRef.current = gameState;
 
@@ -203,6 +205,7 @@ export function useSpawner(
       const now = Date.now();
       setSpawned((prev) => {
         const toLeave: string[] = [];
+        const toFade: string[] = [];
         const filtered = prev.filter((s) => {
           if (s.capturing || s.captured) return true;
           const elapsed = now - s.spawnedAt;
@@ -211,8 +214,18 @@ export function useSpawner(
             toLeave.push(s.uid);
             return false;
           }
+          if (elapsed >= s.lifetime - WARN_BEFORE_MS) {
+            toFade.push(s.uid);
+          }
           return true;
         });
+        if (toFade.length > 0) {
+          setFadingUids(prev => {
+            const next = new Set(prev);
+            toFade.forEach(uid => next.add(uid));
+            return next;
+          });
+        }
 
         if (toLeave.length > 0) {
           setLeavingUids((prev) => {
@@ -220,9 +233,14 @@ export function useSpawner(
             toLeave.forEach((uid) => next.add(uid));
             return next;
           });
-          // After leave animation, remove from leavingUids
+          // After leave animation, remove from leavingUids + fadingUids
           setTimeout(() => {
             setLeavingUids((prev) => {
+              const next = new Set(prev);
+              toLeave.forEach((uid) => next.delete(uid));
+              return next;
+            });
+            setFadingUids((prev) => {
               const next = new Set(prev);
               toLeave.forEach((uid) => next.delete(uid));
               return next;
@@ -239,5 +257,5 @@ export function useSpawner(
 
   const clearSpawned = useCallback(() => setSpawned([]), []);
 
-  return { spawned, capture, leavingUids, clearSpawned };
+  return { spawned, capture, leavingUids, fadingUids, clearSpawned };
 }

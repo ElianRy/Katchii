@@ -271,6 +271,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
             onCapture={() => handleCapture(s.uid, s.pokemonId, s.characterId, s.isShiny, s.x, s.y)}
             disabled={gameState.isOnCooldown()}
             leaving={spawner.leavingUids.has(s.uid)}
+            fading={spawner.fadingUids.has(s.uid)}
             facingRight={s.vx >= 0}
             alreadyCaught={!!gameState.state.normalCollection[s.pokemonId]}
           />

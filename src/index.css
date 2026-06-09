@@ -210,6 +210,12 @@ input, textarea, select {
   100% { opacity: 0;   transform: scale(0.25) rotate(28deg) translateY(-55px); }
 }
 
+@keyframes pokemon-warn {
+  0%,100% { opacity: 1; }
+  40%     { opacity: 0.3; }
+  60%     { opacity: 0.6; }
+}
+
 @keyframes pokeball-throw {
   0%   { transform: translateY(120px) scale(0.6) rotate(0deg); opacity: 0.8; }
   40%  { transform: translateY(40px) scale(0.9) rotate(-120deg); opacity: 1; }
