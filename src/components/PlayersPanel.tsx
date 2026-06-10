@@ -70,6 +70,11 @@ function formatLastSeen(iso: string): string {
 export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setMyUserId(data.user?.id ?? null));
+  }, []);
   const [sort, setSort] = useState<'points' | 'collection' | 'shiny' | 'alpha'>('points');
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerRow | null>(null);
   const [adminTarget, setAdminTarget] = useState<PlayerRow | null>(null);
@@ -245,6 +250,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
 
           const rankColor = i === 0 ? '#fbbf24' : i === 1 ? '#94a3b8' : i === 2 ? '#b45309' : '#475569';
           const isTopThree = i < 3;
+          const isMe = p.user_id === myUserId;
 
           const showcaseItems = (p.showcase ?? []).slice(0, 3);
 
@@ -252,7 +258,10 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
             <div
               key={p.user_id}
               className="flex items-center gap-3 px-4 py-3 border-b border-slate-800/60 active:bg-white/5 cursor-pointer"
-              style={{ background: isTopThree ? `${rankColor}08` : undefined }}
+              style={{
+                background: isMe ? 'rgba(251,191,36,0.08)' : isTopThree ? `${rankColor}08` : undefined,
+                borderLeft: isMe ? '3px solid #fbbf24' : undefined,
+              }}
               onClick={() => isAdmin ? setAdminTarget(p) : setSelectedPlayer(p)}
             >
               {/* Rank */}
@@ -283,7 +292,8 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="font-black text-sm truncate" style={{ color: p.username?.toLowerCase() === 'pokelian' ? '#ef4444' : 'white' }}>{p.username}</span>
+                  <span className="font-black text-sm truncate" style={{ color: isMe ? '#fbbf24' : p.username?.toLowerCase() === 'pokelian' ? '#ef4444' : 'white' }}>{p.username}</span>
+                  {isMe && <span className="shrink-0 text-[0.6rem] font-black px-1.5 py-0.5 rounded-full" style={{ background: '#fbbf24', color: '#000' }}>Vous</span>}
                   {p.isOnline && <span className="shrink-0 w-2 h-2 rounded-full bg-green-400" title="En ligne" />}
                 </div>
                 <div className="flex items-center gap-1 text-xs mt-0.5">

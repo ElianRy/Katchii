@@ -246,8 +246,9 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
         onClick={() => setMenuOpen(false)}
       >
         <div
-          className="absolute bottom-[72px] left-0 right-0 bg-black/95 border-t border-slate-700/60 backdrop-blur-sm px-4 py-3"
+          className="absolute left-0 right-0 bg-black/95 border-t border-slate-700/60 backdrop-blur-sm px-4 py-3"
           style={{
+            bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))',
             transform: menuOpen ? 'translateY(0)' : 'translateY(100%)',
             opacity: menuOpen ? 1 : 0,
             transition: 'transform 0.28s cubic-bezier(0.32,0.72,0,1), opacity 0.2s ease',

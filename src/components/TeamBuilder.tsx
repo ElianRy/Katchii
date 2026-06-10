@@ -208,7 +208,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   // Saved teams detail view
   if (mode === 'savedTeams') {
     return (
-      <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col pb-[72px]">
+      <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
         <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
           <button onClick={() => { setViewTeam(null); setMode('team'); }} className="text-slate-400 hover:text-white text-xl px-1">←</button>
           <h2 className="text-white font-black text-xl flex-1">📋 Équipes sauvegardées</h2>
@@ -349,7 +349,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col pb-[72px]">
+    <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
@@ -633,7 +633,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
               style={{ background: 'linear-gradient(90deg, #6366f1, #8b5cf6)', color: '#fff' }}
               title="Voir les équipes sauvegardées"
             >
-              📋
+              🥊
             </button>
           )}
 

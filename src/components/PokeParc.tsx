@@ -1369,7 +1369,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
             ))}
             <div ref={chatEndRef} />
           </div>
-          <div className="flex gap-2 px-3 py-2 border-t border-slate-700/40 shrink-0" style={{ background: '#0f172a', paddingBottom: 'calc(0.5rem + 72px)' }}>
+          <div className="flex gap-2 px-3 py-2 border-t border-slate-700/40 shrink-0" style={{ background: '#0f172a', paddingBottom: 'calc(0.5rem + 72px + env(safe-area-inset-bottom, 0px))' }}>
             <input
               className="flex-1 rounded-lg px-3 py-2 text-white outline-none border border-slate-600 focus:border-blue-500"
               style={{ background: '#1e293b', minHeight: 40, fontSize: 16 }}
