@@ -7,6 +7,7 @@ import { POKEMON_TYPE } from '../data/pokemonTypes';
 import { getPlayerGrade, PARK_XP_PER_TICK } from '../lib/playerLevel';
 import { xpToNextLevel, calcMaxHp } from '../data/combatEngine';
 import { calcPowerRating, calcEloDelta, calcEloFloor } from '../data/powerRating';
+import { playPokemonCry } from '../lib/audio';
 import { BattleScreen } from './BattleScreen';
 import { TeamMember } from './TeamBuilder';
 
@@ -1189,6 +1190,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                   isOnline={Date.now() - new Date(p.updated_at).getTime() < 60000}
                   waveTarget={waveTarget === p.user_id}
                   onClick={() => {
+                    playPokemonCry(p.pokemon_id);
                     setInteractionTarget({
                       userId: p.user_id,
                       username: p.username,

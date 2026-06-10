@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View } from '../types';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
+import { playSfxConfirm } from '../lib/audio';
 
 interface Props {
   currentView: View;
@@ -233,6 +234,7 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
   const hideCompanion = currentView === 'pokepark';
 
   const handleNavigate = (view: View) => {
+    playSfxConfirm();
     setMenuOpen(false);
     onNavigate(view);
   };

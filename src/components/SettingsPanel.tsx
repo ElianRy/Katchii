@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { stopMusic, playMenuMusic } from '../lib/audio';
 
 interface Props {
   onClose: () => void;
@@ -39,6 +40,10 @@ export function SettingsPanel({ onClose }: Props) {
     const next = { ...settings, [key]: !settings[key] };
     setSettings(next);
     saveSettings(next);
+    if (key === 'sound') {
+      if (!next.sound) stopMusic(0.3);
+      else playMenuMusic();
+    }
   }
 
   async function handleChangePassword() {

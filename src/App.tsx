@@ -26,6 +26,7 @@ import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
 import { calcMaxHp } from './data/combatEngine';
 import { POKEMON_BY_ID } from './data/gen1';
+import { playSfxBack, playMenuMusic, stopMusic } from './lib/audio';
 
 export function App() {
   const [view, setView] = useState<View>('auth');
@@ -74,6 +75,32 @@ export function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Home/menu music
+  useEffect(() => {
+    if (view === 'home') playMenuMusic();
+  }, [view]);
+
+  // Global UI sounds — back buttons (←) and standard confirm buttons
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const btn = target.closest('button');
+      if (!btn) return;
+      // Back buttons: contain ← arrow text or have data-back attribute
+      const text = btn.textContent?.trim() ?? '';
+      if (text === '←' || text.startsWith('←') || btn.dataset.back !== undefined) {
+        playSfxBack();
+      }
+    };
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
+  }, []);
+
+  // Stop music when battle starts, resume zone music when done
+  useEffect(() => {
+    if (battle3v3) stopMusic(0.3);
+  }, [battle3v3]);
 
   // Play time tracking
   useEffect(() => {

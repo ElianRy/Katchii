@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { playBattleMusic, playLeagueBattleMusic, stopMusic, playVictory, playSfxDefeat } from '../lib/audio';
 import { RARITY_COLORS, Rarity } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
@@ -17,6 +18,7 @@ interface Props {
   enemyTeam: TeamMember[];
   bossName?: string;
   onBattleEnd: (won: boolean, xpGains: Record<number, number>, finalTeam?: TeamMember[], enemyDmg?: Record<number, number>) => void;
+  isLeague?: boolean;
   autoCombat?: boolean;
   onAutoCombatChange?: (v: boolean) => void;
   speedLevel?: number;
@@ -294,7 +296,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, isLeague = false, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp }))
   );
@@ -345,12 +347,16 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     setLog(prev => [...prev.slice(-5), { text, color }]);
   }, []);
 
-  // Intro → battle transition (2s cinematic)
+  // Intro → battle transition (2s cinematic) + music
   useEffect(() => {
     if (phase !== 'intro') return;
+    if (isLeague) playLeagueBattleMusic(); else playBattleMusic();
     const t = setTimeout(() => setPhase('battle'), 2000);
     return () => clearTimeout(t);
   }, [phase]);
+
+  // Stop music on unmount
+  useEffect(() => () => stopMusic(0.5), []);
 
   const addDmg = useCallback((value: number, target: 'player' | 'enemy', effectiveness: number, isCrit?: boolean, isMiss?: boolean) => {
     const id = dmgCounter++;
@@ -465,6 +471,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   useEffect(() => {
     if (phase === 'end') {
       const wonSnap = won.current;
+      stopMusic(0.8);
+      setTimeout(() => wonSnap ? playVictory() : playSfxDefeat(), 900);
       // Give bench pokemon 25% of the average XP earned by active fighters
       const snap = { ...xpGains };
       const earned = Object.values(snap);

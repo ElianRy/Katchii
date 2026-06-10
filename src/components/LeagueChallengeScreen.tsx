@@ -6,6 +6,7 @@ import { TeamMember } from './TeamBuilder';
 import { BattleScreen } from './BattleScreen';
 import { ShinySprite } from './ShinySprite';
 import { calcMaxHp } from '../data/combatEngine';
+import { playLeagueVictory, stopMusic } from '../lib/audio';
 
 interface Props {
   state: GameState;
@@ -983,6 +984,8 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
         }
         if (nextPhase === 'victory' && !victoryHandled) {
           setVictoryHandled(true);
+          stopMusic(0.5);
+          setTimeout(() => playLeagueVictory(), 600);
           onVictory();
         }
         setPhase(nextPhase);
@@ -1003,7 +1006,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   if (phase === 'battle_peter') {
     return (
       <div className="fixed inset-0 z-[600]">
-        <BattleScreen playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
+        <BattleScreen isLeague playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
           bossName="Peter" trainerImage="/trainers/peter.png" trainerColor="#ef4444" onBattleEnd={handleBattleEnd('dialogue_giovanni', TRAINER_CONFIGS[0].teamSpec)}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>

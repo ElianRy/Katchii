@@ -7,6 +7,7 @@ import { useSpawner } from '../hooks/useSpawner';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { Zone, ZONE_BY_ID, ZONE_ORDER } from '../data/zones';
 import { ZoneUnlockCondition } from '../types';
+import { playZoneMusic, playSfxCapture, playSfxDuplicate, playSfxShinyCapture } from '../lib/audio';
 
 const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
   zone1: { ground: 'linear-gradient(to top, #14532d 0%, #166534 40%, transparent 100%)', bush: 'linear-gradient(to top, #15803d, #22c55e)' },
@@ -115,6 +116,10 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         const { pts, level: pokemonLevel } = gameState.addCapture(pokemonId, isShiny, pokemon.rarity);
         const totalCaught = Object.values(gameState.state.normalCollection as Record<number,number>).filter(v => v > 0).length + Object.values(gameState.state.shinyCollection as Record<number,number>).filter(v => v > 0).length;
         const isEpic = pokemon.rarity === 'legendaire' || isShiny;
+        // Capture sounds
+        if (isDoublon) playSfxDuplicate();
+        else if (isEpic) playSfxShinyCapture();
+        else playSfxCapture();
         if (pts > 0) {
           addNotification(`+${pts} pts !`, x, y, true);
           addNotification('Nouveau !', x, y - 8, true);
@@ -146,6 +151,9 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
 
   const currentZoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
   const currentZone = ZONE_BY_ID[currentZoneId];
+
+  // Play zone music when zone changes
+  useEffect(() => { playZoneMusic(currentZoneId); }, [currentZoneId]);
   const currentZoneIdx = ZONE_ORDER.indexOf(currentZoneId);
   const prevZoneId = currentZoneIdx > 0 ? ZONE_ORDER[currentZoneIdx - 1] : null;
   const nextZoneId = currentZoneIdx >= 0 && currentZoneIdx < ZONE_ORDER.length - 1 ? ZONE_ORDER[currentZoneIdx + 1] : null;

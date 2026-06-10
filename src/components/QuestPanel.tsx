@@ -1,4 +1,6 @@
+import { useState, useEffect, useRef } from 'react';
 import { GameState } from '../types';
+import { playSfxQuestComplete } from '../lib/audio';
 
 interface Props {
   state: GameState;
@@ -67,9 +69,41 @@ export function QuestPanel({ state, onClaim, onClose }: Props) {
   const { quests } = state.dailyQuests;
   const permanentQuests = getPermanentQuests(state);
   const completed = new Set(state.achievementsCompleted ?? []);
+  const [claimedToast, setClaimedToast] = useState<string | null>(null);
+  const prevCompletedRef = useRef<Set<string>>(new Set());
+
+  // Detect newly completed quests and show toast
+  useEffect(() => {
+    const newlyCompleted = quests.filter(q => q.completed && !q.rewardClaimed && !prevCompletedRef.current.has(q.id));
+    if (newlyCompleted.length > 0) {
+      playSfxQuestComplete();
+      setClaimedToast(newlyCompleted[0].label);
+      const t = setTimeout(() => setClaimedToast(null), 3000);
+      prevCompletedRef.current = new Set(quests.filter(q => q.completed && !q.rewardClaimed).map(q => q.id));
+      return () => clearTimeout(t);
+    }
+    prevCompletedRef.current = new Set(quests.filter(q => q.completed && !q.rewardClaimed).map(q => q.id));
+  }, [quests]);
+
+  const handleClaim = (questId: string) => {
+    playSfxQuestComplete();
+    onClaim(questId);
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col">
+      {/* Quest complete toast */}
+      {claimedToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[999] pointer-events-none"
+          style={{ animation: 'fadeIn 0.3s ease' }}>
+          <div className="bg-yellow-500 text-black font-black text-sm px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2"
+            style={{ boxShadow: '0 0 24px 4px rgba(250,204,21,0.5)' }}>
+            <span>✅</span>
+            <span>Quête complétée !</span>
+            <span className="font-bold opacity-70 text-xs ml-1">{claimedToast}</span>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700">
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
@@ -119,7 +153,7 @@ export function QuestPanel({ state, onClaim, onClose }: Props) {
                         <span className="text-green-400 font-bold text-sm">✓ Réclamée</span>
                       ) : quest.completed ? (
                         <button
-                          onClick={() => onClaim(quest.id)}
+                          onClick={() => handleClaim(quest.id)}
                           className="bg-yellow-500 hover:bg-yellow-400 active:bg-yellow-600 text-black font-bold px-4 py-2 rounded-xl text-sm shadow-lg transition-colors"
                           style={{ boxShadow: '0 0 12px 2px rgba(250,204,21,0.4)' }}
                         >
