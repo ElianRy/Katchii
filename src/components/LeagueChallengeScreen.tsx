@@ -638,8 +638,9 @@ function AlakazamReveal({ trainer }: { trainer: { companion: { image: string; po
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => { setRevealed(true); playShinySpawn(); }, 800);
-    return () => clearTimeout(t);
+    const t1 = setTimeout(() => setRevealed(true), 800);
+    const t2 = setTimeout(() => playShinySpawn(), 1000); // slight delay so sound hits the visual pop
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
   const size = 'min(52vw, 215px)';
@@ -1063,7 +1064,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
       <div className="fixed inset-0 z-[600]">
         <div className="absolute inset-0 pointer-events-none z-10"
           style={{ boxShadow: 'inset 0 0 50px rgba(168,85,247,0.4)', animation: 'aura-pulse 1.2s ease-in-out infinite' }} />
-        <BattleScreen playerTeam={masterTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[2].teamSpec)}
+        <BattleScreen keepMusic playerTeam={masterTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[2].teamSpec)}
           bossName="⚡ Maître Berix ⚡"
           trainerImage="/trainers/master.png" trainerColor="#a855f7"
           sideOverlay={<MasterSideEffects />}

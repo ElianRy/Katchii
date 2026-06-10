@@ -29,6 +29,7 @@ interface Props {
   onBattleEnd: (won: boolean, xpGains: Record<number, number>, finalTeam?: TeamMember[], enemyDmg?: Record<number, number>) => void;
   isLeague?: boolean;
   suppressVictorySound?: boolean;
+  keepMusic?: boolean;
   autoCombat?: boolean;
   onAutoCombatChange?: (v: boolean) => void;
   speedLevel?: number;
@@ -306,7 +307,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, isLeague = false, suppressVictorySound = false, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, isLeague = false, suppressVictorySound = false, keepMusic = false, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp }))
   );
@@ -363,7 +364,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   useEffect(() => {
     if (phase !== 'intro') return;
     const hasShiny = [...playerTeam, ...enemyTeam].some(m => m.isShiny);
-    if (isLeague) playLeagueBattleMusic(); else playBattleMusic();
+    if (!keepMusic) { if (isLeague) playLeagueBattleMusic(); else playBattleMusic(); }
     if (hasShiny) {
       playShinyBattleSfx();
       setShinyIntro(true);
