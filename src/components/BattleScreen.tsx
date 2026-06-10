@@ -490,16 +490,16 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   // ── INTRO PHASE ──
   if (phase === 'intro') {
     return (
-      <div className="fixed inset-0 z-[600] flex flex-col items-center" style={{ background: '#020617' }}>
+      <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617' }}>
         {/* sideOverlay visible during intro too */}
         {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
-        <div className="relative flex-1 overflow-hidden w-full" style={{ maxWidth: 480 }}>
+        <div className="relative flex-1 overflow-hidden">
           <div className="absolute inset-0" style={{
             background: 'radial-gradient(ellipse at 50% 20%, #1e1b4b 0%, #0f0720 55%, #020617 100%)',
           }} />
 
           {/* Enemy pokemon slides in from top-right */}
-          <div className="absolute" style={{ top:'5%', right:'7%', animation:'battle-enter-enemy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
+          <div className="absolute" style={{ top:'5%', right:'max(7%, calc(50% - 220px))', animation:'battle-enter-enemy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
             <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]">
               <div className="flex items-center gap-1.5 mb-1">
                 {trainerImage && (
@@ -525,7 +525,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           </div>
 
           {/* Player pokemon slides in from bottom-left */}
-          <div className="absolute" style={{ bottom:'13%', left:'7%', animation:'battle-enter-player 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
+          <div className="absolute" style={{ bottom:'13%', left:'max(7%, calc(50% - 220px))', animation:'battle-enter-player 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
             {playerFighters[0] && <ShinySprite pokemonId={playerFighters[0].pokemonId} isShiny={playerFighters[0].isShiny ?? false} width={96} height={96}
               style={{ filter: spriteFilter(playerFighters[0].pokemonId, playerFighters[0].isShiny ?? false) }} />}
             <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
@@ -555,12 +555,12 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   }
 
   return (
-    <div className="fixed inset-0 z-[600] flex flex-col items-center" style={{ background: '#020617' }}>
+    <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617' }}>
       {/* Side overlay at root level — covers full screen, not clipped by arena overflow */}
       {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
 
       {/* ── Arena ── */}
-      <div className="relative flex-1 overflow-hidden w-full" style={{ maxWidth: 480 }}>
+      <div className="relative flex-1 overflow-hidden">
 
         {/* Sky */}
         <div className="absolute inset-0" style={{
@@ -595,7 +595,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
         {/* Platform enemy */}
         <div className="absolute pointer-events-none" style={{
-          top: '38%', right: '12%', width: 110, height: 22,
+          top: '38%', right: 'max(12%, calc(50% - 200px))', width: 110, height: 22,
           background: 'radial-gradient(ellipse, rgba(248,113,113,0.55) 0%, transparent 100%)',
           borderRadius: '50%', filter: 'blur(5px)',
           animation: 'platform-pulse 2.2s ease-in-out infinite',
@@ -603,7 +603,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
         {/* Platform player */}
         <div className="absolute pointer-events-none" style={{
-          bottom: '28%', left: '12%', width: 110, height: 22,
+          bottom: '28%', left: 'max(12%, calc(50% - 200px))', width: 110, height: 22,
           background: 'radial-gradient(ellipse, rgba(74,222,128,0.55) 0%, transparent 100%)',
           borderRadius: '50%', filter: 'blur(5px)',
           animation: 'platform-pulse 2.2s ease-in-out 0.4s infinite',
@@ -645,7 +645,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
         })}
 
         {/* Enemy info + sprite */}
-        <div className="absolute" style={{ top: '5%', right: '7%' }}>
+        <div className="absolute" style={{ top: '5%', right: 'max(7%, calc(50% - 220px))' }}>
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]"
             style={{ borderColor: isMasterTrainer ? `${trainerColor}55` : undefined, boxShadow: isMasterTrainer ? `0 0 12px ${trainerColor}33` : undefined }}>
             <div className="flex items-center gap-1.5 mb-1">
@@ -701,7 +701,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
         </div>
 
         {/* Player info + sprite */}
-        <div className="absolute" style={{ bottom: '13%', left: '7%' }}>
+        <div className="absolute" style={{ bottom: '13%', left: 'max(7%, calc(50% - 220px))' }}>
           <div className="flex gap-1.5 mb-1">
             {playerFighters.map((f, i) => (
               <div key={i} className={`w-3 h-3 rounded-full ${i === playerIdx ? 'ring-2 ring-white' : ''} ${f.currentHp > 0 ? 'bg-green-400' : 'bg-slate-600'}`} />
@@ -811,7 +811,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
       </div>
 
       {/* Battle log */}
-      <div className="shrink-0 bg-black/90 border-t border-slate-700/50 px-4 py-2 w-full" style={{ height: 80, overflow: 'hidden', maxWidth: 480 }}>
+      <div className="shrink-0 bg-black/90 border-t border-slate-700/50 px-4 py-2" style={{ height: 80, overflow: 'hidden' }}>
         <div className="flex justify-between items-start h-full">
           <div className="flex-1 overflow-hidden">
             {log.slice(-3).map((entry, i) => (

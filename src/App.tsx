@@ -102,26 +102,38 @@ export function App() {
       pokemonId: p.pokemonId, isShiny: p.isShiny, level: p.level, xp: 0,
       currentHp: calcMaxHp(p.pokemonId, p.level), maxHp: calcMaxHp(p.pokemonId, p.level),
     }));
-    // Build player's top 3 by level desc
-    const RARITY_ORDER_MAP: Record<string, number> = { commun: 0, peu_commun: 1, rare: 2, elite: 3, legendaire: 4 };
-    const playerTop3 = Object.entries(gameState.state.normalCollection)
-      .filter(([, c]) => (c as number) > 0)
-      .map(([id]) => Number(id))
-      .sort((a, b) => {
-        const la = gameState.state.pokemonLevels?.[a]?.level ?? 1;
-        const lb = gameState.state.pokemonLevels?.[b]?.level ?? 1;
-        if (lb !== la) return lb - la;
-        const ra = RARITY_ORDER_MAP[POKEMON_BY_ID[a]?.rarity ?? 'commun'] ?? 0;
-        const rb = RARITY_ORDER_MAP[POKEMON_BY_ID[b]?.rarity ?? 'commun'] ?? 0;
-        return rb - ra;
-      })
-      .slice(0, 3)
-      .map(id => {
-        const level = gameState.state.pokemonLevels?.[id]?.level ?? 1;
-        const xp = gameState.state.pokemonLevels?.[id]?.xp ?? 0;
-        const isShiny = (gameState.state.shinyCollection[id] ?? 0) > 0;
-        return { pokemonId: id, isShiny, level, xp, currentHp: calcMaxHp(id, level), maxHp: calcMaxHp(id, level) };
+    // Build player team: use favorite saved team if set, otherwise top 3 by level
+    let playerTop3: TeamMember[];
+    const favTeam = gameState.state.favoriteTeamId
+      ? gameState.state.savedTeams?.find(t => t.id === gameState.state.favoriteTeamId)
+      : null;
+    if (favTeam && favTeam.members.length > 0) {
+      playerTop3 = favTeam.members.slice(0, 3).map(m => {
+        const level = gameState.state.pokemonLevels?.[m.pokemonId]?.level ?? m.level;
+        const xp = gameState.state.pokemonLevels?.[m.pokemonId]?.xp ?? m.xp;
+        return { pokemonId: m.pokemonId, isShiny: m.isShiny, level, xp, currentHp: calcMaxHp(m.pokemonId, level), maxHp: calcMaxHp(m.pokemonId, level) };
       });
+    } else {
+      const RARITY_ORDER_MAP: Record<string, number> = { commun: 0, peu_commun: 1, rare: 2, elite: 3, legendaire: 4 };
+      playerTop3 = Object.entries(gameState.state.normalCollection)
+        .filter(([, c]) => (c as number) > 0)
+        .map(([id]) => Number(id))
+        .sort((a, b) => {
+          const la = gameState.state.pokemonLevels?.[a]?.level ?? 1;
+          const lb = gameState.state.pokemonLevels?.[b]?.level ?? 1;
+          if (lb !== la) return lb - la;
+          const ra = RARITY_ORDER_MAP[POKEMON_BY_ID[a]?.rarity ?? 'commun'] ?? 0;
+          const rb = RARITY_ORDER_MAP[POKEMON_BY_ID[b]?.rarity ?? 'commun'] ?? 0;
+          return rb - ra;
+        })
+        .slice(0, 3)
+        .map(id => {
+          const level = gameState.state.pokemonLevels?.[id]?.level ?? 1;
+          const xp = gameState.state.pokemonLevels?.[id]?.xp ?? 0;
+          const isShiny = (gameState.state.shinyCollection[id] ?? 0) > 0;
+          return { pokemonId: id, isShiny, level, xp, currentHp: calcMaxHp(id, level), maxHp: calcMaxHp(id, level) };
+        });
+    }
     if (playerTop3.length === 0) return;
     setBattle3v3({ playerTeam: playerTop3, enemyTeam, enemyName });
     setShowPlayers(false);
@@ -207,8 +219,10 @@ export function App() {
           onTrainingBattle={gameState.addTrainingWin}
           onClose={() => persistView('hunt')}
           savedTeams={gameState.state.savedTeams}
+          favoriteTeamId={gameState.state.favoriteTeamId}
           onSaveTeam={gameState.saveTeam}
           onDeleteTeam={gameState.deleteTeam}
+          onSetFavoriteTeamId={gameState.setFavoriteTeamId}
         />
       )}
 

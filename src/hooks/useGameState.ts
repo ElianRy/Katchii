@@ -770,7 +770,15 @@ export function useGameState() {
   }, [update]);
 
   const deleteTeam = useCallback((id: string) => {
-    update(prev => ({ ...prev, savedTeams: (prev.savedTeams ?? []).filter(t => t.id !== id) }));
+    update(prev => ({
+      ...prev,
+      savedTeams: (prev.savedTeams ?? []).filter(t => t.id !== id),
+      favoriteTeamId: prev.favoriteTeamId === id ? undefined : prev.favoriteTeamId,
+    }));
+  }, [update]);
+
+  const setFavoriteTeamId = useCallback((id: string | undefined) => {
+    update(prev => ({ ...prev, favoriteTeamId: id }));
   }, [update]);
 
   const adminGiveAllMax = useCallback(() => {
@@ -827,6 +835,7 @@ export function useGameState() {
     adminGiveAllMax,
     saveTeam,
     deleteTeam,
+    setFavoriteTeamId,
   };
 }
 

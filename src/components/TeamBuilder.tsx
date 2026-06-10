@@ -72,11 +72,13 @@ interface Props {
   onClose: () => void;
   title?: string;
   savedTeams?: Array<{ id: string; name: string; members: TeamMember[] }>;
+  favoriteTeamId?: string;
   onSaveTeam?: (name: string, members: TeamMember[]) => void;
   onDeleteTeam?: (id: string) => void;
+  onSetFavoriteTeamId?: (id: string | undefined) => void;
 }
 
-export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattleWin, onTrainingBattle, onClose, title = 'Mon équipe', savedTeams, onSaveTeam, onDeleteTeam }: Props) {
+export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattleWin, onTrainingBattle, onClose, title = 'Mon équipe', savedTeams, favoriteTeamId, onSaveTeam, onDeleteTeam, onSetFavoriteTeamId }: Props) {
   const [selected, setSelected] = useState<number[]>([]);
   const [sort, setSort] = useState<'level' | 'rarity'>('level');
   const [mode, setMode] = useState<'team' | 'battle' | 'result' | 'savedTeams'>('team');
@@ -216,11 +218,27 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
                 <p>Aucune équipe sauvegardée</p>
               </div>
             )}
-            {savedTeams?.map(t => (
-              <div key={t.id} className="bg-slate-800 rounded-2xl p-4 border border-slate-700">
+            {savedTeams?.map(t => {
+              const isFav = favoriteTeamId === t.id;
+              return (
+              <div key={t.id} className="bg-slate-800 rounded-2xl p-4 border"
+                style={{ borderColor: isFav ? '#fbbf2466' : 'rgb(51,65,85)', boxShadow: isFav ? '0 0 12px #fbbf2422' : undefined }}>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-white font-black text-base">{t.name}</span>
+                  <div className="flex items-center gap-2">
+                    {isFav && <span className="text-yellow-400 text-base" title="Équipe favorite">⭐</span>}
+                    <span className="text-white font-black text-base">{t.name}</span>
+                  </div>
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => onSetFavoriteTeamId?.(isFav ? undefined : t.id)}
+                      className="text-xs font-bold px-2.5 py-1.5 rounded-lg border transition-all"
+                      style={{
+                        background: isFav ? '#92400e' : 'transparent',
+                        borderColor: isFav ? '#fbbf24' : 'rgb(100,116,139)',
+                        color: isFav ? '#fbbf24' : '#94a3b8',
+                      }}
+                      title={isFav ? 'Retirer des favoris' : 'Définir comme équipe favorite pour les 3v3'}
+                    >{isFav ? '★ Favori' : '☆ Favoris'}</button>
                     <button
                       onClick={() => { setSelected(t.members.map(m => m.pokemonId).slice(0, 3)); setMode('team'); }}
                       className="text-xs font-bold px-3 py-1.5 rounded-lg bg-blue-700 text-white"
@@ -260,7 +278,8 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
                   <div className="text-slate-500 text-xs mt-2 text-center">Appuyer pour voir les stats détaillées →</div>
                 </button>
               </div>
-            ))}
+            );})}
+
           </div>
         ) : (
           // Detail view for a single saved team
