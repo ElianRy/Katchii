@@ -92,8 +92,10 @@ export function App() {
   useEffect(() => {
     let last = 0;
     const handler = (e: MouseEvent) => {
-      const tag = (e.target as HTMLElement).tagName;
+      const el = e.target as HTMLElement;
+      const tag = el.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (el.closest('[data-no-sfx]')) return;
       const now = Date.now();
       if (now - last > 150) { playSfxConfirm(); last = now; }
     };

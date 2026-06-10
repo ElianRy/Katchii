@@ -1142,6 +1142,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         {/* Park field */}
         <div
           className="relative overflow-hidden shrink-0"
+          data-no-sfx
           style={{
             height: '42%',
             background: 'linear-gradient(180deg, #0f2a1a 0%, #1a3a2a 40%, #1e4a30 100%)',

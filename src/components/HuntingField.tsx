@@ -125,19 +125,19 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           addNotification(`+${pts} pts !`, x, y, true);
           addNotification('Nouveau !', x, y - 8, true);
           setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
-          if (isEpic) playSfxShinyCapture(); else playSfxCapture(); // sfx when popup appears
+          setTimeout(() => { if (isEpic) playSfxShinyCapture(); else playSfxCapture(); }, 700);
         } else if (isDoublon) {
           addNotification(`+${doublonXp} XP !`, x, y, true);
           addNotification('Doublon !', x, y - 8, false);
           if (isEpic) {
             setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
-            playSfxShinyCapture();
+            setTimeout(() => playSfxShinyCapture(), 700);
           }
         } else if (isShiny) {
           addNotification(`+${doublonXp} XP !`, x, y, true);
           addNotification('Doublon Shiny !', x, y - 8, false);
           setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny: true, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
-          playSfxShinyCapture();
+          setTimeout(() => playSfxShinyCapture(), 700);
         }
         processingRef.current.delete(uid);
         capturingRef.current = false; // UNLOCK
@@ -255,7 +255,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const zoneGround = ZONE_GROUND[currentZoneId] ?? ZONE_GROUND['zone1'];
 
   return (
-    <div className="relative w-full overflow-hidden" style={{ height: 'calc(100dvh - 72px)', maxHeight: 'calc(100dvh - 72px)' }}>
+    <div className="relative w-full overflow-hidden" data-no-sfx style={{ height: 'calc(100dvh - 72px)', maxHeight: 'calc(100dvh - 72px)' }}>
       {/* Zone-specific background */}
       <ZoneBackground key={currentZoneId} zoneId={currentZoneId} />
 
