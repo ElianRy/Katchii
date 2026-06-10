@@ -143,20 +143,21 @@ export function playShinyBattleSfx()    { playSfxFile('combat_shiny'); }
 export function playLeagueBattleMusic() { playMusic('combat_ligue'); }
 export function playMenuMusic()         { playMusic('ecran_menu'); }
 export function playShinySpawn()        { playSfxFile('spawn_shiny'); }
+export function playShinySpawnLoud()    { playSfxFile('spawn_shiny', 1.5); }
 
 // ── One-shot SFX from Supabase ────────────────────────────────────────────
-function playSfxFile(name: string) {
+function playSfxFile(name: string, volMult = 1) {
   const vol = getSfxVol();
   if (vol === 0) return;
   const audio = new Audio(`${BASE_URL}/${name}.mp3`);
-  audio.volume = vol;
+  audio.volume = Math.min(1, vol * volMult);
   audio.play().catch(() => {});
 }
 
 export function playSfxConfirm()       { playSfxFile('sfx_confirm'); }
 export function playSfxCapture()       { playSfxFile('sfx_capture'); }
 export function playSfxPokeball()      { playSfxFile('catch_poke'); }
-export function playCatchPoke()        { playSfxFile('catch_poke'); }
+export function playCatchPoke()        { playSfxFile('catch_poke', 2.0); }
 export function playVictory()          { playSfxFile('victoire'); }
 export function playLeagueVictory()    { playSfxFile('victoire_ligue'); }
 export function playLevelUp()          { playSfxFile('level_up'); }

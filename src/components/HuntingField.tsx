@@ -120,12 +120,11 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         const { pts, level: pokemonLevel } = gameState.addCapture(pokemonId, isShiny, pokemon.rarity);
         const totalCaught = Object.values(gameState.state.normalCollection as Record<number,number>).filter(v => v > 0).length + Object.values(gameState.state.shinyCollection as Record<number,number>).filter(v => v > 0).length;
         const isEpic = pokemon.rarity === 'legendaire' || isShiny;
-        // Capture sounds: sfx immediately, catch melody after
+        // catch_poke immediately on click, then sfx_capture when popup appears
+        playCatchPoke();
         if (!isDoublon) {
-          if (isEpic) playSfxShinyCapture(); else playSfxCapture();
-          setTimeout(() => playCatchPoke(), 400);
-        } else {
-          playCatchPoke();
+          if (isEpic) setTimeout(() => playSfxShinyCapture(), 500);
+          else setTimeout(() => playSfxCapture(), 500);
         }
         if (pts > 0) {
           addNotification(`+${pts} pts !`, x, y, true);

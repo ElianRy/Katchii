@@ -504,8 +504,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   useEffect(() => {
     if (phase === 'end') {
       const wonSnap = won.current;
-      stopMusic(0.8);
-      if (!suppressVictorySound) setTimeout(() => wonSnap ? (isLeague ? playLeagueVictory() : playVictory()) : playSfxDefeat(), 900);
+      stopMusic(0.3);
+      if (!suppressVictorySound) setTimeout(() => wonSnap ? (isLeague ? playLeagueVictory() : playVictory()) : playSfxDefeat(), 400);
       // Give bench pokemon 25% of the average XP earned by active fighters
       const snap = { ...xpGains };
       const earned = Object.values(snap);

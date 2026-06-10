@@ -155,7 +155,7 @@ export const HUNT_TUTORIAL: TutorialStep[] = [
   },
   {
     title: 'Le Cooldown ⏱️',
-    body: "Après chaque capture d'un **nouveau** Pokémon, un cooldown s'active. Les doublons (indiqués par une Pokéball à côté de leur nom) se capturent sans attendre ! Le timer est affiché en bas à droite.",
+    body: "Après chaque capture d'un nouveau Pokémon, un cooldown s'active. Les doublons (indiqués par une Pokéball à côté de leur nom) se capturent sans attendre ! Le timer est affiché en bas à droite.",
     illustration: <CooldownAnim />,
   },
   {

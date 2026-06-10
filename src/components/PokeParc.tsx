@@ -669,7 +669,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [showDuel, setShowDuel] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [justPlaced, setJustPlaced] = useState(false);
-  const [myPokemonShake, setMyPokemonShake] = useState(false);
+  const [myPokemonShake] = useState(false);
   const [parkRevealed, setParkRevealed] = useState(!!state.favoritePokemon);
   const [xpPop, setXpPop] = useState<{ xp: number; key: number } | null>(null);
   const [offlineParkXp, setOfflineParkXp] = useState<{ xp: number; pokemonId: number; isShiny: boolean; levelBefore: number; levelAfter: number; xpBefore: number; xpAfter: number } | null>(null);
@@ -1256,11 +1256,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                 mood={mood}
                 username={username}
                 isMine={true}
-                onClick={() => {
-                  playPokemonCry(myFav.pokemonId);
-                  setMyPokemonShake(true);
-                  setTimeout(() => setMyPokemonShake(false), 700);
-                }}
+                onClick={() => {}}
                 wins={(state.pokemonWins ?? {})[myFav.pokemonId] ?? 0}
               />
             </div>

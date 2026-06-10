@@ -6,7 +6,7 @@ import { TeamMember } from './TeamBuilder';
 import { BattleScreen } from './BattleScreen';
 import { ShinySprite } from './ShinySprite';
 import { calcMaxHp } from '../data/combatEngine';
-import { playLeagueVictory, playLeagueBattleMusic, stopMusic, playMusic, playShinySpawn } from '../lib/audio';
+import { playLeagueVictory, playLeagueBattleMusic, stopMusic, playMusic, playShinySpawnLoud } from '../lib/audio';
 
 interface Props {
   state: GameState;
@@ -640,9 +640,8 @@ function AlakazamReveal({ trainer }: { trainer: { companion: { image: string; po
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setRevealed(true), 800);
-    const t2 = setTimeout(() => playShinySpawn(), 1000); // slight delay so sound hits the visual pop
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    const t1 = setTimeout(() => { setRevealed(true); playShinySpawnLoud(); }, 800);
+    return () => { clearTimeout(t1); };
   }, []);
 
   const size = 'min(52vw, 215px)';
@@ -1000,7 +999,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           setCurrentTeam(survivors);
         }
         if (nextPhase === 'dialogue_giovanni') {
-          // music will switch to 'giovanni' when DialogueScreen mounts (lineIdx 0)
+          playMusic('giovanni');
         } else if (nextPhase === 'dialogue_master') {
           // Giovanni beaten — stop music completely; combat_berix plays at Berix reveal
           stopMusic(0.3);
