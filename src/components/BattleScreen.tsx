@@ -41,6 +41,8 @@ interface FloatingDmg {
   value: number;
   target: 'player' | 'enemy';
   effectiveness: number;
+  isCrit?: boolean;
+  isMiss?: boolean;
 }
 
 // Precomputed stars
@@ -73,13 +75,15 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
   const d = direction;
   type P = React.CSSProperties;
 
-  // Attacker origin: corner of sprite facing the opponent
-  // Player (ltr): top-right corner of player sprite ≈ left:33%, top:50%
-  // Enemy  (rtl): bottom-left corner of enemy sprite ≈ left:70%, top:42%
+  // Attacker origin follows the pokemon sprite positions which use max(7%, calc(50%-220px))
+  // Player (ltr): right edge of player sprite = left side + sprite width ≈ +110px
+  // Enemy  (rtl): left edge of enemy sprite = 100% - right offset - sprite width ≈ -110px
   const origin: P = {
     position: 'absolute', pointerEvents: 'none', zIndex: 15,
-    left: d === 'ltr' ? '33%' : '70%',
-    top:  d === 'ltr' ? '50%' : '42%',
+    left: d === 'ltr'
+      ? 'calc(max(7%, calc(50% - 220px)) + 110px)'
+      : 'calc(100% - max(7%, calc(50% - 220px)) - 120px)',
+    top:  d === 'ltr' ? '56%' : '20%',
   };
 
   switch (type) {
@@ -348,9 +352,9 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     return () => clearTimeout(t);
   }, [phase]);
 
-  const addDmg = useCallback((value: number, target: 'player' | 'enemy', effectiveness: number) => {
+  const addDmg = useCallback((value: number, target: 'player' | 'enemy', effectiveness: number, isCrit?: boolean, isMiss?: boolean) => {
     const id = dmgCounter++;
-    setFloatingDmg(prev => [...prev, { id, value, target, effectiveness }]);
+    setFloatingDmg(prev => [...prev, { id, value, target, effectiveness, isCrit, isMiss }]);
     setTimeout(() => setFloatingDmg(prev => prev.filter(d => d.id !== id)), 1100);
   }, []);
 
@@ -375,24 +379,25 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           const pType = (POKEMON_TYPE[pFighter.pokemonId] ?? ['normal'])[0] as PokemonType;
           const eType = (POKEMON_TYPE[eFighter.pokemonId] ?? ['normal'])[0] as PokemonType;
 
-          const { damage: pDmg, effectiveness: pEff, moveName: pMove } = calcDamage(
+          const { damage: pDmg, effectiveness: pEff, moveName: pMove, isCrit: pCrit, isMiss: pMiss } = calcDamage(
             pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level
           );
 
-          setAttackEvt({ attacker: 'player', type: pType, uid: dmgCounter++ });
-          setTimeout(() => setHitFlash('enemy'), 120);
-          setTimeout(() => setHitFlash(null), 280);
+          setAttackEvt(pMiss ? null : { attacker: 'player', type: pType, uid: dmgCounter++ });
+          if (!pMiss) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
           setTimeout(() => setAttackEvt(null), 300);
-          addDmg(pDmg, 'enemy', pEff);
-          addLog(`${pName} → ${pMove}${pEff >= 2 ? ' 💥 Super efficace !' : pEff === 0 ? ' (sans effet)' : pEff < 1 ? ' (peu efficace)' : ''}`,
-            pEff >= 2 ? '#4ade80' : '#fde68a');
+          addDmg(pDmg, 'enemy', pEff, pCrit, pMiss);
+          addLog(
+            pMiss ? `${pName} rate son attaque !` :
+            `${pName} → ${pMove}${pCrit ? ' ⚡ CRITIQUE !' : ''}${pEff >= 2 ? ' 💥 Super efficace !' : pEff === 0 ? ' (sans effet)' : pEff < 1 ? ' (peu efficace)' : ''}`,
+            pMiss ? '#94a3b8' : pCrit ? '#fbbf24' : pEff >= 2 ? '#4ade80' : '#fde68a');
 
           const newEHp = Math.max(0, eFighter.currentHp - pDmg);
           const newEf = ef.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
 
           if (newEHp <= 0) {
             addLog(`${eName} est K.O. !`, '#f87171');
-            const xpBase = xpGainedFromBattle(eFighter.level, true);
+            const xpBase = xpGainedFromBattle(eFighter.level, true, POKEMON_BY_ID[eFighter.pokemonId]?.rarity);
             const levelBonus = 1 + pFighter.level * 0.025;
             const xpEarned = Math.floor(xpBase * levelBonus);
             setXpGains(prev => ({ ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned }));
@@ -416,11 +421,14 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             setTimeout(() => setHitFlash(null), 280);
             setTimeout(() => setAttackEvt(null), 300);
 
-            const { damage: eDmg, effectiveness: eEff, moveName: eMove } = calcDamage(
+            const { damage: eDmg, effectiveness: eEff, moveName: eMove, isCrit: eCrit, isMiss: eMiss } = calcDamage(
               eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level
             );
-            addDmg(eDmg, 'player', eEff);
-            addLog(`${eName} → ${eMove}${eEff >= 2 ? ' 💥 Super efficace !' : ''}`, eEff >= 2 ? '#f87171' : '#fca5a5');
+            addDmg(eDmg, 'player', eEff, eCrit, eMiss);
+            addLog(
+              eMiss ? `${eName} rate son attaque !` :
+              `${eName} → ${eMove}${eCrit ? ' ⚡ CRITIQUE !' : ''}${eEff >= 2 ? ' 💥 Super efficace !' : ''}`,
+              eMiss ? '#94a3b8' : eCrit ? '#fbbf24' : eEff >= 2 ? '#f87171' : '#fca5a5');
 
             setPlayerFighters(pf2 => {
               enemyDmgRef.current[eFighter.pokemonId] = (enemyDmgRef.current[eFighter.pokemonId] ?? 0) + eDmg;
@@ -625,21 +633,22 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
         {/* Floating damage */}
         {floatingDmg.map(d => {
-          const color = d.effectiveness === 0 ? '#94a3b8' : '#ef4444';
+          const color = d.isMiss ? '#94a3b8' : d.isCrit ? '#fbbf24' : d.effectiveness === 0 ? '#94a3b8' : '#ef4444';
           const pos = d.target === 'enemy'
             ? { top: '22%', right: '14%' }
             : { bottom: '26%', left: '20%' };
           return (
             <div key={d.id} className="absolute pointer-events-none" style={{
               ...pos, zIndex: 20,
-              fontSize: d.effectiveness >= 2 ? '1.6rem' : '1.2rem',
+              fontSize: d.isCrit ? '1.8rem' : d.effectiveness >= 2 ? '1.6rem' : '1.2rem',
               fontWeight: 900, color,
-              textShadow: `0 0 12px ${color}`,
-              animation: 'dmg-float 1.1s ease-out forwards',
+              textShadow: d.isCrit ? `0 0 18px #fbbf24, 0 0 32px #f59e0b` : `0 0 12px ${color}`,
+              animation: d.isCrit ? 'dmg-float 1.1s ease-out forwards' : 'dmg-float 1.1s ease-out forwards',
               transform: 'translateX(-50%)',
             }}>
-              -{d.value}
-              {d.effectiveness >= 2 && <div style={{ fontSize: '0.55rem', textAlign: 'center' }}>SUPER EFFICACE</div>}
+              {d.isMiss ? 'RATÉ!' : `−${d.value}`}
+              {d.isCrit && <div style={{ fontSize: '0.6rem', textAlign: 'center', color: '#fde047', letterSpacing: '0.1em' }}>CRITIQUE !</div>}
+              {!d.isMiss && !d.isCrit && d.effectiveness >= 2 && <div style={{ fontSize: '0.55rem', textAlign: 'center' }}>SUPER EFFICACE</div>}
             </div>
           );
         })}

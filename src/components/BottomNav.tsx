@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View } from '../types';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
 
@@ -39,109 +39,15 @@ const TYPE_ATTACK_EMOJI: Record<string, string> = {
 interface FloatingHeart { id: number; x: number }
 interface AttackEmoji { id: number; emoji: string }
 
-const ORBIT_COLORS_A = ['#fde047', '#f472b6', '#60a5fa', '#4ade80', '#fb923c', '#c084fc'];
-const ORBIT_COLORS_B = ['#f0abfc', '#fbbf24', '#a5f3fc', '#fde047', '#86efac', '#f472b6'];
+const NAV_ORBIT_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string; layer: 'front' | 'back' }[] = [
+  { color: '#fde047', dur: '3.2s', delay: '0s',    sym: '✦', size: 9,  anim: 'park-persp-a', layer: 'front' },
+  { color: '#f472b6', dur: '2.6s', delay: '-0.9s', sym: '★', size: 8,  anim: 'park-persp-b', layer: 'back'  },
+  { color: '#60a5fa', dur: '4.0s', delay: '-1.7s', sym: '✦', size: 9,  anim: 'park-persp-c', layer: 'front' },
+  { color: '#fbbf24', dur: '2.2s', delay: '-0.4s', sym: '✧', size: 7,  anim: 'park-persp-d', layer: 'back'  },
+  { color: '#ffffff', dur: '3.6s', delay: '-2.1s', sym: '★', size: 8,  anim: 'park-persp-e', layer: 'front' },
+  { color: '#4ade80', dur: '2.9s', delay: '-1.3s', sym: '✦', size: 9,  anim: 'park-persp-a', layer: 'back'  },
+];
 
-function NavShinySparkles({ spriteSize = 52 }: { spriteSize?: number }) {
-  const cx = spriteSize / 2;
-  const cy = spriteSize / 2;
-
-  // Inner orbit: 6 stars close to sprite, fast
-  const innerR = 18;
-  const innerStars = useMemo(() => [0,1,2,3,4,5].map(i => ({
-    id: i,
-    color: ORBIT_COLORS_A[i],
-    delay: `${-(i / 6 * 1.8).toFixed(2)}s`,
-  })), []);
-
-  // Outer orbit: 4 larger stars, slower, opposite direction
-  const outerR = 30;
-  const outerStars = useMemo(() => [0,1,2,3].map(i => ({
-    id: i,
-    color: ORBIT_COLORS_B[i],
-    delay: `${-(i / 4 * 3.0).toFixed(2)}s`,
-  })), []);
-
-  // Scattered random twinkling stars at fixed positions (deterministic)
-  const twinkleStars = useMemo(() => [
-    { x: cx - 22, y: cy - 18, color: '#fde047', dur: '1.1s', delay: '0s' },
-    { x: cx + 20, y: cy - 20, color: '#f472b6', dur: '1.4s', delay: '0.3s' },
-    { x: cx + 24, y: cy + 10, color: '#60a5fa', dur: '0.9s', delay: '0.6s' },
-    { x: cx - 20, y: cy + 16, color: '#4ade80', dur: '1.2s', delay: '0.9s' },
-    { x: cx - 8,  y: cy - 28, color: '#c084fc', dur: '1.5s', delay: '0.4s' },
-    { x: cx + 10, y: cy - 26, color: '#fbbf24', dur: '1.0s', delay: '1.1s' },
-    { x: cx + 28, y: cy - 4,  color: '#a5f3fc', dur: '1.3s', delay: '0.7s' },
-    { x: cx - 26, y: cy - 2,  color: '#fb923c', dur: '0.8s', delay: '1.4s' },
-  ], [cx, cy]);
-
-  return (
-    <div style={{ position: 'absolute', left: 0, top: 0, width: spriteSize, height: spriteSize, pointerEvents: 'none', overflow: 'visible' }}>
-      {/* Rainbow shimmer underneath */}
-      <div style={{
-        position: 'absolute',
-        left: cx - 30, top: cy - 30,
-        width: 60, height: 60,
-        borderRadius: '50%',
-        background: 'conic-gradient(from 0deg, #fde04788, #f472b688, #60a5fa88, #4ade8088, #c084fc88, #fbbf2488, #fde04788)',
-        animation: 'shiny-orbit 3s linear infinite',
-        opacity: 0.22,
-        filter: 'blur(4px)',
-      }} />
-
-      {/* Inner fast orbit — 6 stars */}
-      {innerStars.map(sp => (
-        <div key={`in${sp.id}`} style={{
-          position: 'absolute',
-          left: cx - innerR, top: cy - innerR,
-          width: innerR * 2, height: innerR * 2,
-          animation: 'shiny-orbit 1.8s linear infinite',
-          animationDelay: sp.delay,
-          pointerEvents: 'none',
-        }}>
-          <div className="shiny-sparkle" style={{
-            position: 'absolute', width: 10, height: 10,
-            left: innerR - 5, top: -5,
-            '--sp-color': sp.color,
-            '--sp-duration': '0.7s',
-            '--sp-delay': sp.delay,
-          } as React.CSSProperties} />
-        </div>
-      ))}
-
-      {/* Outer slower orbit — 4 bigger stars, reverse */}
-      {outerStars.map(sp => (
-        <div key={`out${sp.id}`} style={{
-          position: 'absolute',
-          left: cx - outerR, top: cy - outerR,
-          width: outerR * 2, height: outerR * 2,
-          animation: 'shiny-orbit-rev 3s linear infinite',
-          animationDelay: sp.delay,
-          pointerEvents: 'none',
-        }}>
-          <div className="shiny-sparkle" style={{
-            position: 'absolute', width: 14, height: 14,
-            left: outerR - 7, top: -7,
-            '--sp-color': sp.color,
-            '--sp-duration': '1.1s',
-            '--sp-delay': sp.delay,
-          } as React.CSSProperties} />
-        </div>
-      ))}
-
-      {/* Scattered twinkling at various positions */}
-      {twinkleStars.map((sp, i) => (
-        <div key={`tw${i}`} className="shiny-sparkle" style={{
-          position: 'absolute',
-          width: 8, height: 8,
-          left: sp.x - 4, top: sp.y - 4,
-          '--sp-color': sp.color,
-          '--sp-duration': sp.dur,
-          '--sp-delay': sp.delay,
-        } as React.CSSProperties} />
-      ))}
-    </div>
-  );
-}
 
 function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: boolean }) {
   const [posX, setPosX] = useState(50);
@@ -287,7 +193,21 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
 
       {/* Flip wrapper — direction; inner img handles bounce/wiggle animation */}
       <div style={{ transform: flipTransform, transition: 'transform 0.3s ease', display: 'inline-block', position: 'relative', width: 52, height: 52 }}>
-        {isShiny && <NavShinySparkles spriteSize={52} />}
+        {isShiny && NAV_ORBIT_STARS.map((star, i) => (
+          <div key={i} style={{
+            position: 'absolute', left: 26, top: 26, width: 0, height: 0,
+            zIndex: star.layer === 'front' ? 5 : 0,
+            animation: `${star.anim} ${star.dur} ${star.delay} linear infinite`,
+            pointerEvents: 'none',
+          } as React.CSSProperties}>
+            <span style={{
+              position: 'absolute', transform: 'translate(-50%,-50%)',
+              color: star.color, fontSize: star.size, fontWeight: 900,
+              textShadow: `0 0 5px ${star.color}, 0 0 10px ${star.color}88`,
+              lineHeight: 1, userSelect: 'none',
+            }}>{star.sym}</span>
+          </div>
+        ))}
         <img
           src={spriteUrl}
           width={52}

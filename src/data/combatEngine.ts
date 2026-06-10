@@ -30,14 +30,14 @@ export function calcMaxHp(pokemonId: number, level: number): number {
   const p = POKEMON_BY_ID[pokemonId];
   if (!p) return 50;
   const base = RARITY_BASE[p.rarity];
-  return Math.floor(50 + level * 5 + base * 10);
+  return Math.floor(50 + level * 8 + base * 12);
 }
 
 export function calcAttack(pokemonId: number, level: number): number {
   const p = POKEMON_BY_ID[pokemonId];
   if (!p) return 10;
   const base = RARITY_BASE[p.rarity];
-  return Math.floor(10 + level * 2 + base * 5);
+  return Math.floor(base * 3 + level * 3);
 }
 
 export function calcDefense(pokemonId: number, level: number): number {
@@ -60,11 +60,10 @@ export function calcDamage(
   attackerLevel: number,
   defenderId: number,
   defenderLevel: number
-): { damage: number; effectiveness: number; moveName: string } {
+): { damage: number; effectiveness: number; moveName: string; isCrit: boolean; isMiss: boolean } {
   const attackerTypes = POKEMON_TYPE[attackerId] ?? ['normal'];
   const defenderTypes = POKEMON_TYPE[defenderId] ?? ['normal'];
 
-  // Use primary type's move
   const primaryType = attackerTypes[0];
   const move = TYPE_MOVES[primaryType];
 
@@ -72,12 +71,22 @@ export function calcDamage(
   const def = calcDefense(defenderId, defenderLevel);
   const effectiveness = getTypeEffectiveness(primaryType, defenderTypes);
 
-  const randomFactor = 0.85 + Math.random() * 0.15;
-  const damage = Math.max(1, Math.floor((move.power * atk / def) * effectiveness * randomFactor / 10));
+  const roll = Math.random();
+  if (roll < 0.08) {
+    return { damage: 0, effectiveness, moveName: move.name, isCrit: false, isMiss: true };
+  }
 
-  return { damage, effectiveness, moveName: move.name };
+  const isCrit = Math.random() < 0.12;
+  const randomFactor = 0.85 + Math.random() * 0.15;
+  const critMult = isCrit ? 1.75 : 1;
+  const damage = Math.max(1, Math.floor((move.power * atk / def) * effectiveness * randomFactor * critMult / 10));
+
+  return { damage, effectiveness, moveName: move.name, isCrit, isMiss: false };
 }
 
-export function xpGainedFromBattle(enemyLevel: number, won: boolean): number {
-  return won ? Math.floor(enemyLevel * 5) : Math.floor(enemyLevel * 1);
+export function xpGainedFromBattle(enemyLevel: number, won: boolean, enemyRarity?: Rarity): number {
+  const rarityBonus = enemyRarity ? RARITY_BASE[enemyRarity] * 5 : 0;
+  return won
+    ? Math.floor(10 + enemyLevel * 2 + rarityBonus)
+    : Math.floor(3 + enemyLevel * 1);
 }

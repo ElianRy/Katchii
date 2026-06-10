@@ -93,14 +93,14 @@ function getSpriteUrl(pokemonId: number, isShiny: boolean) {
 
 // ---- Shiny perspective orbit stars (same system as wild spawn, less intense) ----
 const PARK_ORBIT_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string; layer: 'front' | 'back' }[] = [
-  { color: '#fde047', dur: '3.2s', delay: '0s',    sym: '✦', size: 14, anim: 'shiny-persp-a', layer: 'front' },
-  { color: '#f472b6', dur: '2.6s', delay: '-0.9s', sym: '★', size: 12, anim: 'shiny-persp-b', layer: 'back'  },
-  { color: '#60a5fa', dur: '4.0s', delay: '-1.7s', sym: '✦', size: 13, anim: 'shiny-persp-c', layer: 'front' },
-  { color: '#fbbf24', dur: '2.2s', delay: '-0.4s', sym: '✧', size: 11, anim: 'shiny-persp-d', layer: 'back'  },
-  { color: '#ffffff', dur: '3.6s', delay: '-2.1s', sym: '★', size: 12, anim: 'shiny-persp-e', layer: 'front' },
-  { color: '#4ade80', dur: '2.9s', delay: '-1.3s', sym: '✦', size: 13, anim: 'shiny-persp-a', layer: 'back'  },
-  { color: '#c084fc', dur: '2.4s', delay: '-1.5s', sym: '✧', size: 12, anim: 'shiny-persp-d', layer: 'front' },
-  { color: '#fb923c', dur: '3.8s', delay: '-2.8s', sym: '★', size: 11, anim: 'shiny-persp-b', layer: 'back'  },
+  { color: '#fde047', dur: '3.2s', delay: '0s',    sym: '✦', size: 9,  anim: 'park-persp-a', layer: 'front' },
+  { color: '#f472b6', dur: '2.6s', delay: '-0.9s', sym: '★', size: 8,  anim: 'park-persp-b', layer: 'back'  },
+  { color: '#60a5fa', dur: '4.0s', delay: '-1.7s', sym: '✦', size: 9,  anim: 'park-persp-c', layer: 'front' },
+  { color: '#fbbf24', dur: '2.2s', delay: '-0.4s', sym: '✧', size: 7,  anim: 'park-persp-d', layer: 'back'  },
+  { color: '#ffffff', dur: '3.6s', delay: '-2.1s', sym: '★', size: 8,  anim: 'park-persp-e', layer: 'front' },
+  { color: '#4ade80', dur: '2.9s', delay: '-1.3s', sym: '✦', size: 9,  anim: 'park-persp-a', layer: 'back'  },
+  { color: '#c084fc', dur: '2.4s', delay: '-1.5s', sym: '✧', size: 7,  anim: 'park-persp-d', layer: 'front' },
+  { color: '#fb923c', dur: '3.8s', delay: '-2.8s', sym: '★', size: 8,  anim: 'park-persp-b', layer: 'back'  },
 ];
 
 // ---- Park Attack VFX ----
