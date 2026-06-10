@@ -28,13 +28,18 @@ export function loadAudioSettings(): AudioSettings {
   }
 }
 
+// In-memory master volume — synced via setGlobalVolume() from settings UI
+let _globalVolume: number = (() => {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}').globalVolume ?? 1.0; } catch { return 1.0; }
+})();
+
 function getMusicVol(): number {
   const s = loadAudioSettings();
-  return s.music ? s.musicVolume * s.globalVolume : 0;
+  return s.music ? s.musicVolume * _globalVolume : 0;
 }
 function getSfxVol(): number {
   const s = loadAudioSettings();
-  return s.sound ? s.sfxVolume * s.globalVolume : 0;
+  return s.sound ? s.sfxVolume * _globalVolume : 0;
 }
 
 // ── AudioContext singleton ────────────────────────────────────────────────
@@ -108,8 +113,11 @@ export function setMusicVolume(vol: number) {
 }
 
 export function setGlobalVolume(globalVol: number) {
+  _globalVolume = globalVol;
+  // Apply immediately to playing music (overrides any fade-in in progress)
+  if (currentFadeInId !== null) { clearInterval(currentFadeInId); currentFadeInId = null; }
   const s = loadAudioSettings();
-  if (currentMusic) currentMusic.volume = s.music ? s.musicVolume * globalVol : 0;
+  if (currentMusic) currentMusic.volume = s.music ? s.musicVolume * _globalVolume : 0;
 }
 
 // ── Zone music map ────────────────────────────────────────────────────────
