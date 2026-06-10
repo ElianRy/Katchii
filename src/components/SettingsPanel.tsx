@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { stopMusic, playMenuMusic, setMusicVolume } from '../lib/audio';
+import { stopMusic, playMenuMusic, setMusicVolume, setGlobalVolume } from '../lib/audio';
 
 interface Props {
   onClose: () => void;
@@ -13,15 +13,16 @@ interface Settings {
   sound: boolean;
   musicVolume: number;
   sfxVolume: number;
+  globalVolume: number;
   reducedAnimations: boolean;
 }
 
 function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) return { music: true, sound: true, musicVolume: 0.35, sfxVolume: 0.7, reducedAnimations: false, ...JSON.parse(raw) };
+    if (raw) return { music: true, sound: true, musicVolume: 0.35, sfxVolume: 0.7, globalVolume: 1.0, reducedAnimations: false, ...JSON.parse(raw) };
   } catch {}
-  return { music: true, sound: true, musicVolume: 0.35, sfxVolume: 0.7, reducedAnimations: false };
+  return { music: true, sound: true, musicVolume: 0.35, sfxVolume: 0.7, globalVolume: 1.0, reducedAnimations: false };
 }
 
 function saveSettings(s: Settings) {
@@ -61,7 +62,10 @@ export function SettingsPanel({ onClose }: Props) {
       else playMenuMusic();
     }
     if ('musicVolume' in patch && next.music) {
-      setMusicVolume(patch.musicVolume!);
+      setMusicVolume(patch.musicVolume! * next.globalVolume);
+    }
+    if ('globalVolume' in patch) {
+      setGlobalVolume(patch.globalVolume!);
     }
   }
 
@@ -84,10 +88,30 @@ export function SettingsPanel({ onClose }: Props) {
 
       <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-6">
 
-        {/* Music */}
+        {/* Son — global + musique + effets dans un seul encadré */}
         <section>
-          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🎵 Musique</h3>
+          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🔊 Son</h3>
           <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden">
+
+            {/* Volume global */}
+            <div className="px-4 py-4 border-b border-slate-700/40">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-xl shrink-0">🔊</span>
+                <div className="flex-1">
+                  <div className="text-white font-semibold text-sm">Volume global</div>
+                  <div className="text-slate-400 text-xs mt-0.5">Ajuste le volume de tous les sons</div>
+                </div>
+                <span className="text-slate-300 text-xs w-8 text-right font-bold">{Math.round(settings.globalVolume * 100)}%</span>
+              </div>
+              <input
+                type="range" min={0} max={1} step={0.05}
+                value={settings.globalVolume}
+                onChange={e => update({ globalVolume: parseFloat(e.target.value) })}
+                className="w-full accent-yellow-400"
+              />
+            </div>
+
+            {/* Musique */}
             <ToggleRow
               label="Musique d'ambiance"
               description="Active les musiques de zones et combats"
@@ -96,7 +120,7 @@ export function SettingsPanel({ onClose }: Props) {
               onChange={() => update({ music: !settings.music })}
             />
             {settings.music && (
-              <div className="px-4 pb-4 flex items-center gap-3">
+              <div className="px-4 pb-3 flex items-center gap-3 border-b border-slate-700/40">
                 <span className="text-slate-400 text-xs w-16 shrink-0">Volume</span>
                 <input
                   type="range" min={0} max={1} step={0.05}
@@ -107,17 +131,12 @@ export function SettingsPanel({ onClose }: Props) {
                 <span className="text-slate-300 text-xs w-8 text-right">{Math.round(settings.musicVolume * 100)}%</span>
               </div>
             )}
-          </div>
-        </section>
 
-        {/* Sound FX */}
-        <section>
-          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🔊 Sons</h3>
-          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden">
+            {/* Effets sonores */}
             <ToggleRow
               label="Effets sonores"
               description="Bruitages, cris pokémon, captures…"
-              icon="🔊"
+              icon="🔉"
               checked={settings.sound}
               onChange={() => update({ sound: !settings.sound })}
             />

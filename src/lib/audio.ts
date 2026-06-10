@@ -10,29 +10,31 @@ export interface AudioSettings {
   sound: boolean;
   musicVolume: number; // 0–1
   sfxVolume: number;   // 0–1
+  globalVolume: number; // 0–1 master multiplier
 }
 
 export function loadAudioSettings(): AudioSettings {
   try {
     const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}');
     return {
-      music:       raw.music       ?? true,
-      sound:       raw.sound       ?? true,
-      musicVolume: raw.musicVolume ?? 0.35,
-      sfxVolume:   raw.sfxVolume   ?? 0.7,
+      music:        raw.music        ?? true,
+      sound:        raw.sound        ?? true,
+      musicVolume:  raw.musicVolume  ?? 0.35,
+      sfxVolume:    raw.sfxVolume    ?? 0.7,
+      globalVolume: raw.globalVolume ?? 1.0,
     };
   } catch {
-    return { music: true, sound: true, musicVolume: 0.35, sfxVolume: 0.7 };
+    return { music: true, sound: true, musicVolume: 0.35, sfxVolume: 0.7, globalVolume: 1.0 };
   }
 }
 
 function getMusicVol(): number {
   const s = loadAudioSettings();
-  return s.music ? s.musicVolume : 0;
+  return s.music ? s.musicVolume * s.globalVolume : 0;
 }
 function getSfxVol(): number {
   const s = loadAudioSettings();
-  return s.sound ? s.sfxVolume : 0;
+  return s.sound ? s.sfxVolume * s.globalVolume : 0;
 }
 
 // ── AudioContext singleton ────────────────────────────────────────────────
@@ -100,9 +102,14 @@ export function resumeCurrentMusic() {
   playMusic(track);
 }
 
-// Update music volume live (called from settings slider)
+// Update music volume live (called from settings sliders)
 export function setMusicVolume(vol: number) {
   if (currentMusic) currentMusic.volume = vol;
+}
+
+export function setGlobalVolume(globalVol: number) {
+  const s = loadAudioSettings();
+  if (currentMusic) currentMusic.volume = s.music ? s.musicVolume * globalVol : 0;
 }
 
 // ── Zone music map ────────────────────────────────────────────────────────
