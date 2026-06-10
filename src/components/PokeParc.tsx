@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { TutorialOverlay, isTutorialDone } from './TutorialOverlay';
+import { POKEPARK_TUTORIAL } from './TutorialContent';
 import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { GameState, RARITY_COLORS } from '../types';
@@ -653,6 +655,7 @@ function PokemonPicker({ state, onPick, onClose }: {
 
 // ---- Main Component ----
 export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt, onTrainingWin, onParkDuelResult }: Props) {
+  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('pokepark'));
   const [presence, setPresence] = useState<PresenceRow[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -1439,6 +1442,9 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         );
       })()}
 
+      {showTutorial && (
+        <TutorialOverlay tutorialKey="pokepark" steps={POKEPARK_TUTORIAL} onDone={() => setShowTutorial(false)} />
+      )}
     </div>
   );
 }

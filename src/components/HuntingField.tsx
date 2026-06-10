@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { TutorialOverlay, isTutorialDone } from './TutorialOverlay';
+import { HUNT_TUTORIAL } from './TutorialContent';
 import { ZoneBackground } from './ZoneBackground';
 import { SpawnedPokemonCard } from './SpawnedPokemonCard';
 import { HUD } from './HUD';
@@ -75,6 +77,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const [zoneTransition, setZoneTransition] = useState<'left' | 'right' | null>(null);
   const processingRef = useRef<Set<string>>(new Set());
   const capturingRef = useRef(false);
+  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('hunt'));
 
   // Update cooldown every second
   useEffect(() => {
@@ -473,6 +476,10 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           totalCaught={newCaptureInfo.totalCaught}
           onDismiss={() => setNewCaptureInfo(null)}
         />
+      )}
+
+      {showTutorial && (
+        <TutorialOverlay tutorialKey="hunt" steps={HUNT_TUTORIAL} onDone={() => setShowTutorial(false)} />
       )}
     </div>
   );

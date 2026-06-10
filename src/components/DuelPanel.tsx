@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react';
+import { TutorialOverlay, isTutorialDone } from './TutorialOverlay';
+import { DUELS_TUTORIAL } from './TutorialContent';
 import { GameState, Rarity, DuelEntry } from '../types';
 import { GEN1_POKEMON, POKEMON_BY_ID, POKEMON_BY_RARITY } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
@@ -55,6 +57,7 @@ function buildOpponentTeam(rankingPoints: number): Array<{ pokemonId: number; is
 type DuelPhase = 'team_select' | 'result';
 
 export function DuelPanel({ state, onClose, onDuelResult }: Props) {
+  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('duels'));
   const [selectedTeam, setSelectedTeam] = useState<Array<{ pokemonId: number; isShiny: boolean }>>([]);
   const [phase, setPhase] = useState<DuelPhase>('team_select');
   const [lastResult, setLastResult] = useState<DuelEntry | null>(null);
@@ -310,6 +313,9 @@ export function DuelPanel({ state, onClose, onDuelResult }: Props) {
             </div>
           </div>
         )}
+      {showTutorial && (
+        <TutorialOverlay tutorialKey="duels" steps={DUELS_TUTORIAL} onDone={() => setShowTutorial(false)} />
+      )}
       </div>
     </div>
   );

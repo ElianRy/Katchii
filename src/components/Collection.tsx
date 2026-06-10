@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { TutorialOverlay, isTutorialDone } from './TutorialOverlay';
+import { COLLECTION_TUTORIAL } from './TutorialContent';
 import { GameState, RARITY_COLORS, RARITY_LABELS, Rarity } from '../types';
 import { GEN1_POKEMON, POKEMON_BY_ID } from '../data/gen1';
 import { BADGES } from '../data/badges';
@@ -48,6 +50,7 @@ const ARENA_BADGES = ZONES.filter(z => z.boss?.badge).map(z => ({
 const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
 
 export function Collection({ state, onClose }: Props) {
+  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('collection'));
   const [mainTab, setMainTab] = useState<MainTab>('collection');
   const [filter, setFilter] = useState<FilterTab>(() => {
     try { return (localStorage.getItem('katchii_pokedex_filter') as FilterTab) ?? 'tous'; } catch { return 'tous'; }
@@ -438,6 +441,9 @@ export function Collection({ state, onClose }: Props) {
             })}
           </div>
         </div>
+      )}
+      {showTutorial && (
+        <TutorialOverlay tutorialKey="collection" steps={COLLECTION_TUTORIAL} onDone={() => setShowTutorial(false)} />
       )}
     </div>
   );
