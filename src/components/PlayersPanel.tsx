@@ -406,7 +406,7 @@ function AdminPlayerPanel({ player, mutedUsers, deletedUsers, parkRemovedUsers, 
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/70" onClick={onClose}>
-      <div className="w-full max-w-md bg-slate-900 border-t-2 border-red-500/60 rounded-t-2xl p-5 pb-8 shadow-2xl"
+      <div className="w-full max-w-md bg-slate-900 border-t-2 border-red-500/60 rounded-t-2xl p-5 pb-8 shadow-2xl overflow-y-auto max-h-[85dvh]"
         onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">

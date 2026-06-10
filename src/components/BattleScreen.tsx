@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { playBattleMusic, playLeagueBattleMusic, stopMusic, playVictory, playSfxDefeat } from '../lib/audio';
+import { playBattleMusic, playShinyBattleMusic, playLeagueBattleMusic, stopMusic, playVictory, playSfxDefeat } from '../lib/audio';
 import { RARITY_COLORS, Rarity } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
@@ -350,7 +350,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   // Intro → battle transition (2s cinematic) + music
   useEffect(() => {
     if (phase !== 'intro') return;
-    if (isLeague) playLeagueBattleMusic(); else playBattleMusic();
+    const hasShiny = [...playerTeam, ...enemyTeam].some(m => m.isShiny);
+    if (isLeague) playLeagueBattleMusic(); else if (hasShiny) playShinyBattleMusic(); else playBattleMusic();
     const t = setTimeout(() => setPhase('battle'), 2000);
     return () => clearTimeout(t);
   }, [phase]);

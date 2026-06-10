@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View } from '../types';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
-import { playSfxConfirm } from '../lib/audio';
+import { playSfxConfirm, playPokemonCry } from '../lib/audio';
 
 interface Props {
   currentView: View;
@@ -103,20 +103,17 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
   }, [mood, pokemonId]);
 
   const handleClick = useCallback(() => {
-    const now = Date.now();
-    const delta = now - lastTapRef.current;
-    lastTapRef.current = now;
-    if (delta < 500) {
-      const newHearts: FloatingHeart[] = Array.from({ length: 5 }, () => ({
-        id: heartCounterRef.current++,
-        x: (Math.random() - 0.5) * 40,
-      }));
-      setHearts(prev => [...prev, ...newHearts]);
-      setTimeout(() => {
-        setHearts(prev => prev.filter(h => !newHearts.some(nh => nh.id === h.id)));
-      }, 1400);
-    }
-  }, []);
+    lastTapRef.current = Date.now();
+    const newHearts: FloatingHeart[] = Array.from({ length: 4 }, (_, i) => ({
+      id: heartCounterRef.current++,
+      x: (i % 2 === 0 ? -1 : 1) * (10 + Math.random() * 20),
+    }));
+    setHearts(prev => [...prev, ...newHearts]);
+    setTimeout(() => {
+      setHearts(prev => prev.filter(h => !newHearts.some(nh => nh.id === h.id)));
+    }, 1400);
+    playPokemonCry(pokemonId);
+  }, [pokemonId]);
 
   const MOOD_ANIM: Record<NavMood, string> = {
     happy:   'bounce-pokemon 1.8s ease-in-out infinite',

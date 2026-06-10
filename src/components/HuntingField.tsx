@@ -7,7 +7,7 @@ import { useSpawner } from '../hooks/useSpawner';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { Zone, ZONE_BY_ID, ZONE_ORDER } from '../data/zones';
 import { ZoneUnlockCondition } from '../types';
-import { playZoneMusic, playSfxCapture, playSfxDuplicate, playSfxShinyCapture } from '../lib/audio';
+import { playZoneMusic, stopMusic, playSfxCapture, playSfxDuplicate, playSfxShinyCapture } from '../lib/audio';
 
 const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
   zone1: { ground: 'linear-gradient(to top, #14532d 0%, #166534 40%, transparent 100%)', bush: 'linear-gradient(to top, #15803d, #22c55e)' },
@@ -379,8 +379,9 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           onClick={() => {
             setZoneTransition('left');
             spawner.clearSpawned();
+            stopMusic(0.3);
             gameState.setCurrentZone(prevZoneId!);
-            setTimeout(() => setZoneTransition(null), 400);
+            setTimeout(() => { playZoneMusic(prevZoneId!); setZoneTransition(null); }, 400);
           }}
           className="absolute left-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl"
           title={ZONE_BY_ID[prevZoneId!]?.name}
@@ -393,8 +394,9 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           onClick={() => {
             setZoneTransition('right');
             spawner.clearSpawned();
+            stopMusic(0.3);
             gameState.setCurrentZone(nextZoneId!);
-            setTimeout(() => setZoneTransition(null), 400);
+            setTimeout(() => { playZoneMusic(nextZoneId!); setZoneTransition(null); }, 400);
           }}
           className="absolute right-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl"
           title={ZONE_BY_ID[nextZoneId!]?.name}

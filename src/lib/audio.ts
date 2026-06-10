@@ -47,6 +47,7 @@ function ctx(): AudioContext {
 let currentMusic: HTMLAudioElement | null = null;
 let currentMusicSrc = '';
 let currentMusicTrack = ''; // track name without BASE_URL
+let currentFadeInId: ReturnType<typeof setInterval> | null = null;
 
 export function playMusic(src: string) {
   const vol = getMusicVol();
@@ -66,14 +67,15 @@ export function playMusic(src: string) {
 
   let v = 0;
   const step = vol / 20;
-  const id = setInterval(() => {
+  currentFadeInId = setInterval(() => {
     v = Math.min(vol, v + step);
     if (audio) audio.volume = v;
-    if (v >= vol) clearInterval(id);
+    if (v >= vol) { clearInterval(currentFadeInId!); currentFadeInId = null; }
   }, 50);
 }
 
 export function stopMusic(fadeSec = 1) {
+  if (currentFadeInId !== null) { clearInterval(currentFadeInId); currentFadeInId = null; }
   if (!currentMusic) return;
   const audio = currentMusic;
   currentMusic = null;
@@ -122,8 +124,10 @@ export function playZoneMusic(zoneId: string) {
 }
 
 export function playBattleMusic()       { playMusic('combat'); }
+export function playShinyBattleMusic()  { playMusic('combat_shiny'); }
 export function playLeagueBattleMusic() { playMusic('combat_ligue'); }
 export function playMenuMusic()         { playMusic('ecran_menu'); }
+export function playShinySpawn()        { playSfxFile('spawn_shiny'); }
 
 // ── One-shot SFX from Supabase ────────────────────────────────────────────
 function playSfxFile(name: string) {

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { playShinySpawn } from '../lib/audio';
 import { SpawnedPokemon, Rarity, RARITY_WEIGHTS } from '../types';
 import { GEN1_POKEMON, POKEMON_BY_RARITY, POKEMON_BY_ID } from '../data/gen1';
 import { ZONE_BY_ID } from '../data/zones';
@@ -167,6 +168,7 @@ export function useSpawner(
           captured: false,
         };
 
+        if (isShiny) playShinySpawn();
         return [...prev, newSpawn];
       });
     }, SPAWN_INTERVAL_MS);

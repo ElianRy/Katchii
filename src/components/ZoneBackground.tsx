@@ -367,7 +367,7 @@ export function ZoneBackground({ zoneId }: Props) {
 
             {/* Small fish silhouettes */}
             {[30, 55, 65].map((x, i) => (
-              <g key={`fish${i}`} style={{ animation: `cloud-drift ${8+i*3}s linear infinite`, animationDelay: `${-i*2}s` }}>
+              <g key={`fish${i}`} style={{ animation: `cloud-drift ${18+i*5}s linear infinite`, animationDelay: `${-i*4}s` }}>
                 <ellipse cx={x} cy={40+i*10} rx="4" ry="2" fill={['rgba(100,200,255,0.5)','rgba(255,180,100,0.45)','rgba(100,255,200,0.5)'][i]}/>
                 <polygon points={`${x-4},${40+i*10} ${x-8},${38+i*10} ${x-8},${42+i*10}`}
                   fill={['rgba(80,180,255,0.4)','rgba(230,150,80,0.4)','rgba(80,230,180,0.4)'][i]}/>
