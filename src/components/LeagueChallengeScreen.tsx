@@ -1000,8 +1000,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           setCurrentTeam(survivors);
         }
         if (nextPhase === 'dialogue_giovanni') {
-          // Peter beaten — short victory then back to league battle music
-          setTimeout(() => playLeagueBattleMusic(), 1400);
+          // music will switch to 'giovanni' when DialogueScreen mounts (lineIdx 0)
         } else if (nextPhase === 'dialogue_master') {
           // Giovanni beaten — stop music completely; combat_berix plays at Berix reveal
           stopMusic(0.3);
