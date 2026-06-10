@@ -99,29 +99,29 @@ export function App() {
     return () => document.removeEventListener('click', handler, true);
   }, []);
 
-  // Visibility: cut music on hide, resume on show
+  // Visibility: cut music instantly when app goes to background, resume on return
   useEffect(() => {
-    const onVisibility = () => {
-      if (document.hidden) {
-        stopMusic(0);   // instant cut
-      } else {
-        if (battle3v3) return;
-        const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
-        if (view === 'home') playMenuMusic();
-        else if (view === 'hunt') playZoneMusic(zoneId);
-      }
-    };
-    const onFocus = () => {
+    const cutMusic = () => stopMusic(0);
+    const resumeMusic = () => {
+      if (document.hidden) return;
       if (battle3v3) return;
       const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
       if (view === 'home') playMenuMusic();
       else if (view === 'hunt') playZoneMusic(zoneId);
     };
+    const onVisibility = () => { if (document.hidden) cutMusic(); else resumeMusic(); };
+
     document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('focus', onFocus);
+    window.addEventListener('blur', cutMusic);       // tab loses focus / desktop
+    window.addEventListener('pagehide', cutMusic);   // iOS background / tab close
+    window.addEventListener('focus', resumeMusic);
+    window.addEventListener('pageshow', resumeMusic);
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('focus', onFocus);
+      window.removeEventListener('blur', cutMusic);
+      window.removeEventListener('pagehide', cutMusic);
+      window.removeEventListener('focus', resumeMusic);
+      window.removeEventListener('pageshow', resumeMusic);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, battle3v3, gameState.state.zoneProgress?.currentZoneId]);
