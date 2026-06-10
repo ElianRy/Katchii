@@ -771,13 +771,13 @@ button:active{transform:scale(.93);transition:transform .08s ease}
 }
 
 @keyframes shiny-img-rainbow {
-  0%   { filter: drop-shadow(0 0 6px #fde047) drop-shadow(0 0 14px #fde047cc) drop-shadow(0 0 28px #fde04766); }
-  16%  { filter: drop-shadow(0 0 6px #f472b6) drop-shadow(0 0 14px #f472b6cc) drop-shadow(0 0 28px #f472b666); }
-  33%  { filter: drop-shadow(0 0 6px #60a5fa) drop-shadow(0 0 14px #60a5facc) drop-shadow(0 0 28px #60a5fa66); }
-  50%  { filter: drop-shadow(0 0 6px #4ade80) drop-shadow(0 0 14px #4ade80cc) drop-shadow(0 0 28px #4ade8066); }
-  66%  { filter: drop-shadow(0 0 6px #fb923c) drop-shadow(0 0 14px #fb923ccc) drop-shadow(0 0 28px #fb923c66); }
-  83%  { filter: drop-shadow(0 0 6px #c084fc) drop-shadow(0 0 14px #c084fccc) drop-shadow(0 0 28px #c084fc66); }
-  100% { filter: drop-shadow(0 0 6px #fde047) drop-shadow(0 0 14px #fde047cc) drop-shadow(0 0 28px #fde04766); }
+  0%   { filter: drop-shadow(0 0 4px #fde047) drop-shadow(0 0 10px #fde04799); }
+  16%  { filter: drop-shadow(0 0 4px #f472b6) drop-shadow(0 0 10px #f472b699); }
+  33%  { filter: drop-shadow(0 0 4px #60a5fa) drop-shadow(0 0 10px #60a5fa99); }
+  50%  { filter: drop-shadow(0 0 4px #4ade80) drop-shadow(0 0 10px #4ade8099); }
+  66%  { filter: drop-shadow(0 0 4px #fb923c) drop-shadow(0 0 10px #fb923c99); }
+  83%  { filter: drop-shadow(0 0 4px #c084fc) drop-shadow(0 0 10px #c084fc99); }
+  100% { filter: drop-shadow(0 0 4px #fde047) drop-shadow(0 0 10px #fde04799); }
 }
 
 /* Pokédex shiny rotating stars */

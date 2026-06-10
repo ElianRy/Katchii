@@ -490,10 +490,10 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   // ── INTRO PHASE ──
   if (phase === 'intro') {
     return (
-      <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617' }}>
+      <div className="fixed inset-0 z-[600] flex flex-col items-center" style={{ background: '#020617' }}>
         {/* sideOverlay visible during intro too */}
         {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
-        <div className="relative flex-1 overflow-hidden">
+        <div className="relative flex-1 overflow-hidden w-full" style={{ maxWidth: 480 }}>
           <div className="absolute inset-0" style={{
             background: 'radial-gradient(ellipse at 50% 20%, #1e1b4b 0%, #0f0720 55%, #020617 100%)',
           }} />
@@ -555,12 +555,12 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   }
 
   return (
-    <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617' }}>
+    <div className="fixed inset-0 z-[600] flex flex-col items-center" style={{ background: '#020617' }}>
       {/* Side overlay at root level — covers full screen, not clipped by arena overflow */}
       {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
 
       {/* ── Arena ── */}
-      <div className="relative flex-1 overflow-hidden">
+      <div className="relative flex-1 overflow-hidden w-full" style={{ maxWidth: 480 }}>
 
         {/* Sky */}
         <div className="absolute inset-0" style={{
@@ -811,7 +811,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
       </div>
 
       {/* Battle log */}
-      <div className="shrink-0 bg-black/90 border-t border-slate-700/50 px-4 py-2" style={{ height: 80, overflow: 'hidden' }}>
+      <div className="shrink-0 bg-black/90 border-t border-slate-700/50 px-4 py-2 w-full" style={{ height: 80, overflow: 'hidden', maxWidth: 480 }}>
         <div className="flex justify-between items-start h-full">
           <div className="flex-1 overflow-hidden">
             {log.slice(-3).map((entry, i) => (
