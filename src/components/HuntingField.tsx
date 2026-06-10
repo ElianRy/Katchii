@@ -106,6 +106,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       processingRef.current.add(uid);
 
       spawner.capture(uid);
+      playCatchPoke(); // plays when pokeball animation starts
 
       setTimeout(() => {
         const pokemon = POKEMON_BY_ID[pokemonId];
@@ -120,27 +121,23 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         const { pts, level: pokemonLevel } = gameState.addCapture(pokemonId, isShiny, pokemon.rarity);
         const totalCaught = Object.values(gameState.state.normalCollection as Record<number,number>).filter(v => v > 0).length + Object.values(gameState.state.shinyCollection as Record<number,number>).filter(v => v > 0).length;
         const isEpic = pokemon.rarity === 'legendaire' || isShiny;
-        // catch_poke immediately on click, then sfx_capture when popup appears
-        playCatchPoke();
-        if (!isDoublon) {
-          if (isEpic) setTimeout(() => playSfxShinyCapture(), 500);
-          else setTimeout(() => playSfxCapture(), 500);
-        }
         if (pts > 0) {
           addNotification(`+${pts} pts !`, x, y, true);
           addNotification('Nouveau !', x, y - 8, true);
           setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
+          if (isEpic) playSfxShinyCapture(); else playSfxCapture(); // sfx when popup appears
         } else if (isDoublon) {
           addNotification(`+${doublonXp} XP !`, x, y, true);
           addNotification('Doublon !', x, y - 8, false);
           if (isEpic) {
             setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
+            playSfxShinyCapture();
           }
         } else if (isShiny) {
-          // Shiny duplicate (pts===0, not counted as isDoublon because isShiny)
           addNotification(`+${doublonXp} XP !`, x, y, true);
           addNotification('Doublon Shiny !', x, y - 8, false);
           setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny: true, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
+          playSfxShinyCapture();
         }
         processingRef.current.delete(uid);
         capturingRef.current = false; // UNLOCK

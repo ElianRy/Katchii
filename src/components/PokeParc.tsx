@@ -9,7 +9,7 @@ import { POKEMON_TYPE } from '../data/pokemonTypes';
 import { getPlayerGrade, PARK_XP_PER_TICK } from '../lib/playerLevel';
 import { xpToNextLevel, calcMaxHp } from '../data/combatEngine';
 import { calcPowerRating, calcEloDelta, calcEloFloor } from '../data/powerRating';
-import { playPokemonCry } from '../lib/audio';
+import { playPokemonCry, stopMusic } from '../lib/audio';
 import { BattleScreen } from './BattleScreen';
 import { TeamMember } from './TeamBuilder';
 
@@ -991,6 +991,20 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   };
 
 
+  // Fetch real pokemon level for interaction target from their game_save
+  useEffect(() => {
+    if (!interactionTarget) return;
+    const { userId, pokemonId } = interactionTarget;
+    supabase.from('game_saves').select('state').eq('user_id', userId).single().then(({ data }) => {
+      if (!data) return;
+      const s = data.state as Record<string, unknown> | null;
+      if (!s) return;
+      const levels = s.pokemonLevels as Record<number, { level: number }> | null;
+      const level = levels?.[pokemonId]?.level ?? 1;
+      setInteractionTarget(prev => prev && prev.userId === userId ? { ...prev, level } : prev);
+    });
+  }, [interactionTarget?.userId]);
+
   const handleWave = () => {
     if (!interactionTarget) return;
     const target = interactionTarget;
@@ -1441,7 +1455,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
               if (won) onTrainingWin?.();
               onParkDuelResult?.(won, eloDelta, interactionTarget.userId);
             }}
-            onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
+            onClose={() => { setShowDuel(false); setInteractionTarget(null); stopMusic(0.3); }}
           />,
           document.body
         );
