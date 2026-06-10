@@ -427,12 +427,9 @@ function DialogueScreen({ trainer, onDone }: {
   const [visible, setVisible] = useState(true);
   const isMaster = trainer.id === 'master';
 
-  const isGiovanni = trainer.id === 'giovanni';
-
   useEffect(() => {
-    if (isGiovanni && lineIdx === 0) playMusic('giovanni');
     if (isMaster && lineIdx === 1) playMusic('combat_berix');
-  }, [isGiovanni, isMaster, lineIdx]);
+  }, [isMaster, lineIdx]);
 
   const advance = () => {
     if (lineIdx < trainer.dialogues.length - 1) {
@@ -944,6 +941,14 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   const [retrying, setRetrying] = useState(false);
   const [victoryHandled, setVictoryHandled] = useState(false);
 
+  // Music transitions per phase
+  useEffect(() => {
+    if (phase === 'dialogue_giovanni' || phase === 'starter_giovanni' || phase === 'battle_giovanni') {
+      const t = setTimeout(() => playMusic('giovanni'), 600);
+      return () => clearTimeout(t);
+    }
+  }, [phase]);
+
   // Preload trainer images so they appear instantly in battle
   useEffect(() => {
     ['/trainers/peter.png', '/trainers/giovanni.webp', '/trainers/master.png',
@@ -999,7 +1004,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           setCurrentTeam(survivors);
         }
         if (nextPhase === 'dialogue_giovanni') {
-          setTimeout(() => playMusic('giovanni'), 300); // after BattleScreen unmount cleanup
+          // music handled by top-level phase useEffect
         } else if (nextPhase === 'dialogue_master') {
           // Giovanni beaten — stop music completely; combat_berix plays at Berix reveal
           stopMusic(0.3);
