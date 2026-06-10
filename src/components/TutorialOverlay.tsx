@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export interface TutorialStep {
   title: string;
@@ -23,14 +23,9 @@ export function TutorialOverlay({ tutorialKey, steps, onDone }: Props) {
   const [visible, setVisible] = useState(true);
   const [animDir, setAnimDir] = useState<'in' | 'out'>('in');
 
-  // Mark done on first render
-  useEffect(() => {
-    localStorage.setItem(storageKey(tutorialKey), '1');
-  }, [tutorialKey]);
-
   if (!visible) return null;
 
-  const close = () => { setVisible(false); onDone?.(); };
+  const close = () => { localStorage.setItem(storageKey(tutorialKey), '1'); setVisible(false); onDone?.(); };
 
   const goNext = () => {
     if (step < steps.length - 1) {
