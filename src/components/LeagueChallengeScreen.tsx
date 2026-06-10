@@ -944,7 +944,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   // Music transitions per phase
   useEffect(() => {
     if (phase === 'dialogue_giovanni' || phase === 'starter_giovanni' || phase === 'battle_giovanni') {
-      const t = setTimeout(() => playMusic('giovanni'), 600);
+      const t = setTimeout(() => playMusic('gio2'), 600);
       return () => clearTimeout(t);
     }
   }, [phase]);

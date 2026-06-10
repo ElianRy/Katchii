@@ -21,16 +21,16 @@ export function loadAudioSettings(): AudioSettings {
       sound:        raw.sound        ?? true,
       musicVolume:  raw.musicVolume  ?? 0.2,
       sfxVolume:    raw.sfxVolume    ?? 0.7,
-      globalVolume: raw.globalVolume ?? 1.0,
+      globalVolume: raw.globalVolume ?? 0.7,
     };
   } catch {
-    return { music: true, sound: true, musicVolume: 0.2, sfxVolume: 0.7, globalVolume: 1.0 };
+    return { music: true, sound: true, musicVolume: 0.2, sfxVolume: 0.7, globalVolume: 0.7 };
   }
 }
 
 // In-memory master volume — synced via setGlobalVolume() from settings UI
 let _globalVolume: number = (() => {
-  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}').globalVolume ?? 1.0; } catch { return 1.0; }
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}').globalVolume ?? 0.7; } catch { return 0.7; }
 })();
 
 function getMusicVol(): number {
@@ -87,6 +87,11 @@ export function stopMusic(fadeSec = 1) {
   const audio = currentMusic;
   currentMusic = null;
   currentMusicSrc = '';
+  if (fadeSec <= 0) {
+    audio.pause();
+    audio.src = '';
+    return;
+  }
   const startVol = audio.volume;
   const steps = 20;
   const intervalMs = (fadeSec * 1000) / steps;
@@ -99,8 +104,18 @@ export function stopMusic(fadeSec = 1) {
   }, intervalMs);
 }
 
-// Resume last track (called on visibility change / focus)
+// Pause without destroying the element (for app background/foreground)
+export function pauseCurrentMusic() {
+  if (currentFadeInId !== null) { clearInterval(currentFadeInId); currentFadeInId = null; }
+  if (currentMusic) currentMusic.pause();
+}
+
+// Resume last track — first try to un-pause the existing element, else recreate
 export function resumeCurrentMusic() {
+  if (currentMusic && currentMusic.paused) {
+    currentMusic.play().catch(() => {});
+    return;
+  }
   if (!currentMusicTrack) return;
   const track = currentMusicTrack;
   currentMusicSrc = ''; // force restart
@@ -109,15 +124,22 @@ export function resumeCurrentMusic() {
 
 // Update music volume live (called from settings sliders)
 export function setMusicVolume(vol: number) {
-  if (currentMusic) currentMusic.volume = vol;
+  if (currentMusic) {
+    currentMusic.volume = vol;
+  } else if (vol > 0 && currentMusicTrack) {
+    resumeCurrentMusic(); // restart if music was never started (vol was 0)
+  }
 }
 
 export function setGlobalVolume(globalVol: number) {
   _globalVolume = globalVol;
-  // Apply immediately to playing music (overrides any fade-in in progress)
   if (currentFadeInId !== null) { clearInterval(currentFadeInId); currentFadeInId = null; }
   const s = loadAudioSettings();
-  if (currentMusic) currentMusic.volume = s.music ? s.musicVolume * _globalVolume : 0;
+  if (currentMusic) {
+    currentMusic.volume = s.music ? s.musicVolume * _globalVolume : 0;
+  } else if (globalVol > 0 && currentMusicTrack) {
+    resumeCurrentMusic(); // restart if music was silenced when vol was 0
+  }
 }
 
 // ── Zone music map ────────────────────────────────────────────────────────

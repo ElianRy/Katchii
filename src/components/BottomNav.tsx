@@ -140,7 +140,7 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
     <div
       style={{
         position: 'absolute',
-        bottom: 68,
+        bottom: 'calc(68px + env(safe-area-inset-bottom, 0px))',
         left: `${posX}%`,
         transform: 'translateX(-50%)',
         transition: 'left 3s ease-in-out',
@@ -281,7 +281,7 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
       </div>
 
       {/* Main nav bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-[500] pointer-events-none" style={{ height: BOTTOM_NAV_HEIGHT }}>
+      <div className="fixed bottom-0 left-0 right-0 z-[500] pointer-events-none">
         {/* Favorite pokemon wandering above the nav */}
         {favoritePokemon && !hideCompanion && (
           <FavoritePokemon
@@ -291,8 +291,9 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
         )}
 
         <div
-          className="flex items-center justify-around h-full backdrop-blur-sm px-1 pointer-events-auto"
+          className="flex items-center justify-around backdrop-blur-sm px-1 pointer-events-auto"
           style={{
+            height: BOTTOM_NAV_HEIGHT,
             background: 'linear-gradient(to top, rgba(0,0,0,0.97) 0%, rgba(15,23,42,0.95) 100%)',
             borderTop: '1px solid rgba(148,163,184,0.2)',
             boxShadow: '0 -4px 20px rgba(0,0,0,0.5)',
@@ -356,6 +357,11 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
             )}
           </button>
         </div>
+        {/* Extend background color into home-bar safe area */}
+        <div className="pointer-events-auto" style={{
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          background: 'rgba(0,0,0,0.97)',
+        }} />
       </div>
 
       <style>{`

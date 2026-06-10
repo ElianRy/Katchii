@@ -20,9 +20,9 @@ interface Settings {
 function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
-    if (raw) return { music: true, sound: true, musicVolume: 0.2, sfxVolume: 0.7, globalVolume: 1.0, reducedAnimations: false, ...JSON.parse(raw) };
+    if (raw) return { music: true, sound: true, musicVolume: 0.2, sfxVolume: 0.7, globalVolume: 0.7, reducedAnimations: false, ...JSON.parse(raw) };
   } catch {}
-  return { music: true, sound: true, musicVolume: 0.2, sfxVolume: 0.7, globalVolume: 1.0, reducedAnimations: false };
+  return { music: true, sound: true, musicVolume: 0.2, sfxVolume: 0.7, globalVolume: 0.7, reducedAnimations: false };
 }
 
 function saveSettings(s: Settings) {

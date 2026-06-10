@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fill safe areas (notch / home bar) with app's dark background */
+html, body {
+  background-color: #020617;
+}
+
 /* Prevent iOS Safari zoom on input focus (triggered when font-size < 16px) */
 input, textarea, select {
   font-size: 16px !important;

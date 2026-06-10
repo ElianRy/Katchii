@@ -26,7 +26,7 @@ import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
 import { calcMaxHp } from './data/combatEngine';
 import { POKEMON_BY_ID } from './data/gen1';
-import { playMenuMusic, stopMusic, playZoneMusic, playSfxConfirm } from './lib/audio';
+import { playMenuMusic, stopMusic, playZoneMusic, playSfxConfirm, pauseCurrentMusic, resumeCurrentMusic } from './lib/audio';
 
 export function App() {
   const [view, setView] = useState<View>('auth');
@@ -103,32 +103,26 @@ export function App() {
     return () => document.removeEventListener('click', handler, true);
   }, []);
 
-  // Visibility: cut music instantly when app goes to background, resume on return
+  // Visibility: pause music instantly when app goes to background, resume on return
   useEffect(() => {
-    const cutMusic = () => stopMusic(0);
-    const resumeMusic = () => {
+    const cutMusic = () => pauseCurrentMusic();
+    const onReturn = () => {
       if (document.hidden) return;
       if (battle3v3) return;
-      const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
-      if (view === 'home') playMenuMusic();
-      else if (view === 'hunt') playZoneMusic(zoneId);
+      resumeCurrentMusic();
     };
-    const onVisibility = () => { if (document.hidden) cutMusic(); else resumeMusic(); };
+    const onVisibility = () => { if (document.hidden) cutMusic(); else onReturn(); };
 
     document.addEventListener('visibilitychange', onVisibility);
-    window.addEventListener('blur', cutMusic);       // tab loses focus / desktop
     window.addEventListener('pagehide', cutMusic);   // iOS background / tab close
-    window.addEventListener('focus', resumeMusic);
-    window.addEventListener('pageshow', resumeMusic);
+    window.addEventListener('pageshow', onReturn);
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('blur', cutMusic);
       window.removeEventListener('pagehide', cutMusic);
-      window.removeEventListener('focus', resumeMusic);
-      window.removeEventListener('pageshow', resumeMusic);
+      window.removeEventListener('pageshow', onReturn);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, battle3v3, gameState.state.zoneProgress?.currentZoneId]);
+  }, [battle3v3]);
 
   // Stop music when battle starts; resume zone music after battle ends
   useEffect(() => {
