@@ -115,6 +115,8 @@ export interface GameState {
   lastParkXpAt?: number | null;
   parkElo?: number;
   parkDuelRecord?: { totalWins: number; totalLosses: number };
+  // key = "YYYY-MM-DD:userId", value = fight count today
+  parkFightLog?: Record<string, number>;
 }
 
 export type ZoneUnlockCondition =

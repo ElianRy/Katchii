@@ -634,9 +634,10 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
         {/* Floating damage */}
         {floatingDmg.map(d => {
           const color = d.isMiss ? '#94a3b8' : d.isCrit ? '#fbbf24' : d.effectiveness === 0 ? '#94a3b8' : '#ef4444';
+          // Follow pokemon sprite positions (same max() formula as sprites)
           const pos = d.target === 'enemy'
-            ? { top: '22%', right: '14%' }
-            : { bottom: '26%', left: '20%' };
+            ? { top: '14%', right: 'max(7%, calc(50% - 220px))' }
+            : { bottom: '32%', left: 'max(7%, calc(50% - 220px))' };
           return (
             <div key={d.id} className="absolute pointer-events-none" style={{
               ...pos, zIndex: 20,

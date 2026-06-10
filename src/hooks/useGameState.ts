@@ -745,12 +745,19 @@ export function useGameState() {
     update(prev => ({ ...prev, lastParkXpAt: ts }));
   }, [update]);
 
-  const addParkDuelResult = useCallback((won: boolean, eloDelta: number) => {
+  const addParkDuelResult = useCallback((won: boolean, eloDelta: number, opponentKey?: string) => {
     update(prev => {
       const rec = prev.parkDuelRecord ?? { totalWins: 0, totalLosses: 0 };
+      const today = new Date().toISOString().slice(0, 10);
+      const logKey = opponentKey ? `${today}:${opponentKey}` : null;
+      const fightLog = prev.parkFightLog ?? {};
+      const newFightLog = logKey
+        ? { ...fightLog, [logKey]: (fightLog[logKey] ?? 0) + 1 }
+        : fightLog;
       return {
         ...prev,
-        parkElo: Math.max(100, (prev.parkElo ?? 1000) + eloDelta),
+        parkElo: Math.max(800, (prev.parkElo ?? 1000) + eloDelta),
+        parkFightLog: newFightLog,
         parkDuelRecord: {
           totalWins: rec.totalWins + (won ? 1 : 0),
           totalLosses: rec.totalLosses + (won ? 0 : 1),

@@ -72,11 +72,11 @@ export function calcDamage(
   const effectiveness = getTypeEffectiveness(primaryType, defenderTypes);
 
   const roll = Math.random();
-  if (roll < 0.08) {
+  if (roll < 0.10) {
     return { damage: 0, effectiveness, moveName: move.name, isCrit: false, isMiss: true };
   }
 
-  const isCrit = Math.random() < 0.12;
+  const isCrit = Math.random() < 0.15;
   const randomFactor = 0.85 + Math.random() * 0.15;
   const critMult = isCrit ? 1.75 : 1;
   const damage = Math.max(1, Math.floor((move.power * atk / def) * effectiveness * randomFactor * critMult / 10));

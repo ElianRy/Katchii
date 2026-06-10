@@ -6,6 +6,7 @@ import { POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
 import { getPlayerGrade, PARK_XP_PER_TICK } from '../lib/playerLevel';
 import { xpToNextLevel, calcMaxHp } from '../data/combatEngine';
+import { calcPowerRating, calcEloDelta, calcEloFloor } from '../data/powerRating';
 import { BattleScreen } from './BattleScreen';
 import { TeamMember } from './TeamBuilder';
 
@@ -52,7 +53,7 @@ interface Props {
   onAddPokemonXp: (pokemonId: number, xp: number) => void;
   onSetLastParkXpAt?: (ts: number) => void;
   onTrainingWin?: () => void;
-  onParkDuelResult?: (won: boolean, eloDelta: number) => void;
+  onParkDuelResult?: (won: boolean, eloDelta: number, opponentKey?: string) => void;
 }
 
 function getPokemonTitle(wins: number): string | null {
@@ -498,16 +499,20 @@ function InteractionModal({
 
 // ---- Park Duel Battle (1v1 using BattleScreen) ----
 function ParkDuelBattle({
-  myPokemonId, myIsShiny, myLevel, myElo,
+  myPokemonId, myIsShiny, myLevel, myElo, myPR, myEloFloor,
   opponentPokemonId, opponentIsShiny, opponentLevel, opponentRarity, opponentName,
+  fightCountVsOpp,
   onClose, onResult,
 }: {
-  myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity?: string; myElo: number;
+  myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity?: string;
+  myElo: number; myPR: number; myEloFloor: number;
   opponentPokemonId: number; opponentIsShiny: boolean; opponentLevel: number; opponentRarity: string;
-  opponentName: string; onClose: () => void; onResult: (won: boolean, eloDelta: number) => void;
+  opponentName: string; fightCountVsOpp: number;
+  onClose: () => void; onResult: (won: boolean, eloDelta: number) => void;
 }) {
-  const oppElo = 600 + opponentLevel * 8 * ((RARITY_SCORE[opponentRarity] ?? 1) / 4);
-  const expected = 1 / (1 + Math.pow(10, (oppElo - myElo) / 400));
+  // Estimate opponent PR and Elo from their pokemon stats
+  const oppPR = opponentLevel * (RARITY_SCORE[opponentRarity] ?? 1) * 20;
+  const oppElo = Math.max(800, 1000 + oppPR * 0.15 + opponentLevel * 4);
   const resultSent = useRef(false);
 
   const [eloResult, setEloResult] = useState<{ won: boolean; eloDelta: number; newElo: number } | null>(null);
@@ -539,6 +544,8 @@ function ParkDuelBattle({
                 {eloDelta >= 0 ? '+' : ''}{eloDelta}
               </span>
             </div>
+            {newElo <= myEloFloor && <div className="text-xs text-yellow-400 mt-1">Plancher Elo atteint</div>}
+            {fightCountVsOpp >= 1 && eloDelta === 0 && <div className="text-xs text-slate-400 mt-1">Rendement nul (trop de combats vs ce joueur)</div>}
           </div>
           <button onClick={onClose} className="w-full py-2 rounded-xl bg-slate-600 text-white font-black text-sm">Fermer</button>
         </div>
@@ -554,9 +561,8 @@ function ParkDuelBattle({
       onBattleEnd={(won) => {
         if (resultSent.current) return;
         resultSent.current = true;
-        const rawDelta = Math.round(32 * ((won ? 1 : 0) - expected));
-        const eloDelta = Math.max(-20, Math.min(20, rawDelta));
-        const newElo = Math.max(100, myElo + eloDelta);
+        const eloDelta = calcEloDelta(myElo, myPR, oppElo, oppPR, won, fightCountVsOpp);
+        const newElo = Math.max(myEloFloor, myElo + eloDelta);
         onResult(won, eloDelta);
         setEloResult({ won, eloDelta, newElo });
       }}
@@ -1396,26 +1402,37 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           onClose={() => { setShowRace(false); setInteractionTarget(null); }}
         />, document.body)}
 
-      {showDuel && interactionTarget && myFav && createPortal(
-        <ParkDuelBattle
-          myPokemonId={myFav.pokemonId}
-          myIsShiny={myFav.isShiny ?? false}
-          myLevel={getPokemonLevelFromState(state, myFav.pokemonId)}
-          myRarity={mySpriteData?.rarity ?? 'commun'}
-          myElo={state.parkElo ?? 1000}
-          opponentPokemonId={interactionTarget.pokemonId}
-          opponentIsShiny={interactionTarget.isShiny}
-          opponentLevel={interactionTarget.level}
-          opponentRarity={interactionTarget.rarity}
-          opponentName={interactionTarget.username}
-          onResult={(won, eloDelta) => {
-            if (won) onTrainingWin?.();
-            onParkDuelResult?.(won, eloDelta);
-          }}
-          onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
-        />,
-        document.body
-      )}
+      {showDuel && interactionTarget && myFav && (() => {
+        const myElo = state.parkElo ?? 1000;
+        const myPR = calcPowerRating(state);
+        const myEloFloor = calcEloFloor(myPR);
+        const today = new Date().toISOString().slice(0, 10);
+        const fightKey = `${today}:${interactionTarget.userId}`;
+        const fightCount = (state.parkFightLog ?? {})[fightKey] ?? 0;
+        return createPortal(
+          <ParkDuelBattle
+            myPokemonId={myFav.pokemonId}
+            myIsShiny={myFav.isShiny ?? false}
+            myLevel={getPokemonLevelFromState(state, myFav.pokemonId)}
+            myRarity={mySpriteData?.rarity ?? 'commun'}
+            myElo={myElo}
+            myPR={myPR}
+            myEloFloor={myEloFloor}
+            fightCountVsOpp={fightCount}
+            opponentPokemonId={interactionTarget.pokemonId}
+            opponentIsShiny={interactionTarget.isShiny}
+            opponentLevel={interactionTarget.level}
+            opponentRarity={interactionTarget.rarity}
+            opponentName={interactionTarget.username}
+            onResult={(won, eloDelta) => {
+              if (won) onTrainingWin?.();
+              onParkDuelResult?.(won, eloDelta, interactionTarget.userId);
+            }}
+            onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
+          />,
+          document.body
+        );
+      })()}
 
     </div>
   );

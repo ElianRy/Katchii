@@ -5,7 +5,7 @@ export type QuestType =
   | 'capture_rarity'
   | 'capture_shiny'
   | 'activate_lure'
-  | 'duel_wins';
+  | 'duel_wins'; // kept for type compat, no longer in pool
 
 export type QuestDifficulty = 'facile' | 'moyen' | 'difficile' | 'tres_difficile';
 
@@ -24,19 +24,19 @@ export const QUEST_POOL: QuestDefinition[] = [
   { id: 'capture_5',         label: 'Capture 5 Pokémon',              type: 'capture_n',      target: 5,  difficulty: 'facile',         reward: { points: 25 } },
   { id: 'capture_commun_5',  label: 'Capture 5 Pokémon communs',      type: 'capture_rarity', rarity: 'commun',     target: 5,  difficulty: 'facile',         reward: { points: 20 } },
   { id: 'activate_lure',     label: 'Active un leurre',               type: 'activate_lure',  target: 1,  difficulty: 'facile',         reward: { points: 25 } },
-  { id: 'duel_wins_1',       label: 'Gagne 1 duel',                   type: 'duel_wins',      target: 1,  difficulty: 'facile',         reward: { points: 30 } },
+  { id: 'capture_shiny_easy',label: 'Capture 1 Pokémon shiny',        type: 'capture_shiny',  target: 1,  difficulty: 'facile',         reward: { points: 30 } },
 
   // ── Moyen (récompense 50–65 pts) ─────────────────────────────────────────
   { id: 'capture_10',        label: 'Capture 10 Pokémon',             type: 'capture_n',      target: 10, difficulty: 'moyen',          reward: { points: 55 } },
   { id: 'capture_commun_15', label: 'Capture 15 Pokémon communs',     type: 'capture_rarity', rarity: 'commun',     target: 15, difficulty: 'moyen',          reward: { points: 50 } },
   { id: 'capture_pc_3',      label: 'Capture 3 Pokémon peu communs',  type: 'capture_rarity', rarity: 'peu_commun', target: 3,  difficulty: 'moyen',          reward: { points: 55 } },
-  { id: 'duel_wins_3',       label: 'Gagne 3 duels',                  type: 'duel_wins',      target: 3,  difficulty: 'moyen',          reward: { points: 60 } },
+  { id: 'capture_n_8',       label: 'Capture 8 Pokémon',              type: 'capture_n',      target: 8,  difficulty: 'moyen',          reward: { points: 60 } },
 
   // ── Difficile (récompense 80–100 pts) ────────────────────────────────────
   { id: 'capture_20',        label: 'Capture 20 Pokémon',             type: 'capture_n',      target: 20, difficulty: 'difficile',      reward: { points: 90 } },
   { id: 'capture_pc_5',      label: 'Capture 5 Pokémon peu communs',  type: 'capture_rarity', rarity: 'peu_commun', target: 5,  difficulty: 'difficile',      reward: { points: 80 } },
   { id: 'capture_rare_1',    label: 'Capture 1 Pokémon rare',         type: 'capture_rarity', rarity: 'rare',       target: 1,  difficulty: 'difficile',      reward: { points: 85 } },
-  { id: 'duel_wins_5',       label: 'Gagne 5 duels',                  type: 'duel_wins',      target: 5,  difficulty: 'difficile',      reward: { points: 95 } },
+  { id: 'capture_rare_2',    label: 'Capture 2 Pokémon rares',        type: 'capture_rarity', rarity: 'rare',       target: 2,  difficulty: 'difficile',      reward: { points: 95 } },
 
   // ── Très difficile (récompense 130–160 pts) ───────────────────────────────
   { id: 'capture_rare_3',    label: 'Capture 3 Pokémon rares',        type: 'capture_rarity', rarity: 'rare',       target: 3,  difficulty: 'tres_difficile', reward: { points: 140 } },
