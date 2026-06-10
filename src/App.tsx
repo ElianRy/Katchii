@@ -400,7 +400,12 @@ export function App() {
       {showWelcome && (
         <WelcomeAnimation
           username={username}
-          onDone={() => { setShowWelcome(false); persistView('hunt'); }}
+          onDone={() => {
+            setShowWelcome(false);
+            persistView('hunt');
+            const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
+            playZoneMusic(zoneId);
+          }}
         />
       )}
 
