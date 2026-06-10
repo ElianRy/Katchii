@@ -22,9 +22,9 @@ import { naturalLevel, xpToNextLevel } from '../data/combatEngine';
 const COOLDOWN_MS = 30_000;
 const LURE_DURATION_MS = 10 * 60_000;
 
-// Base 0.4% (1/250). Each completed permanent quest adds the stated bonus cumulatively:
-// +15% → 0.46% (1/217), +20% → 0.54% (1/185), +25% → 0.64% (1/156)
-const ACHIEVEMENT_SHINY_RATES = [250, 217, 185, 156];
+// Base ~0.13% (1/750). Each completed permanent quest adds bonus cumulatively:
+// +15% → 1/651, +20% → 1/555, +25% → 1/468
+const ACHIEVEMENT_SHINY_RATES = [750, 651, 555, 468];
 
 /** Returns list of newly earned permanent achievement IDs */
 function checkAchievements(state: GameState): string[] {

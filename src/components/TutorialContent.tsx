@@ -181,7 +181,7 @@ export const HUNT_TUTORIAL: TutorialStep[] = [
   },
   {
     title: 'Shiny & Probabilités ✨',
-    body: "Chaque Pokémon a une rareté : Commun, Peu commun, Rare, Élite ou Légendaire. Les Shiny sont ultra-rares (1 chance sur ~500). Garde l'œil ouvert — ils brillent ! Ils peuvent spawner dans toutes les zones !",
+    body: "Chaque Pokémon a une rareté : Commun, Peu commun, Rare, Élite ou Légendaire. Les Shiny sont ultra-rares (1 chance sur ~750). Garde l'œil ouvert — ils brillent ! Ils peuvent spawner dans toutes les zones !",
     illustration: <ShinyAnim />,
   },
   {
@@ -205,11 +205,6 @@ export const COLLECTION_TUTORIAL: TutorialStep[] = [
         </div>
       </div>
     ),
-  },
-  {
-    title: 'Entraînement & Niveaux 📈',
-    body: "Tes Pokémon gagnent de l'expérience en combattant. Plus leur niveau est élevé, plus ils sont forts dans les combats. Entraîne-les régulièrement !",
-    illustration: <SwordShieldAnim />,
   },
 ];
 

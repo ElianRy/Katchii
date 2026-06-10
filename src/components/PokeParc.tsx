@@ -20,6 +20,7 @@ interface PresenceRow {
   username: string;
   pokemon_id: number;
   is_shiny: boolean;
+  pokemon_level?: number;
   mood: Mood;
   x: number;
   y: number;
@@ -882,6 +883,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
       username,
       pokemon_id: myFav.pokemonId,
       is_shiny: myFav.isShiny ?? false,
+      pokemon_level: state.pokemonLevels?.[myFav.pokemonId]?.level ?? 1,
       mood: m,
       x: pos.x,
       y: pos.y,
@@ -1200,7 +1202,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                       username: p.username,
                       pokemonId: p.pokemon_id,
                       isShiny: p.is_shiny,
-                      level: data ? (state.pokemonLevels[p.pokemon_id]?.level ?? 5) : 5,
+                      level: p.pokemon_level ?? 1,
                       rarity: data?.rarity ?? 'commun',
                     });
                     const tx = Math.max(5, Math.min(85, p.x + (p.x > 50 ? -12 : 12)));

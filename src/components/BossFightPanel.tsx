@@ -7,6 +7,7 @@ import { TeamBuilder, TeamMember } from './TeamBuilder';
 import { BattleScreen } from './BattleScreen';
 import { calcMaxHp } from '../data/combatEngine';
 import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
+import { playVictory } from '../lib/audio';
 
 const BOSS_TRAINER: Record<string, {
   name: string; title: string; image: string; color: string;
@@ -143,6 +144,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
     if (battleWon && !victoryHandled) {
       setVictoryHandled(true);
       onVictory(zone.id, nextZoneId);
+      setTimeout(() => playVictory(), 500);
     }
 
     setPhase('result');
@@ -160,7 +162,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
     };
     return (
       <div
-        className="fixed inset-0 z-50 flex flex-col select-none"
+        className="fixed inset-0 z-[510] flex flex-col select-none"
         style={{ background: 'linear-gradient(160deg, #0a0a14 0%, #050510 100%)' }}
         onClick={advance}
       >
@@ -223,7 +225,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
   // INTRO phase
   if (phase === 'intro') {
     return (
-      <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col">
+      <div className="fixed inset-0 z-[510] bg-slate-950 flex flex-col">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
           <div>
             <h2 className="text-white font-black text-xl">⚔️ Combat de Zone</h2>
@@ -325,7 +327,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
   }));
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{
+    <div className="fixed inset-0 z-[510] flex flex-col" style={{
       background: won
         ? 'radial-gradient(ellipse at 50% 20%, #1a3a1a 0%, #0a1a0a 60%, #020617 100%)'
         : '#020617',

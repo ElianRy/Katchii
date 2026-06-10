@@ -19,12 +19,12 @@ export function loadAudioSettings(): AudioSettings {
     return {
       music:        raw.music        ?? true,
       sound:        raw.sound        ?? true,
-      musicVolume:  raw.musicVolume  ?? 0.35,
+      musicVolume:  raw.musicVolume  ?? 0.2,
       sfxVolume:    raw.sfxVolume    ?? 0.7,
       globalVolume: raw.globalVolume ?? 1.0,
     };
   } catch {
-    return { music: true, sound: true, musicVolume: 0.35, sfxVolume: 0.7, globalVolume: 1.0 };
+    return { music: true, sound: true, musicVolume: 0.2, sfxVolume: 0.7, globalVolume: 1.0 };
   }
 }
 

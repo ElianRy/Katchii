@@ -70,7 +70,7 @@ function formatLastSeen(iso: string): string {
 export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [sort, setSort] = useState<'points' | 'collection' | 'shiny' | 'rank'>('points');
+  const [sort, setSort] = useState<'points' | 'collection' | 'shiny' | 'alpha'>('points');
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerRow | null>(null);
   const [adminTarget, setAdminTarget] = useState<PlayerRow | null>(null);
   const [mutedUsers, setMutedUsers] = useState<Map<string, number | null>>(loadMutedMap);
@@ -190,7 +190,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
     if (sort === 'points') return b.points - a.points;
     if (sort === 'collection') return b.normalCount - a.normalCount;
     if (sort === 'shiny') return b.shinyCount - a.shinyCount;
-    return b.rankingPoints - a.rankingPoints;
+    return a.username.localeCompare(b.username, 'fr', { sensitivity: 'base' });
   });
 
   const MEDAL = ['🥇', '🥈', '🥉'];
@@ -212,7 +212,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
           ['points', '⭐ Points'],
           ['collection', '📚 Collection'],
           ['shiny', '✨ Shinies'],
-          ['rank', '🥊 Rang duel'],
+          ['alpha', '🔤 A→Z'],
         ] as [typeof sort, string][]).map(([key, label]) => (
           <button
             key={key}
@@ -331,13 +331,13 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
                   {sort === 'points' ? `${p.points}` :
                    sort === 'collection' ? `${p.normalCount}` :
                    sort === 'shiny' ? `${p.shinyCount}` :
-                   `${p.rankingPoints}`}
+                   p.username}
                 </div>
                 <div className="text-xs text-slate-600">
                   {sort === 'points' ? 'pts' :
                    sort === 'collection' ? 'pokémon' :
                    sort === 'shiny' ? 'shinies' :
-                   'ELO'}
+                   'nom'}
                 </div>
               </div>
             </div>
