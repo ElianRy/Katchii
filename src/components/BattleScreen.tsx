@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { playBattleMusic, playShinyBattleMusic, playLeagueBattleMusic, stopMusic, playVictory, playSfxDefeat } from '../lib/audio';
+import { playBattleMusic, playShinyBattleMusic, playLeagueBattleMusic, stopMusic, playVictory, playLeagueVictory, playSfxDefeat } from '../lib/audio';
 import { RARITY_COLORS, Rarity } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
@@ -473,7 +473,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     if (phase === 'end') {
       const wonSnap = won.current;
       stopMusic(0.8);
-      setTimeout(() => wonSnap ? playVictory() : playSfxDefeat(), 900);
+      setTimeout(() => wonSnap ? (isLeague ? playLeagueVictory() : playVictory()) : playSfxDefeat(), 900);
       // Give bench pokemon 25% of the average XP earned by active fighters
       const snap = { ...xpGains };
       const earned = Object.values(snap);

@@ -409,7 +409,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       {showBossFight && fightZone?.id === 'zone8' && (
         <LeagueChallengeScreen
           state={gameState.state}
-          onClose={() => { setShowBossFight(false); setFightZone(null); }}
+          onClose={() => { setShowBossFight(false); setFightZone(null); setTimeout(() => playZoneMusic(currentZoneId), 1000); }}
           onAddXp={(pokemonId, xp) => gameState.addPokemonXp(pokemonId, xp)}
           onVictory={() => {
             gameState.defeatZoneBoss('zone8', 'zone_libre');
@@ -427,7 +427,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         <BossFightPanel
           zone={fightZone}
           state={gameState.state}
-          onClose={() => { setShowBossFight(false); setFightZone(null); }}
+          onClose={() => { setShowBossFight(false); setFightZone(null); setTimeout(() => playZoneMusic(currentZoneId), 1000); }}
           onAddXp={(pokemonId, xp) => gameState.addPokemonXp(pokemonId, xp)}
           onVictory={(zoneId, nextZoneId) => {
             gameState.defeatZoneBoss(zoneId, nextZoneId);

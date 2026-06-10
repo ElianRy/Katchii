@@ -76,26 +76,43 @@ export function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Home/menu music
+  // Home/menu music + zone music when entering hunt
   useEffect(() => {
     if (view === 'home') playMenuMusic();
+    else if (view === 'hunt' && !battle3v3) {
+      const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
+      playZoneMusic(zoneId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
-  // Global UI sounds — back buttons (←) and standard confirm buttons
+  // Global UI sounds — play sfx_confirm on every button click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const btn = target.closest('button');
-      if (!btn) return;
-      // Back buttons: contain ← arrow text or have data-back attribute
-      const text = btn.textContent?.trim() ?? '';
-      if (text === '←' || text.startsWith('←') || btn.dataset.back !== undefined) {
-        playSfxConfirm();
-      }
+      if (target.closest('button')) playSfxConfirm();
     };
     document.addEventListener('click', handler, true);
     return () => document.removeEventListener('click', handler, true);
   }, []);
+
+  // Visibility / focus: resume correct music when user returns to app
+  useEffect(() => {
+    const resume = () => {
+      if (document.hidden) return;
+      if (battle3v3) return;
+      const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
+      if (view === 'home') playMenuMusic();
+      else if (view === 'hunt') playZoneMusic(zoneId);
+    };
+    document.addEventListener('visibilitychange', resume);
+    window.addEventListener('focus', resume);
+    return () => {
+      document.removeEventListener('visibilitychange', resume);
+      window.removeEventListener('focus', resume);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, battle3v3, gameState.state.zoneProgress?.currentZoneId]);
 
   // Stop music when battle starts; resume zone music after battle ends
   useEffect(() => {
@@ -103,7 +120,7 @@ export function App() {
       stopMusic(0.3);
     } else if (view === 'hunt') {
       const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
-      const t = setTimeout(() => playZoneMusic(zoneId), 3500);
+      const t = setTimeout(() => playZoneMusic(zoneId), 2200);
       return () => clearTimeout(t);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -204,7 +221,7 @@ export function App() {
       {view === 'home' && !showWelcome && (
         <HomeScreen
           username={username}
-          onPlay={() => setShowWelcome(true)}
+          onPlay={() => { stopMusic(0.4); setShowWelcome(true); }}
           onProfile={() => setView('profile')}
           onLogout={handleLogout}
           onWrapped={() => persistView('wrapped')}

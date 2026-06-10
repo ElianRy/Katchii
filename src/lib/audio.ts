@@ -195,10 +195,4 @@ export function playSfxQuestComplete() {
   synth('square', 1047, 0.1, 0.25, undefined, 0.24);
 }
 
-// ── Visibility / focus resume ─────────────────────────────────────────────
-if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) resumeCurrentMusic();
-  });
-  window.addEventListener('focus', resumeCurrentMusic);
-}
+// ── Visibility / focus resume is handled by App.tsx (has React state context)

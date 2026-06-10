@@ -1,5 +1,27 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState } from '../types';
+import { loadAudioSettings, stopMusic, resumeCurrentMusic, setMusicVolume } from '../lib/audio';
+
+const SETTINGS_KEY = 'katchii_settings';
+function toggleMusicMute() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}');
+    const base = { music: true, sound: true, musicVolume: 0.35, sfxVolume: 0.7, reducedAnimations: false };
+    const next = { ...base, ...raw, music: !(raw.music ?? true) };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+    if (!next.music) { stopMusic(0.3); } else { setMusicVolume(next.musicVolume); resumeCurrentMusic(); }
+    return next.music as boolean;
+  } catch { return true; }
+}
+function toggleSfxMute() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? '{}');
+    const base = { music: true, sound: true, musicVolume: 0.35, sfxVolume: 0.7, reducedAnimations: false };
+    const next = { ...base, ...raw, sound: !(raw.sound ?? true) };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+    return next.sound as boolean;
+  } catch { return true; }
+}
 interface Props {
   points: number;
   activeLure: GameState['activeLure'];
@@ -97,6 +119,9 @@ export function HUD({
 }: Props) {
   const [showConditionDetail, setShowConditionDetail] = useState(false);
   const [showLureInfo, setShowLureInfo] = useState(false);
+  const s0 = loadAudioSettings();
+  const [musicOn, setMusicOn] = useState(s0.music);
+  const [sfxOn, setSfxOn] = useState(s0.sound);
   // Impact animation when cooldown just finishes
   const [showImpact, setShowImpact] = useState(false);
   const prevCooldown = useRef(cooldownRemaining);
@@ -163,6 +188,18 @@ export function HUD({
           {isAdmin && onOpenAdmin && (
             <button onClick={onOpenAdmin} className="bg-red-900/80 rounded-xl px-2 py-1.5 border border-red-700/60 text-red-300 text-sm shrink-0">🔧</button>
           )}
+
+          {/* Quick mute toggles */}
+          <button onClick={() => { const on = toggleMusicMute(); setMusicOn(on); }}
+            className="bg-black/70 rounded-xl px-2 py-1.5 border border-slate-600/40 text-sm shrink-0"
+            style={{ color: musicOn ? '#fbbf24' : '#475569' }} title={musicOn ? 'Couper musique' : 'Activer musique'}>
+            {musicOn ? '🎵' : '🔇'}
+          </button>
+          <button onClick={() => { const on = toggleSfxMute(); setSfxOn(on); }}
+            className="bg-black/70 rounded-xl px-2 py-1.5 border border-slate-600/40 text-sm shrink-0"
+            style={{ color: sfxOn ? '#60a5fa' : '#475569' }} title={sfxOn ? 'Couper sons' : 'Activer sons'}>
+            {sfxOn ? '🔊' : '🔕'}
+          </button>
 
           {/* Settings */}
           {onOpenSettings && (

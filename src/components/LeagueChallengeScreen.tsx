@@ -6,7 +6,7 @@ import { TeamMember } from './TeamBuilder';
 import { BattleScreen } from './BattleScreen';
 import { ShinySprite } from './ShinySprite';
 import { calcMaxHp } from '../data/combatEngine';
-import { playLeagueVictory, stopMusic } from '../lib/audio';
+import { playLeagueVictory, playLeagueBattleMusic, stopMusic, playMusic, playShinySpawn } from '../lib/audio';
 
 interface Props {
   state: GameState;
@@ -427,6 +427,11 @@ function DialogueScreen({ trainer, onDone }: {
   const [visible, setVisible] = useState(true);
   const isMaster = trainer.id === 'master';
 
+  // Berix color reveal: play combat_berix when silhouette → full color
+  useEffect(() => {
+    if (isMaster && lineIdx === 1) playMusic('combat_berix');
+  }, [isMaster, lineIdx]);
+
   const advance = () => {
     if (lineIdx < trainer.dialogues.length - 1) {
       setVisible(false);
@@ -633,7 +638,7 @@ function AlakazamReveal({ trainer }: { trainer: { companion: { image: string; po
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setRevealed(true), 800);
+    const t = setTimeout(() => { setRevealed(true); playShinySpawn(); }, 800);
     return () => clearTimeout(t);
   }, []);
 
@@ -954,6 +959,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     setCurrentTeam(team);
     setRetrying(false);
     setDefeatStats(null);
+    playLeagueBattleMusic();
     setPhase('dialogue_peter');
   }, [state]);
 
@@ -982,7 +988,13 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           const survivors = finalTeam.filter(m => m.currentHp > 0);
           setCurrentTeam(survivors);
         }
-        if (nextPhase === 'victory' && !victoryHandled) {
+        if (nextPhase === 'dialogue_giovanni') {
+          // Peter beaten — short victory then back to league battle music
+          setTimeout(() => playLeagueBattleMusic(), 1400);
+        } else if (nextPhase === 'dialogue_master') {
+          // Giovanni beaten — stop music completely; combat_berix plays at Berix reveal
+          stopMusic(0.3);
+        } else if (nextPhase === 'victory' && !victoryHandled) {
           setVictoryHandled(true);
           stopMusic(0.5);
           setTimeout(() => playLeagueVictory(), 600);
