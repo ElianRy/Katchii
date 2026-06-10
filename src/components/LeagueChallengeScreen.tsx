@@ -640,8 +640,8 @@ function AlakazamReveal({ trainer }: { trainer: { companion: { image: string; po
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => { setRevealed(true); playShinySpawnLoud(); }, 800);
-    return () => { clearTimeout(t1); };
+    setRevealed(true);
+    playShinySpawnLoud();
   }, []);
 
   const size = 'min(52vw, 215px)';
@@ -999,7 +999,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           setCurrentTeam(survivors);
         }
         if (nextPhase === 'dialogue_giovanni') {
-          playMusic('giovanni');
+          setTimeout(() => playMusic('giovanni'), 300); // after BattleScreen unmount cleanup
         } else if (nextPhase === 'dialogue_master') {
           // Giovanni beaten — stop music completely; combat_berix plays at Berix reveal
           stopMusic(0.3);
