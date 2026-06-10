@@ -427,10 +427,12 @@ function DialogueScreen({ trainer, onDone }: {
   const [visible, setVisible] = useState(true);
   const isMaster = trainer.id === 'master';
 
-  // Berix color reveal: play combat_berix when silhouette → full color
+  const isGiovanni = trainer.id === 'giovanni';
+
   useEffect(() => {
+    if (isGiovanni && lineIdx === 0) playMusic('giovanni');
     if (isMaster && lineIdx === 1) playMusic('combat_berix');
-  }, [isMaster, lineIdx]);
+  }, [isGiovanni, isMaster, lineIdx]);
 
   const advance = () => {
     if (lineIdx < trainer.dialogues.length - 1) {
@@ -1043,7 +1045,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   if (phase === 'battle_giovanni') {
     return (
       <div className="fixed inset-0 z-[600]">
-        <BattleScreen suppressVictorySound playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
+        <BattleScreen keepMusic suppressVictorySound playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
           bossName="Giovanni" trainerImage="/trainers/giovanni.webp" trainerColor="#9ca3af" onBattleEnd={handleBattleEnd('dialogue_master', TRAINER_CONFIGS[1].teamSpec)}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
