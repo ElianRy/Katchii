@@ -32,8 +32,20 @@ export function getSettings(): Settings {
   return loadSettings();
 }
 
+const TUTORIAL_KEYS = ['hunt', 'collection', 'duels', 'pokepark'];
+function allTutorialsDone(): boolean {
+  return TUTORIAL_KEYS.every(k => localStorage.getItem(`katchii_tuto_${k}`) === '1');
+}
+function setAllTutorialsDone(done: boolean) {
+  TUTORIAL_KEYS.forEach(k => {
+    if (done) localStorage.setItem(`katchii_tuto_${k}`, '1');
+    else localStorage.removeItem(`katchii_tuto_${k}`);
+  });
+}
+
 export function SettingsPanel({ onClose }: Props) {
   const [settings, setSettings] = useState<Settings>(loadSettings);
+  const [tutosHidden, setTutosHidden] = useState(allTutorialsDone);
   const [pwNew, setPwNew] = useState('');
   const [pwConfirm, setPwConfirm] = useState('');
   const [pwStatus, setPwStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -134,6 +146,24 @@ export function SettingsPanel({ onClose }: Props) {
               icon="✨"
               checked={settings.reducedAnimations}
               onChange={() => update({ reducedAnimations: !settings.reducedAnimations })}
+            />
+          </div>
+        </section>
+
+        {/* Tutorial */}
+        <section>
+          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">Tutoriel</h3>
+          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden">
+            <ToggleRow
+              label="Masquer les tutoriels"
+              description="Ne plus afficher les guides d'introduction sur chaque écran"
+              icon="📖"
+              checked={tutosHidden}
+              onChange={() => {
+                const next = !tutosHidden;
+                setAllTutorialsDone(next);
+                setTutosHidden(next);
+              }}
             />
           </div>
         </section>
