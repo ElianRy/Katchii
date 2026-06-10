@@ -941,6 +941,14 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   const [masterTeam, setMasterTeam] = useState<TeamMember[]>([]);
   const [retrying, setRetrying] = useState(false);
   const [victoryHandled, setVictoryHandled] = useState(false);
+
+  // Preload trainer images so they appear instantly in battle
+  useEffect(() => {
+    ['/trainers/peter.png', '/trainers/giovanni.webp', '/trainers/master.png',
+     '/trainers/dragonite.png', '/trainers/persian.png', '/trainers/alakazam.png'].forEach(src => {
+      const img = new Image(); img.src = src;
+    });
+  }, []);
   const [defeatStats, setDefeatStats] = useState<DefeatStats | null>(null);
 
   const OPPONENT_META: Record<string, { name: string; color: string }> = {
@@ -1018,7 +1026,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   if (phase === 'battle_peter') {
     return (
       <div className="fixed inset-0 z-[600]">
-        <BattleScreen isLeague playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
+        <BattleScreen isLeague suppressVictorySound playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
           bossName="Peter" trainerImage="/trainers/peter.png" trainerColor="#ef4444" onBattleEnd={handleBattleEnd('dialogue_giovanni', TRAINER_CONFIGS[0].teamSpec)}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
@@ -1034,7 +1042,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   if (phase === 'battle_giovanni') {
     return (
       <div className="fixed inset-0 z-[600]">
-        <BattleScreen playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
+        <BattleScreen suppressVictorySound playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
           bossName="Giovanni" trainerImage="/trainers/giovanni.webp" trainerColor="#9ca3af" onBattleEnd={handleBattleEnd('dialogue_master', TRAINER_CONFIGS[1].teamSpec)}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>

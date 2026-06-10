@@ -86,30 +86,42 @@ export function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
-  // Global UI sounds — play sfx_confirm on every button click
+  // Global UI sounds — every click except inputs, 150 ms debounce
   useEffect(() => {
+    let last = 0;
     const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('button')) playSfxConfirm();
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const now = Date.now();
+      if (now - last > 150) { playSfxConfirm(); last = now; }
     };
     document.addEventListener('click', handler, true);
     return () => document.removeEventListener('click', handler, true);
   }, []);
 
-  // Visibility / focus: resume correct music when user returns to app
+  // Visibility: cut music on hide, resume on show
   useEffect(() => {
-    const resume = () => {
-      if (document.hidden) return;
+    const onVisibility = () => {
+      if (document.hidden) {
+        stopMusic(0);   // instant cut
+      } else {
+        if (battle3v3) return;
+        const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
+        if (view === 'home') playMenuMusic();
+        else if (view === 'hunt') playZoneMusic(zoneId);
+      }
+    };
+    const onFocus = () => {
       if (battle3v3) return;
       const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
       if (view === 'home') playMenuMusic();
       else if (view === 'hunt') playZoneMusic(zoneId);
     };
-    document.addEventListener('visibilitychange', resume);
-    window.addEventListener('focus', resume);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('focus', onFocus);
     return () => {
-      document.removeEventListener('visibilitychange', resume);
-      window.removeEventListener('focus', resume);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('focus', onFocus);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, battle3v3, gameState.state.zoneProgress?.currentZoneId]);

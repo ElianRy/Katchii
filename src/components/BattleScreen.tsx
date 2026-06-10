@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { playBattleMusic, playShinyBattleSfx, playLeagueBattleMusic, stopMusic, playVictory, playLeagueVictory, playSfxDefeat } from '../lib/audio';
+import { playBattleMusic, playShinyBattleSfx, playLeagueBattleMusic, stopMusic, playVictory, playLeagueVictory, playSfxDefeat, playPokemonCry } from '../lib/audio';
 import { RARITY_COLORS, Rarity } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
@@ -28,6 +28,7 @@ interface Props {
   bossName?: string;
   onBattleEnd: (won: boolean, xpGains: Record<number, number>, finalTeam?: TeamMember[], enemyDmg?: Record<number, number>) => void;
   isLeague?: boolean;
+  suppressVictorySound?: boolean;
   autoCombat?: boolean;
   onAutoCombatChange?: (v: boolean) => void;
   speedLevel?: number;
@@ -305,7 +306,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, isLeague = false, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, isLeague = false, suppressVictorySound = false, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp }))
   );
@@ -334,6 +335,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const prevEfHp = useRef<number | null>(null);
   const isMasterTrainer = trainerColor === '#a855f7';
   const [shinyIntro, setShinyIntro] = useState(false);
+  const [shakePokemon, setShakePokemon] = useState<'player' | 'enemy' | null>(null);
 
   // Keep refs in sync
   useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
@@ -357,7 +359,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     setLog(prev => [...prev.slice(-5), { text, color }]);
   }, []);
 
-  // Intro → battle transition (2s cinematic) + music
+  // Intro → battle transition + music + cry/tremble sequence
   useEffect(() => {
     if (phase !== 'intro') return;
     const hasShiny = [...playerTeam, ...enemyTeam].some(m => m.isShiny);
@@ -367,8 +369,22 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
       setShinyIntro(true);
       setTimeout(() => setShinyIntro(false), 2500);
     }
-    const t = setTimeout(() => setPhase('battle'), 2000);
-    return () => clearTimeout(t);
+    // Player pokemon trembles + cry at 1.4s
+    const t1 = setTimeout(() => {
+      setShakePokemon('player');
+      if (playerTeam[0]) playPokemonCry(playerTeam[0].pokemonId);
+      setTimeout(() => setShakePokemon(null), 600);
+    }, 1400);
+    // Enemy pokemon trembles + cry at 2.1s
+    const t2 = setTimeout(() => {
+      setShakePokemon('enemy');
+      if (enemyTeam[0]) playPokemonCry(enemyTeam[0].pokemonId);
+      setTimeout(() => setShakePokemon(null), 600);
+    }, 2100);
+    // Battle starts at 3s
+    const t3 = setTimeout(() => setPhase('battle'), 3000);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
   // Stop music on unmount
@@ -488,7 +504,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     if (phase === 'end') {
       const wonSnap = won.current;
       stopMusic(0.8);
-      setTimeout(() => wonSnap ? (isLeague ? playLeagueVictory() : playVictory()) : playSfxDefeat(), 900);
+      if (!suppressVictorySound) setTimeout(() => wonSnap ? (isLeague ? playLeagueVictory() : playVictory()) : playSfxDefeat(), 900);
       // Give bench pokemon 25% of the average XP earned by active fighters
       const snap = { ...xpGains };
       const earned = Object.values(snap);
@@ -506,13 +522,18 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   }, [phase]);
 
   const handleSwitch = useCallback((idx: number) => {
-    // Update refs immediately so the interval reads correct values on next tick
     playerIdxRef.current = idx;
-    phaseRef.current = 'battle';
     setPlayerIdx(idx);
-    setPhase('battle');
     const name = POKEMON_BY_ID[playerFighters[idx]?.pokemonId]?.name ?? '???';
     addLog(`Allez ${name} !`, '#4ade80');
+    // Cry + tremble before resuming battle
+    setShakePokemon('player');
+    if (playerFighters[idx]) playPokemonCry(playerFighters[idx].pokemonId);
+    setTimeout(() => {
+      setShakePokemon(null);
+      phaseRef.current = 'battle';
+      setPhase('battle');
+    }, 700);
   }, [playerFighters, addLog]);
 
   const activePF = playerFighters[playerIdx];
@@ -552,7 +573,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             </div>
             <div className="flex justify-end">
               {enemyFighters[0] && (
-                <div className="relative inline-flex items-center justify-center">
+                <div className="relative inline-flex items-center justify-center"
+                  style={shakePokemon === 'enemy' ? { animation: 'pokemon-shake 0.6s ease-in-out' } : undefined}>
                   <ShinySprite pokemonId={enemyFighters[0].pokemonId} isShiny={enemyFighters[0].isShiny ?? false} width={88} height={88} flip
                     style={{ filter: spriteFilter(enemyFighters[0].pokemonId, enemyFighters[0].isShiny ?? false) }} />
                   {shinyIntro && enemyFighters[0].isShiny && SHINY_INTRO_STARS.map((s, i) => (
@@ -570,7 +592,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           {/* Player pokemon slides in from bottom-left */}
           <div className="absolute" style={{ bottom:'13%', left:'max(7%, calc(50% - 220px))', animation:'battle-enter-player 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
             {playerFighters[0] && (
-              <div className="relative inline-flex items-center justify-center">
+              <div className="relative inline-flex items-center justify-center"
+                style={shakePokemon === 'player' ? { animation: 'pokemon-shake 0.6s ease-in-out' } : undefined}>
                 <ShinySprite pokemonId={playerFighters[0].pokemonId} isShiny={playerFighters[0].isShiny ?? false} width={96} height={96}
                   style={{ filter: spriteFilter(playerFighters[0].pokemonId, playerFighters[0].isShiny ?? false) }} />
                 {shinyIntro && playerFighters[0].isShiny && SHINY_INTRO_STARS.map((s, i) => (
