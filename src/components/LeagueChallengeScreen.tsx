@@ -758,7 +758,7 @@ function EpicIntroScreen({ onDone }: { onDone: () => void }) {
 interface DefeatStats {
   lostAgainst: string;
   trainerColor: string;
-  damageByEnemy: Array<{ pokemonId: number; damage: number }>;
+  damageByEnemy: Array<{ pokemonId: number; damage: number; level: number }>;
 }
 
 function DefeatScreen({ stats, onRetry, onClose }: {
@@ -781,12 +781,12 @@ function DefeatScreen({ stats, onRetry, onClose }: {
         </p>
       </div>
 
-      {/* Damage breakdown by enemy pokemon */}
+      {/* Damage breakdown by enemy pokemon — ALL shown, sorted by dmg desc */}
       {stats.damageByEnemy.length > 0 && (
-        <div className="w-full max-w-sm rounded-2xl border border-red-900/40 bg-black/60 p-5 mb-4"
+        <div className="w-full max-w-sm rounded-2xl border border-red-900/40 bg-black/60 p-4 mb-4"
           style={{ animation: 'badge-pop 0.5s 0.4s ease-out both', boxShadow: '0 0 20px rgba(239,68,68,0.1)' }}>
-          <div className="text-red-400 font-black text-sm mb-3 uppercase tracking-widest">Dégâts reçus</div>
-          {stats.damageByEnemy
+          <div className="text-red-400 font-black text-xs mb-3 uppercase tracking-widest">Équipe adverse</div>
+          {[...stats.damageByEnemy]
             .sort((a, b) => b.damage - a.damage)
             .map((row, i) => {
               const totalDmg = stats.damageByEnemy.reduce((s, r) => s + r.damage, 0);
@@ -795,18 +795,34 @@ function DefeatScreen({ stats, onRetry, onClose }: {
               const pName = pkData?.name ?? `#${row.pokemonId}`;
               const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${row.pokemonId}.png`;
               const rarityColor = pkData ? RARITY_COLORS[pkData.rarity] : '#6b7280';
+              const types = POKEMON_TYPE[row.pokemonId] ?? [];
               return (
-                <div key={i} className="py-2 border-b border-slate-800 last:border-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <img src={spriteUrl} width={40} height={40}
-                      style={{ imageRendering: 'pixelated', filter: `drop-shadow(0 0 4px ${rarityColor})` }} alt={pName} />
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-300 text-sm font-bold">{pName}</span>
-                        <span className="text-red-400 font-black text-sm">{row.damage > 0 ? `${row.damage.toLocaleString()} dmg` : '—'}</span>
+                <div key={i} className="py-2 border-b border-slate-800/60 last:border-0">
+                  <div className="flex items-center gap-2">
+                    <img src={spriteUrl} width={44} height={44}
+                      style={{ imageRendering: 'pixelated', filter: `drop-shadow(0 0 4px ${rarityColor})`, flexShrink: 0 }} alt={pName} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-white text-sm font-black truncate">{pName}</span>
+                        <span className="text-slate-400 text-xs shrink-0">Nv.{row.level}</span>
                       </div>
-                      <div className="w-full bg-slate-800 rounded-full h-1.5 mt-1">
-                        <div className="h-1.5 rounded-full" style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg,#ef4444,#f97316)' }} />
+                      {/* Type badges */}
+                      <div className="flex gap-1 mt-0.5 mb-1">
+                        {types.map(t => (
+                          <span key={t} className="text-white font-bold rounded px-1.5 py-0.5"
+                            style={{ background: TYPE_COLORS[t as keyof typeof TYPE_COLORS] ?? '#6b7280', fontSize: '0.5rem' }}>
+                            {t.toUpperCase()}
+                          </span>
+                        ))}
+                      </div>
+                      {/* Damage bar */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-slate-800 rounded-full h-1.5">
+                          <div className="h-1.5 rounded-full transition-all" style={{ width: `${pct * 100}%`, background: row.damage > 0 ? 'linear-gradient(90deg,#ef4444,#f97316)' : 'transparent' }} />
+                        </div>
+                        <span className="text-xs font-black shrink-0" style={{ color: row.damage > 0 ? '#f87171' : '#475569', minWidth: 40, textAlign: 'right' }}>
+                          {row.damage > 0 ? `${row.damage} dmg` : '0 dmg'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -941,14 +957,16 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   }, [state]);
 
   const handleBattleEnd = useCallback(
-    (nextPhase: Phase) =>
+    (nextPhase: Phase, enemySpecs: ReadonlyArray<{ pokemonId: number; level: number; isShiny?: boolean }>) =>
       (won: boolean, xpGains: Record<number, number>, finalTeam?: TeamMember[], enemyDmg?: Record<number, number>) => {
         Object.entries(xpGains).forEach(([id, xp]) => onAddXp(Number(id), xp));
         if (!won) {
           const meta = OPPONENT_META[nextPhase] ?? { name: 'ton adversaire', color: '#ef4444' };
-          const damageByEnemy = Object.entries(enemyDmg ?? {}).map(([id, damage]) => ({
-            pokemonId: Number(id),
-            damage,
+          // Include ALL enemy pokemon, even those with 0 damage
+          const damageByEnemy = enemySpecs.map(s => ({
+            pokemonId: s.pokemonId,
+            level: s.level,
+            damage: enemyDmg?.[s.pokemonId] ?? 0,
           }));
           setDefeatStats({
             lostAgainst: meta.name,
@@ -986,7 +1004,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     return (
       <div className="fixed inset-0 z-[600]">
         <BattleScreen playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
-          bossName="Peter" trainerImage="/trainers/peter.png" trainerColor="#ef4444" onBattleEnd={handleBattleEnd('dialogue_giovanni')}
+          bossName="Peter" trainerImage="/trainers/peter.png" trainerColor="#ef4444" onBattleEnd={handleBattleEnd('dialogue_giovanni', TRAINER_CONFIGS[0].teamSpec)}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
     );
@@ -1002,7 +1020,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     return (
       <div className="fixed inset-0 z-[600]">
         <BattleScreen playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
-          bossName="Giovanni" trainerImage="/trainers/giovanni.webp" trainerColor="#9ca3af" onBattleEnd={handleBattleEnd('dialogue_master')}
+          bossName="Giovanni" trainerImage="/trainers/giovanni.webp" trainerColor="#9ca3af" onBattleEnd={handleBattleEnd('dialogue_master', TRAINER_CONFIGS[1].teamSpec)}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
     );
@@ -1026,7 +1044,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           bossName="⚡ Maître Berix ⚡"
           trainerImage="/trainers/master.png" trainerColor="#a855f7"
           sideOverlay={<MasterSideEffects />}
-          onBattleEnd={handleBattleEnd('victory')}
+          onBattleEnd={handleBattleEnd('victory', TRAINER_CONFIGS[2].teamSpec)}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
     );

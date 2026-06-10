@@ -59,7 +59,13 @@ export function Collection({ state, onClose }: Props) {
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
-  const [sortMode, setSortMode] = useState<'id' | 'rarity_desc' | 'level_desc'>('id');
+  const [sortMode, setSortMode] = useState<'id' | 'rarity_desc' | 'level_desc'>(() => {
+    try { return (localStorage.getItem('katchii_pokedex_sort') as 'id' | 'rarity_desc' | 'level_desc') ?? 'id'; } catch { return 'id'; }
+  });
+  const applySortMode = (s: 'id' | 'rarity_desc' | 'level_desc') => {
+    setSortMode(s);
+    try { localStorage.setItem('katchii_pokedex_sort', s); } catch {}
+  };
 
   const totalCaught = GEN1_POKEMON.filter(p => (state.normalCollection[p.id] ?? 0) > 0).length;
   const totalShinyCaught = GEN1_POKEMON.filter(p => (state.shinyCollection[p.id] ?? 0) > 0).length;
@@ -140,7 +146,7 @@ export function Collection({ state, onClose }: Props) {
             />
             <div className="flex gap-1 shrink-0">
               {([['id', '#'], ['rarity_desc', '★'], ['level_desc', '↓Nv']] as const).map(([k, label]) => (
-                <button key={k} onClick={() => setSortMode(k)}
+                <button key={k} onClick={() => applySortMode(k)}
                   className="px-2 py-1.5 rounded-lg text-xs font-bold transition-all"
                   style={{
                     background: sortMode === k ? '#6366f1' : 'rgba(255,255,255,0.06)',
