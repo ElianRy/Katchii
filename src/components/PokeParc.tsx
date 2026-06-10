@@ -668,6 +668,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [showDuel, setShowDuel] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [justPlaced, setJustPlaced] = useState(false);
+  const [myPokemonShake, setMyPokemonShake] = useState(false);
   const [parkRevealed, setParkRevealed] = useState(!!state.favoritePokemon);
   const [xpPop, setXpPop] = useState<{ xp: number; key: number } | null>(null);
   const [offlineParkXp, setOfflineParkXp] = useState<{ xp: number; pokemonId: number; isShiny: boolean; levelBefore: number; levelAfter: number; xpBefore: number; xpAfter: number } | null>(null);
@@ -1224,9 +1225,11 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                 left: `${myPos.x}%`,
                 top: `${myPos.y}%`,
                 transform: 'translate(-50%, -50%)',
-                transition: 'left 2s ease-in-out, top 2s ease-in-out',
+                transition: myPokemonShake ? 'none' : 'left 2s ease-in-out, top 2s ease-in-out',
                 zIndex: justPlaced ? 20 : undefined,
-                animation: justPlaced ? 'park-place-bounce 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' : undefined,
+                animation: myPokemonShake
+                  ? 'pokemon-shake 0.6s ease-in-out'
+                  : (justPlaced ? 'park-place-bounce 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' : undefined),
               }}
             >
               {xpPop && (
@@ -1251,7 +1254,11 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                 mood={mood}
                 username={username}
                 isMine={true}
-                onClick={() => setShowPicker(true)}
+                onClick={() => {
+                  playPokemonCry(myFav.pokemonId);
+                  setMyPokemonShake(true);
+                  setTimeout(() => setMyPokemonShake(false), 700);
+                }}
                 wins={(state.pokemonWins ?? {})[myFav.pokemonId] ?? 0}
               />
             </div>
@@ -1443,7 +1450,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
       })()}
 
       {showTutorial && (
-        <TutorialOverlay tutorialKey="pokepark" steps={POKEPARK_TUTORIAL} onDone={() => setShowTutorial(false)} />
+        <TutorialOverlay tutorialKey="pokepark" steps={POKEPARK_TUTORIAL} onDone={() => setShowTutorial(false)} bottomOffset={72} />
       )}
     </div>
   );

@@ -8,6 +8,75 @@ import { BattleScreen } from './BattleScreen';
 import { calcMaxHp } from '../data/combatEngine';
 import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
 
+const BOSS_TRAINER: Record<string, {
+  name: string; title: string; image: string; color: string;
+  dialogues: string[];
+}> = {
+  zone1: {
+    name: 'Pierre', title: "Maître d'Arène de Pallet", image: '/trainers/pierre.png', color: '#ef8c1a',
+    dialogues: [
+      "Tu t'aventures dans ma forêt ?",
+      "J'ai gardé cette zone depuis le début.",
+      "Mon équipe n'a jamais perdu ici.",
+      "Prouve-moi que tu mérites de passer.",
+    ],
+  },
+  zone2: {
+    name: 'Ondine', title: "Maîtresse d'Arène des Bords de Mer", image: '/trainers/ondine.png', color: '#38bdf8',
+    dialogues: [
+      "L'eau est mon domaine, intrus.",
+      "Mes Pokémon nagent depuis leur naissance.",
+      "Aucun dresseur ne m'a battue ici.",
+      "Tu vas vite comprendre pourquoi.",
+    ],
+  },
+  zone3: {
+    name: 'Bob', title: "Maître d'Arène de la Centrale", image: '/trainers/bob.png', color: '#facc15',
+    dialogues: [
+      "Ah, un visiteur à la centrale !",
+      "Attention où tu mets les pieds ici.",
+      "Mon équipe est chargée à bloc.",
+      "Tu vas prendre une sacrée décharge !",
+    ],
+  },
+  zone4: {
+    name: 'Erika', title: "Maîtresse d'Arène du Bois aux Fleurs", image: '/trainers/erika.png', color: '#4ade80',
+    dialogues: [
+      "Ces fleurs cachent bien des secrets.",
+      "Mon jardin est mon sanctuaire.",
+      "Peu de dresseurs en sont ressortis vainqueurs.",
+      "Mais je t'accorde une chance. Montre-moi.",
+    ],
+  },
+  zone5: {
+    name: 'Koga', title: "Maître d'Arène de la Tour Fantôme", image: '/trainers/koga.png', color: '#a78bfa',
+    dialogues: [
+      "Cette tour renferme des ombres anciennes.",
+      "Mes Pokémon se nourrissent de la peur.",
+      "Beaucoup sont entrés ici...",
+      "...très peu en sont ressortis sereins.",
+    ],
+  },
+  zone6: {
+    name: 'Sabrina', title: "Maîtresse d'Arène de Sylphe SARL", image: '/trainers/sabrina.png', color: '#e879f9',
+    dialogues: [
+      "Je connais déjà ta stratégie.",
+      "Mon Alakazam aussi.",
+      "La télékinésie n'a aucun secret pour moi.",
+      "Ne sois pas surpris par ce qui arrive.",
+    ],
+  },
+  zone7: {
+    name: 'Blaine', title: "Maître d'Arène de l'Île Cramoisie", image: '/trainers/blaine.png', color: '#f97316',
+    dialogues: [
+      "Bienvenue sur mon île volcanique !",
+      "Mes Pokémon sont forgés dans le feu.",
+      "Ici, tout brûle. Tout.",
+      "Voyons si tu résistes à la chaleur !",
+    ],
+  },
+};
+
 interface Props {
   zone: Zone;
   state: GameState;
@@ -17,7 +86,7 @@ interface Props {
   onZoneDiscovered?: () => void;
 }
 
-type Phase = 'intro' | 'select' | 'battle' | 'result';
+type Phase = 'dialogue' | 'intro' | 'select' | 'battle' | 'result';
 
 function getBossLevel(zoneId: string): number {
   const idx = ZONE_ORDER.indexOf(zoneId);
@@ -27,7 +96,11 @@ function getBossLevel(zoneId: string): number {
 }
 
 export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZoneDiscovered }: Props) {
-  const [phase, setPhase] = useState<Phase>('intro');
+  const [phase, setPhase] = useState<Phase>(() => {
+    const trainer = BOSS_TRAINER[zone.id];
+    return trainer ? 'dialogue' : 'intro';
+  });
+  const [dialogueIdx, setDialogueIdx] = useState(0);
   const [playerTeam, setPlayerTeam] = useState<TeamMember[]>([]);
   const [won, setWon] = useState(false);
   const [xpResults, setXpResults] = useState<Record<number, number>>({});
@@ -74,6 +147,78 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
 
     setPhase('result');
   }, [zone.id, nextZoneId, onVictory, onAddXp, victoryHandled]);
+
+  // DIALOGUE phase
+  if (phase === 'dialogue') {
+    const trainer = BOSS_TRAINER[zone.id];
+    if (!trainer) { setPhase('intro'); return null; }
+    const lines = trainer.dialogues;
+    const isLast = dialogueIdx >= lines.length - 1;
+    const advance = () => {
+      if (!isLast) setDialogueIdx(i => i + 1);
+      else setPhase('intro');
+    };
+    return (
+      <div
+        className="fixed inset-0 z-50 flex flex-col select-none"
+        style={{ background: 'linear-gradient(160deg, #0a0a14 0%, #050510 100%)' }}
+        onClick={advance}
+      >
+        <div className="px-5 pt-5 pb-2 shrink-0">
+          <div className="font-black text-2xl tracking-wide" style={{ color: trainer.color, textShadow: `0 0 20px ${trainer.color}66` }}>
+            {trainer.name}
+          </div>
+          <div className="text-slate-400 text-sm font-semibold">{trainer.title}</div>
+        </div>
+
+        <div className="flex-1 relative overflow-hidden">
+          <div className="absolute inset-0"
+            style={{ background: `radial-gradient(ellipse at 50% 100%, ${trainer.color}25 0%, transparent 70%)` }} />
+          <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center pointer-events-none">
+            <img
+              src={trainer.image}
+              alt={trainer.name}
+              draggable={false}
+              className="select-none shrink-0"
+              style={{
+                height: 'min(75vw, 310px)',
+                objectFit: 'contain',
+                objectPosition: 'bottom',
+                filter: `drop-shadow(0 0 14px ${trainer.color}55)`,
+                animation: 'league-trainer-appear 0.6s ease-out',
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="px-4 pb-6 pt-2 shrink-0">
+          <div className="rounded-2xl p-4"
+            style={{ background: 'rgba(5,5,15,0.95)', border: `1px solid ${trainer.color}33`, minHeight: 80 }}>
+            <p className="font-bold text-base leading-relaxed text-slate-100">{lines[dialogueIdx]}</p>
+            <div className="flex items-center justify-between mt-3">
+              <div className="flex gap-1">
+                {lines.map((_, i) => (
+                  <div key={i} className="rounded-full transition-all"
+                    style={{ width: i === dialogueIdx ? 12 : 6, height: 6,
+                      background: i <= dialogueIdx ? trainer.color : 'rgba(255,255,255,0.15)' }} />
+                ))}
+              </div>
+              {!isLast && <span className="text-slate-500 text-xs animate-pulse">Appuie pour continuer ▶</span>}
+            </div>
+          </div>
+          {isLast && (
+            <button
+              onClick={e => { e.stopPropagation(); setPhase('intro'); }}
+              className="w-full mt-3 py-4 rounded-2xl font-black text-lg text-white"
+              style={{ background: `linear-gradient(90deg, ${trainer.color}, ${trainer.color}bb)` }}
+            >
+              ⚔️ Combattre {trainer.name} !
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // INTRO phase
   if (phase === 'intro') {

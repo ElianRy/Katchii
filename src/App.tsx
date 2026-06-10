@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, DuelEntry } from './types';
 import { BottomNav } from './components/BottomNav';
 import { HuntingField } from './components/HuntingField';
@@ -37,6 +37,7 @@ export function App() {
   const [showPlayers, setShowPlayers] = useState(false);
   const [previousView, setPreviousView] = useState<View>('home');
   const [battle3v3, setBattle3v3] = useState<{ playerTeam: TeamMember[]; enemyTeam: TeamMember[]; enemyName: string } | null>(null);
+  const prevViewRef = useRef<View>('auth');
   const gameState = useGameState();
 
   // Persist & restore last view
@@ -79,11 +80,12 @@ export function App() {
   // Home/menu music + zone music when entering hunt
   useEffect(() => {
     // Always play menu music on home, or if hunt is hidden behind the welcome/menu screen
-    if (view === 'home' || showWelcome) { playMenuMusic(); return; }
-    if (view === 'hunt' && !battle3v3) {
+    if (view === 'home' || showWelcome) { playMenuMusic(); prevViewRef.current = view; return; }
+    if (view === 'hunt' && prevViewRef.current !== 'hunt' && !battle3v3) {
       const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
       playZoneMusic(zoneId);
     }
+    prevViewRef.current = view;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, showWelcome]);
 

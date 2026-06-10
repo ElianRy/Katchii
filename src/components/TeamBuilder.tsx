@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { TutorialOverlay, isTutorialDone } from './TutorialOverlay';
+import { TEAM_TUTORIAL } from './TutorialContent';
 import { GameState, RARITY_COLORS } from '../types';
 import { GEN1_POKEMON, POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
@@ -79,6 +81,7 @@ interface Props {
 }
 
 export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattleWin, onTrainingBattle, onClose, title = 'Mon équipe', savedTeams, favoriteTeamId, onSaveTeam, onDeleteTeam, onSetFavoriteTeamId }: Props) {
+  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('team'));
   const [selected, setSelected] = useState<number[]>([]);
   const [sort, setSort] = useState<'level' | 'rarity'>('level');
   const [mode, setMode] = useState<'team' | 'battle' | 'result' | 'savedTeams'>('team');
@@ -649,6 +652,9 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
           </button>
         </div>
       </div>
+      {showTutorial && (
+        <TutorialOverlay tutorialKey="team" steps={TEAM_TUTORIAL} onDone={() => setShowTutorial(false)} bottomOffset={72} />
+      )}
     </div>
   );
 }

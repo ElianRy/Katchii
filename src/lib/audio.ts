@@ -155,7 +155,8 @@ function playSfxFile(name: string) {
 
 export function playSfxConfirm()       { playSfxFile('sfx_confirm'); }
 export function playSfxCapture()       { playSfxFile('sfx_capture'); }
-export function playSfxPokeball()      { playSfxFile('sfx_pokeball'); }
+export function playSfxPokeball()      { playSfxFile('catch_poke'); }
+export function playCatchPoke()        { playSfxFile('catch_poke'); }
 export function playVictory()          { playSfxFile('victoire'); }
 export function playLeagueVictory()    { playSfxFile('victoire_ligue'); }
 export function playLevelUp()          { playSfxFile('level_up'); }

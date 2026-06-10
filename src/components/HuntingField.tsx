@@ -9,7 +9,7 @@ import { useSpawner } from '../hooks/useSpawner';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { Zone, ZONE_BY_ID, ZONE_ORDER } from '../data/zones';
 import { ZoneUnlockCondition } from '../types';
-import { playZoneMusic, stopMusic, playSfxCapture, playSfxDuplicate, playSfxShinyCapture } from '../lib/audio';
+import { playZoneMusic, stopMusic, playSfxCapture, playSfxShinyCapture, playCatchPoke } from '../lib/audio';
 
 const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
   zone1: { ground: 'linear-gradient(to top, #14532d 0%, #166534 40%, transparent 100%)', bush: 'linear-gradient(to top, #15803d, #22c55e)' },
@@ -71,7 +71,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const [showZoneInfo, setShowZoneInfo] = useState(false);
   const [showBossFight, setShowBossFight] = useState(false);
   const [fightZone, setFightZone] = useState<Zone | null>(null);
-  const [discoveryZoneName, setDiscoveryZoneName] = useState<string | null>(null);
+  const [discoveredZone, setDiscoveredZone] = useState<{ name: string; pokemonIds: number[] } | null>(null);
   const [bossReadyAnim, setBossReadyAnim] = useState(false);
   const prevBossUnlockedRef = useRef(false);
   const [zoneTransition, setZoneTransition] = useState<'left' | 'right' | null>(null);
@@ -121,9 +121,11 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         const totalCaught = Object.values(gameState.state.normalCollection as Record<number,number>).filter(v => v > 0).length + Object.values(gameState.state.shinyCollection as Record<number,number>).filter(v => v > 0).length;
         const isEpic = pokemon.rarity === 'legendaire' || isShiny;
         // Capture sounds
-        if (isDoublon) playSfxDuplicate();
-        else if (isEpic) playSfxShinyCapture();
-        else playSfxCapture();
+        playCatchPoke();
+        if (!isDoublon) {
+          if (isEpic) setTimeout(() => playSfxShinyCapture(), 300);
+          else setTimeout(() => playSfxCapture(), 300);
+        }
         if (pts > 0) {
           addNotification(`+${pts} pts !`, x, y, true);
           addNotification('Nouveau !', x, y - 8, true);
@@ -156,8 +158,6 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const currentZoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
   const currentZone = ZONE_BY_ID[currentZoneId];
 
-  // Play zone music when zone changes
-  useEffect(() => { playZoneMusic(currentZoneId); }, [currentZoneId]);
   const currentZoneIdx = ZONE_ORDER.indexOf(currentZoneId);
   const prevZoneId = currentZoneIdx > 0 ? ZONE_ORDER[currentZoneIdx - 1] : null;
   const nextZoneId = currentZoneIdx >= 0 && currentZoneIdx < ZONE_ORDER.length - 1 ? ZONE_ORDER[currentZoneIdx + 1] : null;
@@ -420,7 +420,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           }}
           onZoneDiscovered={() => {
             const nz = ZONE_BY_ID['zone_libre'];
-            if (nz) { setDiscoveryZoneName(nz.name); setTimeout(() => setDiscoveryZoneName(null), 3500); }
+            if (nz) setDiscoveredZone({ name: nz.name, pokemonIds: nz.pokemonIds.slice(0, 8) });
           }}
         />
       )}
@@ -438,29 +438,42 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           }}
           onZoneDiscovered={() => {
             const nz = fightZone && ZONE_BY_ID[ZONE_ORDER[ZONE_ORDER.indexOf(fightZone.id) + 1]];
-            if (nz) { setDiscoveryZoneName(nz.name); setTimeout(() => setDiscoveryZoneName(null), 3500); }
+            if (nz) setDiscoveredZone({ name: nz.name, pokemonIds: nz.pokemonIds.slice(0, 8) });
           }}
         />
       )}
 
       {/* Zone discovery overlay */}
-      {discoveryZoneName && (
-        <div className="fixed inset-0 z-[300] flex flex-col items-center justify-center pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.35) 0%, rgba(2,6,23,0.85) 100%)',
-            animation: 'zone-discover-fade 3.5s ease-out forwards' }}>
-          <div style={{ animation: 'zone-discover-title 3.5s ease-out forwards', textAlign: 'center' }}>
-            <div style={{ fontSize: '3rem', marginBottom: 8 }}>🗺️</div>
-            <div className="font-black text-white" style={{ fontSize: '1.4rem', letterSpacing: 2,
-              textShadow: '0 0 30px rgba(99,102,241,0.9), 0 0 60px rgba(99,102,241,0.5)' }}>
-              NOUVELLE ZONE
+      {discoveredZone && (
+        <div className="fixed inset-0 z-[300] flex flex-col items-center justify-center"
+          style={{ background: 'rgba(2,6,23,0.92)' }}
+          onClick={() => setDiscoveredZone(null)}
+        >
+          <div className="text-center px-6 max-w-sm w-full" style={{ animation: 'badge-pop 0.5s ease-out both' }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>🗺️</div>
+            <div className="font-black text-white text-2xl tracking-wide mb-1"
+              style={{ textShadow: '0 0 24px rgba(99,102,241,0.9)' }}>
+              NOUVELLE ZONE !
             </div>
-          </div>
-          <div style={{ animation: 'zone-discover-sub 3.5s ease-out forwards', textAlign: 'center', marginTop: 12 }}>
-            <div className="font-black text-indigo-300" style={{ fontSize: '1.8rem',
-              textShadow: '0 0 20px rgba(165,180,252,0.8)' }}>
-              {discoveryZoneName}
+            <div className="font-black text-indigo-300 text-xl mb-4">{discoveredZone.name}</div>
+            <div className="text-slate-400 text-xs mb-3 font-semibold uppercase tracking-wider">Pokémon disponibles</div>
+            <div className="flex flex-wrap justify-center gap-2 mb-5">
+              {discoveredZone.pokemonIds.map(id => {
+                const p = POKEMON_BY_ID[id];
+                return (
+                  <div key={id} className="flex flex-col items-center gap-0.5">
+                    <img
+                      src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`}
+                      width={48} height={48}
+                      style={{ imageRendering: 'pixelated', filter: 'drop-shadow(0 0 4px rgba(99,102,241,0.6))' }}
+                      alt={p?.name ?? ''}
+                    />
+                    <span className="text-slate-400 text-xs">{p?.name ?? '???'}</span>
+                  </div>
+                );
+              })}
             </div>
-            <div className="text-slate-400 text-sm mt-1">débloquée !</div>
+            <div className="text-slate-500 text-xs">Appuie pour continuer</div>
           </div>
         </div>
       )}

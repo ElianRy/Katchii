@@ -10,6 +10,7 @@ interface Props {
   tutorialKey: string;   // e.g. 'hunt', 'collection'
   steps: TutorialStep[];
   onDone?: () => void;
+  bottomOffset?: number; // extra bottom padding to avoid navbar
 }
 
 function storageKey(k: string) { return `katchii_tuto_${k}`; }
@@ -18,7 +19,7 @@ export function isTutorialDone(key: string): boolean {
   return localStorage.getItem(storageKey(key)) === '1';
 }
 
-export function TutorialOverlay({ tutorialKey, steps, onDone }: Props) {
+export function TutorialOverlay({ tutorialKey, steps, onDone, bottomOffset }: Props) {
   const [step, setStep] = useState(0);
   const [visible, setVisible] = useState(true);
   const [animDir, setAnimDir] = useState<'in' | 'out'>('in');
@@ -72,8 +73,8 @@ export function TutorialOverlay({ tutorialKey, steps, onDone }: Props) {
 
       {/* Card */}
       <div
-        className="w-full px-4 pb-8"
-        style={{
+        className="w-full px-4"
+        style={{ paddingBottom: bottomOffset ? `${bottomOffset + 32}px` : '32px',
           opacity: animDir === 'in' ? 1 : 0,
           transform: animDir === 'in' ? 'translateY(0)' : 'translateY(16px)',
           transition: 'opacity 0.16s ease, transform 0.16s ease',

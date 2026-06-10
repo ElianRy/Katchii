@@ -89,24 +89,6 @@ function SwordShieldAnim() {
   );
 }
 
-function CollectionAnim() {
-  const pokes = ['🔴','🔵','🟡','🟢','🟣','🟠'];
-  return (
-    <div className="flex flex-wrap justify-center gap-3 px-6">
-      {pokes.map((_color, i) => (
-        <div key={i} className="rounded-2xl flex items-center justify-center"
-          style={{
-            width: 52, height: 52, fontSize: 28,
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-            animation: `badge-pop 0.35s ${i * 0.06}s ease-out both`,
-          }}>
-          <span style={{ filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.3))' }}>⚾</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function TeamAnim() {
   return (
     <div className="flex items-end justify-center gap-3">
@@ -168,27 +150,43 @@ function DuelAnim() {
 export const HUNT_TUTORIAL: TutorialStep[] = [
   {
     title: 'Bienvenue dans la Chasse ! 🎯',
-    body: "Des Pokémon sauvages apparaissent régulièrement dans ta zone. Appuie sur l'un d'eux pour tenter de le capturer. Plus tu joues, plus ta collection s'étoffe !",
+    body: "Des Pokémon sauvages apparaissent régulièrement dans cette zone. Appuie sur l'un d'eux pour tenter de le capturer. Plus tu joues, plus ton Pokédex se remplit !",
     illustration: <PokeballAnim />,
   },
   {
     title: 'Le Cooldown ⏱️',
-    body: "Après chaque capture, un temps de recharge s'active. Tu ne peux pas capturer deux Pokémon d'affilée — patience ! Le timer en haut t'indique quand tu seras prêt.",
+    body: "Après chaque capture d'un **nouveau** Pokémon, un cooldown s'active. Les doublons (indiqués par une Pokéball à côté de leur nom) se capturent sans attendre ! Le timer est affiché en bas à droite.",
     illustration: <CooldownAnim />,
   },
   {
     title: 'Les 8 Zones 🗺️',
-    body: "Il y a 8 zones à débloquer progressivement, chacune avec ses propres Pokémon et sa propre difficulté. Utilise les flèches gauche/droite pour naviguer entre les zones débloquées.",
+    body: "Chaque zone a une mission à accomplir avant d'affronter le Maître d'Arène. Bats-le pour débloquer la zone suivante !",
     illustration: <ZoneMapAnim />,
   },
   {
+    title: 'Le bouton Info ℹ️',
+    body: "Le bouton ℹ️ en haut de chaque zone affiche les Pokémon disponibles, leur rareté, la mission du Maître d'Arène et ta progression. Consulte-le pour savoir quoi capturer !",
+    illustration: (
+      <div className="flex flex-col items-center gap-3">
+        <div className="rounded-2xl px-5 py-3 flex items-center gap-3"
+          style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.4)' }}>
+          <span style={{ fontSize: 32 }}>ℹ️</span>
+          <div className="text-left">
+            <div className="text-white font-bold text-sm">Zone Info</div>
+            <div className="text-slate-400 text-xs">Pokémon · Missions · Maître</div>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+  {
     title: 'Shiny & Probabilités ✨',
-    body: "Chaque Pokémon a une rareté : Commun, Peu commun, Rare, Élite ou Légendaire. Les Shiny sont ultra-rares (1 chance sur ~500). Garde l'œil ouvert — ils brillent !",
+    body: "Chaque Pokémon a une rareté : Commun, Peu commun, Rare, Élite ou Légendaire. Les Shiny sont ultra-rares (1 chance sur ~500). Garde l'œil ouvert — ils brillent ! Ils peuvent spawner dans toutes les zones !",
     illustration: <ShinyAnim />,
   },
   {
     title: 'Les Légendaires 🐉',
-    body: "Les Pokémon Légendaires ne sont disponibles QUE dans la dernière zone (Zone 8 — Route Victoire). Progresse zone par zone pour avoir une chance de les rencontrer !",
+    body: "Les Pokémon Légendaires ne sont disponibles QUE dans la Zone Libre (la dernière zone débloquée). Progresse zone par zone pour avoir une chance de les rencontrer !",
     illustration: <LegendaryAnim />,
   },
 ];
@@ -196,17 +194,34 @@ export const HUNT_TUTORIAL: TutorialStep[] = [
 export const COLLECTION_TUTORIAL: TutorialStep[] = [
   {
     title: 'Ta Collection 📚',
-    body: "Tous les Pokémon que tu as capturés sont ici. Filtre par rareté, recherche par nom, et consulte les stats de chacun. Les Shiny ont une bordure dorée.",
-    illustration: <CollectionAnim />,
+    body: "Tous les Pokémon que tu as capturés sont ici. Filtre par rareté, recherche par nom, et consulte les stats de chacun.",
+    illustration: (
+      <div className="flex flex-col items-center gap-3">
+        <div style={{ fontSize: 52, animation: 'badge-pop 0.5s ease-out both, alakazam-float 2.5s ease-in-out infinite' }}>📚</div>
+        <div className="flex gap-2 text-xs text-slate-300 font-bold">
+          <span className="px-2 py-1 rounded-lg" style={{ background: 'rgba(168,85,247,0.15)', border: '1px solid rgba(168,85,247,0.3)' }}>✨ Shiny</span>
+          <span className="px-2 py-1 rounded-lg" style={{ background: 'rgba(250,204,21,0.12)', border: '1px solid rgba(250,204,21,0.2)' }}>🏆 Élite</span>
+          <span className="px-2 py-1 rounded-lg" style={{ background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.2)' }}>💫 Rare</span>
+        </div>
+      </div>
+    ),
   },
   {
+    title: 'Entraînement & Niveaux 📈',
+    body: "Tes Pokémon gagnent de l'expérience en combattant. Plus leur niveau est élevé, plus ils sont forts dans les combats. Entraîne-les régulièrement !",
+    illustration: <SwordShieldAnim />,
+  },
+];
+
+export const TEAM_TUTORIAL: TutorialStep[] = [
+  {
     title: 'Ton Équipe ⚔️',
-    body: "Dans l'onglet Équipe, compose une équipe de 3 Pokémon pour les combats et les duels. Définis une équipe favorite pour qu'elle soit utilisée automatiquement.",
+    body: "Compose une équipe de 3 Pokémon pour les combats. Définis une équipe favorite — elle sera utilisée automatiquement dans les duels et les combats de zone.",
     illustration: <TeamAnim />,
   },
   {
     title: 'Entraînement & Niveaux 📈',
-    body: "Tes Pokémon gagnent de l'expérience en combattant. Plus leur niveau est élevé, plus ils sont forts dans les duels et en ligue. Entraîne-les régulièrement !",
+    body: "Tes Pokémon gagnent de l'XP en combattant. Plus leur niveau est élevé, plus ils sont forts dans les combats. Entraîne-les régulièrement !",
     illustration: <SwordShieldAnim />,
   },
 ];
@@ -236,12 +251,12 @@ export const DUELS_TUTORIAL: TutorialStep[] = [
 export const POKEPARK_TUTORIAL: TutorialStep[] = [
   {
     title: 'Le PokéParc 🌿',
-    body: "Ton Pokémon favori se balade librement dans ce parc partagé avec tous les joueurs connectés ! Choisis ton favori depuis ton profil ou en appuyant dessus dans la navbar.",
+    body: "Choisis un Pokémon à mettre dans le Poképarc (un seul à la fois). Il se balade librement dans cet espace partagé avec tous les joueurs connectés !",
     illustration: <ParkAnim />,
   },
   {
     title: 'Interactions & XP 💬',
-    body: "Appuie sur les Pokémon des autres joueurs pour interagir avec eux. Chaque interaction rapporte de l'XP à ton Pokémon. Tu peux aussi chatter et défier les autres en duel direct !",
+    body: "Ton Pokémon dans le Poképarc gagne de l'XP automatiquement au fil du temps — même quand tu n'es pas connecté ! Interagis avec les Pokémon des autres joueurs pour chatter et les défier en duel.",
     illustration: (
       <div className="flex flex-col items-center gap-3">
         <div className="flex gap-3">

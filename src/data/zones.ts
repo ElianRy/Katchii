@@ -97,7 +97,7 @@ export const ZONES: Zone[] = [
     completionThreshold: 0.70,
     unlockCondition: { type: 'capture_n_times', pokemonId: 82, count: 10 },
     boss: {
-      name: 'Maître Roguele',
+      name: 'Maître Bob',
       title: 'Gym Leader Électrik',
       team: [
         { pokemonId: 100, isShiny: false },

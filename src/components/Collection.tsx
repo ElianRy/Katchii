@@ -443,7 +443,7 @@ export function Collection({ state, onClose }: Props) {
         </div>
       )}
       {showTutorial && (
-        <TutorialOverlay tutorialKey="collection" steps={COLLECTION_TUTORIAL} onDone={() => setShowTutorial(false)} />
+        <TutorialOverlay tutorialKey="collection" steps={COLLECTION_TUTORIAL} onDone={() => setShowTutorial(false)} bottomOffset={72} />
       )}
     </div>
   );
