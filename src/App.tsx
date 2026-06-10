@@ -78,13 +78,14 @@ export function App() {
 
   // Home/menu music + zone music when entering hunt
   useEffect(() => {
-    if (view === 'home') playMenuMusic();
-    else if (view === 'hunt' && !battle3v3) {
+    // Always play menu music on home, or if hunt is hidden behind the welcome/menu screen
+    if (view === 'home' || showWelcome) { playMenuMusic(); return; }
+    if (view === 'hunt' && !battle3v3) {
       const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
       playZoneMusic(zoneId);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view]);
+  }, [view, showWelcome]);
 
   // Global UI sounds — every click except inputs, 150 ms debounce
   useEffect(() => {
