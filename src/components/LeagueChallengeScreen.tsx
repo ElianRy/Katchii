@@ -336,87 +336,6 @@ function StarterSelectScreen({ team, trainerName, trainerColor, onConfirm }: {
   );
 }
 
-/* ── MASTER PICK 3 ── */
-function MasterPick3Screen({ survivors, onConfirm }: {
-  survivors: TeamMember[];
-  onConfirm: (team: TeamMember[]) => void;
-}) {
-  const maxPick = Math.min(3, survivors.length);
-  const [selected, setSelected] = useState<number[]>([]);
-  const masterColor = '#a855f7';
-
-  const toggle = (i: number) => {
-    setSelected(prev => {
-      if (prev.includes(i)) return prev.filter(x => x !== i);
-      if (prev.length >= maxPick) return prev;
-      return [...prev, i];
-    });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: 'linear-gradient(160deg, #0a0010 0%, #000005 100%)' }}>
-      <div className="px-4 pt-6 pb-3 shrink-0 border-b border-purple-900/50">
-        <h2 className="text-white font-black text-xl">⚡ Combat Final</h2>
-        <p className="text-slate-300 text-sm mt-0.5">
-          Choisissez <span className="text-purple-400 font-bold">{maxPick} Pokémon</span> pour affronter le Maître de la Ligue
-        </p>
-        <p className="text-slate-500 text-xs mt-0.5">HP non restaurés · uniquement vos survivants</p>
-      </div>
-      <div className="flex-1 overflow-y-auto px-3 py-3 pb-28">
-        <div className="flex flex-col gap-2">
-          {survivors.map((m, i) => {
-            const p = POKEMON_BY_ID[m.pokemonId];
-            const hpPct = m.currentHp / m.maxHp;
-            const hpColor = hpPct > 0.5 ? '#22c55e' : hpPct > 0.25 ? '#f59e0b' : '#ef4444';
-            const isChosen = selected.includes(i);
-            const choiceNum = selected.indexOf(i) + 1;
-            return (
-              <button key={i} onClick={() => toggle(i)}
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all"
-                style={{
-                  borderColor: isChosen ? masterColor : 'rgba(255,255,255,0.1)',
-                  background: isChosen ? 'rgba(168,85,247,0.15)' : 'rgba(255,255,255,0.03)',
-                  boxShadow: isChosen ? '0 0 12px rgba(168,85,247,0.4)' : 'none',
-                }}>
-                <ShinySprite pokemonId={m.pokemonId} isShiny={m.isShiny ?? false} width={52} height={52} alt={p?.name ?? ''} compact />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-white font-bold">{p?.name ?? '???'}</span>
-                    {m.isShiny && <span className="text-xs text-yellow-400 font-bold">✨</span>}
-                    <span className="text-slate-400 text-xs ml-auto">Nv.{m.level}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 h-2 rounded-full bg-slate-700 overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${hpPct * 100}%`, background: hpColor }} />
-                    </div>
-                    <span className="text-xs shrink-0" style={{ color: hpColor }}>{m.currentHp}/{m.maxHp}</span>
-                  </div>
-                </div>
-                {isChosen && (
-                  <div className="shrink-0 w-7 h-7 rounded-full flex items-center justify-center font-black text-sm"
-                    style={{ background: masterColor, color: 'black' }}>{choiceNum}</div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      <div className="fixed bottom-0 left-0 right-0 z-[610] p-4 bg-black/98 border-t border-purple-900/50">
-        <div className="text-center text-slate-500 text-xs mb-2">{selected.length}/{maxPick} Pokémon sélectionnés</div>
-        <button disabled={selected.length !== maxPick} onClick={() => onConfirm(selected.map(i => survivors[i]))}
-          className="w-full py-4 rounded-2xl font-black text-lg text-white transition-all"
-          style={{
-            background: selected.length === maxPick
-              ? 'linear-gradient(90deg, #7c3aed, #a855f7, #c026d3)'
-              : '#1f1f2e',
-            boxShadow: selected.length === maxPick ? '0 0 20px rgba(168,85,247,0.5)' : 'none',
-          }}>
-          {selected.length === maxPick ? '⚡ Affronter le Maître !' : `Choisissez ${maxPick - selected.length} Pokémon de plus`}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 /* ── DIALOGUE SCREEN ── */
 function DialogueScreen({ trainer, onDone }: {
@@ -937,15 +856,13 @@ function VictoryFinalScreen({ onClose, onZoneDiscovered }: { onClose: () => void
 export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZoneDiscovered }: Props) {
   const [phase, setPhase] = useState<Phase>('team_select');
   const [currentTeam, setCurrentTeam] = useState<TeamMember[]>([]);
-  const [masterTeam, setMasterTeam] = useState<TeamMember[]>([]);
   const [retrying, setRetrying] = useState(false);
   const [victoryHandled, setVictoryHandled] = useState(false);
 
   // Music transitions per phase
   useEffect(() => {
     if (phase === 'dialogue_giovanni' || phase === 'starter_giovanni' || phase === 'battle_giovanni') {
-      const t = setTimeout(() => playMusic('gio2'), 600);
-      return () => clearTimeout(t);
+      playMusic('gio2');
     }
   }, [phase]);
 
@@ -1055,11 +972,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     );
   }
   if (phase === 'dialogue_master') {
-    return <DialogueScreen trainer={TRAINER_CONFIGS[2]} onDone={() => setPhase('master_pick3')} />;
-  }
-  if (phase === 'master_pick3') {
-    return <MasterPick3Screen survivors={currentTeam}
-      onConfirm={t => { setMasterTeam(t); setPhase('epic_intro'); }} />;
+    return <DialogueScreen trainer={TRAINER_CONFIGS[2]} onDone={() => setPhase('epic_intro')} />;
   }
   if (phase === 'epic_intro') {
     return <EpicIntroScreen onDone={() => setPhase('battle_master')} />;
@@ -1069,7 +982,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
       <div className="fixed inset-0 z-[600]">
         <div className="absolute inset-0 pointer-events-none z-10"
           style={{ boxShadow: 'inset 0 0 50px rgba(168,85,247,0.4)', animation: 'aura-pulse 1.2s ease-in-out infinite' }} />
-        <BattleScreen keepMusic playerTeam={masterTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[2].teamSpec)}
+        <BattleScreen keepMusic playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[2].teamSpec)}
           bossName="⚡ Maître Berix ⚡"
           trainerImage="/trainers/master.png" trainerColor="#a855f7"
           sideOverlay={<MasterSideEffects />}
