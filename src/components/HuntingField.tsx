@@ -47,6 +47,7 @@ interface Props {
   onOpenRaid: () => void;
   onOpenWrapped: () => void;
   onChangeUniverse: () => void;
+  onOpenSettings?: () => void;
   gameState: ReturnType<typeof useGameState>;
 }
 
@@ -59,7 +60,7 @@ interface NewCaptureInfo {
   totalCaught: number;
 }
 
-export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmin, onOpenLures, onOpenQuests, onOpenDuels, onOpenRaid, onOpenWrapped, onChangeUniverse, gameState }: Props) {
+export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmin, onOpenLures, onOpenQuests, onOpenDuels, onOpenRaid, onOpenWrapped, onChangeUniverse, onOpenSettings, gameState }: Props) {
   const spawner = useSpawner(gameState);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [cooldownSecs, setCooldownSecs] = useState(0);
@@ -302,6 +303,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         onOpenRaid={onOpenRaid}
         onOpenWrapped={onOpenWrapped}
         onChangeUniverse={onChangeUniverse}
+        onOpenSettings={onOpenSettings}
         onOpenZoneInfo={() => setShowZoneInfo(true)}
         capturedCount={capturedCount}
         totalPokemon={totalPokemon}

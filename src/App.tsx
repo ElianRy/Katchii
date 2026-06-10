@@ -26,7 +26,7 @@ import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
 import { calcMaxHp } from './data/combatEngine';
 import { POKEMON_BY_ID } from './data/gen1';
-import { playSfxBack, playMenuMusic, stopMusic } from './lib/audio';
+import { playMenuMusic, stopMusic, playZoneMusic, playSfxConfirm } from './lib/audio';
 
 export function App() {
   const [view, setView] = useState<View>('auth');
@@ -90,16 +90,23 @@ export function App() {
       // Back buttons: contain ← arrow text or have data-back attribute
       const text = btn.textContent?.trim() ?? '';
       if (text === '←' || text.startsWith('←') || btn.dataset.back !== undefined) {
-        playSfxBack();
+        playSfxConfirm();
       }
     };
     document.addEventListener('click', handler, true);
     return () => document.removeEventListener('click', handler, true);
   }, []);
 
-  // Stop music when battle starts, resume zone music when done
+  // Stop music when battle starts; resume zone music after battle ends
   useEffect(() => {
-    if (battle3v3) stopMusic(0.3);
+    if (battle3v3) {
+      stopMusic(0.3);
+    } else if (view === 'hunt') {
+      const zoneId = gameState.state.zoneProgress?.currentZoneId ?? 'zone1';
+      const t = setTimeout(() => playZoneMusic(zoneId), 3500);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [battle3v3]);
 
   // Play time tracking
@@ -218,6 +225,7 @@ export function App() {
           onOpenRaid={() => persistView('raid')}
           onOpenWrapped={() => persistView('wrapped')}
           onChangeUniverse={() => setView('home')}
+          onOpenSettings={() => setView('settings')}
           gameState={gameState}
         />
       </div>

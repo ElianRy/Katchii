@@ -13,6 +13,7 @@ interface Props {
   onOpenRaid: () => void;
   onOpenWrapped: () => void;
   onChangeUniverse: () => void;
+  onOpenSettings?: () => void;
   onOpenZoneInfo?: () => void;
   onOpenAdmin?: () => void;
   isAdmin?: boolean;
@@ -81,6 +82,7 @@ export function HUD({
   onOpenRaid,
   onOpenWrapped,
   onChangeUniverse,
+  onOpenSettings,
   onOpenZoneInfo,
   onOpenAdmin,
   isAdmin = false,
@@ -160,6 +162,11 @@ export function HUD({
           {/* Admin */}
           {isAdmin && onOpenAdmin && (
             <button onClick={onOpenAdmin} className="bg-red-900/80 rounded-xl px-2 py-1.5 border border-red-700/60 text-red-300 text-sm shrink-0">🔧</button>
+          )}
+
+          {/* Settings */}
+          {onOpenSettings && (
+            <button onClick={onOpenSettings} className="bg-black/70 rounded-xl px-2 py-1.5 border border-slate-600/40 text-slate-300 hover:text-white text-sm shrink-0">⚙️</button>
           )}
 
           {/* Menu */}

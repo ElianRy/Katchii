@@ -17,14 +17,14 @@ interface Props {
 }
 
 const BATTLE_ORBIT_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string; layer: 'front' | 'back' }[] = [
-  { color: '#fde047', dur: '3.0s', delay: '0s',    sym: '✦', size: 15, anim: 'shiny-persp-a', layer: 'front' },
-  { color: '#f472b6', dur: '2.5s', delay: '-0.8s', sym: '★', size: 13, anim: 'shiny-persp-b', layer: 'back'  },
-  { color: '#60a5fa', dur: '3.8s', delay: '-1.6s', sym: '✦', size: 14, anim: 'shiny-persp-c', layer: 'front' },
-  { color: '#fbbf24', dur: '2.1s', delay: '-0.4s', sym: '✧', size: 12, anim: 'shiny-persp-d', layer: 'back'  },
-  { color: '#ffffff', dur: '3.4s', delay: '-2.0s', sym: '★', size: 13, anim: 'shiny-persp-e', layer: 'front' },
-  { color: '#4ade80', dur: '2.8s', delay: '-1.2s', sym: '✦', size: 14, anim: 'shiny-persp-a', layer: 'back'  },
-  { color: '#c084fc', dur: '2.3s', delay: '-1.4s', sym: '✧', size: 12, anim: 'shiny-persp-d', layer: 'front' },
-  { color: '#fb923c', dur: '3.6s', delay: '-2.6s', sym: '★', size: 11, anim: 'shiny-persp-b', layer: 'back'  },
+  { color: '#fde047', dur: '3.0s', delay: '0s',    sym: '✦', size: 9,  anim: 'park-persp-a', layer: 'front' },
+  { color: '#f472b6', dur: '2.5s', delay: '-0.8s', sym: '★', size: 8,  anim: 'park-persp-b', layer: 'back'  },
+  { color: '#60a5fa', dur: '3.8s', delay: '-1.6s', sym: '✦', size: 9,  anim: 'park-persp-c', layer: 'front' },
+  { color: '#fbbf24', dur: '2.1s', delay: '-0.4s', sym: '✧', size: 7,  anim: 'park-persp-d', layer: 'back'  },
+  { color: '#ffffff', dur: '3.4s', delay: '-2.0s', sym: '★', size: 8,  anim: 'park-persp-e', layer: 'front' },
+  { color: '#4ade80', dur: '2.8s', delay: '-1.2s', sym: '✦', size: 9,  anim: 'park-persp-a', layer: 'back'  },
+  { color: '#c084fc', dur: '2.3s', delay: '-1.4s', sym: '✧', size: 7,  anim: 'park-persp-d', layer: 'front' },
+  { color: '#fb923c', dur: '3.6s', delay: '-2.6s', sym: '★', size: 8,  anim: 'park-persp-b', layer: 'back'  },
 ];
 
 export function ShinySprite({ pokemonId, isShiny, width = 64, height = 64, className, style, alt, compact = false, flip = false }: Props) {
