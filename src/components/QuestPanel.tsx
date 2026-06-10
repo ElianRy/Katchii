@@ -96,7 +96,7 @@ export function QuestPanel({ state, onClaim, onClose }: Props) {
       {claimedToast && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[999] pointer-events-none"
           style={{ animation: 'fadeIn 0.3s ease' }}>
-          <div className="bg-yellow-500 text-black font-black text-sm px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2"
+          <div className="bg-yellow-500 text-black font-black text-sm px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 whitespace-nowrap"
             style={{ boxShadow: '0 0 24px 4px rgba(250,204,21,0.5)' }}>
             <span>✅</span>
             <span>Quête complétée !</span>
