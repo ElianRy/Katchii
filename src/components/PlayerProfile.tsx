@@ -10,6 +10,7 @@ interface Props {
   isOnline?: boolean;
   lastSeen?: string;
   onClose: () => void;
+  onBattle3v3?: (enemyPokemon: Array<{ pokemonId: number; level: number; isShiny?: boolean }>, enemyName: string) => void;
 }
 
 function formatLastSeen(iso: string): string {
@@ -27,7 +28,7 @@ const RARITY_ORDER: Record<string, number> = { commun: 0, peu_commun: 1, rare: 2
 
 type Tab = 'stats' | 'collection';
 
-export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose }: Props) {
+export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, onBattle3v3 }: Props) {
   const [state, setState] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [fallbackLastSeen, setFallbackLastSeen] = useState<string | undefined>(undefined);
@@ -236,6 +237,36 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose }:
                 ? <span className="text-slate-500 text-sm">Dernière connexion : {formatLastSeen(effectiveLastSeen)}</span>
                 : null}
           </div>
+
+          {/* 3v3 challenge */}
+          {onBattle3v3 && !loading && state && ownedIds.length >= 1 && (
+            <button
+              onClick={() => {
+                const RARITY_RANK: Record<string, number> = { commun: 0, peu_commun: 1, rare: 2, elite: 3, legendaire: 4 };
+                const pokemonLevels = (state?.pokemonLevels as Record<number, { level: number }>) ?? {};
+                const top3 = ownedIds.slice(0, 9)
+                  .sort((a, b) => {
+                    const la = pokemonLevels[a]?.level ?? 1;
+                    const lb = pokemonLevels[b]?.level ?? 1;
+                    if (lb !== la) return lb - la;
+                    const ra = RARITY_RANK[POKEMON_BY_ID[a]?.rarity ?? 'commun'] ?? 0;
+                    const rb = RARITY_RANK[POKEMON_BY_ID[b]?.rarity ?? 'commun'] ?? 0;
+                    return rb - ra;
+                  })
+                  .slice(0, 3)
+                  .map(id => ({
+                    pokemonId: id,
+                    level: pokemonLevels[id]?.level ?? 1,
+                    isShiny: (shiny[id] ?? 0) > 0,
+                  }));
+                onBattle3v3(top3, username);
+              }}
+              className="w-full py-3 rounded-2xl font-black text-base"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)', color: 'white', boxShadow: '0 0 16px #a855f744' }}
+            >
+              ⚔️ Défier en 3v3
+            </button>
+          )}
         </div>
       ) : (
         /* ── COLLECTION TAB ── */

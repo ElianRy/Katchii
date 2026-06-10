@@ -5,7 +5,9 @@ import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
 import { getPlayerGrade, PARK_XP_PER_TICK } from '../lib/playerLevel';
-import { xpToNextLevel } from '../data/combatEngine';
+import { xpToNextLevel, calcMaxHp } from '../data/combatEngine';
+import { BattleScreen } from './BattleScreen';
+import { TeamMember } from './TeamBuilder';
 
 type Mood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited' | 'scared' | 'proud' | 'hungry' | 'curious';
 
@@ -494,96 +496,72 @@ function InteractionModal({
   );
 }
 
-// ---- Duel Modal ----
-function DuelModal({
-  myPokemonId, myIsShiny, myLevel, myRarity, myElo,
+// ---- Park Duel Battle (1v1 using BattleScreen) ----
+function ParkDuelBattle({
+  myPokemonId, myIsShiny, myLevel, myElo,
   opponentPokemonId, opponentIsShiny, opponentLevel, opponentRarity, opponentName,
   onClose, onResult,
 }: {
-  myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity: string; myElo: number;
+  myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity?: string; myElo: number;
   opponentPokemonId: number; opponentIsShiny: boolean; opponentLevel: number; opponentRarity: string;
   opponentName: string; onClose: () => void; onResult: (won: boolean, eloDelta: number) => void;
 }) {
-  const myData = POKEMON_BY_ID[myPokemonId];
-  const oppData = POKEMON_BY_ID[opponentPokemonId];
-  const myScore = myLevel * (RARITY_SCORE[myRarity] ?? 1);
-  const oppScore = opponentLevel * (RARITY_SCORE[opponentRarity] ?? 1);
-  const won = useRef(Math.random() < myScore / (myScore + oppScore)).current;
-
-  // Elo calculation
   const oppElo = 600 + opponentLevel * 8 * ((RARITY_SCORE[opponentRarity] ?? 1) / 4);
   const expected = 1 / (1 + Math.pow(10, (oppElo - myElo) / 400));
-  const rawDelta = Math.round(32 * ((won ? 1 : 0) - expected));
-  const eloDelta = Math.max(-20, Math.min(20, rawDelta));
-  const newElo = Math.max(100, myElo + eloDelta);
-
-  const [phase, setPhase] = useState<'flash' | 'result'>('flash');
   const resultSent = useRef(false);
 
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setPhase('result');
-      if (!resultSent.current) { resultSent.current = true; onResult(won, eloDelta); }
-    }, 1500);
-    return () => clearTimeout(t);
-  }, []);
+  const [eloResult, setEloResult] = useState<{ won: boolean; eloDelta: number; newElo: number } | null>(null);
 
-  const myRarityColor = myData ? RARITY_COLORS[myData.rarity] : '#6b7280';
-  const oppRarityColor = oppData ? RARITY_COLORS[oppData.rarity] : '#6b7280';
+  const playerTeam: TeamMember[] = [{
+    pokemonId: myPokemonId, isShiny: myIsShiny, level: myLevel, xp: 0,
+    currentHp: calcMaxHp(myPokemonId, myLevel), maxHp: calcMaxHp(myPokemonId, myLevel),
+  }];
+  const enemyTeam: TeamMember[] = [{
+    pokemonId: opponentPokemonId, isShiny: opponentIsShiny, level: opponentLevel, xp: 0,
+    currentHp: calcMaxHp(opponentPokemonId, opponentLevel), maxHp: calcMaxHp(opponentPokemonId, opponentLevel),
+  }];
+
+  if (eloResult) {
+    const newElo = eloResult.newElo;
+    const { won, eloDelta } = eloResult;
+    return (
+      <div className="fixed inset-0 z-[700] flex items-center justify-center bg-black/85">
+        <div className="bg-slate-800 rounded-2xl border border-slate-600 shadow-2xl p-6 w-72 max-w-[90vw] text-center">
+          <div className="text-5xl mb-3">{won ? '🏆' : '💀'}</div>
+          <div className="font-black text-xl mb-1" style={{ color: won ? '#fbbf24' : '#ef4444' }}>
+            {won ? 'VICTOIRE !' : 'Défaite…'}
+          </div>
+          <div className="bg-slate-700/60 rounded-xl px-4 py-3 my-4">
+            <div className="text-xs text-slate-400 mb-1">Elo PokéParc</div>
+            <div className="flex items-center justify-center gap-2">
+              <span className="font-black text-lg text-white">{newElo}</span>
+              <span className="font-bold text-sm" style={{ color: eloDelta >= 0 ? '#4ade80' : '#f87171' }}>
+                {eloDelta >= 0 ? '+' : ''}{eloDelta}
+              </span>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-full py-2 rounded-xl bg-slate-600 text-white font-black text-sm">Fermer</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 z-[600] flex items-center justify-center bg-black/85">
-      <div className="bg-slate-800 rounded-2xl border border-slate-600 shadow-2xl p-5 w-80 max-w-[95vw]">
-        {/* Sprites */}
-        <div className="flex justify-around items-end mb-4">
-          <div className="flex flex-col items-center gap-1">
-            <img src={getSpriteUrl(myPokemonId, myIsShiny)} width={56} height={56}
-              style={{ imageRendering: 'pixelated', filter: `drop-shadow(0 0 8px ${myRarityColor})` }} alt="me" />
-            <span className="text-xs text-yellow-400 font-bold truncate max-w-[80px] text-center">Toi</span>
-          </div>
-          <div className="text-3xl font-black text-white">VS</div>
-          <div className="flex flex-col items-center gap-1">
-            <img src={getSpriteUrl(opponentPokemonId, opponentIsShiny)} width={56} height={56}
-              style={{ imageRendering: 'pixelated', transform: 'scaleX(-1)', filter: `drop-shadow(0 0 8px ${oppRarityColor})` }} alt="opp" />
-            <span className="text-xs text-slate-300 font-bold truncate max-w-[80px] text-center">{opponentName}</span>
-          </div>
-        </div>
-
-        {phase === 'flash' && (
-          <div className="text-center py-4">
-            <div className="text-4xl animate-pulse">⚔️</div>
-            <div className="text-sm text-slate-400 mt-2 animate-pulse">Combat en cours…</div>
-          </div>
-        )}
-
-        {phase === 'result' && (
-          <div className="text-center">
-            <div className="text-5xl mb-2">{won ? '🏆' : '💀'}</div>
-            <div className="font-black text-xl mb-1" style={{ color: won ? '#fbbf24' : '#ef4444' }}>
-              {won ? 'VICTOIRE !' : 'Défaite…'}
-            </div>
-            <div className="text-xs text-slate-400 mb-3">
-              {won ? `Tu as battu ${opponentName} !` : `${opponentName} était trop fort.`}
-            </div>
-
-            {/* Elo change */}
-            <div className="bg-slate-700/60 rounded-xl px-4 py-3 mb-4 text-center">
-              <div className="text-xs text-slate-400 mb-1">Elo PokéParc</div>
-              <div className="flex items-center justify-center gap-2">
-                <span className="font-black text-lg text-white">{newElo}</span>
-                <span className="font-bold text-sm" style={{ color: eloDelta >= 0 ? '#4ade80' : '#f87171' }}>
-                  {eloDelta >= 0 ? '+' : ''}{eloDelta}
-                </span>
-              </div>
-            </div>
-
-            <button onClick={onClose} className="w-full py-2 rounded-xl bg-slate-600 text-white font-black text-sm">
-              Fermer
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    <BattleScreen
+      playerTeam={playerTeam}
+      enemyTeam={enemyTeam}
+      bossName={opponentName}
+      onBattleEnd={(won) => {
+        if (resultSent.current) return;
+        resultSent.current = true;
+        const rawDelta = Math.round(32 * ((won ? 1 : 0) - expected));
+        const eloDelta = Math.max(-20, Math.min(20, rawDelta));
+        const newElo = Math.max(100, myElo + eloDelta);
+        onResult(won, eloDelta);
+        setEloResult({ won, eloDelta, newElo });
+      }}
+      onQuit={onClose}
+    />
   );
 }
 
@@ -1176,7 +1154,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           {/* Player count */}
           <div className="absolute top-2 left-2">
             <div className="text-xs text-slate-400 bg-black/40 rounded px-2 py-0.5">
-              {others.length + (myFav ? 1 : 0)} joueurs en ligne
+              {others.length + (myFav ? 1 : 0)} pokémons dans le parc
             </div>
           </div>
 
@@ -1419,7 +1397,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         />, document.body)}
 
       {showDuel && interactionTarget && myFav && createPortal(
-        <DuelModal
+        <ParkDuelBattle
           myPokemonId={myFav.pokemonId}
           myIsShiny={myFav.isShiny ?? false}
           myLevel={getPokemonLevelFromState(state, myFav.pokemonId)}

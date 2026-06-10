@@ -306,6 +306,9 @@ export function useGameState() {
               level++;
             }
             next.pokemonLevels = { ...(next.pokemonLevels ?? {}), [pokemonId]: { level, xp } };
+            capturedLevel = level;
+          } else {
+            capturedLevel = current.level;
           }
         }
       }

@@ -19,9 +19,13 @@ import { PokeParc } from './components/PokeParc';
 import { SettingsPanel } from './components/SettingsPanel';
 import { ClanPanel } from './components/ClanPanel';
 import { PlayersPanel } from './components/PlayersPanel';
+import { BattleScreen } from './components/BattleScreen';
+import { TeamMember } from './components/TeamBuilder';
 import { useGameState } from './hooks/useGameState';
 import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
+import { calcMaxHp } from './data/combatEngine';
+import { POKEMON_BY_ID } from './data/gen1';
 
 export function App() {
   const [view, setView] = useState<View>('auth');
@@ -30,11 +34,17 @@ export function App() {
   const [authChecked, setAuthChecked] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const [showPlayers, setShowPlayers] = useState(false);
+  const [previousView, setPreviousView] = useState<View>('home');
+  const [battle3v3, setBattle3v3] = useState<{ playerTeam: TeamMember[]; enemyTeam: TeamMember[]; enemyName: string } | null>(null);
   const gameState = useGameState();
 
   // Persist & restore last view
   const persistView = useCallback((v: View) => {
-    setView(v);
+    setView(prev => {
+      if (v === 'profile') setPreviousView(prev);
+      return v;
+    });
+    setShowPlayers(false);
     if (v !== 'auth' && v !== 'home') {
       localStorage.setItem('katchii_last_view', v);
     }
@@ -82,6 +92,40 @@ export function App() {
   const handleDuelResult = useCallback((entry: DuelEntry, pointsDelta: number, fragment: { pokemonId: number } | null, lurePrize: boolean) => {
     gameState.addDuelResult(entry, pointsDelta, fragment?.pokemonId ?? null, lurePrize);
   }, [gameState]);
+
+  const handleBattle3v3 = useCallback((
+    enemyPokemon: Array<{ pokemonId: number; level: number; isShiny?: boolean }>,
+    enemyName: string
+  ) => {
+    // Build enemy team
+    const enemyTeam: TeamMember[] = enemyPokemon.map(p => ({
+      pokemonId: p.pokemonId, isShiny: p.isShiny, level: p.level, xp: 0,
+      currentHp: calcMaxHp(p.pokemonId, p.level), maxHp: calcMaxHp(p.pokemonId, p.level),
+    }));
+    // Build player's top 3 by level desc
+    const RARITY_ORDER_MAP: Record<string, number> = { commun: 0, peu_commun: 1, rare: 2, elite: 3, legendaire: 4 };
+    const playerTop3 = Object.entries(gameState.state.normalCollection)
+      .filter(([, c]) => (c as number) > 0)
+      .map(([id]) => Number(id))
+      .sort((a, b) => {
+        const la = gameState.state.pokemonLevels?.[a]?.level ?? 1;
+        const lb = gameState.state.pokemonLevels?.[b]?.level ?? 1;
+        if (lb !== la) return lb - la;
+        const ra = RARITY_ORDER_MAP[POKEMON_BY_ID[a]?.rarity ?? 'commun'] ?? 0;
+        const rb = RARITY_ORDER_MAP[POKEMON_BY_ID[b]?.rarity ?? 'commun'] ?? 0;
+        return rb - ra;
+      })
+      .slice(0, 3)
+      .map(id => {
+        const level = gameState.state.pokemonLevels?.[id]?.level ?? 1;
+        const xp = gameState.state.pokemonLevels?.[id]?.xp ?? 0;
+        const isShiny = (gameState.state.shinyCollection[id] ?? 0) > 0;
+        return { pokemonId: id, isShiny, level, xp, currentHp: calcMaxHp(id, level), maxHp: calcMaxHp(id, level) };
+      });
+    if (playerTop3.length === 0) return;
+    setBattle3v3({ playerTeam: playerTop3, enemyTeam, enemyName });
+    setShowPlayers(false);
+  }, [gameState.state]);
 
   const handleLogout = useCallback(async () => {
     await logoutUser();
@@ -229,7 +273,7 @@ export function App() {
         <ProfileScreen
           username={username}
           state={gameState.state}
-          onClose={() => setView('home')}
+          onClose={() => setView(previousView)}
           onLogout={handleLogout}
         />
       )}
@@ -258,7 +302,17 @@ export function App() {
         />
       )}
 
-      {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} />}
+      {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} onBattle3v3={handleBattle3v3} />}
+
+      {battle3v3 && (
+        <BattleScreen
+          playerTeam={battle3v3.playerTeam}
+          enemyTeam={battle3v3.enemyTeam}
+          bossName={battle3v3.enemyName}
+          onBattleEnd={() => setBattle3v3(null)}
+          onQuit={() => setBattle3v3(null)}
+        />
+      )}
 
       {/* Welcome animation — first session only */}
       {showWelcome && (

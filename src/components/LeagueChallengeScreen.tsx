@@ -139,7 +139,7 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
   };
 
   return (
-    <div className="fixed inset-0 z-[210] flex flex-col bg-slate-950">
+    <div className="fixed inset-0 z-[600] flex flex-col bg-slate-950">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
         <div>
@@ -249,7 +249,7 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
       </div>
 
       {/* CTA */}
-      <div className="fixed bottom-0 left-0 right-0 z-[220] p-4 bg-slate-950/98 border-t border-slate-800">
+      <div className="fixed bottom-0 left-0 right-0 z-[610] p-4 bg-slate-950/98 border-t border-slate-800">
         <button disabled={selected.length < 1} onClick={() => onConfirm(selected)}
           className="w-full py-4 rounded-2xl font-black text-lg transition-all"
           style={{
@@ -281,7 +281,7 @@ function StarterSelectScreen({ team, trainerName, trainerColor, onConfirm }: {
   };
 
   return (
-    <div className="fixed inset-0 z-[210] flex flex-col bg-slate-950">
+    <div className="fixed inset-0 z-[600] flex flex-col bg-slate-950">
       <div className="px-4 pt-6 pb-3 shrink-0 border-b border-slate-800">
         <h2 className="text-white font-black text-xl">⚔️ Qui commence ?</h2>
         <p className="text-slate-400 text-sm mt-0.5">Choisissez le Pokémon qui débutera le combat contre <span style={{ color: trainerColor }}>{trainerName}</span></p>
@@ -324,7 +324,7 @@ function StarterSelectScreen({ team, trainerName, trainerColor, onConfirm }: {
           })}
         </div>
       </div>
-      <div className="fixed bottom-0 left-0 right-0 z-[220] p-4 bg-slate-950/98 border-t border-slate-800">
+      <div className="fixed bottom-0 left-0 right-0 z-[610] p-4 bg-slate-950/98 border-t border-slate-800">
         <button onClick={handleConfirm}
           className="w-full py-4 rounded-2xl font-black text-lg text-black"
           style={{ background: `linear-gradient(90deg, ${trainerColor}, ${trainerColor}aa)` }}>
@@ -353,7 +353,7 @@ function MasterPick3Screen({ survivors, onConfirm }: {
   };
 
   return (
-    <div className="fixed inset-0 z-[210] flex flex-col" style={{ background: 'linear-gradient(160deg, #0a0010 0%, #000005 100%)' }}>
+    <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: 'linear-gradient(160deg, #0a0010 0%, #000005 100%)' }}>
       <div className="px-4 pt-6 pb-3 shrink-0 border-b border-purple-900/50">
         <h2 className="text-white font-black text-xl">⚡ Combat Final</h2>
         <p className="text-slate-300 text-sm mt-0.5">
@@ -400,7 +400,7 @@ function MasterPick3Screen({ survivors, onConfirm }: {
           })}
         </div>
       </div>
-      <div className="fixed bottom-0 left-0 right-0 z-[220] p-4 bg-black/98 border-t border-purple-900/50">
+      <div className="fixed bottom-0 left-0 right-0 z-[610] p-4 bg-black/98 border-t border-purple-900/50">
         <div className="text-center text-slate-500 text-xs mb-2">{selected.length}/{maxPick} Pokémon sélectionnés</div>
         <button disabled={selected.length !== maxPick} onClick={() => onConfirm(selected.map(i => survivors[i]))}
           className="w-full py-4 rounded-2xl font-black text-lg text-white transition-all"
@@ -436,7 +436,7 @@ function DialogueScreen({ trainer, onDone }: {
   };
 
   return (
-    <div className="fixed inset-0 z-[210] flex flex-col select-none" style={{ background: trainer.bg }} onClick={advance}>
+    <div className="fixed inset-0 z-[600] flex flex-col select-none" style={{ background: trainer.bg }} onClick={advance}>
       {isMaster && (
         <div className="absolute inset-0 pointer-events-none"
           style={{ animation: 'league-lightning 4s ease-in-out infinite', background: 'rgba(168,85,247,0.05)' }} />
@@ -710,7 +710,7 @@ function EpicIntroScreen({ onDone }: { onDone: () => void }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[210] flex flex-col items-center justify-center overflow-hidden" style={{ background: '#000' }}>
+    <div className="fixed inset-0 z-[600] flex flex-col items-center justify-center overflow-hidden" style={{ background: '#000' }}>
       <MasterSideEffects />
       {/* Radial purple glow — appears progressively */}
       <div className="absolute inset-0 pointer-events-none" style={{
@@ -767,7 +767,7 @@ function DefeatScreen({ stats, onRetry, onClose }: {
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[210] flex flex-col items-center justify-center overflow-y-auto px-4 py-8"
+    <div className="fixed inset-0 z-[600] flex flex-col items-center justify-center overflow-y-auto px-4 py-8"
       style={{ background: 'radial-gradient(ellipse at 50% 0%, #1a0505 0%, #050000 60%, #000 100%)' }}>
       <div style={{ fontSize: '5rem', animation: 'victory-trophy 0.7s cubic-bezier(0.175,0.885,0.32,1.275) forwards' }}>💀</div>
 
@@ -845,7 +845,7 @@ function VictoryFinalScreen({ onClose, onZoneDiscovered }: { onClose: () => void
     dur: `${0.9 + (i % 5) * 0.1}s`,
   }));
   return (
-    <div className="fixed inset-0 z-[210] overflow-y-auto"
+    <div className="fixed inset-0 z-[600] overflow-y-auto"
       style={{ background: 'radial-gradient(ellipse at 50% 0%, #1a0a3a 0%, #050010 60%, #000005 100%)' }}>
       {CONFETTI.map((c, i) => (
         <div key={i} style={{
@@ -984,7 +984,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   }
   if (phase === 'battle_peter') {
     return (
-      <div className="fixed inset-0 z-[210]">
+      <div className="fixed inset-0 z-[600]">
         <BattleScreen playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
           bossName="Peter" trainerImage="/trainers/peter.png" trainerColor="#ef4444" onBattleEnd={handleBattleEnd('dialogue_giovanni')}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
@@ -1000,7 +1000,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   }
   if (phase === 'battle_giovanni') {
     return (
-      <div className="fixed inset-0 z-[210]">
+      <div className="fixed inset-0 z-[600]">
         <BattleScreen playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
           bossName="Giovanni" trainerImage="/trainers/giovanni.webp" trainerColor="#9ca3af" onBattleEnd={handleBattleEnd('dialogue_master')}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
@@ -1019,7 +1019,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   }
   if (phase === 'battle_master') {
     return (
-      <div className="fixed inset-0 z-[210]">
+      <div className="fixed inset-0 z-[600]">
         <div className="absolute inset-0 pointer-events-none z-10"
           style={{ boxShadow: 'inset 0 0 50px rgba(168,85,247,0.4)', animation: 'aura-pulse 1.2s ease-in-out infinite' }} />
         <BattleScreen playerTeam={masterTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[2].teamSpec)}

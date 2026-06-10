@@ -23,6 +23,7 @@ interface PlayerRow {
 
 interface Props {
   onClose: () => void;
+  onBattle3v3?: (enemyPokemon: Array<{ pokemonId: number; level: number; isShiny?: boolean }>, enemyName: string) => void;
 }
 
 function formatLastSeen(iso: string): string {
@@ -34,7 +35,7 @@ function formatLastSeen(iso: string): string {
   return `${Math.floor(h / 24)}j`;
 }
 
-export function PlayersPanel({ onClose }: Props) {
+export function PlayersPanel({ onClose, onBattle3v3 }: Props) {
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<'points' | 'collection' | 'shiny' | 'rank'>('points');
@@ -43,7 +44,7 @@ export function PlayersPanel({ onClose }: Props) {
   useEffect(() => {
     Promise.all([
       supabase.from('game_saves').select('state, user_id, updated_at'),
-      supabase.from('pokepark_presence').select('user_id, last_seen'),
+      supabase.from('pokepark_presence').select('user_id, updated_at'),
     ]).then(([savesRes, presenceRes]) => {
       const { data, error } = savesRes;
       if (error || !data) { setLoading(false); return; }
@@ -53,10 +54,10 @@ export function PlayersPanel({ onClose }: Props) {
       const presenceMap = new Map<string, { lastSeen: string; isOnline: boolean }>();
       if (presenceRes.data) {
         for (const p of presenceRes.data) {
-          const ms = new Date(p.last_seen).getTime();
+          const ms = new Date(p.updated_at).getTime();
           presenceMap.set(p.user_id, {
-            lastSeen: p.last_seen,
-            isOnline: nowMs - ms < 60 * 1000, // online if seen <1min ago
+            lastSeen: p.updated_at,
+            isOnline: nowMs - ms < 60 * 1000,
           });
         }
       }
@@ -293,6 +294,7 @@ export function PlayersPanel({ onClose }: Props) {
           isOnline={selectedPlayer.isOnline}
           lastSeen={selectedPlayer.lastSeen}
           onClose={() => setSelectedPlayer(null)}
+          onBattle3v3={onBattle3v3}
         />
       )}
     </div>
