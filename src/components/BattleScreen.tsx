@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { playBattleMusic, playShinyBattleMusic, playLeagueBattleMusic, stopMusic, playVictory, playLeagueVictory, playSfxDefeat } from '../lib/audio';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { playBattleMusic, playShinyBattleSfx, playLeagueBattleMusic, stopMusic, playVictory, playLeagueVictory, playSfxDefeat } from '../lib/audio';
 import { RARITY_COLORS, Rarity } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
@@ -12,6 +12,15 @@ function spriteFilter(pokemonId: number, _isShiny: boolean, _size = 4): string {
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
 import { calcDamage, xpGainedFromBattle } from '../data/combatEngine';
 import { TeamMember } from './TeamBuilder';
+
+const SHINY_INTRO_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string }[] = [
+  { color: '#fde047', dur: '1.2s', delay: '0s',    sym: '✦', size: 18, anim: 'park-persp-a' },
+  { color: '#f472b6', dur: '1.0s', delay: '-0.3s', sym: '★', size: 16, anim: 'park-persp-b' },
+  { color: '#60a5fa', dur: '1.5s', delay: '-0.6s', sym: '✦', size: 17, anim: 'park-persp-c' },
+  { color: '#4ade80', dur: '1.1s', delay: '-0.9s', sym: '✧', size: 15, anim: 'park-persp-d' },
+  { color: '#ffffff', dur: '1.4s', delay: '-0.4s', sym: '★', size: 16, anim: 'park-persp-e' },
+  { color: '#c084fc', dur: '1.0s', delay: '-0.7s', sym: '✦', size: 17, anim: 'park-persp-a' },
+];
 
 interface Props {
   playerTeam: TeamMember[];
@@ -324,6 +333,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const [trainerKoAnim, setTrainerKoAnim] = useState(false);
   const prevEfHp = useRef<number | null>(null);
   const isMasterTrainer = trainerColor === '#a855f7';
+  const [shinyIntro, setShinyIntro] = useState(false);
 
   // Keep refs in sync
   useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
@@ -351,7 +361,12 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   useEffect(() => {
     if (phase !== 'intro') return;
     const hasShiny = [...playerTeam, ...enemyTeam].some(m => m.isShiny);
-    if (isLeague) playLeagueBattleMusic(); else if (hasShiny) playShinyBattleMusic(); else playBattleMusic();
+    if (isLeague) playLeagueBattleMusic(); else playBattleMusic();
+    if (hasShiny) {
+      playShinyBattleSfx();
+      setShinyIntro(true);
+      setTimeout(() => setShinyIntro(false), 2500);
+    }
     const t = setTimeout(() => setPhase('battle'), 2000);
     return () => clearTimeout(t);
   }, [phase]);
@@ -536,15 +551,37 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
               </div>
             </div>
             <div className="flex justify-end">
-              {enemyFighters[0] && <ShinySprite pokemonId={enemyFighters[0].pokemonId} isShiny={enemyFighters[0].isShiny ?? false} width={88} height={88} flip
-                style={{ filter: spriteFilter(enemyFighters[0].pokemonId, enemyFighters[0].isShiny ?? false) }} />}
+              {enemyFighters[0] && (
+                <div className="relative inline-flex items-center justify-center">
+                  <ShinySprite pokemonId={enemyFighters[0].pokemonId} isShiny={enemyFighters[0].isShiny ?? false} width={88} height={88} flip
+                    style={{ filter: spriteFilter(enemyFighters[0].pokemonId, enemyFighters[0].isShiny ?? false) }} />
+                  {shinyIntro && enemyFighters[0].isShiny && SHINY_INTRO_STARS.map((s, i) => (
+                    <div key={i} style={{ position:'absolute', left:'50%', top:'50%', width:0, height:0, zIndex:10,
+                      animation:`${s.anim} ${s.dur} ${s.delay} linear infinite` } as React.CSSProperties}>
+                      <span style={{ position:'absolute', transform:'translate(-50%,-50%)', color:s.color, fontSize:s.size,
+                        fontWeight:900, textShadow:`0 0 8px ${s.color}`, lineHeight:1, userSelect:'none' }}>{s.sym}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
           {/* Player pokemon slides in from bottom-left */}
           <div className="absolute" style={{ bottom:'13%', left:'max(7%, calc(50% - 220px))', animation:'battle-enter-player 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
-            {playerFighters[0] && <ShinySprite pokemonId={playerFighters[0].pokemonId} isShiny={playerFighters[0].isShiny ?? false} width={96} height={96}
-              style={{ filter: spriteFilter(playerFighters[0].pokemonId, playerFighters[0].isShiny ?? false) }} />}
+            {playerFighters[0] && (
+              <div className="relative inline-flex items-center justify-center">
+                <ShinySprite pokemonId={playerFighters[0].pokemonId} isShiny={playerFighters[0].isShiny ?? false} width={96} height={96}
+                  style={{ filter: spriteFilter(playerFighters[0].pokemonId, playerFighters[0].isShiny ?? false) }} />
+                {shinyIntro && playerFighters[0].isShiny && SHINY_INTRO_STARS.map((s, i) => (
+                  <div key={i} style={{ position:'absolute', left:'50%', top:'50%', width:0, height:0, zIndex:10,
+                    animation:`${s.anim} ${s.dur} ${s.delay} linear infinite` } as React.CSSProperties}>
+                    <span style={{ position:'absolute', transform:'translate(-50%,-50%)', color:s.color, fontSize:s.size,
+                      fontWeight:900, textShadow:`0 0 8px ${s.color}`, lineHeight:1, userSelect:'none' }}>{s.sym}</span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-white font-black text-sm">{POKEMON_BY_ID[playerFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>

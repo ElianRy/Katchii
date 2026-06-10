@@ -108,7 +108,7 @@ export function setMusicVolume(vol: number) {
 // ── Zone music map ────────────────────────────────────────────────────────
 const ZONE_MUSIC: Record<string, string> = {
   zone1: 'foret_pallet',
-  zone2: 'bord_de_mer',
+  zone2: 'bords_de_mer',
   zone3: 'centrale_electrique',
   zone4: 'bois_aux_fleurs',
   zone5: 'tour_fantome',
@@ -124,7 +124,7 @@ export function playZoneMusic(zoneId: string) {
 }
 
 export function playBattleMusic()       { playMusic('combat'); }
-export function playShinyBattleMusic()  { playMusic('combat_shiny'); }
+export function playShinyBattleSfx()    { playSfxFile('combat_shiny'); }
 export function playLeagueBattleMusic() { playMusic('combat_ligue'); }
 export function playMenuMusic()         { playMusic('ecran_menu'); }
 export function playShinySpawn()        { playSfxFile('spawn_shiny'); }

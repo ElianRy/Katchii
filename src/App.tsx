@@ -225,7 +225,7 @@ export function App() {
           onProfile={() => setView('profile')}
           onLogout={handleLogout}
           onWrapped={() => persistView('wrapped')}
-          onSettings={() => setView('settings')}
+          onSettings={() => { setPreviousView('home'); setView('settings'); }}
         />
       )}
 
@@ -242,7 +242,7 @@ export function App() {
           onOpenRaid={() => persistView('raid')}
           onOpenWrapped={() => persistView('wrapped')}
           onChangeUniverse={() => setView('home')}
-          onOpenSettings={() => setView('settings')}
+          onOpenSettings={() => { setPreviousView(view as typeof previousView); setView('settings'); }}
           gameState={gameState}
         />
       </div>
@@ -345,7 +345,7 @@ export function App() {
       )}
 
       {view === 'settings' && (
-        <SettingsPanel onClose={() => setView('home')} />
+        <SettingsPanel onClose={() => setView(previousView)} />
       )}
 
       {view === 'clan' && (
