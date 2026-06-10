@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { RARITY_COLORS } from '../types';
@@ -21,8 +21,40 @@ interface PlayerRow {
   badgeCount?: number;
 }
 
+const MUTE_KEY = 'katchii_muted_users';
+const DELETED_KEY = 'katchii_deleted_users';
+const PARK_REMOVED_KEY = 'katchii_park_removed_users';
+
+function loadMutedMap(): Map<string, number | null> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(MUTE_KEY) ?? '[]') as [string, number | null][];
+    const now = Date.now();
+    return new Map(raw.filter(([, exp]) => exp === null || exp > now));
+  } catch { return new Map(); }
+}
+function saveMutedMap(m: Map<string, number | null>) {
+  localStorage.setItem(MUTE_KEY, JSON.stringify([...m.entries()]));
+}
+function loadSet(key: string): Set<string> {
+  try { return new Set(JSON.parse(localStorage.getItem(key) ?? '[]') as string[]); }
+  catch { return new Set(); }
+}
+function saveSet(key: string, s: Set<string>) {
+  localStorage.setItem(key, JSON.stringify([...s]));
+}
+
+function muteRemaining(expiry: number | null): string {
+  if (expiry === null) return 'Permanent';
+  const ms = expiry - Date.now();
+  if (ms <= 0) return 'Expiré';
+  const m = Math.ceil(ms / 60000);
+  if (m < 60) return `${m} min`;
+  return `${Math.floor(m / 60)}h ${m % 60}min`;
+}
+
 interface Props {
   onClose: () => void;
+  isAdmin?: boolean;
   onBattle3v3?: (enemyPokemon: Array<{ pokemonId: number; level: number; isShiny?: boolean }>, enemyName: string) => void;
 }
 
@@ -35,11 +67,16 @@ function formatLastSeen(iso: string): string {
   return `${Math.floor(h / 24)}j`;
 }
 
-export function PlayersPanel({ onClose, onBattle3v3 }: Props) {
+export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<'points' | 'collection' | 'shiny' | 'rank'>('points');
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerRow | null>(null);
+  const [adminTarget, setAdminTarget] = useState<PlayerRow | null>(null);
+  const [mutedUsers, setMutedUsers] = useState<Map<string, number | null>>(loadMutedMap);
+  const [deletedUsers, setDeletedUsers] = useState<Set<string>>(loadSet.bind(null, DELETED_KEY));
+  const [parkRemovedUsers, setParkRemovedUsers] = useState<Set<string>>(loadSet.bind(null, PARK_REMOVED_KEY));
+  const [adminConfirm, setAdminConfirm] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -119,7 +156,34 @@ export function PlayersPanel({ onClose, onBattle3v3 }: Props) {
     });
   }, []);
 
-  const sorted = [...players].sort((a, b) => {
+  const adminMute = useCallback((userId: string, durationMs: number | null) => {
+    const expiry = durationMs === null ? null : Date.now() + durationMs;
+    setMutedUsers(prev => { const next = new Map(prev).set(userId, expiry); saveMutedMap(next); return next; });
+  }, []);
+
+  const adminUnmute = useCallback((userId: string) => {
+    setMutedUsers(prev => { const next = new Map(prev); next.delete(userId); saveMutedMap(next); return next; });
+  }, []);
+
+  const adminDeleteUser = useCallback(async (userId: string) => {
+    const next = new Set(deletedUsers).add(userId);
+    setDeletedUsers(next);
+    saveSet(DELETED_KEY, next);
+    // Remove from pokepark presence
+    await supabase.from('pokepark_presence').delete().eq('user_id', userId);
+    setAdminTarget(null);
+    setAdminConfirm(null);
+  }, [deletedUsers]);
+
+  const adminRemoveFromPark = useCallback(async (userId: string) => {
+    const next = new Set(parkRemovedUsers).add(userId);
+    setParkRemovedUsers(next);
+    saveSet(PARK_REMOVED_KEY, next);
+    await supabase.from('pokepark_presence').delete().eq('user_id', userId);
+    setAdminTarget(null);
+  }, [parkRemovedUsers]);
+
+  const sorted = [...players].filter(p => !deletedUsers.has(p.user_id)).sort((a, b) => {
     // Online players always first
     if (a.isOnline && !b.isOnline) return -1;
     if (!a.isOnline && b.isOnline) return 1;
@@ -189,7 +253,7 @@ export function PlayersPanel({ onClose, onBattle3v3 }: Props) {
               key={p.user_id}
               className="flex items-center gap-3 px-4 py-3 border-b border-slate-800/60 active:bg-white/5 cursor-pointer"
               style={{ background: isTopThree ? `${rankColor}08` : undefined }}
-              onClick={() => setSelectedPlayer(p)}
+              onClick={() => isAdmin ? setAdminTarget(p) : setSelectedPlayer(p)}
             >
               {/* Rank */}
               <div className="shrink-0 w-8 text-center">
@@ -297,6 +361,151 @@ export function PlayersPanel({ onClose, onBattle3v3 }: Props) {
           onBattle3v3={onBattle3v3}
         />
       )}
+
+      {/* Admin panel */}
+      {adminTarget && (
+        <AdminPlayerPanel
+          player={adminTarget}
+          mutedUsers={mutedUsers}
+          deletedUsers={deletedUsers}
+          parkRemovedUsers={parkRemovedUsers}
+          adminConfirm={adminConfirm}
+          onMute={adminMute}
+          onUnmute={adminUnmute}
+          onDeleteUser={adminDeleteUser}
+          onRemoveFromPark={adminRemoveFromPark}
+          onSetConfirm={setAdminConfirm}
+          onViewProfile={() => { setSelectedPlayer(adminTarget); setAdminTarget(null); }}
+          onClose={() => { setAdminTarget(null); setAdminConfirm(null); }}
+        />
+      )}
+    </div>
+  );
+}
+
+interface AdminPanelProps {
+  player: PlayerRow;
+  mutedUsers: Map<string, number | null>;
+  deletedUsers: Set<string>;
+  parkRemovedUsers: Set<string>;
+  adminConfirm: string | null;
+  onMute: (userId: string, ms: number | null) => void;
+  onUnmute: (userId: string) => void;
+  onDeleteUser: (userId: string) => void;
+  onRemoveFromPark: (userId: string) => void;
+  onSetConfirm: (v: string | null) => void;
+  onViewProfile: () => void;
+  onClose: () => void;
+}
+
+function AdminPlayerPanel({ player, mutedUsers, deletedUsers, parkRemovedUsers, adminConfirm, onMute, onUnmute, onDeleteUser, onRemoveFromPark, onSetConfirm, onViewProfile, onClose }: AdminPanelProps) {
+  const muteExpiry = mutedUsers.get(player.user_id);
+  const isMuted = muteExpiry !== undefined && (muteExpiry === null || muteExpiry > Date.now());
+  const isDeleted = deletedUsers.has(player.user_id);
+  const isRemovedFromPark = parkRemovedUsers.has(player.user_id);
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/70" onClick={onClose}>
+      <div className="w-full max-w-md bg-slate-900 border-t-2 border-red-500/60 rounded-t-2xl p-5 pb-8 shadow-2xl"
+        onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-red-400 text-xs font-black uppercase tracking-wider">⚙️ Admin</span>
+            </div>
+            <div className="font-black text-white text-lg">{player.username}</div>
+            <div className="text-slate-400 text-xs font-mono">{player.user_id.slice(0, 8)}…</div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={onViewProfile}
+              className="px-3 py-1.5 rounded-lg bg-blue-800/50 text-blue-300 text-xs font-bold">
+              Profil
+            </button>
+            <button onClick={onClose} className="text-slate-400 text-2xl px-1">✕</button>
+          </div>
+        </div>
+
+        {/* Status badges */}
+        <div className="flex gap-2 flex-wrap mb-4">
+          {isMuted && (
+            <span className="px-2 py-0.5 rounded-full bg-orange-900/50 border border-orange-500/50 text-orange-300 text-xs font-bold">
+              🔇 Muté — {muteRemaining(muteExpiry!)}
+            </span>
+          )}
+          {isDeleted && (
+            <span className="px-2 py-0.5 rounded-full bg-red-900/50 border border-red-500/50 text-red-300 text-xs font-bold">
+              🗑️ Compte supprimé
+            </span>
+          )}
+          {isRemovedFromPark && !isDeleted && (
+            <span className="px-2 py-0.5 rounded-full bg-slate-700/80 border border-slate-500/50 text-slate-400 text-xs font-bold">
+              🌿 Retiré du parc
+            </span>
+          )}
+        </div>
+
+        {/* Mute section */}
+        <div className="bg-slate-800/60 rounded-xl p-3 mb-3">
+          <div className="text-xs font-black text-orange-400 mb-2 uppercase">🔇 Mute chat</div>
+          {isMuted ? (
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-300">Durée restante : <span className="font-bold text-orange-300">{muteRemaining(muteExpiry!)}</span></span>
+              <button onClick={() => onUnmute(player.user_id)}
+                className="px-3 py-1 rounded-lg bg-green-700/60 text-green-300 text-xs font-bold">
+                🔊 Démuter
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { label: '5 min',  ms: 5 * 60 * 1000 },
+                { label: '15 min', ms: 15 * 60 * 1000 },
+                { label: '1 h',    ms: 60 * 60 * 1000 },
+                { label: 'Perma',  ms: null },
+              ].map(opt => (
+                <button key={opt.label} onClick={() => onMute(player.user_id, opt.ms)}
+                  className="px-2 py-1.5 rounded-lg bg-orange-900/50 border border-orange-600/40 text-orange-300 text-xs font-bold hover:bg-orange-800/60 transition-all">
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Park section */}
+        <div className="bg-slate-800/60 rounded-xl p-3 mb-3">
+          <div className="text-xs font-black text-green-400 mb-2 uppercase">🌿 PokéParc</div>
+          <button onClick={() => onRemoveFromPark(player.user_id)}
+            disabled={isRemovedFromPark}
+            className="w-full px-3 py-2 rounded-lg bg-slate-700/60 border border-slate-600/40 text-slate-300 text-xs font-bold disabled:opacity-40 hover:bg-slate-600/60 transition-all">
+            {isRemovedFromPark ? '✓ Pokémon retiré du parc' : 'Retirer le pokémon du parc'}
+          </button>
+        </div>
+
+        {/* Danger zone */}
+        <div className="bg-red-950/30 rounded-xl p-3 border border-red-800/40">
+          <div className="text-xs font-black text-red-400 mb-2 uppercase">⚠️ Zone dangereuse</div>
+          {adminConfirm === 'delete' ? (
+            <div className="flex flex-col gap-2">
+              <div className="text-xs text-red-300 font-bold text-center">Confirmer la suppression de <span className="text-white">{player.username}</span> ?</div>
+              <div className="text-[0.6rem] text-slate-400 text-center">Retire le joueur de la liste et du PokéParc.</div>
+              <div className="flex gap-2">
+                <button onClick={() => onSetConfirm(null)} className="flex-1 py-2 rounded-lg bg-slate-700 text-slate-300 text-xs font-bold">Annuler</button>
+                <button onClick={() => onDeleteUser(player.user_id)}
+                  className="flex-1 py-2 rounded-lg bg-red-700 text-white text-xs font-black">
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={() => onSetConfirm('delete')}
+              className="w-full px-3 py-2 rounded-lg bg-red-900/50 border border-red-700/50 text-red-300 text-xs font-bold hover:bg-red-800/50 transition-all">
+              🗑️ Supprimer le compte
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

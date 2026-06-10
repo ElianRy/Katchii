@@ -1086,8 +1086,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         );
       })()}
 
-      {/* Mood bar */}
-      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 border-b border-slate-700/30 shrink-0 overflow-x-auto">
+      {/* Mood bar — only shown when a pokemon is deposited */}
+      {myFav && <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 border-b border-slate-700/30 shrink-0 overflow-x-auto">
         <span className="text-xs text-slate-500 shrink-0 mr-1">Humeur :</span>
         {([
           ['happy',   '😄', 'Joyeux'],
@@ -1114,7 +1114,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
             <span className="text-[0.48rem] font-bold mt-0.5">{label}</span>
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Main content: field + chat */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -1319,17 +1319,20 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                             className="text-orange-500 hover:text-orange-400 px-1 rounded text-xs" title="Muter">🔇</button>
                         )}
                         {muteMenuFor === msg.id && (
-                          <div className="absolute right-0 bottom-6 z-50 bg-slate-800 border border-slate-600 rounded-xl shadow-xl flex flex-col overflow-hidden" style={{ minWidth: 110 }}>
+                          <div className="fixed z-[900] bg-slate-800 border border-orange-500/40 rounded-xl shadow-2xl flex flex-col overflow-hidden" style={{ minWidth: 130, bottom: 80, right: 16 }}>
+                            <div className="px-3 py-1.5 text-[0.6rem] font-black text-orange-400 border-b border-slate-700 uppercase tracking-wider">Muter {msg.username}</div>
                             {[
-                              { label: '5 min', ms: 5 * 60 * 1000 },
-                              { label: '1 heure', ms: 60 * 60 * 1000 },
-                              { label: 'Permanent', ms: null },
+                              { label: '5 minutes',  ms: 5 * 60 * 1000 },
+                              { label: '15 minutes', ms: 15 * 60 * 1000 },
+                              { label: '1 heure',    ms: 60 * 60 * 1000 },
+                              { label: 'Permanent',  ms: null },
                             ].map(opt => (
                               <button key={opt.label} onClick={() => muteUser(msg.user_id, opt.ms)}
                                 className="px-3 py-2 text-xs font-bold text-left hover:bg-slate-700 text-orange-300 whitespace-nowrap">
                                 🔇 {opt.label}
                               </button>
                             ))}
+                            <button onClick={() => setMuteMenuFor(null)} className="px-3 py-2 text-xs text-slate-500 hover:bg-slate-700 text-left border-t border-slate-700">Annuler</button>
                           </div>
                         )}
                       </div>}

@@ -316,7 +316,7 @@ export function App() {
         />
       )}
 
-      {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} onBattle3v3={handleBattle3v3} />}
+      {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} isAdmin={['admin', 'elian'].includes(username.toLowerCase())} onBattle3v3={handleBattle3v3} />}
 
       {battle3v3 && (
         <BattleScreen
