@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { stopMusic, playMenuMusic, setMusicVolume, setGlobalVolume } from '../lib/audio';
+import { stopMusic, playMenuMusic, setMusicVolume, setGlobalVolume, setSfxVolume } from '../lib/audio';
 
 interface Props {
   onClose: () => void;
@@ -56,13 +56,19 @@ export function SettingsPanel({ onClose }: Props) {
     const next = { ...settings, ...patch };
     setSettings(next);
     saveSettings(next);
-    // Live audio reactions
+    // Live audio reactions — gain tree: masterGain × musicGain × sfxGain
     if ('music' in patch) {
-      if (!patch.music) stopMusic(0.3);
-      else playMenuMusic();
+      if (!patch.music) { stopMusic(0.3); setMusicVolume(0); }
+      else { setMusicVolume(next.musicVolume); playMenuMusic(); }
     }
-    if ('musicVolume' in patch && next.music) {
-      setMusicVolume(patch.musicVolume! * next.globalVolume);
+    if ('musicVolume' in patch) {
+      setMusicVolume(next.music ? patch.musicVolume! : 0);
+    }
+    if ('sfxVolume' in patch) {
+      setSfxVolume(next.sound ? patch.sfxVolume! : 0);
+    }
+    if ('sound' in patch) {
+      setSfxVolume(patch.sound ? next.sfxVolume : 0);
     }
     if ('globalVolume' in patch) {
       setGlobalVolume(patch.globalVolume!);
