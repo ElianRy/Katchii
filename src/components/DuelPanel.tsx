@@ -127,7 +127,7 @@ export function DuelPanel({ state, onClose, onDuelResult }: Props) {
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
+      <div className="flex items-center gap-3 px-4 pb-3 border-b border-slate-700 shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div>
           <h2 className="text-white font-bold text-xl">⚔️ Duels</h2>

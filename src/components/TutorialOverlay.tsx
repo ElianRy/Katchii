@@ -77,7 +77,7 @@ export function TutorialOverlay({ tutorialKey, steps, onDone, bottomOffset }: Pr
         onClick={close}
         className="absolute right-4 w-9 h-9 rounded-full flex items-center justify-center font-bold text-lg"
         style={{
-          top: '1rem',
+          top: 'calc(1rem + env(safe-area-inset-top, 0px))',
           background: 'rgba(255,255,255,0.12)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.15)',
         }}
       >
@@ -86,7 +86,7 @@ export function TutorialOverlay({ tutorialKey, steps, onDone, bottomOffset }: Pr
 
       {/* Step indicators */}
       <div className="absolute left-0 right-0 flex justify-center gap-2"
-        style={{ top: '1.25rem' }}>
+        style={{ top: 'calc(1.25rem + env(safe-area-inset-top, 0px))' }}>
         {steps.map((_, i) => (
           <div key={i} className="rounded-full transition-all duration-300"
             style={{

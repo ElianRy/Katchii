@@ -105,7 +105,7 @@ export function QuestPanel({ state, onClaim, onClose }: Props) {
         </div>
       )}
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700">
+      <div className="flex items-center gap-3 px-4 pb-3 border-b border-slate-700" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div>
           <h2 className="text-white font-bold text-xl">📋 Quêtes</h2>

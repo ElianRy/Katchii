@@ -144,7 +144,7 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
   return (
     <div className="fixed inset-0 z-[600] flex flex-col bg-slate-950">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
+      <div className="flex items-center justify-between px-4 pb-3 border-b border-slate-700 shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
         <div>
           <h2 className="text-white font-black text-lg">🏆 Défi de la Ligue</h2>
           <p className="text-slate-400 text-xs">
@@ -285,7 +285,7 @@ function StarterSelectScreen({ team, trainerName, trainerColor, onConfirm }: {
 
   return (
     <div className="fixed inset-0 z-[600] flex flex-col bg-slate-950">
-      <div className="px-4 pt-6 pb-3 shrink-0 border-b border-slate-800">
+      <div className="px-4 pb-3 shrink-0 border-b border-slate-800" style={{ paddingTop: 'calc(1.5rem + env(safe-area-inset-top, 0px))' }}>
         <h2 className="text-white font-black text-xl">⚔️ Qui commence ?</h2>
         <p className="text-slate-400 text-sm mt-0.5">Choisissez le Pokémon qui débutera le combat contre <span style={{ color: trainerColor }}>{trainerName}</span></p>
       </div>
@@ -370,7 +370,7 @@ function DialogueScreen({ trainer, onDone }: {
       {/* Side effects cover the ENTIRE screen including header */}
       {isMaster && <MasterSideEffects />}
 
-      <div className="px-5 pt-5 pb-2 shrink-0" style={{ position: 'relative', zIndex: 5 }}>
+      <div className="px-5 pb-2 shrink-0" style={{ position: 'relative', zIndex: 5, paddingTop: 'calc(1.25rem + env(safe-area-inset-top, 0px))' }}>
         <div className="font-black text-2xl tracking-wide" style={{ color: trainer.color, textShadow: `0 0 20px ${trainer.color}66` }}>
           {trainer.name}
         </div>

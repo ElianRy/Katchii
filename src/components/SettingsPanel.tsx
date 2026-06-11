@@ -87,7 +87,7 @@ export function SettingsPanel({ onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[80] flex flex-col bg-slate-950" style={{ height: '100dvh' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
+      <div className="flex items-center gap-3 px-4 pb-3 border-b border-slate-700 shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <h2 className="text-white font-black text-xl">⚙️ Paramètres</h2>
       </div>

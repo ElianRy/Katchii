@@ -567,7 +567,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           }} />
 
           {/* Enemy pokemon slides in from top-right */}
-          <div className="absolute" style={{ top:'5%', right:'max(7%, calc(50% - 220px))', animation:'battle-enter-enemy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
+          <div className="absolute" style={{ top:'calc(5% + env(safe-area-inset-top, 0px))', right:'max(7%, calc(50% - 220px))', animation:'battle-enter-enemy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
             <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]">
               <div className="flex items-center gap-1.5 mb-1">
                 {trainerImage && (
@@ -739,7 +739,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
         })}
 
         {/* Enemy info + sprite */}
-        <div className="absolute" style={{ top: '5%', right: 'max(7%, calc(50% - 220px))' }}>
+        <div className="absolute" style={{ top: 'calc(5% + env(safe-area-inset-top, 0px))', right: 'max(7%, calc(50% - 220px))' }}>
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]"
             style={{ borderColor: isMasterTrainer ? `${trainerColor}55` : undefined, boxShadow: isMasterTrainer ? `0 0 12px ${trainerColor}33` : undefined }}>
             <div className="flex items-center gap-1.5 mb-1">

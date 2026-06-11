@@ -173,7 +173,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
         style={{ background: 'linear-gradient(160deg, #0a0a14 0%, #050510 100%)' }}
         onClick={advance}
       >
-        <div className="px-5 pt-5 pb-2 shrink-0">
+        <div className="px-5 pb-2 shrink-0" style={{ paddingTop: 'calc(1.25rem + env(safe-area-inset-top, 0px))' }}>
           <div className="font-black text-2xl tracking-wide" style={{ color: trainer.color, textShadow: `0 0 20px ${trainer.color}66` }}>
             {trainer.name}
           </div>
@@ -233,7 +233,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
   if (phase === 'intro') {
     return (
       <div className="fixed inset-0 z-[510] bg-slate-950 flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 shrink-0">
+        <div className="flex items-center justify-between px-4 pb-3 border-b border-slate-700 shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
           <div>
             <h2 className="text-white font-black text-xl">⚔️ Combat de Zone</h2>
             <p className="text-slate-400 text-sm">{zone.name}</p>

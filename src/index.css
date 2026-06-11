@@ -7,13 +7,6 @@ html, body {
   background-color: #020617;
 }
 
-/* PWA standalone: push content below the Dynamic Island / notch */
-@media all and (display-mode: standalone) {
-  body {
-    padding-top: env(safe-area-inset-top, 0px);
-  }
-}
-
 /* Prevent iOS Safari zoom on input focus (triggered when font-size < 16px) */
 input, textarea, select {
   font-size: 16px !important;
