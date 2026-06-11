@@ -218,7 +218,7 @@ export function HUD({
         // Phase 4 (83%→100%): fill with red/black
         const p4 = Math.min(1, Math.max(0, (elapsed - 0.83) / 0.17));
         return (
-          <div className="absolute right-3 z-20" style={{ top: '128px' }}>
+          <div className="absolute right-3 z-20" style={{ top: 'calc(128px + env(safe-area-inset-top, 0px))' }}>
             <svg width="64" height="82" viewBox="0 0 64 82"
               style={{ transition: 'filter 0.5s ease', filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.9)) drop-shadow(0 2px 6px rgba(0,0,0,0.8))' }}>
               {/* Ghost — full pokeball shape in gray so player sees what's being drawn */}
