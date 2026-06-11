@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { GameState, LureType, LURE_COSTS, LURE_LABELS, XpCandySize, XP_CANDY_COSTS, COOLDOWN_REDUCER_COST } from '../types';
+import { GameState, LureType, LURE_COSTS, LURE_LABELS, XpCandySize, XP_CANDY_COSTS, COOLDOWN_REDUCER_COST, SPAWN_NET_COST, ATTACK_BOOST_COST, MYSTERY_CASE_COST } from '../types';
 
 interface Props {
   state: GameState;
   onBuyLure: (type: LureType) => void;
   onBuyXpCandy: (size: XpCandySize) => boolean;
   onBuyCooldownBoost: () => boolean;
+  onBuySpawnNet: () => boolean;
+  onBuyAttackBoost: () => boolean;
+  onBuyMysteryCase: () => boolean;
   onClose: () => void;
 }
 
@@ -34,7 +37,7 @@ const XP_SIZES: XpCandySize[] = ['petit', 'moyen', 'grand'];
 
 interface Toast { id: number; text: string }
 
-export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, onClose }: Props) {
+export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, onBuySpawnNet, onBuyAttackBoost, onBuyMysteryCase, onClose }: Props) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [counter, setCounter] = useState(0);
   const coins = state.points;
@@ -163,23 +166,58 @@ export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, 
         {/* Boosts */}
         <section>
           <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">⚡ Boosts</h3>
-          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-3.5">
-              <span className="text-2xl shrink-0">⏱️</span>
+          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden divide-y divide-slate-700/40">
+            {[
+              { key: 'cooldown', icon: '⏱️', label: 'Réducteur de cooldown', desc: 'Cooldown réduit à 10 sec pendant 10 min', cost: COOLDOWN_REDUCER_COST, color: '#22d3ee', buy: handleBuyCooldownBoost },
+              { key: 'spawn',    icon: '🕸️', label: 'Filet Géant',           desc: 'Spawns ×2 pendant 5 min',               cost: SPAWN_NET_COST,         color: '#4ade80', buy: () => { if (onBuySpawnNet()) addToast('🎒 Ajouté au sac à dos'); } },
+              { key: 'attack',   icon: '⚔️', label: 'Boost Attaque',          desc: '+25% de dégâts pour 1 combat',           cost: ATTACK_BOOST_COST,      color: '#f87171', buy: () => { if (onBuyAttackBoost()) addToast('🎒 Ajouté au sac à dos'); } },
+            ].map(({ key, icon, label, desc, cost, color, buy }) => (
+              <div key={key} className="flex items-center gap-3 px-4 py-3.5">
+                <span className="text-2xl shrink-0">{icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-white font-semibold text-sm">{label}</div>
+                  <div className="text-slate-400 text-xs mt-0.5">{desc}</div>
+                </div>
+                <div className="flex flex-col items-end gap-1 shrink-0">
+                  <span className="text-xs font-bold" style={{ color }}>🪙 {cost}</span>
+                  <button onClick={buy} disabled={coins < cost}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                    style={{
+                      background: coins >= cost ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b',
+                      color: coins >= cost ? '#fff' : '#475569',
+                      cursor: coins >= cost ? 'pointer' : 'not-allowed',
+                    }}>
+                    Acheter
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Capsule Katchii */}
+        <section>
+          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🎰 Capsule</h3>
+          <div
+            className="rounded-xl overflow-hidden border"
+            style={{ background: 'linear-gradient(135deg,rgba(120,53,15,0.4),rgba(30,10,60,0.6))', borderColor: '#f59e0b66' }}
+          >
+            <div className="flex items-center gap-3 px-4 py-4">
+              <span className="text-3xl shrink-0">🎰</span>
               <div className="flex-1 min-w-0">
-                <div className="text-white font-semibold text-sm">Réducteur de cooldown</div>
-                <div className="text-slate-400 text-xs mt-0.5">Cooldown réduit à 10 sec pendant 10 min</div>
+                <div className="text-white font-black text-sm">Capsule Katchii</div>
+                <div className="text-slate-400 text-xs mt-0.5">Pokémon aléatoire jusqu'à Épique · 0,2% Shiny ✨</div>
               </div>
               <div className="flex flex-col items-end gap-1 shrink-0">
-                <span className="text-xs font-bold text-cyan-400">🪙 {COOLDOWN_REDUCER_COST}</span>
+                <span className="text-xs font-bold text-yellow-400">🪙 {MYSTERY_CASE_COST}</span>
                 <button
-                  onClick={handleBuyCooldownBoost}
-                  disabled={coins < COOLDOWN_REDUCER_COST}
+                  onClick={() => { if (onBuyMysteryCase()) addToast('🎒 Ajouté au sac à dos'); }}
+                  disabled={coins < MYSTERY_CASE_COST}
                   className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
                   style={{
-                    background: coins >= COOLDOWN_REDUCER_COST ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b',
-                    color: coins >= COOLDOWN_REDUCER_COST ? '#fff' : '#475569',
-                    cursor: coins >= COOLDOWN_REDUCER_COST ? 'pointer' : 'not-allowed',
+                    background: coins >= MYSTERY_CASE_COST ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b',
+                    color: coins >= MYSTERY_CASE_COST ? '#fff' : '#475569',
+                    cursor: coins >= MYSTERY_CASE_COST ? 'pointer' : 'not-allowed',
                   }}
                 >
                   Acheter

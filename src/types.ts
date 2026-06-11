@@ -63,8 +63,12 @@ export interface GameState {
   fragments: Record<number, number>;        // pokemonId -> available fragments (dupes beyond 1st)
   lures: Record<LureType, number>;          // inventory count
   xpCandies?: Record<XpCandySize, number>;     // xp candy inventory
-  cooldownReducers?: number;                    // cooldown reducer stock
-  activeCooldownBoost?: { expiresAt: number };  // cooldown reducer active
+  cooldownReducers?: number;
+  activeCooldownBoost?: { expiresAt: number };
+  spawnNets?: number;
+  activeSpawnBoost?: { expiresAt: number };
+  attackBoostCharges?: number;
+  mysteryCases?: number;
   activeLure: { type: LureType; expiresAt: number } | null;
   globalCooldownUntil: number | null;       // timestamp ms
   shinyDepleted: number[];                  // pokemonIds caught as shiny
@@ -196,7 +200,11 @@ export const XP_CANDY_COSTS: Record<XpCandySize, number> = {
   grand: 800,
 };
 
-export const COOLDOWN_REDUCER_COST = 250;
+export const COOLDOWN_REDUCER_COST  = 250;
+export const SPAWN_NET_COST         = 200;
+export const SPAWN_NET_DURATION_MS  = 5 * 60_000;
+export const ATTACK_BOOST_COST      = 300;
+export const MYSTERY_CASE_COST      = 600;
 export const COOLDOWN_REDUCED_MS   = 10_000; // 10 seconds
 export const COOLDOWN_BOOST_DURATION_MS = 10 * 60_000; // 10 min
 

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { GameState, Rarity, LureType, XpCandySize, FIRST_CAPTURE_POINTS, DUPLICATE_CAPTURE_POINTS, SHINY_COINS_MULT, COINS_TRAINING_WIN, COINS_BOSS_DEFEAT, LURE_COSTS, XP_CANDY_COSTS, COOLDOWN_REDUCER_COST, COOLDOWN_REDUCED_MS, COOLDOWN_BOOST_DURATION_MS, RARITY_WEIGHTS } from '../types';
+import { GameState, Rarity, LureType, XpCandySize, FIRST_CAPTURE_POINTS, DUPLICATE_CAPTURE_POINTS, SHINY_COINS_MULT, COINS_TRAINING_WIN, COINS_BOSS_DEFEAT, LURE_COSTS, XP_CANDY_COSTS, COOLDOWN_REDUCER_COST, COOLDOWN_REDUCED_MS, COOLDOWN_BOOST_DURATION_MS, SPAWN_NET_COST, SPAWN_NET_DURATION_MS, ATTACK_BOOST_COST, MYSTERY_CASE_COST, RARITY_WEIGHTS } from '../types';
 import { CAPTURE_XP } from '../lib/playerLevel';
 import { TeamMember } from '../components/TeamBuilder';
 import { loadState, loadUserState, saveState, saveUserState, DEFAULT_STATE } from '../lib/storage';
@@ -730,6 +730,76 @@ export function useGameState() {
     return success;
   }, [update]);
 
+  const buySpawnNet = useCallback((): boolean => {
+    let ok = false;
+    update(prev => {
+      if (prev.points < SPAWN_NET_COST) return prev;
+      ok = true;
+      return { ...prev, points: prev.points - SPAWN_NET_COST, spawnNets: (prev.spawnNets ?? 0) + 1 };
+    });
+    return ok;
+  }, [update]);
+
+  const activateSpawnNet = useCallback((): boolean => {
+    let ok = false;
+    update(prev => {
+      if ((prev.spawnNets ?? 0) <= 0) return prev;
+      if (prev.activeSpawnBoost && Date.now() < prev.activeSpawnBoost.expiresAt) return prev;
+      ok = true;
+      return { ...prev, spawnNets: (prev.spawnNets ?? 1) - 1, activeSpawnBoost: { expiresAt: Date.now() + SPAWN_NET_DURATION_MS } };
+    });
+    return ok;
+  }, [update]);
+
+  const buyAttackBoost = useCallback((): boolean => {
+    let ok = false;
+    update(prev => {
+      if (prev.points < ATTACK_BOOST_COST) return prev;
+      ok = true;
+      return { ...prev, points: prev.points - ATTACK_BOOST_COST, attackBoostCharges: (prev.attackBoostCharges ?? 0) + 1 };
+    });
+    return ok;
+  }, [update]);
+
+  const consumeAttackBoost = useCallback((): boolean => {
+    let had = false;
+    update(prev => {
+      if ((prev.attackBoostCharges ?? 0) <= 0) return prev;
+      had = true;
+      return { ...prev, attackBoostCharges: (prev.attackBoostCharges ?? 1) - 1 };
+    });
+    return had;
+  }, [update]);
+
+  const buyMysteryCase = useCallback((): boolean => {
+    let ok = false;
+    update(prev => {
+      if (prev.points < MYSTERY_CASE_COST) return prev;
+      ok = true;
+      return { ...prev, points: prev.points - MYSTERY_CASE_COST, mysteryCases: (prev.mysteryCases ?? 0) + 1 };
+    });
+    return ok;
+  }, [update]);
+
+  const openMysteryCase = useCallback((pokemonId: number, isShiny: boolean, rarity: Rarity) => {
+    update(prev => {
+      if ((prev.mysteryCases ?? 0) <= 0) return prev;
+      const next = {
+        ...prev,
+        mysteryCases: (prev.mysteryCases ?? 1) - 1,
+        normalCollection: { ...prev.normalCollection, [pokemonId]: (prev.normalCollection[pokemonId] ?? 0) + 1 },
+      };
+      if (isShiny) {
+        next.shinyCollection = { ...prev.shinyCollection, [pokemonId]: (prev.shinyCollection[pokemonId] ?? 0) + 1 };
+      }
+      if (!prev.pokemonLevels?.[pokemonId]) {
+        const lvl = naturalLevel(rarity, undefined);
+        next.pokemonLevels = { ...(prev.pokemonLevels ?? {}), [pokemonId]: { level: lvl, xp: 0 } };
+      }
+      return next;
+    });
+  }, [update]);
+
   const activateCooldownBoost = useCallback((): boolean => {
     let success = false;
     update(prev => {
@@ -874,6 +944,12 @@ export function useGameState() {
     buyXpCandy,
     buyCooldownBoost,
     activateCooldownBoost,
+    buySpawnNet,
+    activateSpawnNet,
+    buyAttackBoost,
+    consumeAttackBoost,
+    buyMysteryCase,
+    openMysteryCase,
     claimQuestReward,
     updateDuels,
     addDuelResult,

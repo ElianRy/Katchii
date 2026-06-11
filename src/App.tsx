@@ -20,6 +20,7 @@ import { SettingsPanel } from './components/SettingsPanel';
 import { ClanPanel } from './components/ClanPanel';
 import { BackpackPanel } from './components/BackpackPanel';
 import { ShopPanel } from './components/ShopPanel';
+import { CaseOpenScreen } from './components/CaseOpenScreen';
 import { PlayersPanel } from './components/PlayersPanel';
 import { BattleScreen } from './components/BattleScreen';
 import { TeamMember } from './components/TeamBuilder';
@@ -39,6 +40,7 @@ export function App() {
   const [showPlayers, setShowPlayers] = useState(false);
   const [previousView, setPreviousView] = useState<View>('home');
   const [battle3v3, setBattle3v3] = useState<{ playerTeam: TeamMember[]; enemyTeam: TeamMember[]; enemyName: string; onDone?: (dmg: number, won: boolean) => void } | null>(null);
+  const [openingCase, setOpeningCase] = useState(false);
   const prevViewRef = useRef<View>('auth');
   const gameState = useGameState();
 
@@ -379,6 +381,8 @@ export function App() {
           state={gameState.state}
           onActivateLure={gameState.activateLure}
           onActivateCooldownBoost={gameState.activateCooldownBoost}
+          onActivateSpawnNet={gameState.activateSpawnNet}
+          onOpenCase={() => setOpeningCase(true)}
           onClose={() => persistView('hunt')}
         />
       )}
@@ -389,6 +393,9 @@ export function App() {
           onBuyLure={gameState.buyLure}
           onBuyXpCandy={gameState.buyXpCandy}
           onBuyCooldownBoost={gameState.buyCooldownBoost}
+          onBuySpawnNet={gameState.buySpawnNet}
+          onBuyAttackBoost={gameState.buyAttackBoost}
+          onBuyMysteryCase={gameState.buyMysteryCase}
           onClose={() => persistView('hunt')}
         />
       )}
@@ -407,19 +414,37 @@ export function App() {
 
       {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} isAdmin={['admin', 'elian'].includes(username.toLowerCase())} onBattle3v3={handleBattle3v3} />}
 
-      {battle3v3 && (
-        <BattleScreen
-          playerTeam={battle3v3.playerTeam}
-          enemyTeam={battle3v3.enemyTeam}
-          bossName={battle3v3.enemyName}
-          onBattleEnd={(won, _xp, _team, enemyDmg) => {
-            if (battle3v3.onDone) {
-              const totalDmg = Object.values(enemyDmg ?? {}).reduce((s, n) => s + n, 0);
-              battle3v3.onDone(totalDmg, won);
+      {battle3v3 && (() => {
+        const hasAttackBoost = (gameState.state.attackBoostCharges ?? 0) > 0;
+        const damageMult = hasAttackBoost ? 1.25 : 1;
+        if (hasAttackBoost) gameState.consumeAttackBoost();
+        return (
+          <BattleScreen
+            playerTeam={battle3v3.playerTeam}
+            enemyTeam={battle3v3.enemyTeam}
+            bossName={battle3v3.enemyName}
+            playerDamageMult={damageMult}
+            onBattleEnd={(won, _xp, _team, enemyDmg) => {
+              if (battle3v3.onDone) {
+                const totalDmg = Object.values(enemyDmg ?? {}).reduce((s, n) => s + n, 0);
+                battle3v3.onDone(totalDmg, won);
+              }
+              setBattle3v3(null);
+            }}
+            onQuit={() => { battle3v3.onDone?.(0, false); setBattle3v3(null); }}
+          />
+        );
+      })()}
+
+      {openingCase && (
+        <CaseOpenScreen
+          onClose={result => {
+            setOpeningCase(false);
+            if (result) {
+              // Consume 1 case and add the pokemon to collection
+              gameState.openMysteryCase?.(result.pokemonId, result.isShiny, result.rarity);
             }
-            setBattle3v3(null);
           }}
-          onQuit={() => { battle3v3.onDone?.(0, false); setBattle3v3(null); }}
         />
       )}
 

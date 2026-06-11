@@ -5,6 +5,8 @@ interface Props {
   state: GameState;
   onActivateLure: (type: LureType) => void;
   onActivateCooldownBoost: () => boolean;
+  onActivateSpawnNet: () => boolean;
+  onOpenCase: () => void;
   onClose: () => void;
 }
 
@@ -38,7 +40,7 @@ function formatRemaining(expiresAt: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, onClose }: Props) {
+export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, onActivateSpawnNet, onOpenCase, onClose }: Props) {
   const [, setTick] = useState(0);
 
   // Refresh timers every second
@@ -52,10 +54,14 @@ export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, 
 
   const isLureActive = !!(state.activeLure && Date.now() < state.activeLure.expiresAt);
   const isBoostActive = !!(state.activeCooldownBoost && Date.now() < state.activeCooldownBoost.expiresAt);
+  const isSpawnActive = !!(state.activeSpawnBoost && Date.now() < state.activeSpawnBoost.expiresAt);
 
   const totalLures = LURE_TYPES.reduce((s, t) => s + (state.lures[t] ?? 0), 0);
   const totalCandies = XP_CANDY_SIZES.reduce((s, t) => s + (state.xpCandies?.[t] ?? 0), 0);
   const totalBoosts = state.cooldownReducers ?? 0;
+  const totalSpawnNets = state.spawnNets ?? 0;
+  const totalAttackBoosts = state.attackBoostCharges ?? 0;
+  const totalCases = state.mysteryCases ?? 0;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col" style={{ height: '100dvh' }}>
@@ -65,7 +71,7 @@ export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, 
         <div>
           <h2 className="text-white font-black text-xl">🎒 Sac à dos</h2>
           <p className="text-slate-400 text-xs">
-            {totalLures} leurre{totalLures !== 1 ? 's' : ''} · {totalCandies} bonbon{totalCandies !== 1 ? 's' : ''} · {totalBoosts} boost{totalBoosts !== 1 ? 's' : ''}
+            {totalLures} leurre{totalLures !== 1 ? 's' : ''} · {totalCandies} bonbon{totalCandies !== 1 ? 's' : ''} · {totalBoosts + totalSpawnNets + totalAttackBoosts} boost{(totalBoosts + totalSpawnNets + totalAttackBoosts) !== 1 ? 's' : ''} · {totalCases} capsule{totalCases !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
@@ -94,6 +100,16 @@ export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, 
                   <div className="text-cyan-500 text-xs">{formatRemaining(state.activeCooldownBoost.expiresAt)} restant</div>
                 </div>
                 <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              </div>
+            )}
+            {isSpawnActive && state.activeSpawnBoost && (
+              <div className="rounded-xl border border-green-500/40 bg-green-900/20 px-4 py-3 flex items-center gap-3">
+                <span className="text-2xl">🕸️</span>
+                <div className="flex-1">
+                  <div className="text-green-300 font-bold text-sm">Filet Géant actif — Spawns ×2</div>
+                  <div className="text-green-500 text-xs">{formatRemaining(state.activeSpawnBoost.expiresAt)} restant</div>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
               </div>
             )}
           </div>
@@ -142,10 +158,51 @@ export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, 
           )}
         </section>
 
-        {/* Cooldown reducers */}
+
+        {/* Boosts divers */}
         <section>
-          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">⏱️ Réducteurs de cooldown</h3>
-          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden">
+          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">⚡ Boosts</h3>
+          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden divide-y divide-slate-700/40">
+            {/* Filet Géant */}
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <span className="text-2xl shrink-0">🕸️</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-white font-semibold text-sm">Filet Géant</div>
+                <div className="text-slate-400 text-xs mt-0.5">Spawns ×2 pendant 5 min</div>
+              </div>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ color: '#4ade80', background: '#4ade8022', border: '1px solid #4ade8044' }}>
+                  ×{totalSpawnNets}
+                </span>
+                {totalSpawnNets > 0 && !isSpawnActive && (
+                  <button onClick={() => onActivateSpawnNet()}
+                    className="text-xs font-bold px-3 py-1 rounded-lg transition-all active:scale-95"
+                    style={{ background: '#4ade8033', color: '#4ade80', border: '1px solid #4ade8066' }}>
+                    Activer
+                  </button>
+                )}
+                {isSpawnActive && <span className="text-xs text-green-400 font-bold">Actif ✓</span>}
+              </div>
+            </div>
+            {/* Boost Attaque */}
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <span className="text-2xl shrink-0">⚔️</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-white font-semibold text-sm">Boost Attaque</div>
+                <div className="text-slate-400 text-xs mt-0.5">+25% dégâts · consommé au prochain combat</div>
+              </div>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ color: '#f87171', background: '#f8717122', border: '1px solid #f8717144' }}>
+                  ×{totalAttackBoosts}
+                </span>
+                {totalAttackBoosts > 0 && (
+                  <span className="text-xs text-slate-400 text-right" style={{ maxWidth: 80 }}>Auto au prochain combat</span>
+                )}
+              </div>
+            </div>
+            {/* Réducteur de cooldown */}
             <div className="flex items-center gap-3 px-4 py-3.5">
               <span className="text-2xl shrink-0">⏱️</span>
               <div className="flex-1 min-w-0">
@@ -158,11 +215,9 @@ export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, 
                   ×{totalBoosts}
                 </span>
                 {totalBoosts > 0 && !isBoostActive && (
-                  <button
-                    onClick={() => onActivateCooldownBoost()}
+                  <button onClick={() => onActivateCooldownBoost()}
                     className="text-xs font-bold px-3 py-1 rounded-lg transition-all active:scale-95"
-                    style={{ background: '#22d3ee33', color: '#22d3ee', border: '1px solid #22d3ee66' }}
-                  >
+                    style={{ background: '#22d3ee33', color: '#22d3ee', border: '1px solid #22d3ee66' }}>
                     Activer
                   </button>
                 )}
@@ -170,8 +225,39 @@ export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, 
               </div>
             </div>
           </div>
-          {totalBoosts === 0 && (
+          {(totalSpawnNets + totalAttackBoosts + totalBoosts) === 0 && (
             <p className="text-slate-500 text-xs text-center mt-2">Aucun boost — achète-en dans la Boutique 🏪</p>
+          )}
+        </section>
+
+        {/* Capsules Katchii */}
+        <section>
+          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🎰 Capsules Katchii</h3>
+          <div className="bg-slate-800/60 rounded-xl border"
+            style={{ borderColor: '#f59e0b44', background: 'linear-gradient(135deg,rgba(120,53,15,0.25),rgba(30,10,60,0.35))' }}>
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <span className="text-3xl shrink-0">🎰</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-white font-semibold text-sm">Capsule Katchii</div>
+                <div className="text-slate-400 text-xs mt-0.5">Pokémon aléatoire · 0,2% Shiny ✨</div>
+              </div>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ color: '#f59e0b', background: '#f59e0b22', border: '1px solid #f59e0b44' }}>
+                  ×{totalCases}
+                </span>
+                {totalCases > 0 && (
+                  <button onClick={onOpenCase}
+                    className="text-xs font-bold px-3 py-1 rounded-lg transition-all active:scale-95"
+                    style={{ background: 'linear-gradient(135deg,#f59e0b,#ef7c00)', color: '#fff' }}>
+                    Ouvrir !
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+          {totalCases === 0 && (
+            <p className="text-slate-500 text-xs text-center mt-2">Aucune capsule — achète-en dans la Boutique 🏪</p>
           )}
         </section>
 

@@ -111,9 +111,13 @@ export function useSpawner(
   useEffect(() => {
     const id = setInterval(() => {
       setSpawned((prev) => {
+        const gs2 = stateRef.current;
+        const spawnBoostActive = !!(gs2.state.activeSpawnBoost && Date.now() < gs2.state.activeSpawnBoost.expiresAt);
+        const maxSpawned = spawnBoostActive ? MAX_SPAWNED * 2 : MAX_SPAWNED;
+        const spawnChance = spawnBoostActive ? Math.min(1, SPAWN_CHANCE * 2) : SPAWN_CHANCE;
         const active = prev.filter((s) => !s.captured);
-        if (active.length >= MAX_SPAWNED) return prev;
-        if (Math.random() > SPAWN_CHANCE) return prev;
+        if (active.length >= maxSpawned) return prev;
+        if (Math.random() > spawnChance) return prev;
 
         const gs = stateRef.current;
         const mult = gs.getActiveLureMultipliers();

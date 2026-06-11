@@ -27,6 +27,7 @@ interface Props {
   enemyTeam: TeamMember[];
   bossName?: string;
   onBattleEnd: (won: boolean, xpGains: Record<number, number>, finalTeam?: TeamMember[], enemyDmg?: Record<number, number>) => void;
+  playerDamageMult?: number;
   isLeague?: boolean;
   suppressVictorySound?: boolean;
   keepMusic?: boolean;
@@ -307,7 +308,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, isLeague = false, suppressVictorySound = false, keepMusic = false, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, playerDamageMult = 1, isLeague = false, suppressVictorySound = false, keepMusic = false, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp }))
   );
@@ -418,9 +419,10 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           const pType = (POKEMON_TYPE[pFighter.pokemonId] ?? ['normal'])[0] as PokemonType;
           const eType = (POKEMON_TYPE[eFighter.pokemonId] ?? ['normal'])[0] as PokemonType;
 
-          const { damage: pDmg, effectiveness: pEff, moveName: pMove, isCrit: pCrit, isMiss: pMiss } = calcDamage(
+          const { damage: pDmgRaw, effectiveness: pEff, moveName: pMove, isCrit: pCrit, isMiss: pMiss } = calcDamage(
             pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level
           );
+          const pDmg = pMiss ? 0 : Math.round(pDmgRaw * playerDamageMult);
 
           setAttackEvt(pMiss ? null : { attacker: 'player', type: pType, uid: dmgCounter++ });
           if (!pMiss) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
