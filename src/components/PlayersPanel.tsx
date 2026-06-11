@@ -201,7 +201,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
   const MEDAL = ['🥇', '🥈', '🥉'];
 
   return (
-    <div className="fixed inset-0 z-[80] flex flex-col bg-slate-950" style={{ height: '100dvh' }}>
+    <div className="fixed inset-0 z-[600] flex flex-col bg-slate-950" style={{ height: '100dvh' }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>

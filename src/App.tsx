@@ -18,6 +18,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { PokeParc } from './components/PokeParc';
 import { SettingsPanel } from './components/SettingsPanel';
 import { ClanPanel } from './components/ClanPanel';
+import { BackpackPanel } from './components/BackpackPanel';
 import { PlayersPanel } from './components/PlayersPanel';
 import { BattleScreen } from './components/BattleScreen';
 import { TeamMember } from './components/TeamBuilder';
@@ -36,7 +37,7 @@ export function App() {
   const [showWelcome, setShowWelcome] = useState(false);
   const [showPlayers, setShowPlayers] = useState(false);
   const [previousView, setPreviousView] = useState<View>('home');
-  const [battle3v3, setBattle3v3] = useState<{ playerTeam: TeamMember[]; enemyTeam: TeamMember[]; enemyName: string } | null>(null);
+  const [battle3v3, setBattle3v3] = useState<{ playerTeam: TeamMember[]; enemyTeam: TeamMember[]; enemyName: string; onDone?: (dmg: number, won: boolean) => void } | null>(null);
   const prevViewRef = useRef<View>('auth');
   const gameState = useGameState();
 
@@ -316,9 +317,15 @@ export function App() {
       {view === 'raid' && (
         <RaidPanel
           state={gameState.state}
-          onAttack={gameState.attackRaid}
-          onClaimReward={gameState.claimRaidReward}
-          onStartRaid={gameState.startRaid}
+          userId={userId}
+          username={username}
+          isAdmin={['admin', 'elian'].includes(username.toLowerCase())}
+          onStartBattle={(playerTeam, bossTeam, bossName, onDone) => {
+            setBattle3v3({ playerTeam, enemyTeam: bossTeam, enemyName: bossName, onDone });
+            setShowPlayers(false);
+          }}
+          onRewardXp={gameState.addPokemonXp}
+          onRewardLure={(type, count) => gameState.grantLure(type, count)}
           onClose={() => persistView('hunt')}
         />
       )}
@@ -366,6 +373,14 @@ export function App() {
         />
       )}
 
+      {view === 'backpack' && (
+        <BackpackPanel
+          state={gameState.state}
+          onActivateLure={gameState.activateLure}
+          onClose={() => persistView('hunt')}
+        />
+      )}
+
       {/* Persistent bottom navbar (not on auth/home/universe/profile/admin) */}
       {showBottomNav && (
         <BottomNav
@@ -385,8 +400,14 @@ export function App() {
           playerTeam={battle3v3.playerTeam}
           enemyTeam={battle3v3.enemyTeam}
           bossName={battle3v3.enemyName}
-          onBattleEnd={() => setBattle3v3(null)}
-          onQuit={() => setBattle3v3(null)}
+          onBattleEnd={(won, _xp, _team, enemyDmg) => {
+            if (battle3v3.onDone) {
+              const totalDmg = Object.values(enemyDmg ?? {}).reduce((s, n) => s + n, 0);
+              battle3v3.onDone(totalDmg, won);
+            }
+            setBattle3v3(null);
+          }}
+          onQuit={() => { battle3v3.onDone?.(0, false); setBattle3v3(null); }}
         />
       )}
 

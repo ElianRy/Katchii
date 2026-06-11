@@ -361,6 +361,13 @@ export function useGameState() {
     return success;
   }, [update]);
 
+  const grantLure = useCallback((type: LureType, count = 1) => {
+    update(prev => ({
+      ...prev,
+      lures: { ...prev.lures, [type]: prev.lures[type] + count },
+    }));
+  }, [update]);
+
   const activateLure = useCallback((type: LureType): boolean => {
     let success = false;
     update(prev => {
@@ -804,6 +811,7 @@ export function useGameState() {
     state,
     addCapture,
     buyLure,
+    grantLure,
     activateLure,
     claimQuestReward,
     updateDuels,

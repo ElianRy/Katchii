@@ -1,0 +1,179 @@
+import { useState } from 'react';
+import { GameState, LureType, LURE_LABELS, XpCandySize } from '../types';
+
+interface Props {
+  state: GameState;
+  onActivateLure: (type: LureType) => void;
+  onClose: () => void;
+}
+
+const LURE_DESCRIPTIONS: Record<LureType, string> = {
+  rare:       'Augmente les apparitions Rare ×4 pendant 10 min',
+  epique:     'Augmente les apparitions Élite ×4 pendant 10 min',
+  legendaire: 'Augmente les apparitions Légendaires ×4 pendant 10 min',
+  shiny:      'Augmente le taux Shiny ×4 pendant 10 min',
+};
+
+const LURE_ICONS: Record<LureType, string> = {
+  rare: '💎', epique: '🔮', legendaire: '⚡', shiny: '✨',
+};
+
+const LURE_COLORS: Record<LureType, string> = {
+  rare:       '#3b82f6',
+  epique:     '#a855f7',
+  legendaire: '#f59e0b',
+  shiny:      '#ec4899',
+};
+
+const LURE_TYPES: LureType[] = ['rare', 'epique', 'legendaire', 'shiny'];
+
+const XP_CANDY_LABELS: Record<XpCandySize, string> = {
+  petit: 'Bonbon XP Petit',
+  moyen: 'Bonbon XP Moyen',
+  grand: 'Bonbon XP Grand',
+};
+
+const XP_CANDY_ICONS: Record<XpCandySize, string> = {
+  petit: '🍬', moyen: '🍭', grand: '🍫',
+};
+
+const XP_CANDY_DESCRIPTIONS: Record<XpCandySize, string> = {
+  petit: 'Donne 500 XP à un Pokémon de ton choix',
+  moyen: 'Donne 2 000 XP à un Pokémon de ton choix',
+  grand: 'Donne 10 000 XP à un Pokémon de ton choix',
+};
+
+const XP_CANDY_SIZES: XpCandySize[] = ['petit', 'moyen', 'grand'];
+
+function formatLureRemaining(expiresAt: number): string {
+  const ms = Math.max(0, expiresAt - Date.now());
+  const totalSec = Math.ceil(ms / 1000);
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+export function BackpackPanel({ state, onActivateLure, onClose }: Props) {
+  const [tick, setTick] = useState(0);
+  const isLureActive = state.activeLure && Date.now() < state.activeLure.expiresAt;
+
+  // Refresh timer display every second when lure is active
+  useState(() => {
+    if (!isLureActive) return;
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  });
+
+  const totalLures = LURE_TYPES.reduce((s, t) => s + (state.lures[t] ?? 0), 0);
+  const totalCandies = XP_CANDY_SIZES.reduce((s, t) => s + (state.xpCandies?.[t] ?? 0), 0);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col" style={{ height: '100dvh' }}>
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
+        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
+        <div>
+          <h2 className="text-white font-black text-xl">🎒 Sac à dos</h2>
+          <p className="text-slate-400 text-xs">{totalLures} leurre{totalLures !== 1 ? 's' : ''} · {totalCandies} bonbon{totalCandies !== 1 ? 's' : ''}</p>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-6"
+        style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px) + 1.25rem)' }}>
+
+        {/* Active lure banner */}
+        {isLureActive && state.activeLure && (
+          <div className="rounded-xl border border-yellow-500/40 bg-yellow-900/20 px-4 py-3 flex items-center gap-3">
+            <span className="text-2xl">{LURE_ICONS[state.activeLure.type]}</span>
+            <div className="flex-1">
+              <div className="text-yellow-300 font-bold text-sm">{LURE_LABELS[state.activeLure.type]} actif</div>
+              <div className="text-yellow-500 text-xs">{formatLureRemaining(state.activeLure.expiresAt)} restant{void tick}</div>
+            </div>
+            <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+          </div>
+        )}
+
+        {/* Lures section */}
+        <section>
+          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🎣 Leurres</h3>
+          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden divide-y divide-slate-700/40">
+            {LURE_TYPES.map(type => {
+              const count = state.lures[type] ?? 0;
+              const color = LURE_COLORS[type];
+              const isThisActive = isLureActive && state.activeLure?.type === type;
+              return (
+                <div key={type} className="flex items-center gap-3 px-4 py-3.5">
+                  <span className="text-2xl shrink-0">{LURE_ICONS[type]}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-semibold text-sm">{LURE_LABELS[type]}</div>
+                    <div className="text-slate-400 text-xs mt-0.5">{LURE_DESCRIPTIONS[type]}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{ color, background: color + '22', border: `1px solid ${color}44` }}>
+                      ×{count}
+                    </span>
+                    {count > 0 && !isLureActive && (
+                      <button
+                        onClick={() => onActivateLure(type)}
+                        className="text-xs font-bold px-3 py-1 rounded-lg transition-all active:scale-95"
+                        style={{ background: color + '33', color, border: `1px solid ${color}66` }}
+                      >
+                        Activer
+                      </button>
+                    )}
+                    {isThisActive && (
+                      <span className="text-xs text-yellow-400 font-bold">Actif ✓</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {totalLures === 0 && (
+            <p className="text-slate-500 text-xs text-center mt-2">Aucun leurre en stock — achetez-en depuis le menu Leurres</p>
+          )}
+        </section>
+
+        {/* XP Candies section */}
+        <section>
+          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🍬 Bonbons XP</h3>
+          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden divide-y divide-slate-700/40">
+            {XP_CANDY_SIZES.map(size => {
+              const count = state.xpCandies?.[size] ?? 0;
+              return (
+                <div key={size} className="flex items-center gap-3 px-4 py-3.5">
+                  <span className="text-2xl shrink-0">{XP_CANDY_ICONS[size]}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-white font-semibold text-sm">{XP_CANDY_LABELS[size]}</div>
+                    <div className="text-slate-400 text-xs mt-0.5">{XP_CANDY_DESCRIPTIONS[size]}</div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{ color: '#4ade80', background: '#4ade8022', border: '1px solid #4ade8044' }}>
+                      ×{count}
+                    </span>
+                    {count > 0 && (
+                      <button
+                        className="text-xs font-bold px-3 py-1 rounded-lg transition-all active:scale-95"
+                        style={{ background: '#4ade8033', color: '#4ade80', border: '1px solid #4ade8066' }}
+                        disabled
+                        title="Bientôt disponible"
+                      >
+                        Utiliser
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {totalCandies === 0 && (
+            <p className="text-slate-500 text-xs text-center mt-2">Aucun bonbon XP — gagnez-en lors des raids !</p>
+          )}
+        </section>
+
+      </div>
+    </div>
+  );
+}

@@ -1,6 +1,8 @@
 export type Rarity = 'commun' | 'peu_commun' | 'rare' | 'elite' | 'legendaire';
 export type LureType = 'rare' | 'epique' | 'legendaire' | 'shiny';
-export type View = 'auth' | 'home' | 'hunt' | 'collection' | 'team' | 'admin' | 'lures' | 'quests' | 'duels' | 'raid' | 'wrapped' | 'profile' | 'zones' | 'pokepark' | 'settings' | 'clan';
+export type View = 'auth' | 'home' | 'hunt' | 'collection' | 'team' | 'admin' | 'lures' | 'quests' | 'duels' | 'raid' | 'wrapped' | 'profile' | 'zones' | 'pokepark' | 'settings' | 'clan' | 'backpack';
+
+export type XpCandySize = 'petit' | 'moyen' | 'grand';
 
 export type QuestType =
   | 'capture_n'
@@ -60,6 +62,7 @@ export interface GameState {
   shinyCollection: Record<number, number>;  // pokemonId -> times caught shiny
   fragments: Record<number, number>;        // pokemonId -> available fragments (dupes beyond 1st)
   lures: Record<LureType, number>;          // inventory count
+  xpCandies?: Record<XpCandySize, number>; // xp candy inventory
   activeLure: { type: LureType; expiresAt: number } | null;
   globalCooldownUntil: number | null;       // timestamp ms
   shinyDepleted: number[];                  // pokemonIds caught as shiny
