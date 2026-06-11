@@ -158,7 +158,7 @@ export function HomeScreen({ username, onPlay, onProfile, onLogout, onWrapped, o
         onClick={onWrapped}
         className="absolute right-4 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-bold transition-all active:scale-95"
         style={{
-          top: 'calc(1rem + env(safe-area-inset-top, 0px))',
+          top: '1rem',
           background: 'rgba(255,255,255,0.85)',
           color: '#ec4899',
           boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
