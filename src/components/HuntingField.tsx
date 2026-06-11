@@ -426,6 +426,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
             const nz = ZONE_BY_ID['zone_libre'];
             if (nz) setDiscoveredZone({ name: nz.name, pokemonIds: nz.pokemonIds.slice(0, 8) });
           }}
+          attackBoostCharges={gameState.state.attackBoostCharges ?? 0}
+          onConsumeAttackBoost={gameState.consumeAttackBoost}
         />
       )}
 
@@ -444,6 +446,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
             const nz = fightZone && ZONE_BY_ID[ZONE_ORDER[ZONE_ORDER.indexOf(fightZone.id) + 1]];
             if (nz) setDiscoveredZone({ name: nz.name, pokemonIds: nz.pokemonIds.slice(0, 8) });
           }}
+          attackBoostCharges={gameState.state.attackBoostCharges ?? 0}
+          onConsumeAttackBoost={gameState.consumeAttackBoost}
         />
       )}
 

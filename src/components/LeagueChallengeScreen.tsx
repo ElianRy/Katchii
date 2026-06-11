@@ -14,6 +14,8 @@ interface Props {
   onVictory: () => void;
   onAddXp: (pokemonId: number, xp: number) => void;
   onZoneDiscovered?: () => void;
+  attackBoostCharges?: number;
+  onConsumeAttackBoost?: () => void;
 }
 
 type Phase =
@@ -853,11 +855,12 @@ function VictoryFinalScreen({ onClose, onZoneDiscovered }: { onClose: () => void
 }
 
 /* ── MAIN ── */
-export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZoneDiscovered }: Props) {
+export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZoneDiscovered, attackBoostCharges = 0, onConsumeAttackBoost }: Props) {
   const [phase, setPhase] = useState<Phase>('team_select');
   const [currentTeam, setCurrentTeam] = useState<TeamMember[]>([]);
   const [retrying, setRetrying] = useState(false);
   const [victoryHandled, setVictoryHandled] = useState(false);
+  const [damageMult, setDamageMult] = useState(1);
 
   // Music transitions per phase
   useEffect(() => {
@@ -891,9 +894,15 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     setCurrentTeam(team);
     setRetrying(false);
     setDefeatStats(null);
+    if (attackBoostCharges > 0) {
+      setDamageMult(1.25);
+      onConsumeAttackBoost?.();
+    } else {
+      setDamageMult(1);
+    }
     playLeagueBattleMusic();
     setPhase('dialogue_peter');
-  }, [state]);
+  }, [state, attackBoostCharges, onConsumeAttackBoost]);
 
   const handleBattleEnd = useCallback(
     (nextPhase: Phase, enemySpecs: ReadonlyArray<{ pokemonId: number; level: number; isShiny?: boolean }>) =>
@@ -949,7 +958,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   if (phase === 'battle_peter') {
     return (
       <div className="fixed inset-0 z-[600]">
-        <BattleScreen isLeague suppressVictorySound playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
+        <BattleScreen isLeague suppressVictorySound playerDamageMult={damageMult} playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
           bossName="Peter" trainerImage="/trainers/peter.png" trainerColor="#ef4444" onBattleEnd={handleBattleEnd('dialogue_giovanni', TRAINER_CONFIGS[0].teamSpec)}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>

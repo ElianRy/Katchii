@@ -85,6 +85,8 @@ interface Props {
   onVictory: (zoneId: string, nextZoneId: string | null) => void;
   onAddXp: (pokemonId: number, xp: number) => void;
   onZoneDiscovered?: () => void;
+  attackBoostCharges?: number;
+  onConsumeAttackBoost?: () => void;
 }
 
 type Phase = 'dialogue' | 'intro' | 'select' | 'battle' | 'result';
@@ -96,7 +98,7 @@ function getBossLevel(zoneId: string): number {
   return Math.min(100, 15 + idx * 10);
 }
 
-export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZoneDiscovered }: Props) {
+export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZoneDiscovered, attackBoostCharges = 0, onConsumeAttackBoost }: Props) {
   const [phase, setPhase] = useState<Phase>(() => {
     const trainer = BOSS_TRAINER[zone.id];
     return trainer ? 'dialogue' : 'intro';
@@ -104,6 +106,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
   const [dialogueIdx, setDialogueIdx] = useState(0);
   const [playerTeam, setPlayerTeam] = useState<TeamMember[]>([]);
   const [won, setWon] = useState(false);
+  const [damageMult, setDamageMult] = useState(1);
   const [xpResults, setXpResults] = useState<Record<number, number>>({});
   const [victoryHandled, setVictoryHandled] = useState(false);
 
@@ -129,8 +132,12 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
 
   const handleTeamConfirm = useCallback((team: TeamMember[]) => {
     setPlayerTeam(team);
+    if (attackBoostCharges > 0) {
+      setDamageMult(1.25);
+      onConsumeAttackBoost?.();
+    }
     setPhase('battle');
-  }, []);
+  }, [attackBoostCharges, onConsumeAttackBoost]);
 
   const handleBattleEnd = useCallback((battleWon: boolean, xpGains: Record<number, number>) => {
     setWon(battleWon);
@@ -311,6 +318,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
         bossName={boss.name}
         onBattleEnd={handleBattleEnd}
         suppressVictorySound
+        playerDamageMult={damageMult}
         onQuit={onClose}
       />
     );

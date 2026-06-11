@@ -31,6 +31,7 @@ interface Props {
   isLeague?: boolean;
   suppressVictorySound?: boolean;
   keepMusic?: boolean;
+  keepMusicOnUnmount?: boolean;
   autoCombat?: boolean;
   onAutoCombatChange?: (v: boolean) => void;
   speedLevel?: number;
@@ -308,7 +309,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, playerDamageMult = 1, isLeague = false, suppressVictorySound = false, keepMusic = false, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
+export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, playerDamageMult = 1, isLeague = false, suppressVictorySound = false, keepMusic = false, keepMusicOnUnmount = false, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
     playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp }))
   );
@@ -392,8 +393,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  // Stop music on unmount
-  useEffect(() => () => stopMusic(0.5), []);
+  // Stop music on unmount (unless keepMusicOnUnmount is set, e.g. for park duels where victory music must continue)
+  useEffect(() => () => { if (!keepMusicOnUnmount) stopMusic(0.5); }, [keepMusicOnUnmount]);
 
   const addDmg = useCallback((value: number, target: 'player' | 'enemy', effectiveness: number, isCrit?: boolean, isMiss?: boolean) => {
     const id = dmgCounter++;
@@ -806,8 +807,13 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           </div>
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
             <div className="flex justify-between items-center mb-1">
-              <span className="text-white font-black text-sm">{POKEMON_BY_ID[activePF?.pokemonId ?? 0]?.name ?? '???'}</span>
-              <span className="text-slate-400 text-xs">Nv.{activePF?.level}</span>
+              <div className="flex items-center gap-1 min-w-0">
+                <span className="text-white font-black text-sm truncate">{POKEMON_BY_ID[activePF?.pokemonId ?? 0]?.name ?? '???'}</span>
+                {boostActive && playerIdx === 0 && (
+                  <span className="font-black shrink-0" style={{ fontSize: '0.48rem', color: '#f87171' }}>⚔️+25%</span>
+                )}
+              </div>
+              <span className="text-slate-400 text-xs shrink-0 ml-1">Nv.{activePF?.level}</span>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-2.5">
               <div className="h-2.5 rounded-full transition-all duration-300"
@@ -821,12 +827,6 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
                 </span>
               ))}
             </div>
-            {boostActive && playerIdx === 0 && (
-              <div className="mt-1 px-1.5 py-0.5 rounded text-center font-black"
-                style={{ fontSize: '0.5rem', background: 'rgba(248,113,113,0.2)', color: '#f87171', border: '1px solid #f8717155' }}>
-                ⚔️ +25% dégâts (Boost Attaque)
-              </div>
-            )}
           </div>
         </div>
 

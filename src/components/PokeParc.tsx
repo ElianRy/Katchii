@@ -8,7 +8,7 @@ import { POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
 import { getPlayerGrade, PARK_XP_PER_TICK } from '../lib/playerLevel';
 import { xpToNextLevel, calcMaxHp } from '../data/combatEngine';
-import { playPokemonCry, stopMusic } from '../lib/audio';
+import { playPokemonCry, stopMusic, playZoneMusic } from '../lib/audio';
 import { BattleScreen } from './BattleScreen';
 import { TeamMember } from './TeamBuilder';
 
@@ -57,6 +57,7 @@ interface Props {
   onSetLastParkXpAt?: (ts: number) => void;
   onTrainingWin?: () => void;
   onParkDuelResult?: (won: boolean, eloDelta: number, opponentKey?: string) => void;
+  currentZoneId?: string;
 }
 
 function getPokemonTitle(wins: number): string | null {
@@ -504,12 +505,13 @@ function InteractionModal({
 function ParkDuelBattle({
   myPokemonId, myIsShiny, myLevel,
   opponentPokemonId, opponentIsShiny, opponentLevel, opponentRarity, opponentName,
-  onClose, onResult,
+  onClose, onResult, currentZoneId,
 }: {
   myPokemonId: number; myIsShiny: boolean; myLevel: number; myRarity?: string;
   opponentPokemonId: number; opponentIsShiny: boolean; opponentLevel: number; opponentRarity: string;
   opponentName: string;
   onClose: () => void; onResult: (won: boolean) => void;
+  currentZoneId?: string;
 }) {
   const resultSent = useRef(false);
   const [duelResult, setDuelResult] = useState<{ won: boolean; myHpLeft: number; myHpMax: number; dmgDealt: number } | null>(null);
@@ -550,7 +552,7 @@ function ParkDuelBattle({
               </span>
             </div>
           </div>
-          <button onClick={onClose} className="w-full py-2 rounded-xl bg-slate-600 text-white font-black text-sm">Fermer</button>
+          <button onClick={() => { stopMusic(0.4); setTimeout(() => playZoneMusic(currentZoneId ?? 'zone1'), 500); onClose(); }} className="w-full py-2 rounded-xl bg-slate-600 text-white font-black text-sm">Fermer</button>
         </div>
       </div>
     );
@@ -561,7 +563,7 @@ function ParkDuelBattle({
       playerTeam={playerTeam}
       enemyTeam={enemyTeam}
       bossName={opponentName}
-      suppressVictorySound
+      keepMusicOnUnmount
       onBattleEnd={(wonBool, _xp, finalTeam, enemyDmg) => {
         if (resultSent.current) return;
         resultSent.current = true;
@@ -655,7 +657,7 @@ function PokemonPicker({ state, onPick, onClose }: {
 
 
 // ---- Main Component ----
-export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt, onTrainingWin, onParkDuelResult }: Props) {
+export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt, onTrainingWin, onParkDuelResult, currentZoneId = 'zone1' }: Props) {
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('pokepark'));
   const [presence, setPresence] = useState<PresenceRow[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
@@ -1510,11 +1512,12 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           opponentLevel={interactionTarget.level}
           opponentRarity={interactionTarget.rarity}
           opponentName={interactionTarget.username}
+          currentZoneId={currentZoneId}
           onResult={(won) => {
             if (won) onTrainingWin?.();
             onParkDuelResult?.(won, 0, interactionTarget.userId);
           }}
-          onClose={() => { setShowDuel(false); setInteractionTarget(null); stopMusic(0.3); }}
+          onClose={() => { setShowDuel(false); setInteractionTarget(null); }}
         />,
         document.body
       )}

@@ -363,6 +363,7 @@ export function App() {
           onSetLastParkXpAt={gameState.setLastParkXpAt}
           onTrainingWin={gameState.addTrainingWin}
           onParkDuelResult={gameState.addParkDuelResult}
+          currentZoneId={gameState.state.zoneProgress?.currentZoneId ?? 'zone1'}
         />
       )}
 
