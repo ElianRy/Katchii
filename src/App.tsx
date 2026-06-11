@@ -88,8 +88,7 @@ export function App() {
 
   // Detect forced password change flag set by admin
   useEffect(() => {
-    const fpw = gameState.state.forcePasswordChange;
-    if (fpw && view !== 'auth') setForcePwChange({ tempPw: fpw });
+    if (gameState.state.forcePasswordChange && view !== 'auth') setForcePwChange({ tempPw: 'katchii2026' });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameState.state.forcePasswordChange, view]);
 

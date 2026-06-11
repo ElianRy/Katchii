@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { adminResetPassword } from '../lib/supabaseAdmin';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { RARITY_COLORS } from '../types';
 import { PlayerProfile } from './PlayerProfile';
@@ -408,32 +409,25 @@ interface AdminPanelProps {
   onClose: () => void;
 }
 
-function generateTempPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return 'Katchii' + Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-}
 
 function AdminPlayerPanel({ player, mutedUsers, deletedUsers, parkRemovedUsers, adminConfirm, onMute, onUnmute, onDeleteUser, onRemoveFromPark, onSetConfirm, onViewProfile, onClose }: AdminPanelProps) {
   const muteExpiry = mutedUsers.get(player.user_id);
   const isMuted = muteExpiry !== undefined && (muteExpiry === null || muteExpiry > Date.now());
   const isDeleted = deletedUsers.has(player.user_id);
   const isRemovedFromPark = parkRemovedUsers.has(player.user_id);
-  const [pwResetResult, setPwResetResult] = useState<{ tempPw: string; status: 'pending' | 'done' | 'error' } | null>(null);
+  const [pwResetResult, setPwResetResult] = useState<{ tempPw: string; status: 'pending' | 'done' | 'error'; errorMsg?: string } | null>(null);
 
   const handlePasswordReset = async () => {
-    const tempPw = generateTempPassword();
-    setPwResetResult({ tempPw, status: 'pending' });
-    try {
-      // Store forcePasswordChange flag in game_saves so app forces change on next login
-      const { data: saveData } = await supabase.from('game_saves').select('state').eq('user_id', player.user_id).single();
-      if (saveData?.state) {
-        const newState = { ...(saveData.state as Record<string, unknown>), forcePasswordChange: tempPw };
-        await supabase.from('game_saves').update({ state: newState }).eq('user_id', player.user_id);
-      }
-      setPwResetResult({ tempPw, status: 'done' });
-    } catch {
-      setPwResetResult({ tempPw, status: 'error' });
+    setPwResetResult({ tempPw: 'katchii2026', status: 'pending' });
+    // Change auth password to "katchii2026" via service role
+    const { error: pwError } = await adminResetPassword(player.user_id);
+    // Store forcePasswordChange flag so app forces change on next login
+    const { data: saveData } = await supabase.from('game_saves').select('state').eq('user_id', player.user_id).single();
+    if (saveData?.state) {
+      const newState = { ...(saveData.state as Record<string, unknown>), forcePasswordChange: true };
+      await supabase.from('game_saves').update({ state: newState }).eq('user_id', player.user_id);
     }
+    setPwResetResult({ tempPw: 'katchii2026', status: pwError ? 'error' : 'done', errorMsg: pwError ?? undefined });
   };
 
   return (
@@ -520,22 +514,28 @@ function AdminPlayerPanel({ player, mutedUsers, deletedUsers, parkRemovedUsers, 
           <div className="text-xs font-black text-blue-400 mb-2 uppercase">🔑 Mot de passe</div>
           {pwResetResult ? (
             <div className="flex flex-col gap-2">
-              <div className="text-xs text-slate-300">
-                Mot de passe temporaire généré :
-              </div>
-              <div className="flex items-center gap-2 bg-slate-700 rounded-lg px-3 py-2">
-                <span className="font-mono text-sm text-white font-bold flex-1">{pwResetResult.tempPw}</span>
-                <button
-                  onClick={() => navigator.clipboard.writeText(pwResetResult.tempPw)}
-                  className="text-xs text-blue-400 font-bold shrink-0">
-                  Copier
-                </button>
-              </div>
-              <div className="text-[0.65rem] text-slate-500 leading-snug">
-                Donne ce mot de passe au joueur. Il devra le changer immédiatement à sa prochaine connexion.
-                <br />
-                <span className="text-yellow-500">⚠️ Change aussi son mdp manuellement dans le dashboard Supabase.</span>
-              </div>
+              {pwResetResult.status === 'pending' && (
+                <div className="text-xs text-slate-400 text-center animate-pulse">Réinitialisation en cours…</div>
+              )}
+              {pwResetResult.status === 'done' && (
+                <>
+                  <div className="text-xs text-green-400 font-bold">✅ Mot de passe réinitialisé !</div>
+                  <div className="flex items-center gap-2 bg-slate-700 rounded-lg px-3 py-2">
+                    <span className="font-mono text-sm text-white font-bold flex-1">katchii2026</span>
+                    <button onClick={() => navigator.clipboard.writeText('katchii2026')}
+                      className="text-xs text-blue-400 font-bold shrink-0">Copier</button>
+                  </div>
+                  <div className="text-[0.65rem] text-slate-400 leading-snug">
+                    Donne ce mot de passe temporaire au joueur. À sa prochaine connexion, il devra immédiatement choisir un nouveau mot de passe.
+                  </div>
+                </>
+              )}
+              {pwResetResult.status === 'error' && (
+                <>
+                  <div className="text-xs text-red-400 font-bold">⚠️ Erreur auth : {pwResetResult.errorMsg}</div>
+                  <div className="text-[0.65rem] text-yellow-500">Le flag forcePasswordChange a quand même été posé. Ajoute VITE_SUPABASE_SERVICE_ROLE_KEY dans .env.local pour changer le vrai mot de passe.</div>
+                </>
+              )}
               <button onClick={() => setPwResetResult(null)}
                 className="text-xs text-slate-400 underline text-left">Fermer</button>
             </div>

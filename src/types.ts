@@ -126,7 +126,7 @@ export interface GameState {
   parkDuelRecord?: { totalWins: number; totalLosses: number };
   // key = "YYYY-MM-DD:userId", value = fight count today
   parkFightLog?: Record<string, number>;
-  forcePasswordChange?: string; // temp password set by admin — forces change on next login
+  forcePasswordChange?: boolean; // set by admin — forces password change on next login
 }
 
 export type ZoneUnlockCondition =
