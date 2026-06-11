@@ -108,6 +108,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
       const rows: PlayerRow[] = data.map(row => {
         const s = row.state as Record<string, unknown> | null;
         if (!s) return null;
+        if (s.banned === true) return null;
         const normal = s.normalCollection as Record<number, number> ?? {};
         const shiny  = s.shinyCollection  as Record<number, number> ?? {};
         const duels   = s.duels   as { wins?: number; losses?: number; rankingPoints?: number } | null;
@@ -151,7 +152,6 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
       }).filter((r): r is PlayerRow => {
         if (!r || !r.username || r.username === '?') return false;
         const u = r.username.toLowerCase();
-        // Hide admin account and test/deleted accounts from the leaderboard
         if (u === 'elian') return false;
         if (u === 'resteappu') return false;
         if (u === 'test') return false;

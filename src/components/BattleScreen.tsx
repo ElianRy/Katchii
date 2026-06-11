@@ -452,6 +452,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             const nextE = newEf.findIndex((f, i) => i > eIdx && f.currentHp > 0);
             if (nextE < 0 && newEf.every(f => f.currentHp <= 0)) {
               battleDone.current = true; won.current = true;
+              if (!suppressVictorySound) { isLeague ? playLeagueVictory() : playVictory(); }
               phaseRef.current = 'end'; setPhase('end');
             } else if (nextE >= 0) {
               enemyIdxRef.current = nextE;
@@ -521,7 +522,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
       boostActiveRef.current = false;
       setBoostActive(false);
       stopMusic(0.3);
-      if (!suppressVictorySound) setTimeout(() => wonSnap ? (isLeague ? playLeagueVictory() : playVictory()) : playSfxDefeat(), 400);
+      if (!suppressVictorySound && !wonSnap) playSfxDefeat();
       // Give bench pokemon 25% of the average XP earned by active fighters
       const snap = { ...xpGains };
       const earned = Object.values(snap);

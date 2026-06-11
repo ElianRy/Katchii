@@ -324,6 +324,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         conditionLabel={conditionLabel}
         conditionProgress={conditionProgress}
         conditionDescription={conditionDescription}
+        currentZoneId={currentZoneId}
         onFightBoss={() => { setFightZone(currentZone ?? null); setShowBossFight(true); }}
       />
 

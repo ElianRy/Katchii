@@ -32,6 +32,7 @@ interface Props {
   conditionProgress?: number;
   conditionDescription?: string;
   onFightBoss?: () => void;
+  currentZoneId?: string;
 }
 
 function zoneEmoji(name: string): string {
@@ -94,6 +95,7 @@ export function HUD({
   conditionProgress = 0,
   conditionDescription,
   onFightBoss,
+  currentZoneId,
 }: Props) {
   const [showConditionDetail, setShowConditionDetail] = useState(false);
   const [showLureInfo, setShowLureInfo] = useState(false);
@@ -196,7 +198,7 @@ export function HUD({
             </button>
             {bossUnlocked && onFightBoss && (
               <button onClick={onFightBoss} className="w-full text-xs font-black py-1.5 rounded-xl mt-1 animate-pulse" style={{ background: 'linear-gradient(90deg,#f59e0b,#ef4444)', color: '#000' }}>
-                🏆 Lancer le Défi de la Ligue !
+                {currentZoneId === 'zone8' ? '🏆 Lancer le Défi de la Ligue !' : `⚔️ Affronter Maître ${bossName} !`}
               </button>
             )}
           </div>

@@ -213,7 +213,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   if (mode === 'savedTeams') {
     return (
       <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
+        <div className="flex items-center gap-3 px-4 pb-3 border-b border-slate-700 shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
           <button onClick={() => { setViewTeam(null); setMode('team'); }} className="text-slate-400 hover:text-white text-xl px-1">←</button>
           <h2 className="text-white font-black text-xl flex-1">📋 Équipes sauvegardées</h2>
         </div>
@@ -355,7 +355,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   return (
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
+      <div className="flex items-center gap-3 px-4 pb-3 border-b border-slate-700 shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div>
           <h2 className="text-white font-black text-xl">⚔️ {title}</h2>

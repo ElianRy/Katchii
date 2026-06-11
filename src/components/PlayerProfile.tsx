@@ -100,7 +100,7 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
   return (
     <div className="fixed inset-0 z-[90] flex flex-col bg-slate-950" style={{ height: '100dvh' }}>
       {/* Header */}
-      <div className="shrink-0 px-4 py-3 border-b border-slate-700 flex items-center gap-3">
+      <div className="shrink-0 px-4 pb-3 border-b border-slate-700 flex items-center gap-3" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
