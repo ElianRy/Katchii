@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <filter id="redGlow">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="whiteGlow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="boltGlow">
+      <feGaussianBlur stdDeviation="7" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <linearGradient id="boltGrad" x1="0.3" y1="0" x2="0.7" y2="1">
+      <stop offset="0%"   stop-color="#facc15"/>
+      <stop offset="40%"  stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#60a5fa"/>
+    </linearGradient>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#2a2a32"/>
+      <stop offset="100%" stop-color="#111116"/>
+    </radialGradient>
+    <!-- clip for bottom half fill -->
+    <clipPath id="bottomHalf">
+      <rect x="60" y="256" width="392" height="220"/>
+    </clipPath>
+    <clipPath id="topHalf">
+      <rect x="60" y="40" width="392" height="216"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="108" fill="url(#bgGrad)"/>
+
+  <!-- Top half fill (dark red tint) -->
+  <circle cx="256" cy="256" r="176" fill="#2a0a0e" clip-path="url(#topHalf)"/>
+  <!-- Bottom half fill (dark) -->
+  <circle cx="256" cy="256" r="176" fill="#111116" clip-path="url(#bottomHalf)"/>
+
+  <!-- Pokeball top arc stroke (red neon) -->
+  <path d="M 80 256 A 176 176 0 0 1 432 256" fill="none" stroke="#e8192c" stroke-width="20" stroke-linecap="round" filter="url(#redGlow)"/>
+  <path d="M 80 256 A 176 176 0 0 1 432 256" fill="none" stroke="#ff4455" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Pokeball bottom arc stroke (white neon) -->
+  <path d="M 80 256 A 176 176 0 0 0 432 256" fill="none" stroke="#cccccc" stroke-width="20" stroke-linecap="round" filter="url(#whiteGlow)"/>
+  <path d="M 80 256 A 176 176 0 0 0 432 256" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Center horizontal line -->
+  <line x1="80" y1="256" x2="432" y2="256" stroke="#cccccc" stroke-width="20" stroke-linecap="round" filter="url(#whiteGlow)"/>
+  <line x1="80" y1="256" x2="432" y2="256" stroke="#ffffff" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Center circle bg -->
+  <circle cx="256" cy="256" r="52" fill="#1a1a1e"/>
+
+  <!-- Center circle ring (white neon) -->
+  <circle cx="256" cy="256" r="52" fill="none" stroke="#aaaaaa" stroke-width="18" filter="url(#whiteGlow)"/>
+  <circle cx="256" cy="256" r="52" fill="none" stroke="#ffffff" stroke-width="8"/>
+
+  <!-- Lightning bolt glow layer -->
+  <polygon points="268,202 238,262 262,262 236,314 292,246 264,246 284,202"
+    fill="url(#boltGrad)" filter="url(#boltGlow)" opacity="0.8"/>
+  <!-- Lightning bolt sharp layer -->
+  <polygon points="268,202 238,262 262,262 236,314 292,246 264,246 284,202"
+    fill="url(#boltGrad)"/>
+</svg>
