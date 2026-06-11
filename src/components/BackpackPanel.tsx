@@ -210,7 +210,9 @@ const totalBoosts = state.cooldownReducers ?? 0;
                     Activer
                   </button>
                 )}
-                {isBoostActive && <span className="text-xs text-cyan-400 font-bold">Actif ✓</span>}
+                {isBoostActive && state.activeCooldownBoost && (
+                  <span className="text-xs text-cyan-400 font-bold">⏱️ {formatRemaining(state.activeCooldownBoost.expiresAt)}</span>
+                )}
               </div>
             </div>
           </div>

@@ -197,6 +197,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         bossName={`Dresseur ${chosenDifficulty.label}`}
         onBattleEnd={handleBattleEnd}
         autoCombat={autoCombat}
+        suppressVictorySound={autoCombat}
         onAutoCombatChange={setAutoCombat}
         speedLevel={battleSpeed}
         onSpeedLevelChange={setBattleSpeed}

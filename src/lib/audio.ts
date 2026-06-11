@@ -259,8 +259,25 @@ export function playSfxConfirm()       { playSfxFile('sfx_confirm'); }
 export function playSfxCapture()       { playSfxFile('sfx_capture'); }
 export function playSfxPokeball()      { playSfxFile('catch_poke'); }
 export function playCatchPoke()        { playSfxFile('catch_poke', 2.0); }
-export function playVictory()          { playSfxFile('victoire'); }
-export function playLeagueVictory()    { playSfxFile('victoire_ligue'); }
+// Victory plays through the music channel so ambient volume setting controls it
+function playVictoryTrack(name: string) {
+  const s = loadAudioSettings();
+  if (!s.music) return;
+  const audio = new Audio(`${BASE_URL}/${name}.mp3`);
+  audio.crossOrigin = 'anonymous';
+  audio.loop = false;
+  try {
+    const c = getCtx();
+    const source = c.createMediaElementSource(audio);
+    source.connect(_musicGain!);
+    audio.play().catch(() => {});
+  } catch {
+    audio.volume = s.music ? s.musicVolume * s.globalVolume : 0;
+    audio.play().catch(() => {});
+  }
+}
+export function playVictory()          { playVictoryTrack('victoire'); }
+export function playLeagueVictory()    { playVictoryTrack('victoire_ligue'); }
 export function playLevelUp()          { playSfxFile('level_up'); }
 
 // ── Pokemon cry ───────────────────────────────────────────────────────────

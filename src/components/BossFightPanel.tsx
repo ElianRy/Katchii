@@ -41,7 +41,7 @@ const BOSS_TRAINER: Record<string, {
     ],
   },
   zone4: {
-    name: 'Erika', title: "Maîtresse d'Arène du Bois aux Fleurs", image: '/trainers/erika.png', color: '#4ade80',
+    name: 'Erika', title: "Maîtresse d'Arène du Bois aux Fleurs", image: '/trainers/erika2.png', color: '#4ade80',
     dialogues: [
       "Ces fleurs cachent bien des secrets.",
       "Mon jardin est mon sanctuaire.",
