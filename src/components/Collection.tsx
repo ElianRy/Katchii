@@ -3,7 +3,6 @@ import { TutorialOverlay, isTutorialDone } from './TutorialOverlay';
 import { COLLECTION_TUTORIAL } from './TutorialContent';
 import { GameState, RARITY_COLORS, RARITY_LABELS, Rarity } from '../types';
 import { GEN1_POKEMON, POKEMON_BY_ID } from '../data/gen1';
-import { BADGES } from '../data/badges';
 import { ZONES } from '../data/zones';
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
 import { xpToNextLevel } from '../data/combatEngine';
@@ -36,7 +35,7 @@ interface Props {
 }
 
 type FilterTab = 'tous' | 'captures' | 'shinies' | Rarity;
-type MainTab = 'collection' | 'badges' | 'succes';
+type MainTab = 'collection' | 'badges';
 
 // All arena badges (zones with a boss that has a badge)
 const ARENA_BADGES = ZONES.filter(z => z.boss?.badge).map(z => ({
@@ -120,7 +119,6 @@ export function Collection({ state, onClose }: Props) {
         {([
           { id: 'collection' as MainTab, label: '📚 Collection' },
           { id: 'badges' as MainTab, label: '🥇 Badges' },
-          { id: 'succes' as MainTab, label: '🏅 Succès' },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -408,40 +406,6 @@ export function Collection({ state, onClose }: Props) {
         );
       })()}
 
-      {mainTab === 'succes' && (
-        <div className="flex-1 overflow-y-auto px-4 py-4 pb-28">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {BADGES.map((badge) => {
-              const earned = state.badges.includes(badge.id);
-              return (
-                <div
-                  key={badge.id}
-                  className={`rounded-xl border p-3 flex items-center gap-3 ${
-                    earned
-                      ? 'border-yellow-500/50 bg-yellow-900/20'
-                      : 'border-slate-600/30 bg-slate-800/30'
-                  }`}
-                >
-                  <span className="text-2xl" style={{ filter: earned ? 'none' : 'grayscale(1) opacity(0.3)' }}>
-                    {badge.secret && !earned ? '❓' : badge.icon}
-                  </span>
-                  <div className="min-w-0">
-                    <div
-                      className="font-bold text-sm truncate"
-                      style={{ color: earned ? '#fde68a' : '#4b5563' }}
-                    >
-                      {badge.secret && !earned ? '???' : badge.label}
-                    </div>
-                    <div className="text-xs" style={{ color: earned ? '#94a3b8' : '#374151' }}>
-                      {badge.secret && !earned ? '????' : badge.desc}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
       {showTutorial && (
         <TutorialOverlay tutorialKey="collection" steps={COLLECTION_TUTORIAL} onDone={() => setShowTutorial(false)} bottomOffset={72} />
       )}

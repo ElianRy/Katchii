@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { GameState } from '../types';
-import { BADGES } from '../data/badges';
+import { GameState, RARITY_COLORS } from '../types';
+import { POKEMON_BY_ID } from '../data/gen1';
+import { playerLevelFromXp, xpToNextLevel, getPlayerGrade } from '../lib/playerLevel';
+import { ShinySprite } from './ShinySprite';
 
 interface Props {
   username: string;
@@ -8,8 +10,6 @@ interface Props {
   onClose: () => void;
   onLogout: () => void;
 }
-
-type Tab = 'profil' | 'stats';
 
 function formatPlayTime(ms: number): string {
   const totalMin = Math.floor(ms / 60000);
@@ -19,152 +19,169 @@ function formatPlayTime(ms: number): string {
   return `${h}h ${min}min`;
 }
 
+const RARITY_ORDER: Record<string, number> = { commun: 0, peu_commun: 1, rare: 2, elite: 3, legendaire: 4 };
+
 export function ProfileScreen({ username, state, onClose, onLogout }: Props) {
-  const [tab, setTab] = useState<Tab>('profil');
+  const [collectionOpen, setCollectionOpen] = useState(false);
 
-  const totalCaught = Object.keys(state.normalCollection).filter(id => (state.normalCollection[Number(id)] ?? 0) > 0).length;
-  const totalShinyCaught = Object.keys(state.shinyCollection).filter(id => (state.shinyCollection[Number(id)] ?? 0) > 0).length;
-  const badgesEarned = state.badges.length;
-  const totalBadges = BADGES.length;
-  const totalPlayTime = state.stats?.totalPlayTimeMs ?? 0;
+  const normal = state.normalCollection;
+  const shiny  = state.shinyCollection;
+  const points = state.points;
+  const playerXp = state.playerXp ?? 0;
+  const totalPlayTimeMs = state.stats?.totalPlayTimeMs ?? 0;
 
-  const earnedBadges = BADGES.filter(b => state.badges.includes(b.id));
+  const normalCount = Object.values(normal).filter(v => v > 0).length;
+  const shinyCount  = Object.values(shiny).filter(v  => v > 0).length;
+
+  const grade   = getPlayerGrade(playerXp);
+  const { progress, needed } = xpToNextLevel(playerXp);
+  const level   = playerLevelFromXp(playerXp);
+
+  // Favorite team from savedTeams
+  const savedTeams = state.savedTeams ?? [];
+  const favoriteTeam = savedTeams.find(t => t.id === state.favoriteTeamId);
+
+  // Sorted owned pokemon ids
+  const ownedIds = Object.entries(normal)
+    .filter(([, c]) => c > 0)
+    .map(([id]) => Number(id))
+    .sort((a, b) => {
+      const ra = RARITY_ORDER[POKEMON_BY_ID[a]?.rarity ?? 'commun'] ?? 0;
+      const rb = RARITY_ORDER[POKEMON_BY_ID[b]?.rarity ?? 'commun'] ?? 0;
+      return rb !== ra ? rb - ra : b - a;
+    });
+
+  // Team to display: favorite or top 3
+  const pokemonLevels = (state.pokemonLevels ?? {}) as Record<number, { level: number }>;
+  const teamToShow: Array<{ pokemonId: number; isShiny: boolean; level: number }> = favoriteTeam
+    ? favoriteTeam.members.slice(0, 3).map(m => ({ pokemonId: m.pokemonId, isShiny: m.isShiny ?? false, level: m.level }))
+    : ownedIds.slice(0, 9)
+        .sort((a, b) => {
+          const la = pokemonLevels[a]?.level ?? 1;
+          const lb = pokemonLevels[b]?.level ?? 1;
+          if (lb !== la) return lb - la;
+          const ra = RARITY_ORDER[POKEMON_BY_ID[a]?.rarity ?? 'commun'] ?? 0;
+          const rb = RARITY_ORDER[POKEMON_BY_ID[b]?.rarity ?? 'commun'] ?? 0;
+          return rb - ra;
+        })
+        .slice(0, 3)
+        .map(id => ({ pokemonId: id, isShiny: (shiny[id] ?? 0) > 0, level: pokemonLevels[id]?.level ?? 1 }));
+
+  const isPokelian = username.toLowerCase() === 'pokelian';
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: 'linear-gradient(180deg, #0a0a2e 0%, #1a1040 40%, #0d1f3c 100%)' }}>
+    <div className="fixed inset-0 z-50 flex flex-col bg-slate-950" style={{ height: '100dvh' }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
-        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl leading-none px-2">←</button>
-        <h2 className="text-white font-bold text-xl">Profil</h2>
-        <div className="w-10" />
+      <div className="shrink-0 px-4 py-3 border-b border-slate-700 flex items-center gap-3">
+        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-black text-lg truncate" style={{ color: isPokelian ? '#ef4444' : 'white' }}>
+              {username}
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 mt-0.5">Dresseur Katchii</p>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-xl">{grade.icon}</span>
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+            style={{ background: `${grade.color}22`, color: grade.color, border: `1px solid ${grade.color}44` }}>
+            {grade.grade}
+          </span>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-700 shrink-0">
-        {(['profil', 'stats'] as Tab[]).map((t) => (
+      <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-5 pb-10">
+
+        {/* ── Favorite team (big sprites) ── */}
+        <div className="flex justify-center gap-4">
+          {teamToShow.length === 0 ? (
+            <div className="text-slate-600 text-sm py-6">Aucun Pokémon capturé</div>
+          ) : teamToShow.map((m, i) => {
+            const p = POKEMON_BY_ID[m.pokemonId];
+            if (!p) return null;
+            return (
+              <div key={i} className="flex flex-col items-center gap-1">
+                <ShinySprite pokemonId={m.pokemonId} isShiny={m.isShiny} width={88} height={88}
+                  style={{ filter: `drop-shadow(0 0 8px ${RARITY_COLORS[p.rarity]})` }} />
+                <span className="text-white font-bold text-xs">{p.name}</span>
+                <span className="text-slate-400 text-xs">Nv.{m.level}</span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Collection (collapsible) ── */}
+        <div>
           <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 py-3 text-sm font-bold transition-colors ${
-              tab === t ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-slate-400 hover:text-slate-200'
-            }`}
+            className="w-full flex items-center justify-between py-2 px-3 rounded-xl bg-slate-800/60 border border-slate-700/40"
+            onClick={() => setCollectionOpen(o => !o)}
           >
-            {t === 'profil' ? '👤 Profil' : '📊 Stats'}
+            <span className="text-slate-300 font-bold text-sm">📚 Collection ({normalCount}/151)</span>
+            <span className="text-slate-400 text-sm">{collectionOpen ? '▲' : '▼'}</span>
           </button>
-        ))}
-      </div>
-
-      <div className="flex-1 overflow-y-auto px-4 py-6">
-        {tab === 'profil' && (
-          <div className="flex flex-col items-center gap-6">
-            {/* Avatar */}
-            <div
-              className="w-24 h-24 rounded-full flex items-center justify-center text-4xl font-black"
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-                boxShadow: '0 0 30px rgba(245,158,11,0.4)',
-              }}
-            >
-              {username.charAt(0).toUpperCase()}
-            </div>
-
-            {/* Username */}
-            <div className="text-center">
-              <h2 className="text-white font-black text-2xl">{username}</h2>
-              <p className="text-slate-400 text-sm">Dresseur Katchii</p>
-            </div>
-
-            {/* Stats row */}
-            <div className="grid grid-cols-3 gap-3 w-full max-w-sm">
-              <div className="bg-slate-800/60 rounded-xl p-3 text-center border border-slate-700/40">
-                <div className="text-yellow-400 font-black text-xl">🪙 {state.points.toLocaleString()}</div>
-                <div className="text-slate-400 text-xs">PokéCoins</div>
-              </div>
-              <div className="bg-slate-800/60 rounded-xl p-3 text-center border border-slate-700/40">
-                <div className="text-blue-400 font-black text-xl">{totalCaught}</div>
-                <div className="text-slate-400 text-xs">Capturés</div>
-              </div>
-              <div className="bg-slate-800/60 rounded-xl p-3 text-center border border-slate-700/40">
-                <div className="text-purple-400 font-black text-xl">{totalShinyCaught}</div>
-                <div className="text-slate-400 text-xs">Shinies</div>
-              </div>
-            </div>
-
-            {/* PokéParc Elo */}
-            {(state.parkDuelRecord?.totalWins !== undefined || state.parkElo !== undefined) && (
-              <div className="w-full max-w-sm bg-slate-800/60 rounded-2xl border border-slate-700/40 p-4">
-                <div className="text-slate-300 font-bold text-sm mb-3">🌿 PokéParc — Duels</div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="text-center">
-                    <div className="text-yellow-400 font-black text-xl">{state.parkElo ?? 1000}</div>
-                    <div className="text-slate-400 text-xs">Elo</div>
+          {collectionOpen && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {ownedIds.length === 0 ? (
+                <div className="text-slate-600 text-sm text-center py-4 w-full">Aucun Pokémon capturé</div>
+              ) : ownedIds.map(id => {
+                const p = POKEMON_BY_ID[id];
+                const isS = (shiny[id] ?? 0) > 0;
+                const count = normal[id] ?? 0;
+                const rarityColor = p ? RARITY_COLORS[p.rarity] : '#888';
+                return p ? (
+                  <div key={id} className="flex flex-col items-center gap-0.5 rounded-xl p-1 border"
+                    style={{ borderColor: `${rarityColor}44`, background: `${rarityColor}08`, minWidth: 54 }}>
+                    <ShinySprite pokemonId={id} isShiny={isS} width={48} height={48}
+                      style={{ filter: `drop-shadow(0 0 4px ${rarityColor})` }} />
+                    <span className="text-slate-300 font-bold" style={{ fontSize: '0.55rem' }}>{p.name}</span>
+                    {count > 1 && <span className="text-slate-500" style={{ fontSize: '0.5rem' }}>×{count}</span>}
                   </div>
-                  <div className="text-center">
-                    <div className="text-green-400 font-black text-xl">{state.parkDuelRecord?.totalWins ?? 0}</div>
-                    <div className="text-slate-400 text-xs">Victoires</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-red-400 font-black text-xl">{state.parkDuelRecord?.totalLosses ?? 0}</div>
-                    <div className="text-slate-400 text-xs">Défaites</div>
-                  </div>
-                </div>
-              </div>
-            )}
+                ) : null;
+              })}
+            </div>
+          )}
+        </div>
 
-            {/* Succès section */}
-            {earnedBadges.length > 0 && (
-              <div className="w-full max-w-sm">
-                <h3 className="text-slate-300 font-bold text-sm mb-3">Succès obtenus ({badgesEarned}/{totalBadges})</h3>
-                <div className="flex flex-wrap gap-2">
-                  {earnedBadges.map(badge => (
-                    <div
-                      key={badge.id}
-                      className="bg-yellow-900/30 border border-yellow-500/40 rounded-xl px-3 py-2 flex items-center gap-2"
-                      title={badge.desc}
-                    >
-                      <span className="text-lg">{badge.icon}</span>
-                      <span className="text-yellow-300 text-xs font-bold">{badge.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Logout */}
-            <button
-              onClick={onLogout}
-              className="text-red-400 hover:text-red-300 border border-red-500/30 rounded-xl px-6 py-2 text-sm transition-colors mt-4"
-            >
-              Se déconnecter
-            </button>
+        {/* ── Level ── */}
+        <div className="bg-slate-800/60 rounded-2xl p-4 border border-slate-700/40">
+          <div className="flex items-center justify-between mb-2">
+            <span className="font-bold text-sm" style={{ color: grade.color }}>Nv. {level} — {grade.grade}</span>
+            <span className="text-xs text-slate-500">{playerXp.toLocaleString()} XP</span>
           </div>
-        )}
-
-        {tab === 'stats' && (
-          <div className="flex flex-col gap-3 max-w-sm mx-auto">
-            {[
-              { label: 'Pokémon capturés (normal)', value: totalCaught, icon: '🎯' },
-              { label: 'Shinies capturés', value: totalShinyCaught, icon: '✨' },
-              { label: 'Duels gagnés', value: state.duels.wins, icon: '⚔️' },
-              { label: 'Duels perdus', value: state.duels.losses, icon: '💔' },
-              { label: 'Meilleure streak', value: state.duels.streak, icon: '🔥' },
-              { label: 'Succès débloqués', value: `${badgesEarned}/${totalBadges}`, icon: '🏅' },
-              { label: 'PokéCoins', value: state.points.toLocaleString(), icon: '🪙' },
-              { label: 'Temps total de jeu', value: formatPlayTime(totalPlayTime), icon: '⏰' },
-            ].map(({ label, value, icon }) => (
-              <div
-                key={label}
-                className="flex items-center justify-between bg-slate-800/60 rounded-xl px-4 py-3 border border-slate-700/40"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">{icon}</span>
-                  <span className="text-slate-300 text-sm">{label}</span>
-                </div>
-                <span className="text-white font-bold">{value}</span>
-              </div>
-            ))}
+          <div className="w-full bg-slate-700 rounded-full h-2.5 overflow-hidden">
+            <div className="h-2.5 rounded-full transition-all duration-700"
+              style={{ width: `${Math.min(1, progress) * 100}%`, background: `linear-gradient(90deg, ${grade.color}88, ${grade.color})` }} />
           </div>
-        )}
+          <div className="text-right text-xs text-slate-500 mt-1">encore {needed.toLocaleString()} XP pour le prochain niveau</div>
+        </div>
+
+        {/* ── Stats ── */}
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { icon: '🪙', label: 'PokéCoins', value: points.toLocaleString(), color: '#f59e0b' },
+            { icon: '📚', label: 'Pokédex', value: `${normalCount} / 151`, color: '#3b82f6' },
+            { icon: '✨', label: 'Shinies', value: shinyCount, color: '#fde047' },
+            { icon: '⏰', label: 'Temps de jeu', value: formatPlayTime(totalPlayTimeMs), color: '#4ade80' },
+          ].map(s => (
+            <div key={s.label} className="bg-slate-800/60 rounded-2xl p-3 border border-slate-700/40 flex items-center gap-3">
+              <span className="text-2xl">{s.icon}</span>
+              <div>
+                <div className="font-black text-base leading-none" style={{ color: s.color }}>{s.value}</div>
+                <div className="text-slate-500 text-xs mt-0.5">{s.label}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Logout ── */}
+        <button
+          onClick={onLogout}
+          className="w-full py-3 rounded-2xl font-bold text-sm border border-red-500/30 text-red-400 hover:bg-red-900/20 transition-colors mt-2"
+        >
+          Se déconnecter
+        </button>
+
       </div>
     </div>
   );

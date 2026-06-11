@@ -40,6 +40,7 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
   const [loading, setLoading] = useState(true);
   const [fallbackLastSeen, setFallbackLastSeen] = useState<string | undefined>(undefined);
   const effectiveLastSeen = lastSeen ?? fallbackLastSeen;
+  const [collectionOpen, setCollectionOpen] = useState(false);
 
   useEffect(() => {
     supabase.from('game_saves').select('state, updated_at').eq('user_id', userId).single()
@@ -153,41 +154,46 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
           {/* ── 3v3 challenge button ── */}
           {onBattle3v3 && teamToShow.length >= 1 && (
             <button
-              onClick={() => {
-                onBattle3v3(
-                  teamToShow.map(m => ({ pokemonId: m.pokemonId, level: m.level, isShiny: m.isShiny })),
-                  username
-                );
-              }}
-              className="w-full py-3.5 rounded-2xl font-black text-base"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)', color: 'white', boxShadow: '0 0 20px #a855f744' }}
+              onClick={() => onBattle3v3(teamToShow.map(m => ({ pokemonId: m.pokemonId, level: m.level, isShiny: m.isShiny })), username)}
+              className="w-full py-2 rounded-xl font-black text-sm"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)', color: 'white', boxShadow: '0 0 12px #a855f733' }}
             >
               ⚔️ Défier en 3v3
             </button>
           )}
 
-          {/* ── Collection ── */}
+          {/* ── Collection (collapsible) ── */}
           <div>
-            <div className="text-slate-300 font-bold text-sm mb-3">📚 Collection ({normalCount}/151)</div>
-            {ownedIds.length === 0 ? (
-              <div className="text-slate-600 text-sm text-center py-4">Aucun Pokémon capturé</div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {ownedIds.map(id => {
-                  const p = POKEMON_BY_ID[id];
-                  const isS = (shiny[id] ?? 0) > 0;
-                  const count = normal[id] ?? 0;
-                  const rarityColor = p ? RARITY_COLORS[p.rarity] : '#888';
-                  return p ? (
-                    <div key={id} className="flex flex-col items-center gap-0.5 rounded-xl p-1 border"
-                      style={{ borderColor: `${rarityColor}44`, background: `${rarityColor}08`, minWidth: 54 }}>
-                      <ShinySprite pokemonId={id} isShiny={isS} width={48} height={48}
-                        style={{ filter: `drop-shadow(0 0 4px ${rarityColor})` }} />
-                      <span className="text-slate-300 font-bold" style={{ fontSize: '0.55rem' }}>{p.name}</span>
-                      {count > 1 && <span className="text-slate-500" style={{ fontSize: '0.5rem' }}>×{count}</span>}
-                    </div>
-                  ) : null;
-                })}
+            <button
+              className="w-full flex items-center justify-between py-2 px-3 rounded-xl bg-slate-800/60 border border-slate-700/40"
+              onClick={() => setCollectionOpen(o => !o)}
+            >
+              <span className="text-slate-300 font-bold text-sm">📚 Collection ({normalCount}/151)</span>
+              <span className="text-slate-400 text-sm">{collectionOpen ? '▲' : '▼'}</span>
+            </button>
+            {collectionOpen && (
+              <div className="mt-2">
+                {ownedIds.length === 0 ? (
+                  <div className="text-slate-600 text-sm text-center py-4">Aucun Pokémon capturé</div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {ownedIds.map(id => {
+                      const p = POKEMON_BY_ID[id];
+                      const isS = (shiny[id] ?? 0) > 0;
+                      const count = normal[id] ?? 0;
+                      const rarityColor = p ? RARITY_COLORS[p.rarity] : '#888';
+                      return p ? (
+                        <div key={id} className="flex flex-col items-center gap-0.5 rounded-xl p-1 border"
+                          style={{ borderColor: `${rarityColor}44`, background: `${rarityColor}08`, minWidth: 54 }}>
+                          <ShinySprite pokemonId={id} isShiny={isS} width={48} height={48}
+                            style={{ filter: `drop-shadow(0 0 4px ${rarityColor})` }} />
+                          <span className="text-slate-300 font-bold" style={{ fontSize: '0.55rem' }}>{p.name}</span>
+                          {count > 1 && <span className="text-slate-500" style={{ fontSize: '0.5rem' }}>×{count}</span>}
+                        </div>
+                      ) : null;
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
