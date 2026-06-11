@@ -121,12 +121,12 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         const { pts, level: pokemonLevel } = gameState.addCapture(pokemonId, isShiny, pokemon.rarity);
         const totalCaught = Object.values(gameState.state.normalCollection as Record<number,number>).filter(v => v > 0).length + Object.values(gameState.state.shinyCollection as Record<number,number>).filter(v => v > 0).length;
         const isEpic = pokemon.rarity === 'legendaire' || isShiny;
-        if (pts > 0) {
+        if (!isDoublon) {
           addNotification(`+${pts} 🪙`, x, y, true);
           addNotification('Nouveau !', x, y - 8, true);
           setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
           setTimeout(() => { if (isEpic) playSfxShinyCapture(); else playSfxCapture(); }, 700);
-        } else if (isDoublon) {
+        } else {
           addNotification(`+${pts} 🪙`, x, y, false);
           addNotification(`+${doublonXp} XP !`, x, y - 8, false);
           addNotification('Doublon !', x, y - 16, false);
