@@ -720,12 +720,25 @@ export function useGameState() {
     let success = false;
     update(prev => {
       if (prev.points < COOLDOWN_REDUCER_COST) return prev;
-      // Don't stack if already active
-      if (prev.activeCooldownBoost && Date.now() < prev.activeCooldownBoost.expiresAt) return prev;
       success = true;
       return {
         ...prev,
         points: prev.points - COOLDOWN_REDUCER_COST,
+        cooldownReducers: (prev.cooldownReducers ?? 0) + 1,
+      };
+    });
+    return success;
+  }, [update]);
+
+  const activateCooldownBoost = useCallback((): boolean => {
+    let success = false;
+    update(prev => {
+      if ((prev.cooldownReducers ?? 0) <= 0) return prev;
+      if (prev.activeCooldownBoost && Date.now() < prev.activeCooldownBoost.expiresAt) return prev;
+      success = true;
+      return {
+        ...prev,
+        cooldownReducers: (prev.cooldownReducers ?? 1) - 1,
         activeCooldownBoost: { expiresAt: Date.now() + COOLDOWN_BOOST_DURATION_MS },
       };
     });
@@ -860,6 +873,7 @@ export function useGameState() {
     activateLure,
     buyXpCandy,
     buyCooldownBoost,
+    activateCooldownBoost,
     claimQuestReward,
     updateDuels,
     addDuelResult,

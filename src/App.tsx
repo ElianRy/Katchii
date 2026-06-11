@@ -378,6 +378,7 @@ export function App() {
         <BackpackPanel
           state={gameState.state}
           onActivateLure={gameState.activateLure}
+          onActivateCooldownBoost={gameState.activateCooldownBoost}
           onClose={() => persistView('hunt')}
         />
       )}

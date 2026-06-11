@@ -32,39 +32,33 @@ const XP_CANDY_DESCS: Record<XpCandySize, string> = {
 };
 const XP_SIZES: XpCandySize[] = ['petit', 'moyen', 'grand'];
 
-function BuyButton({ canAfford, onClick, label }: { canAfford: boolean; onClick: () => void; label: string }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={!canAfford}
-      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95 shrink-0"
-      style={{
-        background: canAfford ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b',
-        color: canAfford ? '#fff' : '#475569',
-        cursor: canAfford ? 'pointer' : 'not-allowed',
-      }}
-    >
-      {label}
-    </button>
-  );
-}
+interface Toast { id: number; text: string }
 
 export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, onClose }: Props) {
-  const [flash, setFlash] = useState<string | null>(null);
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [counter, setCounter] = useState(0);
   const coins = state.points;
-  const boostActive = state.activeCooldownBoost && Date.now() < state.activeCooldownBoost.expiresAt;
+  const unlockedZones = state.zoneProgress?.unlockedZones ?? [];
+  const hasZoneLibre = unlockedZones.includes('zone_libre');
 
-  function bought(key: string) {
-    setFlash(key);
-    setTimeout(() => setFlash(null), 1200);
+  function addToast(text: string) {
+    const id = counter;
+    setCounter(c => c + 1);
+    setToasts(prev => [...prev, { id, text }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 2200);
   }
 
-  function remainingBoost() {
-    if (!state.activeCooldownBoost) return '';
-    const ms = Math.max(0, state.activeCooldownBoost.expiresAt - Date.now());
-    const m = Math.floor(ms / 60000);
-    const s = Math.floor((ms % 60000) / 1000);
-    return `${m}:${s.toString().padStart(2, '0')}`;
+  function handleBuyLure(type: LureType) {
+    onBuyLure(type);
+    addToast('🎒 Ajouté au sac à dos');
+  }
+
+  function handleBuyXpCandy(size: XpCandySize) {
+    if (onBuyXpCandy(size)) addToast('🎒 Ajouté au sac à dos');
+  }
+
+  function handleBuyCooldownBoost() {
+    if (onBuyCooldownBoost()) addToast('🎒 Ajouté au sac à dos');
   }
 
   return (
@@ -74,7 +68,7 @@ export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, 
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div className="flex-1">
           <h2 className="text-white font-black text-xl">🏪 Boutique</h2>
-          <p className="text-slate-400 text-xs">Dépense tes PokéCoins</p>
+          <p className="text-slate-400 text-xs">Les objets achetés vont dans ton sac à dos</p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
           style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)' }}>
@@ -92,25 +86,38 @@ export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, 
           <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden divide-y divide-slate-700/40">
             {LURE_TYPES.map(type => {
               const cost = LURE_COSTS[type];
-              const canAfford = coins >= cost;
+              const isLocked = type === 'legendaire' && !hasZoneLibre;
+              const canAfford = !isLocked && coins >= cost;
               const color = LURE_COLORS[type];
-              const isFlash = flash === `lure_${type}`;
               return (
-                <div key={type} className="flex items-center gap-3 px-4 py-3.5">
-                  <span className="text-2xl shrink-0">{LURE_ICONS[type]}</span>
+                <div key={type} className="flex items-center gap-3 px-4 py-3.5"
+                  style={{ opacity: isLocked ? 0.55 : 1 }}>
+                  <span className="text-2xl shrink-0">{isLocked ? '🔒' : LURE_ICONS[type]}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="text-white font-semibold text-sm">{LURE_LABELS[type]}</div>
+                    <div className="text-white font-semibold text-sm flex items-center gap-2">
+                      {LURE_LABELS[type]}
+                      {isLocked && (
+                        <span className="text-slate-500 text-xs font-normal">— Zone Libre requise</span>
+                      )}
+                    </div>
                     <div className="text-slate-400 text-xs mt-0.5">{LURE_DESCS[type]}</div>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className="text-xs font-bold" style={{ color }}>
-                      {isFlash ? '✅ Acheté !' : `🪙 ${cost}`}
+                    <span className="text-xs font-bold" style={{ color: isLocked ? '#475569' : color }}>
+                      🪙 {cost}
                     </span>
-                    <BuyButton
-                      canAfford={canAfford}
-                      label="Acheter"
-                      onClick={() => { onBuyLure(type); bought(`lure_${type}`); }}
-                    />
+                    <button
+                      onClick={() => !isLocked && canAfford && handleBuyLure(type)}
+                      disabled={isLocked || !canAfford}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                      style={{
+                        background: (isLocked || !canAfford) ? '#1e293b' : 'linear-gradient(135deg,#f59e0b,#ef7c00)',
+                        color: (isLocked || !canAfford) ? '#475569' : '#fff',
+                        cursor: (isLocked || !canAfford) ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {isLocked ? 'Verrouillé' : 'Acheter'}
+                    </button>
                   </div>
                 </div>
               );
@@ -125,7 +132,6 @@ export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, 
             {XP_SIZES.map(size => {
               const cost = XP_CANDY_COSTS[size];
               const canAfford = coins >= cost;
-              const isFlash = flash === `candy_${size}`;
               return (
                 <div key={size} className="flex items-center gap-3 px-4 py-3.5">
                   <span className="text-2xl shrink-0">{XP_CANDY_ICONS[size]}</span>
@@ -134,14 +140,19 @@ export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, 
                     <div className="text-slate-400 text-xs mt-0.5">{XP_CANDY_DESCS[size]}</div>
                   </div>
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className="text-xs font-bold text-green-400">
-                      {isFlash ? '✅ Acheté !' : `🪙 ${cost}`}
-                    </span>
-                    <BuyButton
-                      canAfford={canAfford}
-                      label="Acheter"
-                      onClick={() => { if (onBuyXpCandy(size)) bought(`candy_${size}`); }}
-                    />
+                    <span className="text-xs font-bold text-green-400">🪙 {cost}</span>
+                    <button
+                      onClick={() => handleBuyXpCandy(size)}
+                      disabled={!canAfford}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                      style={{
+                        background: canAfford ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b',
+                        color: canAfford ? '#fff' : '#475569',
+                        cursor: canAfford ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      Acheter
+                    </button>
                   </div>
                 </div>
               );
@@ -149,7 +160,7 @@ export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, 
           </div>
         </section>
 
-        {/* Cooldown reducer */}
+        {/* Boosts */}
         <section>
           <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">⚡ Boosts</h3>
           <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden">
@@ -157,23 +168,22 @@ export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, 
               <span className="text-2xl shrink-0">⏱️</span>
               <div className="flex-1 min-w-0">
                 <div className="text-white font-semibold text-sm">Réducteur de cooldown</div>
-                <div className="text-slate-400 text-xs mt-0.5">
-                  {boostActive
-                    ? `Actif — expire dans ${remainingBoost()}`
-                    : 'Cooldown réduit à 10 sec pendant 10 min'}
-                </div>
+                <div className="text-slate-400 text-xs mt-0.5">Cooldown réduit à 10 sec pendant 10 min</div>
               </div>
               <div className="flex flex-col items-end gap-1 shrink-0">
-                <span className="text-xs font-bold text-cyan-400">
-                  {flash === 'boost' ? '✅ Activé !' : boostActive ? '⚡ Actif' : `🪙 ${COOLDOWN_REDUCER_COST}`}
-                </span>
-                {!boostActive && (
-                  <BuyButton
-                    canAfford={coins >= COOLDOWN_REDUCER_COST}
-                    label="Activer"
-                    onClick={() => { if (onBuyCooldownBoost()) bought('boost'); }}
-                  />
-                )}
+                <span className="text-xs font-bold text-cyan-400">🪙 {COOLDOWN_REDUCER_COST}</span>
+                <button
+                  onClick={handleBuyCooldownBoost}
+                  disabled={coins < COOLDOWN_REDUCER_COST}
+                  className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                  style={{
+                    background: coins >= COOLDOWN_REDUCER_COST ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b',
+                    color: coins >= COOLDOWN_REDUCER_COST ? '#fff' : '#475569',
+                    cursor: coins >= COOLDOWN_REDUCER_COST ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  Acheter
+                </button>
               </div>
             </div>
           </div>
@@ -184,12 +194,12 @@ export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, 
           <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🪙 Comment gagner des PokéCoins</h3>
           <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 divide-y divide-slate-700/30">
             {[
-              ['Capture (nouveau)', 'Varie selon la rareté', '15 – 250 🪙'],
-              ['Capture (doublon)', 'Moins, mais ça compte', '5 – 75 🪙'],
-              ['Capture Shiny', 'Multiplicateur ×3 sur la rareté', '45 – 750 🪙'],
-              ['Victoire entraînement', 'Chaque combat remporté', '+10 🪙'],
-              ['Boss d\'arène vaincu', 'Victoire contre un champion', '+80 🪙'],
-              ['Raid', 'Récompenses proportionnelles aux dégâts', 'Variable'],
+              ['Capture (nouveau)',    'Varie selon la rareté', '15 – 250 🪙'],
+              ['Capture (doublon)',    'Moins, mais ça compte',  '5 – 75 🪙'],
+              ['Capture Shiny',        'Multiplicateur ×3',     '45 – 750 🪙'],
+              ['Entraînement gagné',   'Chaque combat remporté', '+10 🪙'],
+              ['Boss d\'arène vaincu', 'Victoire en zone',       '+80 🪙'],
+              ['Raid',                 'Proportionnel aux dégâts','Variable'],
             ].map(([action, desc, amount]) => (
               <div key={action} className="flex items-center gap-3 px-4 py-2.5">
                 <div className="flex-1 min-w-0">
@@ -202,6 +212,27 @@ export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, 
           </div>
         </section>
       </div>
+
+      {/* Toast stack */}
+      <div className="fixed left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 pointer-events-none"
+        style={{ bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))', zIndex: 600 }}>
+        {toasts.map(t => (
+          <div key={t.id}
+            className="bg-slate-800 border border-slate-600 text-white text-sm font-bold px-4 py-2.5 rounded-full shadow-xl"
+            style={{ animation: 'toast-up 2.2s ease forwards' }}>
+            {t.text}
+          </div>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes toast-up {
+          0%   { opacity: 0; transform: translateY(12px); }
+          15%  { opacity: 1; transform: translateY(0); }
+          70%  { opacity: 1; transform: translateY(0); }
+          100% { opacity: 0; transform: translateY(-8px); }
+        }
+      `}</style>
     </div>
   );
 }

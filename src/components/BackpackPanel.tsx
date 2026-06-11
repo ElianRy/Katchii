@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GameState, LureType, LURE_LABELS, XpCandySize } from '../types';
 
 interface Props {
   state: GameState;
   onActivateLure: (type: LureType) => void;
+  onActivateCooldownBoost: () => boolean;
   onClose: () => void;
 }
 
@@ -13,59 +14,48 @@ const LURE_DESCRIPTIONS: Record<LureType, string> = {
   legendaire: 'Augmente les apparitions Légendaires ×4 pendant 10 min',
   shiny:      'Augmente le taux Shiny ×4 pendant 10 min',
 };
-
-const LURE_ICONS: Record<LureType, string> = {
-  rare: '💎', epique: '🔮', legendaire: '⚡', shiny: '✨',
-};
-
+const LURE_ICONS: Record<LureType, string> = { rare: '💎', epique: '🔮', legendaire: '⚡', shiny: '✨' };
 const LURE_COLORS: Record<LureType, string> = {
-  rare:       '#3b82f6',
-  epique:     '#a855f7',
-  legendaire: '#f59e0b',
-  shiny:      '#ec4899',
+  rare: '#3b82f6', epique: '#a855f7', legendaire: '#f59e0b', shiny: '#ec4899',
 };
-
 const LURE_TYPES: LureType[] = ['rare', 'epique', 'legendaire', 'shiny'];
 
 const XP_CANDY_LABELS: Record<XpCandySize, string> = {
-  petit: 'Bonbon XP Petit',
-  moyen: 'Bonbon XP Moyen',
-  grand: 'Bonbon XP Grand',
+  petit: 'Bonbon XP Petit', moyen: 'Bonbon XP Moyen', grand: 'Bonbon XP Grand',
 };
-
-const XP_CANDY_ICONS: Record<XpCandySize, string> = {
-  petit: '🍬', moyen: '🍭', grand: '🍫',
-};
-
+const XP_CANDY_ICONS: Record<XpCandySize, string> = { petit: '🍬', moyen: '🍭', grand: '🍫' };
 const XP_CANDY_DESCRIPTIONS: Record<XpCandySize, string> = {
   petit: 'Donne 500 XP à un Pokémon de ton choix',
   moyen: 'Donne 2 000 XP à un Pokémon de ton choix',
   grand: 'Donne 10 000 XP à un Pokémon de ton choix',
 };
-
 const XP_CANDY_SIZES: XpCandySize[] = ['petit', 'moyen', 'grand'];
 
-function formatLureRemaining(expiresAt: number): string {
+function formatRemaining(expiresAt: number): string {
   const ms = Math.max(0, expiresAt - Date.now());
-  const totalSec = Math.ceil(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function BackpackPanel({ state, onActivateLure, onClose }: Props) {
-  const [tick, setTick] = useState(0);
-  const isLureActive = state.activeLure && Date.now() < state.activeLure.expiresAt;
+export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, onClose }: Props) {
+  const [, setTick] = useState(0);
 
-  // Refresh timer display every second when lure is active
-  useState(() => {
-    if (!isLureActive) return;
+  // Refresh timers every second
+  useEffect(() => {
+    const hasActive = (state.activeLure && Date.now() < state.activeLure.expiresAt) ||
+                      (state.activeCooldownBoost && Date.now() < state.activeCooldownBoost.expiresAt);
+    if (!hasActive) return;
     const id = setInterval(() => setTick(t => t + 1), 1000);
     return () => clearInterval(id);
   });
 
+  const isLureActive = !!(state.activeLure && Date.now() < state.activeLure.expiresAt);
+  const isBoostActive = !!(state.activeCooldownBoost && Date.now() < state.activeCooldownBoost.expiresAt);
+
   const totalLures = LURE_TYPES.reduce((s, t) => s + (state.lures[t] ?? 0), 0);
   const totalCandies = XP_CANDY_SIZES.reduce((s, t) => s + (state.xpCandies?.[t] ?? 0), 0);
+  const totalBoosts = state.cooldownReducers ?? 0;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col" style={{ height: '100dvh' }}>
@@ -74,26 +64,42 @@ export function BackpackPanel({ state, onActivateLure, onClose }: Props) {
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div>
           <h2 className="text-white font-black text-xl">🎒 Sac à dos</h2>
-          <p className="text-slate-400 text-xs">{totalLures} leurre{totalLures !== 1 ? 's' : ''} · {totalCandies} bonbon{totalCandies !== 1 ? 's' : ''}</p>
+          <p className="text-slate-400 text-xs">
+            {totalLures} leurre{totalLures !== 1 ? 's' : ''} · {totalCandies} bonbon{totalCandies !== 1 ? 's' : ''} · {totalBoosts} boost{totalBoosts !== 1 ? 's' : ''}
+          </p>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-5 flex flex-col gap-6"
         style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px) + 1.25rem)' }}>
 
-        {/* Active lure banner */}
-        {isLureActive && state.activeLure && (
-          <div className="rounded-xl border border-yellow-500/40 bg-yellow-900/20 px-4 py-3 flex items-center gap-3">
-            <span className="text-2xl">{LURE_ICONS[state.activeLure.type]}</span>
-            <div className="flex-1">
-              <div className="text-yellow-300 font-bold text-sm">{LURE_LABELS[state.activeLure.type]} actif</div>
-              <div className="text-yellow-500 text-xs">{formatLureRemaining(state.activeLure.expiresAt)} restant{void tick}</div>
-            </div>
-            <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+        {/* Active items banner */}
+        {(isLureActive || isBoostActive) && (
+          <div className="flex flex-col gap-2">
+            {isLureActive && state.activeLure && (
+              <div className="rounded-xl border border-yellow-500/40 bg-yellow-900/20 px-4 py-3 flex items-center gap-3">
+                <span className="text-2xl">{LURE_ICONS[state.activeLure.type]}</span>
+                <div className="flex-1">
+                  <div className="text-yellow-300 font-bold text-sm">{LURE_LABELS[state.activeLure.type]} actif</div>
+                  <div className="text-yellow-500 text-xs">{formatRemaining(state.activeLure.expiresAt)} restant</div>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+              </div>
+            )}
+            {isBoostActive && state.activeCooldownBoost && (
+              <div className="rounded-xl border border-cyan-500/40 bg-cyan-900/20 px-4 py-3 flex items-center gap-3">
+                <span className="text-2xl">⏱️</span>
+                <div className="flex-1">
+                  <div className="text-cyan-300 font-bold text-sm">Réducteur de cooldown actif</div>
+                  <div className="text-cyan-500 text-xs">{formatRemaining(state.activeCooldownBoost.expiresAt)} restant</div>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              </div>
+            )}
           </div>
         )}
 
-        {/* Lures section */}
+        {/* Lures */}
         <section>
           <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🎣 Leurres</h3>
           <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden divide-y divide-slate-700/40">
@@ -122,8 +128,9 @@ export function BackpackPanel({ state, onActivateLure, onClose }: Props) {
                         Activer
                       </button>
                     )}
-                    {isThisActive && (
-                      <span className="text-xs text-yellow-400 font-bold">Actif ✓</span>
+                    {isThisActive && <span className="text-xs text-yellow-400 font-bold">Actif ✓</span>}
+                    {isLureActive && !isThisActive && count > 0 && (
+                      <span className="text-xs text-slate-500">Un leurre est déjà actif</span>
                     )}
                   </div>
                 </div>
@@ -131,11 +138,44 @@ export function BackpackPanel({ state, onActivateLure, onClose }: Props) {
             })}
           </div>
           {totalLures === 0 && (
-            <p className="text-slate-500 text-xs text-center mt-2">Aucun leurre en stock — achetez-en depuis le menu Leurres</p>
+            <p className="text-slate-500 text-xs text-center mt-2">Aucun leurre — achète-en dans la Boutique 🏪</p>
           )}
         </section>
 
-        {/* XP Candies section */}
+        {/* Cooldown reducers */}
+        <section>
+          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">⏱️ Réducteurs de cooldown</h3>
+          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3.5">
+              <span className="text-2xl shrink-0">⏱️</span>
+              <div className="flex-1 min-w-0">
+                <div className="text-white font-semibold text-sm">Réducteur de cooldown</div>
+                <div className="text-slate-400 text-xs mt-0.5">Cooldown réduit à 10 sec pendant 10 min</div>
+              </div>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ color: '#22d3ee', background: '#22d3ee22', border: '1px solid #22d3ee44' }}>
+                  ×{totalBoosts}
+                </span>
+                {totalBoosts > 0 && !isBoostActive && (
+                  <button
+                    onClick={() => onActivateCooldownBoost()}
+                    className="text-xs font-bold px-3 py-1 rounded-lg transition-all active:scale-95"
+                    style={{ background: '#22d3ee33', color: '#22d3ee', border: '1px solid #22d3ee66' }}
+                  >
+                    Activer
+                  </button>
+                )}
+                {isBoostActive && <span className="text-xs text-cyan-400 font-bold">Actif ✓</span>}
+              </div>
+            </div>
+          </div>
+          {totalBoosts === 0 && (
+            <p className="text-slate-500 text-xs text-center mt-2">Aucun boost — achète-en dans la Boutique 🏪</p>
+          )}
+        </section>
+
+        {/* XP Candies */}
         <section>
           <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🍬 Bonbons XP</h3>
           <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden divide-y divide-slate-700/40">
@@ -155,12 +195,11 @@ export function BackpackPanel({ state, onActivateLure, onClose }: Props) {
                     </span>
                     {count > 0 && (
                       <button
-                        className="text-xs font-bold px-3 py-1 rounded-lg transition-all active:scale-95"
-                        style={{ background: '#4ade8033', color: '#4ade80', border: '1px solid #4ade8066' }}
+                        className="text-xs font-bold px-3 py-1 rounded-lg"
+                        style={{ background: '#1e293b', color: '#475569', cursor: 'not-allowed' }}
                         disabled
-                        title="Bientôt disponible"
                       >
-                        Utiliser
+                        Bientôt
                       </button>
                     )}
                   </div>
@@ -169,7 +208,7 @@ export function BackpackPanel({ state, onActivateLure, onClose }: Props) {
             })}
           </div>
           {totalCandies === 0 && (
-            <p className="text-slate-500 text-xs text-center mt-2">Aucun bonbon XP — gagnez-en lors des raids !</p>
+            <p className="text-slate-500 text-xs text-center mt-2">Aucun bonbon — gagne-en lors des raids !</p>
           )}
         </section>
 

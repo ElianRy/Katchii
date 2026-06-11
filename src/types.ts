@@ -62,8 +62,9 @@ export interface GameState {
   shinyCollection: Record<number, number>;  // pokemonId -> times caught shiny
   fragments: Record<number, number>;        // pokemonId -> available fragments (dupes beyond 1st)
   lures: Record<LureType, number>;          // inventory count
-  xpCandies?: Record<XpCandySize, number>; // xp candy inventory
-  activeCooldownBoost?: { expiresAt: number }; // cooldown reducer active
+  xpCandies?: Record<XpCandySize, number>;     // xp candy inventory
+  cooldownReducers?: number;                    // cooldown reducer stock
+  activeCooldownBoost?: { expiresAt: number };  // cooldown reducer active
   activeLure: { type: LureType; expiresAt: number } | null;
   globalCooldownUntil: number | null;       // timestamp ms
   shinyDepleted: number[];                  // pokemonIds caught as shiny
