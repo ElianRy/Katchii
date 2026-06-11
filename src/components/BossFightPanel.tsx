@@ -23,7 +23,7 @@ const BOSS_TRAINER: Record<string, {
     ],
   },
   zone2: {
-    name: 'Ondine', title: "Maîtresse d'Arène des Bords de Mer", image: '/trainers/ondine.png', color: '#38bdf8',
+    name: 'Ondine', title: "Maîtresse d'Arène des Bords de Mer", image: '/trainers/ondine2.png', color: '#38bdf8',
     dialogues: [
       "L'eau est mon domaine, intrus.",
       "Mes Pokémon nagent depuis leur naissance.",
