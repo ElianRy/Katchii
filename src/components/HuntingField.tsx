@@ -30,6 +30,7 @@ import { LeagueChallengeScreen } from './LeagueChallengeScreen';
 interface Notification {
   id: number;
   text: string;
+  lines?: string[]; // multi-line grouped notification
   x: number;
   y: number;
   isNew: boolean;
@@ -96,6 +97,14 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
     }, 1500);
   }, []);
 
+  const addGroupedNotification = useCallback((lines: string[], x: number, y: number, isNew: boolean) => {
+    const id = notifCounter++;
+    setNotifications((prev) => [...prev, { id, text: lines[0], lines, x, y, isNew }]);
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }, 1800);
+  }, []);
+
   const handleCapture = useCallback(
     (uid: string, pokemonId: number, _characterId: string | undefined, isShiny: boolean, x: number, y: number) => {
       if (capturingRef.current) return; // LOCK: only one capture at a time
@@ -127,9 +136,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
           setTimeout(() => { if (isEpic) playSfxShinyCapture(); else playSfxCapture(); }, 700);
         } else {
-          addNotification(`+${pts} 🪙`, x, y, false);
-          addNotification(`+${doublonXp} XP !`, x, y - 8, false);
-          addNotification('Doublon !', x, y - 16, false);
+          addGroupedNotification(['Doublon !', `+${doublonXp} XP !`, `+${pts} 🪙`], x, y, false);
           if (isEpic) {
             setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
             setTimeout(() => playSfxShinyCapture(), 700);
@@ -334,7 +341,11 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
             whiteSpace: 'nowrap',
           }}
         >
-          {n.text}
+          {n.lines ? (
+            <div className="flex flex-col items-center" style={{ gap: 2 }}>
+              {n.lines.map((line, i) => <div key={i}>{line}</div>)}
+            </div>
+          ) : n.text}
         </div>
       ))}
 
