@@ -119,7 +119,7 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-white font-bold text-sm">Pokémon disponibles dans cette zone</h3>
             {(() => {
-              const RATES = [250, 217, 185, 156];
+              const RATES = [750, 651, 555, 468];
               const achCount = Math.min((state.achievementsCompleted ?? []).length, 3);
               const pct = (1 / RATES[achCount] * 100).toFixed(2);
               return (
