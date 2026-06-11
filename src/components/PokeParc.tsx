@@ -552,7 +552,7 @@ function ParkDuelBattle({
               </span>
             </div>
           </div>
-          <button onClick={() => { stopMusic(0.4); setTimeout(() => playZoneMusic(currentZoneId ?? 'zone1'), 500); onClose(); }} className="w-full py-2 rounded-xl bg-slate-600 text-white font-black text-sm">Fermer</button>
+          <button onClick={() => { stopMusic(0); playZoneMusic(currentZoneId ?? 'zone1'); onClose(); }} className="w-full py-2 rounded-xl bg-slate-600 text-white font-black text-sm">Fermer</button>
         </div>
       </div>
     );
