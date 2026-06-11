@@ -165,6 +165,12 @@ export function useGameState() {
           return;
         }
         // Cloud has the authoritative state — always use it.
+        // Check ban flag before loading
+        if ((cloudState as unknown as Record<string, unknown>).banned === true) {
+          loadingForRef.current = null;
+          supabase.auth.signOut();
+          return;
+        }
         const stamped = username ? { ...cloudState, username } : cloudState;
         latestStateRef.current = stamped;
         isReadyToSaveRef.current = true;
