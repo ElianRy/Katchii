@@ -40,6 +40,7 @@ let _ctx: AudioContext | null = null;
 let _masterGain: GainNode | null = null;
 let _musicGain: GainNode | null = null;
 let _sfxGain: GainNode | null = null;
+let _victoryAudio: HTMLAudioElement | null = null;
 
 function getCtx(): AudioContext {
   if (!_ctx) {
@@ -120,6 +121,8 @@ export function playMusic(src: string) {
 
 export function stopMusic(fadeSec = 1) {
   if (currentFadeInId !== null) { clearInterval(currentFadeInId); currentFadeInId = null; }
+  // Stop any victory track that may still be playing
+  if (_victoryAudio) { _victoryAudio.pause(); _victoryAudio.src = ''; _victoryAudio = null; }
   if (!currentMusic) return;
 
   const audio    = currentMusic;
@@ -263,9 +266,13 @@ export function playCatchPoke()        { playSfxFile('catch_poke', 2.0); }
 function playVictoryTrack(name: string) {
   const s = loadAudioSettings();
   if (!s.music) return;
+  // Stop any previous victory track
+  if (_victoryAudio) { _victoryAudio.pause(); _victoryAudio.src = ''; _victoryAudio = null; }
   const audio = new Audio(`${BASE_URL}/${name}.mp3`);
   audio.crossOrigin = 'anonymous';
   audio.loop = false;
+  _victoryAudio = audio;
+  audio.addEventListener('ended', () => { if (_victoryAudio === audio) _victoryAudio = null; });
   try {
     const c = getCtx();
     const source = c.createMediaElementSource(audio);
