@@ -41,6 +41,11 @@ export function App() {
   const [previousView, setPreviousView] = useState<View>('home');
   const [battle3v3, setBattle3v3] = useState<{ playerTeam: TeamMember[]; enemyTeam: TeamMember[]; enemyName: string; onDone?: (dmg: number, won: boolean) => void } | null>(null);
   const [openingCase, setOpeningCase] = useState(false);
+  const [forcePwChange, setForcePwChange] = useState<{ tempPw: string } | null>(null);
+  const [forcePwInput, setForcePwInput] = useState('');
+  const [forcePwConfirm, setForcePwConfirm] = useState('');
+  const [forcePwError, setForcePwError] = useState('');
+  const [forcePwLoading, setForcePwLoading] = useState(false);
   const prevViewRef = useRef<View>('auth');
   const gameState = useGameState();
 
@@ -80,6 +85,13 @@ export function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Detect forced password change flag set by admin
+  useEffect(() => {
+    const fpw = gameState.state.forcePasswordChange;
+    if (fpw && view !== 'auth') setForcePwChange({ tempPw: fpw });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.state.forcePasswordChange, view]);
 
   // Home/menu music + zone music when entering hunt
   useEffect(() => {
@@ -446,6 +458,52 @@ export function App() {
             }
           }}
         />
+      )}
+
+      {/* Forced password change modal (set by admin) */}
+      {forcePwChange && (
+        <div className="fixed inset-0 z-[900] flex items-center justify-center bg-black/90 px-4">
+          <div className="w-full max-w-xs bg-slate-900 border-2 border-blue-500/60 rounded-2xl p-6 shadow-2xl">
+            <div className="text-3xl text-center mb-2">🔑</div>
+            <h2 className="text-white font-black text-lg text-center mb-1">Changement de mot de passe requis</h2>
+            <p className="text-slate-400 text-xs text-center mb-4">Un administrateur a réinitialisé ton mot de passe. Tu dois en choisir un nouveau pour continuer.</p>
+            <div className="flex flex-col gap-3">
+              <input
+                type="password"
+                placeholder="Nouveau mot de passe (min. 6 caractères)"
+                value={forcePwInput}
+                onChange={e => { setForcePwInput(e.target.value); setForcePwError(''); }}
+                className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+              />
+              <input
+                type="password"
+                placeholder="Confirmer le mot de passe"
+                value={forcePwConfirm}
+                onChange={e => { setForcePwConfirm(e.target.value); setForcePwError(''); }}
+                className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+              />
+              {forcePwError && <p className="text-red-400 text-xs text-center">{forcePwError}</p>}
+              <button
+                disabled={forcePwLoading}
+                onClick={async () => {
+                  if (forcePwInput.length < 6) { setForcePwError('Le mot de passe doit faire au moins 6 caractères.'); return; }
+                  if (forcePwInput !== forcePwConfirm) { setForcePwError('Les mots de passe ne correspondent pas.'); return; }
+                  setForcePwLoading(true);
+                  const { error } = await supabase.auth.updateUser({ password: forcePwInput });
+                  if (error) { setForcePwError('Erreur : ' + error.message); setForcePwLoading(false); return; }
+                  gameState.clearForcePasswordChange?.();
+                  setForcePwChange(null);
+                  setForcePwInput('');
+                  setForcePwConfirm('');
+                  setForcePwLoading(false);
+                }}
+                className="w-full py-3 rounded-xl font-black text-sm text-white transition-all active:scale-95 disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg,#3b82f6,#2563eb)' }}>
+                {forcePwLoading ? 'Mise à jour…' : 'Valider le nouveau mot de passe'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Welcome animation — first session only */}

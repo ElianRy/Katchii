@@ -690,6 +690,9 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [mutedUsers, setMutedUsers] = useState<Map<string, number | null>>(loadMuted);
   const adminChanRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const [muteMenuFor, setMuteMenuFor] = useState<string | null>(null);
+  const myUserIdRef = useRef<string | null>(null);
+  const [muteNotif, setMuteNotif] = useState<{ type: 'muted' | 'unmuted'; expiry: number | null } | null>(null);
+  const [mutedBlockPopup, setMutedBlockPopup] = useState<{ expiry: number | null } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const wanderRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -698,7 +701,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   // Get current user ID
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setMyUserId(user.id);
+      if (user) { setMyUserId(user.id); myUserIdRef.current = user.id; }
     });
   }, []);
 
@@ -779,10 +782,12 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
       .on('broadcast', { event: 'mute' }, ({ payload }) => {
         const { userId, expiry } = payload as { userId: string; expiry: number | null };
         setMutedUsers(prev => { const next = new Map(prev).set(userId, expiry); saveMuted(next); return next; });
+        if (userId === myUserIdRef.current) setMuteNotif({ type: 'muted', expiry });
       })
       .on('broadcast', { event: 'unmute' }, ({ payload }) => {
         const { userId } = payload as { userId: string };
         setMutedUsers(prev => { const next = new Map(prev); next.delete(userId); saveMuted(next); return next; });
+        if (userId === myUserIdRef.current) setMuteNotif({ type: 'unmuted', expiry: null });
       })
       .subscribe();
     adminChanRef.current = chan;
@@ -910,7 +915,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     if (!msg) return;
     // Block muted users from sending
     if (myUserId && isMuted(myUserId)) {
-      setChatInput('');
+      const expiry = mutedUsers.get(myUserId) ?? null;
+      setMutedBlockPopup({ expiry });
       return;
     }
     let uid = myUserId;
@@ -989,6 +995,17 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     setMutedUsers(prev => { const next = new Map(prev); next.delete(userId); saveMuted(next); return next; });
     return false;
   };
+
+  function formatMuteRemaining(expiry: number | null): string {
+    if (expiry === null) return 'définitivement';
+    const ms = expiry - Date.now();
+    if (ms <= 0) return 'plus (expiration imminente)';
+    const m = Math.ceil(ms / 60000);
+    if (m < 60) return `encore ${m} min`;
+    const h = Math.floor(m / 60);
+    const rem = m % 60;
+    return rem > 0 ? `encore ${h}h ${rem}min` : `encore ${h}h`;
+  }
 
 
   // Fetch real pokemon level for interaction target from their game_save
@@ -1106,6 +1123,58 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           </div>
         );
       })()}
+
+      {/* Mute notification popup — shown to the muted user */}
+      {muteNotif && (
+        <div className="fixed inset-0 z-[800] flex items-center justify-center bg-black/70" onClick={() => setMuteNotif(null)}>
+          <div className="bg-slate-900 border-2 rounded-2xl px-6 py-5 text-center shadow-2xl max-w-xs w-full mx-4"
+            style={{ borderColor: muteNotif.type === 'muted' ? '#f97316' : '#4ade80' }}
+            onClick={e => e.stopPropagation()}>
+            <div className="text-4xl mb-2">{muteNotif.type === 'muted' ? '🔇' : '🔊'}</div>
+            {muteNotif.type === 'muted' ? (
+              <>
+                <div className="text-orange-400 font-black text-lg mb-1">Tu as été mis en sourdine</div>
+                <div className="text-slate-300 text-sm">
+                  {muteNotif.expiry === null
+                    ? 'Tu as été muté définitivement.'
+                    : `Tu as été muté pour ${formatMuteRemaining(muteNotif.expiry)}.`}
+                </div>
+                <div className="text-slate-500 text-xs mt-2">Tu ne peux plus envoyer de messages dans le chat.</div>
+              </>
+            ) : (
+              <>
+                <div className="text-green-400 font-black text-lg mb-1">Tu as été démute !</div>
+                <div className="text-slate-300 text-sm">Tu peux à nouveau envoyer des messages dans le chat.</div>
+              </>
+            )}
+            <button onClick={() => setMuteNotif(null)}
+              className="mt-4 px-6 py-2 rounded-xl font-black text-sm text-white"
+              style={{ background: muteNotif.type === 'muted' ? '#9a3412' : '#166534' }}>
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mute block popup — shown when muted user tries to send a message */}
+      {mutedBlockPopup && (
+        <div className="fixed inset-0 z-[800] flex items-center justify-center bg-black/70" onClick={() => setMutedBlockPopup(null)}>
+          <div className="bg-slate-900 border-2 border-orange-500/60 rounded-2xl px-6 py-5 text-center shadow-2xl max-w-xs w-full mx-4"
+            onClick={e => e.stopPropagation()}>
+            <div className="text-4xl mb-2">🔇</div>
+            <div className="text-orange-400 font-black text-lg mb-1">Tu es en sourdine</div>
+            <div className="text-slate-300 text-sm">
+              {mutedBlockPopup.expiry === null
+                ? 'Tu as été muté définitivement et ne peux pas envoyer de messages.'
+                : `Il te reste ${formatMuteRemaining(mutedBlockPopup.expiry)} avant de pouvoir parler à nouveau.`}
+            </div>
+            <button onClick={() => setMutedBlockPopup(null)}
+              className="mt-4 px-6 py-2 rounded-xl font-black text-sm text-white bg-slate-700">
+              OK
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Mood bar — only shown when a pokemon is deposited */}
       {myFav && <div className="flex items-center gap-1.5 px-3 py-1.5 bg-black/40 border-b border-slate-700/30 shrink-0 overflow-x-auto">

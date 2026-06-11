@@ -408,15 +408,37 @@ interface AdminPanelProps {
   onClose: () => void;
 }
 
+function generateTempPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return 'Katchii' + Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
 function AdminPlayerPanel({ player, mutedUsers, deletedUsers, parkRemovedUsers, adminConfirm, onMute, onUnmute, onDeleteUser, onRemoveFromPark, onSetConfirm, onViewProfile, onClose }: AdminPanelProps) {
   const muteExpiry = mutedUsers.get(player.user_id);
   const isMuted = muteExpiry !== undefined && (muteExpiry === null || muteExpiry > Date.now());
   const isDeleted = deletedUsers.has(player.user_id);
   const isRemovedFromPark = parkRemovedUsers.has(player.user_id);
+  const [pwResetResult, setPwResetResult] = useState<{ tempPw: string; status: 'pending' | 'done' | 'error' } | null>(null);
+
+  const handlePasswordReset = async () => {
+    const tempPw = generateTempPassword();
+    setPwResetResult({ tempPw, status: 'pending' });
+    try {
+      // Store forcePasswordChange flag in game_saves so app forces change on next login
+      const { data: saveData } = await supabase.from('game_saves').select('state').eq('user_id', player.user_id).single();
+      if (saveData?.state) {
+        const newState = { ...(saveData.state as Record<string, unknown>), forcePasswordChange: tempPw };
+        await supabase.from('game_saves').update({ state: newState }).eq('user_id', player.user_id);
+      }
+      setPwResetResult({ tempPw, status: 'done' });
+    } catch {
+      setPwResetResult({ tempPw, status: 'error' });
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/70" onClick={onClose}>
-      <div className="w-full max-w-md bg-slate-900 border-t-2 border-red-500/60 rounded-t-2xl p-5 pb-8 shadow-2xl overflow-y-auto max-h-[85dvh]"
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 px-4" onClick={onClose}>
+      <div className="w-full max-w-md bg-slate-900 border border-red-500/40 rounded-2xl p-5 shadow-2xl overflow-y-auto max-h-[90dvh]"
         onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -491,6 +513,38 @@ function AdminPlayerPanel({ player, mutedUsers, deletedUsers, parkRemovedUsers, 
             className="w-full px-3 py-2 rounded-lg bg-slate-700/60 border border-slate-600/40 text-slate-300 text-xs font-bold disabled:opacity-40 hover:bg-slate-600/60 transition-all">
             {isRemovedFromPark ? '✓ Pokémon retiré du parc' : 'Retirer le pokémon du parc'}
           </button>
+        </div>
+
+        {/* Password reset */}
+        <div className="bg-slate-800/60 rounded-xl p-3 mb-3">
+          <div className="text-xs font-black text-blue-400 mb-2 uppercase">🔑 Mot de passe</div>
+          {pwResetResult ? (
+            <div className="flex flex-col gap-2">
+              <div className="text-xs text-slate-300">
+                Mot de passe temporaire généré :
+              </div>
+              <div className="flex items-center gap-2 bg-slate-700 rounded-lg px-3 py-2">
+                <span className="font-mono text-sm text-white font-bold flex-1">{pwResetResult.tempPw}</span>
+                <button
+                  onClick={() => navigator.clipboard.writeText(pwResetResult.tempPw)}
+                  className="text-xs text-blue-400 font-bold shrink-0">
+                  Copier
+                </button>
+              </div>
+              <div className="text-[0.65rem] text-slate-500 leading-snug">
+                Donne ce mot de passe au joueur. Il devra le changer immédiatement à sa prochaine connexion.
+                <br />
+                <span className="text-yellow-500">⚠️ Change aussi son mdp manuellement dans le dashboard Supabase.</span>
+              </div>
+              <button onClick={() => setPwResetResult(null)}
+                className="text-xs text-slate-400 underline text-left">Fermer</button>
+            </div>
+          ) : (
+            <button onClick={handlePasswordReset}
+              className="w-full px-3 py-2 rounded-lg bg-blue-900/40 border border-blue-700/40 text-blue-300 text-xs font-bold hover:bg-blue-800/50 transition-all">
+              🔑 Réinitialiser le mot de passe
+            </button>
+          )}
         </div>
 
         {/* Danger zone */}

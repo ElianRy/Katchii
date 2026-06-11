@@ -134,12 +134,6 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
             setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
             setTimeout(() => playSfxShinyCapture(), 700);
           }
-        } else if (isShiny) {
-          addNotification(`+${pts} 🪙`, x, y, true);
-          addNotification(`+${doublonXp} XP !`, x, y - 8, false);
-          addNotification('Doublon Shiny !', x, y - 16, false);
-          setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny: true, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
-          setTimeout(() => playSfxShinyCapture(), 700);
         }
         processingRef.current.delete(uid);
         capturingRef.current = false; // UNLOCK

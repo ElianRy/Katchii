@@ -781,6 +781,14 @@ export function useGameState() {
     return ok;
   }, [update]);
 
+  const clearForcePasswordChange = useCallback(() => {
+    update(prev => {
+      const next = { ...prev };
+      delete next.forcePasswordChange;
+      return next;
+    });
+  }, [update]);
+
   const openMysteryCase = useCallback((pokemonId: number, isShiny: boolean, rarity: Rarity) => {
     update(prev => {
       if ((prev.mysteryCases ?? 0) <= 0) return prev;
@@ -988,6 +996,7 @@ export function useGameState() {
     saveTeam,
     deleteTeam,
     setFavoriteTeamId,
+    clearForcePasswordChange,
   };
 }
 
