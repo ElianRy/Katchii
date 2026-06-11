@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { adminResetPassword } from '../lib/supabaseAdmin';
+import { adminResetPassword, adminBanUser } from '../lib/supabaseAdmin';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { RARITY_COLORS } from '../types';
 import { PlayerProfile } from './PlayerProfile';
@@ -76,7 +76,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setMyUserId(data.user?.id ?? null));
   }, []);
-  const [sort, setSort] = useState<'points' | 'collection' | 'shiny' | 'alpha'>('points');
+  const [sort, setSort] = useState<'collection' | 'shiny' | 'alpha'>('alpha');
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerRow | null>(null);
   const [adminTarget, setAdminTarget] = useState<PlayerRow | null>(null);
   const [mutedUsers, setMutedUsers] = useState<Map<string, number | null>>(loadMutedMap);
@@ -172,11 +172,15 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
   }, []);
 
   const adminDeleteUser = useCallback(async (userId: string) => {
+    // Ban: delete Supabase auth account so they can no longer log in
+    await adminBanUser(userId);
+    // Remove from pokepark presence
+    await supabase.from('pokepark_presence').delete().eq('user_id', userId);
+    // Also delete their game_saves to free resources
+    await supabase.from('game_saves').delete().eq('user_id', userId);
     const next = new Set(deletedUsers).add(userId);
     setDeletedUsers(next);
     saveSet(DELETED_KEY, next);
-    // Remove from pokepark presence
-    await supabase.from('pokepark_presence').delete().eq('user_id', userId);
     setAdminTarget(null);
     setAdminConfirm(null);
   }, [deletedUsers]);
@@ -190,16 +194,10 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
   }, [parkRemovedUsers]);
 
   const sorted = [...players].filter(p => !deletedUsers.has(p.user_id)).sort((a, b) => {
-    // Online players always first
-    if (a.isOnline && !b.isOnline) return -1;
-    if (!a.isOnline && b.isOnline) return 1;
-    if (sort === 'points') return b.points - a.points;
     if (sort === 'collection') return b.normalCount - a.normalCount;
     if (sort === 'shiny') return b.shinyCount - a.shinyCount;
     return a.username.localeCompare(b.username, 'fr', { sensitivity: 'base' });
   });
-
-  const MEDAL = ['🥇', '🥈', '🥉'];
 
   return (
     <div className="fixed inset-0 z-[600] flex flex-col bg-slate-950" style={{ height: '100dvh' }}>
@@ -215,10 +213,9 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
       {/* Sort tabs */}
       <div className="flex gap-1.5 px-4 py-2 border-b border-slate-700/50 shrink-0 overflow-x-auto">
         {([
-          ['points', '⭐ Points'],
+          ['alpha', '🔤 A→Z'],
           ['collection', '📚 Collection'],
           ['shiny', '✨ Shinies'],
-          ['alpha', '🔤 A→Z'],
         ] as [typeof sort, string][]).map(([key, label]) => (
           <button
             key={key}
@@ -241,7 +238,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
             Chargement…
           </div>
         )}
-        {!loading && sorted.map((p, i) => {
+        {!loading && sorted.map((p) => {
           const favData = p.favoritePokemon ? POKEMON_BY_ID[p.favoritePokemon.pokemonId] : null;
           const favSpriteUrl = p.favoritePokemon
             ? p.favoritePokemon.isShiny
@@ -249,42 +246,21 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
               : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.favoritePokemon.pokemonId}.png`
             : null;
 
-          const rankColor = i === 0 ? '#fbbf24' : i === 1 ? '#94a3b8' : i === 2 ? '#b45309' : '#475569';
-          const isTopThree = i < 3;
           const isMe = p.user_id === myUserId;
-
-          const showcaseItems = (p.showcase ?? []).slice(0, 3);
 
           return (
             <div
               key={p.user_id}
               className="flex items-center gap-3 px-4 py-3 border-b border-slate-800/60 active:bg-white/5 cursor-pointer"
-              style={{
-                background: isMe ? 'rgba(251,191,36,0.08)' : isTopThree ? `${rankColor}08` : undefined,
-                borderLeft: isMe ? '3px solid #fbbf24' : undefined,
-              }}
+              style={{ borderLeft: isMe ? '3px solid #fbbf24' : undefined, background: isMe ? 'rgba(251,191,36,0.06)' : undefined }}
               onClick={() => isAdmin ? setAdminTarget(p) : setSelectedPlayer(p)}
             >
-              {/* Rank */}
-              <div className="shrink-0 w-8 text-center">
-                {i < 3
-                  ? <span className="text-xl">{MEDAL[i]}</span>
-                  : <span className="text-sm font-bold text-slate-500">#{i + 1}</span>
-                }
-              </div>
-
               {/* Favorite pokemon sprite */}
               <div className="shrink-0 w-10 h-10 flex items-center justify-center">
                 {favSpriteUrl ? (
-                  <img
-                    src={favSpriteUrl}
-                    width={40} height={40}
-                    style={{
-                      imageRendering: 'pixelated',
-                      filter: favData ? `drop-shadow(0 0 4px ${RARITY_COLORS[favData.rarity]})` : undefined,
-                    }}
-                    alt=""
-                  />
+                  <img src={favSpriteUrl} width={40} height={40}
+                    style={{ imageRendering: 'pixelated', filter: favData ? `drop-shadow(0 0 4px ${RARITY_COLORS[favData.rarity]})` : undefined }}
+                    alt="" />
                 ) : (
                   <div className="text-2xl text-slate-600">?</div>
                 )}
@@ -295,62 +271,32 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="font-black text-sm truncate" style={{ color: isMe ? '#fbbf24' : p.username?.toLowerCase() === 'pokelian' ? '#ef4444' : 'white' }}>{p.username}</span>
                   {isMe && <span className="shrink-0 text-[0.6rem] font-black px-1.5 py-0.5 rounded-full" style={{ background: '#fbbf24', color: '#000' }}>Vous</span>}
-                  {p.isOnline && <span className="shrink-0 w-2 h-2 rounded-full bg-green-400" title="En ligne" />}
+                  {p.isOnline && <span className="shrink-0 w-2 h-2 rounded-full bg-green-400" />}
                 </div>
                 <div className="flex items-center gap-1 text-xs mt-0.5">
-                  {p.isOnline ? (
-                    <span className="text-green-400 font-semibold">En ligne</span>
-                  ) : p.lastSeen ? (
-                    <span className="text-slate-500">Actif il y a {formatLastSeen(p.lastSeen)}</span>
-                  ) : null}
+                  {p.isOnline
+                    ? <span className="text-green-400 font-semibold">En ligne</span>
+                    : p.lastSeen
+                      ? <span className="text-slate-500">Actif il y a {formatLastSeen(p.lastSeen)}</span>
+                      : null}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5 flex-wrap">
-                  <span>⭐ {p.points} pts</span>
+                <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
                   <span>📚 {p.normalCount}/151</span>
                   {p.shinyCount > 0 && <span>✨ {p.shinyCount}</span>}
-                  <span>🥊 {p.duelWins}</span>
                 </div>
               </div>
 
-              {/* Showcase previews */}
-              {showcaseItems.length > 0 && (
-                <div className="shrink-0 flex items-center gap-0.5">
-                  {showcaseItems.map((s, si) => {
-                    const sUrl = s.isShiny
-                      ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/${s.pokemonId}.png`
-                      : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${s.pokemonId}.png`;
-                    const sData = POKEMON_BY_ID[s.pokemonId];
-                    return (
-                      <img
-                        key={si}
-                        src={sUrl}
-                        width={24} height={24}
-                        style={{
-                          imageRendering: 'pixelated',
-                          filter: sData ? `drop-shadow(0 0 2px ${RARITY_COLORS[sData.rarity]})` : undefined,
-                        }}
-                        alt=""
-                      />
-                    );
-                  })}
+              {/* Sort score */}
+              {sort !== 'alpha' && (
+                <div className="shrink-0 text-right">
+                  <div className="font-black text-sm text-slate-300">
+                    {sort === 'collection' ? p.normalCount : p.shinyCount}
+                  </div>
+                  <div className="text-xs text-slate-600">
+                    {sort === 'collection' ? 'pokémon' : 'shinies'}
+                  </div>
                 </div>
               )}
-
-              {/* Score highlight */}
-              <div className="shrink-0 text-right">
-                <div className="font-black text-sm" style={{ color: rankColor }}>
-                  {sort === 'points' ? `${p.points}` :
-                   sort === 'collection' ? `${p.normalCount}` :
-                   sort === 'shiny' ? `${p.shinyCount}` :
-                   p.username}
-                </div>
-                <div className="text-xs text-slate-600">
-                  {sort === 'points' ? 'pts' :
-                   sort === 'collection' ? 'pokémon' :
-                   sort === 'shiny' ? 'shinies' :
-                   'nom'}
-                </div>
-              </div>
             </div>
           );
         })}
@@ -552,8 +498,8 @@ function AdminPlayerPanel({ player, mutedUsers, deletedUsers, parkRemovedUsers, 
           <div className="text-xs font-black text-red-400 mb-2 uppercase">⚠️ Zone dangereuse</div>
           {adminConfirm === 'delete' ? (
             <div className="flex flex-col gap-2">
-              <div className="text-xs text-red-300 font-bold text-center">Confirmer la suppression de <span className="text-white">{player.username}</span> ?</div>
-              <div className="text-[0.6rem] text-slate-400 text-center">Retire le joueur de la liste et du PokéParc.</div>
+              <div className="text-xs text-red-300 font-bold text-center">Bannir <span className="text-white">{player.username}</span> définitivement ?</div>
+              <div className="text-[0.6rem] text-slate-400 text-center">Supprime son compte auth — il ne pourra plus jamais se connecter.</div>
               <div className="flex gap-2">
                 <button onClick={() => onSetConfirm(null)} className="flex-1 py-2 rounded-lg bg-slate-700 text-slate-300 text-xs font-bold">Annuler</button>
                 <button onClick={() => onDeleteUser(player.user_id)}
@@ -565,7 +511,7 @@ function AdminPlayerPanel({ player, mutedUsers, deletedUsers, parkRemovedUsers, 
           ) : (
             <button onClick={() => onSetConfirm('delete')}
               className="w-full px-3 py-2 rounded-lg bg-red-900/50 border border-red-700/50 text-red-300 text-xs font-bold hover:bg-red-800/50 transition-all">
-              🗑️ Supprimer le compte
+              🚫 Bannir le compte
             </button>
           )}
         </div>

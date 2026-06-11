@@ -13,3 +13,10 @@ export async function adminResetPassword(userId: string): Promise<{ error: strin
   if (error) return { error: error.message };
   return { error: null };
 }
+
+export async function adminBanUser(userId: string): Promise<{ error: string | null }> {
+  if (!adminClient) return { error: 'Clé service role manquante.' };
+  const { error } = await adminClient.auth.admin.deleteUser(userId);
+  if (error) return { error: error.message };
+  return { error: null };
+}
