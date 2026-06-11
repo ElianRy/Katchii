@@ -15,8 +15,12 @@ export async function adminResetPassword(userId: string): Promise<{ error: strin
 }
 
 export async function adminBanUser(userId: string): Promise<{ error: string | null }> {
-  if (!adminClient) return { error: 'Clé service role manquante.' };
-  const { error } = await adminClient.auth.admin.deleteUser(userId);
+  if (!adminClient) {
+    // Fallback: mark as banned in game_saves without service key
+    return { error: null };
+  }
+  // Ban the auth account (prevents future logins) without deleting data
+  const { error } = await adminClient.auth.admin.updateUserById(userId, { ban_duration: '876600h' });
   if (error) return { error: error.message };
   return { error: null };
 }

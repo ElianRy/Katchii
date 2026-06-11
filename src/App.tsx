@@ -221,6 +221,18 @@ export function App() {
     setUsername('Joueur');
   }, []);
 
+  // Listen for ban broadcast — log out immediately if current user is banned
+  useEffect(() => {
+    if (!userId) return;
+    const chan = supabase.channel('katchii_moderation')
+      .on('broadcast', { event: 'user_banned' }, ({ payload }) => {
+        const { userId: bannedId } = payload as { userId: string };
+        if (bannedId === userId) handleLogout();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(chan); };
+  }, [userId, handleLogout]);
+
   if (!authChecked) {
     return (
       <div className="w-full h-screen bg-slate-900 flex items-center justify-center">

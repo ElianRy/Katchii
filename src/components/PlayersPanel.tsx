@@ -172,12 +172,19 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
   }, []);
 
   const adminDeleteUser = useCallback(async (userId: string) => {
-    // Ban: delete Supabase auth account so they can no longer log in
+    // Ban auth account (prevents future logins) — requires service role key
     await adminBanUser(userId);
-    // Remove from pokepark presence
+    // Remove from pokepark presence and game data
     await supabase.from('pokepark_presence').delete().eq('user_id', userId);
-    // Also delete their game_saves to free resources
     await supabase.from('game_saves').delete().eq('user_id', userId);
+    // Broadcast ban so active sessions log out immediately
+    const modChan = supabase.channel('katchii_moderation');
+    modChan.subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        modChan.send({ type: 'broadcast', event: 'user_banned', payload: { userId } })
+          .finally(() => { setTimeout(() => supabase.removeChannel(modChan), 2000); });
+      }
+    });
     const next = new Set(deletedUsers).add(userId);
     setDeletedUsers(next);
     saveSet(DELETED_KEY, next);
