@@ -97,6 +97,7 @@ function checkBadges(state: GameState): string[] {
 
 export function useGameState() {
   const [state, setState] = useState<GameState>(() => loadState());
+  const [stateLoaded, setStateLoaded] = useState(false);
   const isReadyToSaveRef = useRef(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
   // Badge toast queue
@@ -124,10 +125,10 @@ export function useGameState() {
       if (loadingForRef.current === userId) return;
       loadingForRef.current = userId;
       userIdRef.current = userId;
+      setStateLoaded(false);
       const username = user ? getUsername(user) : undefined;
       loadCloudState(userId).then(cloudState => {
         if (cloudState === 'error') {
-          // Cloud unreachable — fall back to this user's local save
           console.warn('[useGameState] cloud load failed, using user-local state');
           const local = loadUserState(userId) ?? { ...DEFAULT_STATE };
           const stamped = username ? { ...local, username } : local;
@@ -135,25 +136,21 @@ export function useGameState() {
           isReadyToSaveRef.current = true;
           setState(() => { saveUserState(userId, stamped); return stamped; });
           loadingForRef.current = null;
-          // Retry cloud save in 5s
+          setStateLoaded(true);
           setTimeout(() => {
             if (userIdRef.current === userId) saveCloudState(userId, latestStateRef.current);
           }, 5000);
           return;
         }
         if (!cloudState) {
-          // No cloud row — could be a new user OR cloud save was never written.
-          // Check if this user has local data before treating as fresh account.
           const local = loadUserState(userId);
           if (local) {
-            // Had local data — use it and push it to cloud now
             const stamped = username ? { ...local, username } : local;
             latestStateRef.current = stamped;
             isReadyToSaveRef.current = true;
             setState(() => { saveUserState(userId, stamped); return stamped; });
             saveCloudState(userId, stamped);
           } else {
-            // Truly new user — start fresh
             const fresh = { ...DEFAULT_STATE, ...(username ? { username } : {}) };
             latestStateRef.current = fresh;
             isReadyToSaveRef.current = true;
@@ -162,9 +159,9 @@ export function useGameState() {
             saveCloudState(userId, fresh);
           }
           loadingForRef.current = null;
+          setStateLoaded(true);
           return;
         }
-        // Cloud has the authoritative state — always use it.
         // Check ban flag before loading
         if ((cloudState as unknown as Record<string, unknown>).banned === true) {
           loadingForRef.current = null;
@@ -176,6 +173,7 @@ export function useGameState() {
         isReadyToSaveRef.current = true;
         setState(() => { saveUserState(userId, stamped); return stamped; });
         loadingForRef.current = null;
+        setStateLoaded(true);
       });
     };
 
@@ -951,6 +949,7 @@ export function useGameState() {
 
   return {
     state,
+    stateLoaded,
     addCapture,
     buyLure,
     grantLure,
