@@ -313,6 +313,9 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp }))
   );
   const playerFightersRef = useRef<FighterState[]>(playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp })));
+  // Attack boost applies only to the first pokemon sent; once it faints, boost is spent
+  const boostActiveRef = useRef(playerDamageMult > 1);
+  const [boostActive, setBoostActive] = useState(playerDamageMult > 1);
   const [enemyFighters, setEnemyFighters] = useState<FighterState[]>(
     enemyTeam.map(m => ({ ...m, currentHp: m.maxHp }))
   );
@@ -422,7 +425,9 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           const { damage: pDmgRaw, effectiveness: pEff, moveName: pMove, isCrit: pCrit, isMiss: pMiss } = calcDamage(
             pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level
           );
-          const pDmg = pMiss ? 0 : Math.round(pDmgRaw * playerDamageMult);
+          // Boost applies only while the original first pokemon is active
+          const activeMult = boostActiveRef.current && pIdx === 0 ? playerDamageMult : 1;
+          const pDmg = pMiss ? 0 : Math.round(pDmgRaw * activeMult);
 
           setAttackEvt(pMiss ? null : { attacker: 'player', type: pType, uid: dmgCounter++ });
           if (!pMiss) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
@@ -442,6 +447,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             const levelBonus = 1 + pFighter.level * 0.025;
             const xpEarned = Math.floor(xpBase * levelBonus);
             setXpGains(prev => ({ ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned }));
+            // Boost stays active — it was the enemy that fainted, not our pokemon
             const nextE = newEf.findIndex((f, i) => i > eIdx && f.currentHp > 0);
             if (nextE < 0 && newEf.every(f => f.currentHp <= 0)) {
               battleDone.current = true; won.current = true;
@@ -477,6 +483,11 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
               const newPf = pf2.map((f, i) => i === pIdx2 ? { ...f, currentHp: newPHp } : f);
               if (newPHp <= 0) {
                 addLog(`${pName} est K.O. !`, '#f87171');
+                // Boost is consumed when the boosted pokemon (first one) faints
+                if (pIdx2 === 0 && boostActiveRef.current) {
+                  boostActiveRef.current = false;
+                  setBoostActive(false);
+                }
                 const nextP = newPf.findIndex((f, i) => i > pIdx2 && f.currentHp > 0);
                 if (nextP < 0 && newPf.every(f => f.currentHp <= 0)) {
                   battleDone.current = true; won.current = false;
@@ -810,6 +821,12 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
                 </span>
               ))}
             </div>
+            {boostActive && playerIdx === 0 && (
+              <div className="mt-1 px-1.5 py-0.5 rounded text-center font-black"
+                style={{ fontSize: '0.5rem', background: 'rgba(248,113,113,0.2)', color: '#f87171', border: '1px solid #f8717155' }}>
+                ⚔️ +25% dégâts (Boost Attaque)
+              </div>
+            )}
           </div>
         </div>
 

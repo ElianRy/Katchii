@@ -147,7 +147,7 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
               { icon: '🪙', label: 'PokéCoins', value: points.toLocaleString(), color: '#f59e0b' },
               { icon: '📚', label: 'Pokédex', value: `${normalCount} / 151`, color: '#3b82f6' },
               { icon: '✨', label: 'Shinies', value: shinyCount, color: '#fde047' },
-              { icon: '🥊', label: 'ELO duel', value: duels.rankingPoints ?? 0, color: '#a78bfa' },
+              { icon: '🥊', label: 'Victoires', value: duels.wins ?? 0, color: '#a78bfa' },
             ].map(s => (
               <div key={s.label} className="bg-slate-800/60 rounded-2xl p-3 border border-slate-700/40 flex items-center gap-3">
                 <span className="text-2xl">{s.icon}</span>
