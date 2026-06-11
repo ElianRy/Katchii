@@ -121,6 +121,7 @@ export interface GameState {
   questsCompletedTotal?: number;
   questsBaselineAtUnlock?: Record<string, number>;
   achievementsCompleted?: string[];
+  completedTutorials?: string[];
   lastParkXpAt?: number | null;
   parkElo?: number;
   parkDuelRecord?: { totalWins: number; totalLosses: number };

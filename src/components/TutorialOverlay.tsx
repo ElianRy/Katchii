@@ -10,12 +10,27 @@ interface Props {
   tutorialKey: string;   // e.g. 'hunt', 'collection'
   steps: TutorialStep[];
   onDone?: () => void;
-  bottomOffset?: number; // extra bottom padding to avoid navbar
+  bottomOffset?: number;
 }
 
-function storageKey(k: string) { return `katchii_tuto_${k}`; }
+function getCurrentUserId(): string | null {
+  try {
+    // Supabase stores session in localStorage — find it by key pattern
+    const authKey = Object.keys(localStorage).find(k => k.endsWith('-auth-token') || k.includes('supabase.auth'));
+    if (!authKey) return null;
+    const raw = localStorage.getItem(authKey);
+    if (!raw) return null;
+    return (JSON.parse(raw) as { user?: { id?: string } })?.user?.id ?? null;
+  } catch { return null; }
+}
+
+function storageKey(k: string, userId?: string | null) {
+  return userId ? `katchii_tuto_${userId}_${k}` : `katchii_tuto_${k}`;
+}
 
 export function isTutorialDone(key: string): boolean {
+  const uid = getCurrentUserId();
+  if (uid && localStorage.getItem(storageKey(key, uid)) === '1') return true;
   return localStorage.getItem(storageKey(key)) === '1';
 }
 
@@ -26,7 +41,13 @@ export function TutorialOverlay({ tutorialKey, steps, onDone, bottomOffset }: Pr
 
   if (!visible) return null;
 
-  const close = () => { localStorage.setItem(storageKey(tutorialKey), '1'); setVisible(false); onDone?.(); };
+  const close = () => {
+    const uid = getCurrentUserId();
+    localStorage.setItem(storageKey(tutorialKey, uid), '1');
+    localStorage.setItem(storageKey(tutorialKey), '1'); // legacy fallback
+    setVisible(false);
+    onDone?.();
+  };
 
   const goNext = () => {
     if (step < steps.length - 1) {
@@ -54,14 +75,18 @@ export function TutorialOverlay({ tutorialKey, steps, onDone, bottomOffset }: Pr
       {/* Skip */}
       <button
         onClick={close}
-        className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center font-bold text-lg"
-        style={{ background: 'rgba(255,255,255,0.12)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.15)' }}
+        className="absolute right-4 w-9 h-9 rounded-full flex items-center justify-center font-bold text-lg"
+        style={{
+          top: 'calc(1rem + env(safe-area-inset-top, 0px))',
+          background: 'rgba(255,255,255,0.12)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.15)',
+        }}
       >
         ✕
       </button>
 
       {/* Step indicators */}
-      <div className="absolute top-5 left-0 right-0 flex justify-center gap-2">
+      <div className="absolute left-0 right-0 flex justify-center gap-2"
+        style={{ top: 'calc(1.25rem + env(safe-area-inset-top, 0px))' }}>
         {steps.map((_, i) => (
           <div key={i} className="rounded-full transition-all duration-300"
             style={{
