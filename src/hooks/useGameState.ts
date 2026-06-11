@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { GameState, Rarity, LureType, FIRST_CAPTURE_POINTS, LURE_COSTS, RARITY_WEIGHTS } from '../types';
+import { GameState, Rarity, LureType, XpCandySize, FIRST_CAPTURE_POINTS, DUPLICATE_CAPTURE_POINTS, SHINY_COINS_MULT, COINS_TRAINING_WIN, COINS_BOSS_DEFEAT, LURE_COSTS, XP_CANDY_COSTS, COOLDOWN_REDUCER_COST, COOLDOWN_REDUCED_MS, COOLDOWN_BOOST_DURATION_MS, RARITY_WEIGHTS } from '../types';
 import { CAPTURE_XP } from '../lib/playerLevel';
 import { TeamMember } from '../components/TeamBuilder';
 import { loadState, loadUserState, saveState, saveUserState, DEFAULT_STATE } from '../lib/storage';
@@ -20,6 +20,10 @@ import { naturalLevel, xpToNextLevel } from '../data/combatEngine';
 
 
 const COOLDOWN_MS = 30_000;
+const getCooldownMs = (state: GameState) =>
+  state.activeCooldownBoost && Date.now() < state.activeCooldownBoost.expiresAt
+    ? COOLDOWN_REDUCED_MS
+    : COOLDOWN_MS;
 const LURE_DURATION_MS = 10 * 60_000;
 
 // Base ~0.13% (1/750). Each completed permanent quest adds bonus cumulatively:
@@ -251,9 +255,9 @@ export function useGameState() {
           next.normalCollection = { ...prev.normalCollection, [pokemonId]: 1 };
         }
         if (!alreadyCaughtShiny) {
-          pointsEarned = rarity === 'legendaire' ? 50 : 20;
+          pointsEarned = FIRST_CAPTURE_POINTS[rarity] * SHINY_COINS_MULT;
           next.points = prev.points + pointsEarned;
-          next.globalCooldownUntil = Date.now() + COOLDOWN_MS;
+          next.globalCooldownUntil = Date.now() + getCooldownMs(prev);
           if (!prev.shinyDepleted.includes(pokemonId)) {
             next.shinyDepleted = [...prev.shinyDepleted, pokemonId];
           }
@@ -283,9 +287,12 @@ export function useGameState() {
         if (!alreadyCaught) {
           pointsEarned = FIRST_CAPTURE_POINTS[rarity];
           next.points = prev.points + pointsEarned;
-          next.globalCooldownUntil = Date.now() + COOLDOWN_MS;
+          next.globalCooldownUntil = Date.now() + getCooldownMs(prev);
         } else {
           next.fragments = { ...prev.fragments, [pokemonId]: (prev.fragments[pokemonId] ?? 0) + 1 };
+          // Duplicate earns a small amount of PokéCoins
+          pointsEarned = DUPLICATE_CAPTURE_POINTS[rarity];
+          next.points = prev.points + pointsEarned;
         }
 
         // Initialize level on first capture, capped by current zone's maxLevel
@@ -627,6 +634,7 @@ export function useGameState() {
         trainingBattlesTotal: (prev.trainingBattlesTotal ?? 0) + 1,
         trainingBattlesByZone: byZone,
         playerXp: (prev.playerXp ?? 0) + 800,
+        points: prev.points + COINS_TRAINING_WIN,
       };
     });
   }, [update]);
@@ -676,6 +684,7 @@ export function useGameState() {
       }
       return {
         ...prev,
+        points: prev.points + COINS_BOSS_DEFEAT,
         dailyQuests: newDailyQuests,
         questsBaselineAtUnlock: newBaseline,
         zoneProgress: {
@@ -687,6 +696,42 @@ export function useGameState() {
       };
     });
   }, [update]);
+
+  const buyXpCandy = useCallback((size: XpCandySize): boolean => {
+    let success = false;
+    update(prev => {
+      const cost = XP_CANDY_COSTS[size];
+      if (prev.points < cost) return prev;
+      success = true;
+      return {
+        ...prev,
+        points: prev.points - cost,
+        xpCandies: {
+          petit: 0, moyen: 0, grand: 0,
+          ...(prev.xpCandies ?? {}),
+          [size]: (prev.xpCandies?.[size] ?? 0) + 1,
+        },
+      };
+    });
+    return success;
+  }, [update]);
+
+  const buyCooldownBoost = useCallback((): boolean => {
+    let success = false;
+    update(prev => {
+      if (prev.points < COOLDOWN_REDUCER_COST) return prev;
+      // Don't stack if already active
+      if (prev.activeCooldownBoost && Date.now() < prev.activeCooldownBoost.expiresAt) return prev;
+      success = true;
+      return {
+        ...prev,
+        points: prev.points - COOLDOWN_REDUCER_COST,
+        activeCooldownBoost: { expiresAt: Date.now() + COOLDOWN_BOOST_DURATION_MS },
+      };
+    });
+    return success;
+  }, [update]);
+
 
   const resetBossDefeated = useCallback((zoneId: string) => {
     update(prev => {
@@ -813,6 +858,8 @@ export function useGameState() {
     buyLure,
     grantLure,
     activateLure,
+    buyXpCandy,
+    buyCooldownBoost,
     claimQuestReward,
     updateDuels,
     addDuelResult,

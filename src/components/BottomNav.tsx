@@ -22,7 +22,7 @@ const MAIN_ITEMS = [
 ];
 
 const MENU_ITEMS = [
-  { view: 'lures'    as View, icon: '🎣', label: 'Leurres',    color: '#c084fc' },
+  { view: 'shop'     as View, icon: '🏪', label: 'Boutique',   color: '#34d399' },
   { view: 'backpack' as View, icon: '🎒', label: 'Sac à dos',  color: '#fb923c' },
   { view: 'raid'     as View, icon: '🐉', label: 'Raid',       color: '#f87171' },
   { view: 'clan'     as View, icon: '🛡️', label: 'Clan',       color: '#fbbf24' },

@@ -1,6 +1,6 @@
 export type Rarity = 'commun' | 'peu_commun' | 'rare' | 'elite' | 'legendaire';
 export type LureType = 'rare' | 'epique' | 'legendaire' | 'shiny';
-export type View = 'auth' | 'home' | 'hunt' | 'collection' | 'team' | 'admin' | 'lures' | 'quests' | 'duels' | 'raid' | 'wrapped' | 'profile' | 'zones' | 'pokepark' | 'settings' | 'clan' | 'backpack';
+export type View = 'auth' | 'home' | 'hunt' | 'collection' | 'team' | 'admin' | 'lures' | 'quests' | 'duels' | 'raid' | 'wrapped' | 'profile' | 'zones' | 'pokepark' | 'settings' | 'clan' | 'backpack' | 'shop';
 
 export type XpCandySize = 'petit' | 'moyen' | 'grand';
 
@@ -63,6 +63,7 @@ export interface GameState {
   fragments: Record<number, number>;        // pokemonId -> available fragments (dupes beyond 1st)
   lures: Record<LureType, number>;          // inventory count
   xpCandies?: Record<XpCandySize, number>; // xp candy inventory
+  activeCooldownBoost?: { expiresAt: number }; // cooldown reducer active
   activeLure: { type: LureType; expiresAt: number } | null;
   globalCooldownUntil: number | null;       // timestamp ms
   shinyDepleted: number[];                  // pokemonIds caught as shiny
@@ -155,20 +156,48 @@ export const RARITY_WEIGHTS: Record<Rarity, number> = {
   legendaire: 0.3,
 };
 
+// PokéCoins earned on first capture
 export const FIRST_CAPTURE_POINTS: Record<Rarity, number> = {
-  commun: 10,
-  peu_commun: 20,
-  rare: 20,
-  elite: 30,
-  legendaire: 50,
+  commun:      15,
+  peu_commun:  35,
+  rare:        70,
+  elite:       120,
+  legendaire:  250,
 };
 
-export const LURE_COSTS: Record<LureType, number> = {
-  rare: 30,
-  epique: 50,
-  legendaire: 100,
-  shiny: 75,
+// PokéCoins earned on duplicate capture
+export const DUPLICATE_CAPTURE_POINTS: Record<Rarity, number> = {
+  commun:     5,
+  peu_commun: 10,
+  rare:       20,
+  elite:      35,
+  legendaire: 75,
 };
+
+// Shiny multiplier on first shiny capture coins
+export const SHINY_COINS_MULT = 3;
+
+// PokéCoins earned from various actions
+export const COINS_TRAINING_WIN = 10;
+export const COINS_BOSS_DEFEAT  = 80;
+export const COINS_BOSS_ATTEMPT = 20; // even on loss
+
+export const LURE_COSTS: Record<LureType, number> = {
+  rare:       150,
+  epique:     300,
+  legendaire: 600,
+  shiny:      450,
+};
+
+export const XP_CANDY_COSTS: Record<XpCandySize, number> = {
+  petit: 60,
+  moyen: 200,
+  grand: 800,
+};
+
+export const COOLDOWN_REDUCER_COST = 250;
+export const COOLDOWN_REDUCED_MS   = 10_000; // 10 seconds
+export const COOLDOWN_BOOST_DURATION_MS = 10 * 60_000; // 10 min
 
 export const LURE_LABELS: Record<LureType, string> = {
   rare: 'Leurre Rare',

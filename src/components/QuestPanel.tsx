@@ -135,7 +135,7 @@ export function QuestPanel({ state, onClaim, onClose }: Props) {
                     <div className="flex-1">
                       <div className="text-white font-bold mb-1">{quest.label}</div>
                       <div className="text-slate-400 text-sm mb-2">
-                        Récompense : {quest.reward.points} pts
+                        Récompense : {quest.reward.points} 🪙
                         {quest.reward.fragments ? ` + ${quest.reward.fragments} fragments` : ''}
                       </div>
                       <div className="flex items-center gap-2">

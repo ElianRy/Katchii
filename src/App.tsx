@@ -19,6 +19,7 @@ import { PokeParc } from './components/PokeParc';
 import { SettingsPanel } from './components/SettingsPanel';
 import { ClanPanel } from './components/ClanPanel';
 import { BackpackPanel } from './components/BackpackPanel';
+import { ShopPanel } from './components/ShopPanel';
 import { PlayersPanel } from './components/PlayersPanel';
 import { BattleScreen } from './components/BattleScreen';
 import { TeamMember } from './components/TeamBuilder';
@@ -377,6 +378,16 @@ export function App() {
         <BackpackPanel
           state={gameState.state}
           onActivateLure={gameState.activateLure}
+          onClose={() => persistView('hunt')}
+        />
+      )}
+
+      {view === 'shop' && (
+        <ShopPanel
+          state={gameState.state}
+          onBuyLure={gameState.buyLure}
+          onBuyXpCandy={gameState.buyXpCandy}
+          onBuyCooldownBoost={gameState.buyCooldownBoost}
           onClose={() => persistView('hunt')}
         />
       )}

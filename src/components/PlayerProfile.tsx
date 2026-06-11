@@ -144,7 +144,7 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
           {/* Key stats grid */}
           <div className="grid grid-cols-2 gap-2">
             {[
-              { icon: '⭐', label: 'Points', value: points.toLocaleString(), color: '#f59e0b' },
+              { icon: '🪙', label: 'PokéCoins', value: points.toLocaleString(), color: '#f59e0b' },
               { icon: '📚', label: 'Pokédex', value: `${normalCount} / 151`, color: '#3b82f6' },
               { icon: '✨', label: 'Shinies', value: shinyCount, color: '#fde047' },
               { icon: '🥊', label: 'ELO duel', value: duels.rankingPoints ?? 0, color: '#a78bfa' },

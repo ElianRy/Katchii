@@ -77,8 +77,8 @@ export function ProfileScreen({ username, state, onClose, onLogout }: Props) {
             {/* Stats row */}
             <div className="grid grid-cols-3 gap-3 w-full max-w-sm">
               <div className="bg-slate-800/60 rounded-xl p-3 text-center border border-slate-700/40">
-                <div className="text-yellow-400 font-black text-xl">{state.points}</div>
-                <div className="text-slate-400 text-xs">Points</div>
+                <div className="text-yellow-400 font-black text-xl">🪙 {state.points.toLocaleString()}</div>
+                <div className="text-slate-400 text-xs">PokéCoins</div>
               </div>
               <div className="bg-slate-800/60 rounded-xl p-3 text-center border border-slate-700/40">
                 <div className="text-blue-400 font-black text-xl">{totalCaught}</div>
@@ -149,7 +149,7 @@ export function ProfileScreen({ username, state, onClose, onLogout }: Props) {
               { label: 'Duels perdus', value: state.duels.losses, icon: '💔' },
               { label: 'Meilleure streak', value: state.duels.streak, icon: '🔥' },
               { label: 'Succès débloqués', value: `${badgesEarned}/${totalBadges}`, icon: '🏅' },
-              { label: 'Points totaux', value: state.points, icon: '⭐' },
+              { label: 'PokéCoins', value: state.points.toLocaleString(), icon: '🪙' },
               { label: 'Temps total de jeu', value: formatPlayTime(totalPlayTime), icon: '⏰' },
             ].map(({ label, value, icon }) => (
               <div
