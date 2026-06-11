@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GameState, LureType, LURE_LABELS, XpCandySize } from '../types';
+import { GameState, LureType, LURE_LABELS } from '../types';
 
 interface Props {
   state: GameState;
@@ -22,16 +22,6 @@ const LURE_COLORS: Record<LureType, string> = {
 };
 const LURE_TYPES: LureType[] = ['rare', 'epique', 'legendaire', 'shiny'];
 
-const XP_CANDY_LABELS: Record<XpCandySize, string> = {
-  petit: 'Bonbon XP Petit', moyen: 'Bonbon XP Moyen', grand: 'Bonbon XP Grand',
-};
-const XP_CANDY_ICONS: Record<XpCandySize, string> = { petit: '🍬', moyen: '🍭', grand: '🍫' };
-const XP_CANDY_DESCRIPTIONS: Record<XpCandySize, string> = {
-  petit: 'Donne 500 XP à un Pokémon de ton choix',
-  moyen: 'Donne 2 000 XP à un Pokémon de ton choix',
-  grand: 'Donne 10 000 XP à un Pokémon de ton choix',
-};
-const XP_CANDY_SIZES: XpCandySize[] = ['petit', 'moyen', 'grand'];
 
 function formatRemaining(expiresAt: number): string {
   const ms = Math.max(0, expiresAt - Date.now());
@@ -57,8 +47,7 @@ export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, 
   const isSpawnActive = !!(state.activeSpawnBoost && Date.now() < state.activeSpawnBoost.expiresAt);
 
   const totalLures = LURE_TYPES.reduce((s, t) => s + (state.lures[t] ?? 0), 0);
-  const totalCandies = XP_CANDY_SIZES.reduce((s, t) => s + (state.xpCandies?.[t] ?? 0), 0);
-  const totalBoosts = state.cooldownReducers ?? 0;
+const totalBoosts = state.cooldownReducers ?? 0;
   const totalSpawnNets = state.spawnNets ?? 0;
   const totalAttackBoosts = state.attackBoostCharges ?? 0;
   const totalCases = state.mysteryCases ?? 0;
@@ -71,7 +60,7 @@ export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, 
         <div>
           <h2 className="text-white font-black text-xl">🎒 Sac à dos</h2>
           <p className="text-slate-400 text-xs">
-            {totalLures} leurre{totalLures !== 1 ? 's' : ''} · {totalCandies} bonbon{totalCandies !== 1 ? 's' : ''} · {totalBoosts + totalSpawnNets + totalAttackBoosts} boost{(totalBoosts + totalSpawnNets + totalAttackBoosts) !== 1 ? 's' : ''} · {totalCases} capsule{totalCases !== 1 ? 's' : ''}
+            {totalLures} leurre{totalLures !== 1 ? 's' : ''} · {totalBoosts + totalSpawnNets + totalAttackBoosts} boost{(totalBoosts + totalSpawnNets + totalAttackBoosts) !== 1 ? 's' : ''} · {totalCases} capsule{totalCases !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
@@ -261,42 +250,6 @@ export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, 
           )}
         </section>
 
-        {/* XP Candies */}
-        <section>
-          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🍬 Bonbons XP</h3>
-          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden divide-y divide-slate-700/40">
-            {XP_CANDY_SIZES.map(size => {
-              const count = state.xpCandies?.[size] ?? 0;
-              return (
-                <div key={size} className="flex items-center gap-3 px-4 py-3.5">
-                  <span className="text-2xl shrink-0">{XP_CANDY_ICONS[size]}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white font-semibold text-sm">{XP_CANDY_LABELS[size]}</div>
-                    <div className="text-slate-400 text-xs mt-0.5">{XP_CANDY_DESCRIPTIONS[size]}</div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1.5 shrink-0">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                      style={{ color: '#4ade80', background: '#4ade8022', border: '1px solid #4ade8044' }}>
-                      ×{count}
-                    </span>
-                    {count > 0 && (
-                      <button
-                        className="text-xs font-bold px-3 py-1 rounded-lg"
-                        style={{ background: '#1e293b', color: '#475569', cursor: 'not-allowed' }}
-                        disabled
-                      >
-                        Bientôt
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {totalCandies === 0 && (
-            <p className="text-slate-500 text-xs text-center mt-2">Aucun bonbon — gagne-en lors des raids !</p>
-          )}
-        </section>
 
       </div>
     </div>

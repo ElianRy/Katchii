@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { GameState, LureType, LURE_COSTS, LURE_LABELS, XpCandySize, XP_CANDY_COSTS, COOLDOWN_REDUCER_COST, SPAWN_NET_COST, ATTACK_BOOST_COST, MYSTERY_CASE_COST } from '../types';
+import { GameState, LureType, LURE_COSTS, LURE_LABELS, XpCandySize, COOLDOWN_REDUCER_COST, SPAWN_NET_COST, ATTACK_BOOST_COST, MYSTERY_CASE_COST } from '../types';
 
 interface Props {
   state: GameState;
@@ -24,20 +24,10 @@ const LURE_COLORS: Record<LureType, string> = {
 };
 const LURE_TYPES: LureType[] = ['rare', 'epique', 'legendaire', 'shiny'];
 
-const XP_CANDY_ICONS: Record<XpCandySize, string> = { petit: '🍬', moyen: '🍭', grand: '🍫' };
-const XP_CANDY_LABELS: Record<XpCandySize, string> = {
-  petit: 'Bonbon XP Petit', moyen: 'Bonbon XP Moyen', grand: 'Bonbon XP Grand',
-};
-const XP_CANDY_DESCS: Record<XpCandySize, string> = {
-  petit: 'Donne 500 XP à un Pokémon',
-  moyen: 'Donne 2 000 XP à un Pokémon',
-  grand: 'Donne 10 000 XP à un Pokémon',
-};
-const XP_SIZES: XpCandySize[] = ['petit', 'moyen', 'grand'];
 
 interface Toast { id: number; text: string }
 
-export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, onBuySpawnNet, onBuyAttackBoost, onBuyMysteryCase, onClose }: Props) {
+export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet, onBuyAttackBoost, onBuyMysteryCase, onClose }: Omit<Props, 'onBuyXpCandy'> & { onBuyXpCandy?: (size: XpCandySize) => boolean }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [counter, setCounter] = useState(0);
   const coins = state.points;
@@ -56,11 +46,7 @@ export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, 
     addToast('🎒 Ajouté au sac à dos');
   }
 
-  function handleBuyXpCandy(size: XpCandySize) {
-    if (onBuyXpCandy(size)) addToast('🎒 Ajouté au sac à dos');
-  }
-
-  function handleBuyCooldownBoost() {
+function handleBuyCooldownBoost() {
     if (onBuyCooldownBoost()) addToast('🎒 Ajouté au sac à dos');
   }
 
@@ -120,41 +106,6 @@ export function ShopPanel({ state, onBuyLure, onBuyXpCandy, onBuyCooldownBoost, 
                       }}
                     >
                       {isLocked ? 'Verrouillé' : 'Acheter'}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        {/* Bonbons XP */}
-        <section>
-          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🍬 Bonbons XP</h3>
-          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden divide-y divide-slate-700/40">
-            {XP_SIZES.map(size => {
-              const cost = XP_CANDY_COSTS[size];
-              const canAfford = coins >= cost;
-              return (
-                <div key={size} className="flex items-center gap-3 px-4 py-3.5">
-                  <span className="text-2xl shrink-0">{XP_CANDY_ICONS[size]}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-white font-semibold text-sm">{XP_CANDY_LABELS[size]}</div>
-                    <div className="text-slate-400 text-xs mt-0.5">{XP_CANDY_DESCS[size]}</div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className="text-xs font-bold text-green-400">🪙 {cost}</span>
-                    <button
-                      onClick={() => handleBuyXpCandy(size)}
-                      disabled={!canAfford}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
-                      style={{
-                        background: canAfford ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b',
-                        color: canAfford ? '#fff' : '#475569',
-                        cursor: canAfford ? 'pointer' : 'not-allowed',
-                      }}
-                    >
-                      Acheter
                     </button>
                   </div>
                 </div>
