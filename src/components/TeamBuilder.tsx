@@ -78,10 +78,13 @@ interface Props {
   onSaveTeam?: (name: string, members: TeamMember[]) => void;
   onDeleteTeam?: (id: string) => void;
   onSetFavoriteTeamId?: (id: string | undefined) => void;
+  onMarkTutorialDone?: () => void;
 }
 
-export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattleWin, onTrainingBattle, onClose, title = 'Mon équipe', savedTeams, favoriteTeamId, onSaveTeam, onDeleteTeam, onSetFavoriteTeamId }: Props) {
-  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('team'));
+export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattleWin, onTrainingBattle, onClose, title = 'Mon équipe', savedTeams, favoriteTeamId, onSaveTeam, onDeleteTeam, onSetFavoriteTeamId, onMarkTutorialDone }: Props) {
+  const [showTutorial, setShowTutorial] = useState(() =>
+    !state.completedTutorials?.includes('team') && !isTutorialDone('team')
+  );
   const [selected, setSelected] = useState<number[]>([]);
   const [sort, setSort] = useState<'level' | 'rarity'>('level');
   const [mode, setMode] = useState<'team' | 'battle' | 'result' | 'savedTeams'>('team');
@@ -654,7 +657,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         </div>
       </div>
       {showTutorial && (
-        <TutorialOverlay tutorialKey="team" steps={TEAM_TUTORIAL} onDone={() => setShowTutorial(false)} bottomOffset={72} />
+        <TutorialOverlay tutorialKey="team" steps={TEAM_TUTORIAL} onDone={() => { setShowTutorial(false); onMarkTutorialDone?.(); }} bottomOffset={72} />
       )}
     </div>
   );

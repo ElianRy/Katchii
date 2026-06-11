@@ -78,7 +78,9 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const [zoneTransition, setZoneTransition] = useState<'left' | 'right' | null>(null);
   const processingRef = useRef<Set<string>>(new Set());
   const capturingRef = useRef(false);
-  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('hunt'));
+  const [showTutorial, setShowTutorial] = useState(() =>
+    !gameState.state.completedTutorials?.includes('hunt') && !isTutorialDone('hunt')
+  );
 
   // Update cooldown every second
   useEffect(() => {
@@ -500,7 +502,10 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       )}
 
       {showTutorial && (
-        <TutorialOverlay tutorialKey="hunt" steps={HUNT_TUTORIAL} onDone={() => setShowTutorial(false)} />
+        <TutorialOverlay tutorialKey="hunt" steps={HUNT_TUTORIAL} onDone={() => {
+          setShowTutorial(false);
+          gameState.update(s => ({ ...s, completedTutorials: [...(s.completedTutorials ?? []), 'hunt'] }));
+        }} />
       )}
     </div>
   );

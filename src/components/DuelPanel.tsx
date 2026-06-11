@@ -10,6 +10,7 @@ interface Props {
   state: GameState;
   onClose: () => void;
   onDuelResult: (entry: DuelEntry, pointsDelta: number, fragmentReward: { pokemonId: number } | null, lurePrize: boolean) => void;
+  onMarkTutorialDone?: () => void;
 }
 
 const RARITY_BONUS: Record<Rarity, number> = {
@@ -56,8 +57,10 @@ function buildOpponentTeam(rankingPoints: number): Array<{ pokemonId: number; is
 
 type DuelPhase = 'team_select' | 'result';
 
-export function DuelPanel({ state, onClose, onDuelResult }: Props) {
-  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('duels'));
+export function DuelPanel({ state, onClose, onDuelResult, onMarkTutorialDone }: Props) {
+  const [showTutorial, setShowTutorial] = useState(() =>
+    !state.completedTutorials?.includes('duels') && !isTutorialDone('duels')
+  );
   const [selectedTeam, setSelectedTeam] = useState<Array<{ pokemonId: number; isShiny: boolean }>>([]);
   const [phase, setPhase] = useState<DuelPhase>('team_select');
   const [lastResult, setLastResult] = useState<DuelEntry | null>(null);
@@ -314,7 +317,7 @@ export function DuelPanel({ state, onClose, onDuelResult }: Props) {
           </div>
         )}
       {showTutorial && (
-        <TutorialOverlay tutorialKey="duels" steps={DUELS_TUTORIAL} onDone={() => setShowTutorial(false)} />
+        <TutorialOverlay tutorialKey="duels" steps={DUELS_TUTORIAL} onDone={() => { setShowTutorial(false); onMarkTutorialDone?.(); }} />
       )}
       </div>
     </div>

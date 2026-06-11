@@ -1002,6 +1002,7 @@ export function useGameState() {
     deleteTeam,
     setFavoriteTeamId,
     clearForcePasswordChange,
+    update,
   };
 }
 

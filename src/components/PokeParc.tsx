@@ -58,6 +58,7 @@ interface Props {
   onTrainingWin?: () => void;
   onParkDuelResult?: (won: boolean, eloDelta: number, opponentKey?: string) => void;
   currentZoneId?: string;
+  onMarkTutorialDone?: () => void;
 }
 
 function getPokemonTitle(wins: number): string | null {
@@ -657,8 +658,10 @@ function PokemonPicker({ state, onPick, onClose }: {
 
 
 // ---- Main Component ----
-export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt, onTrainingWin, onParkDuelResult, currentZoneId = 'zone1' }: Props) {
-  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('pokepark'));
+export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt, onTrainingWin, onParkDuelResult, currentZoneId = 'zone1', onMarkTutorialDone }: Props) {
+  const [showTutorial, setShowTutorial] = useState(() =>
+    !state.completedTutorials?.includes('pokepark') && !isTutorialDone('pokepark')
+  );
   const [presence, setPresence] = useState<PresenceRow[]>([]);
   const [chat, setChat] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
@@ -1523,7 +1526,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
       )}
 
       {showTutorial && (
-        <TutorialOverlay tutorialKey="pokepark" steps={POKEPARK_TUTORIAL} onDone={() => setShowTutorial(false)} bottomOffset={72} />
+        <TutorialOverlay tutorialKey="pokepark" steps={POKEPARK_TUTORIAL} onDone={() => { setShowTutorial(false); onMarkTutorialDone?.(); }} bottomOffset={72} />
       )}
     </div>
   );

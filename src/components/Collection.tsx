@@ -32,6 +32,7 @@ function getNextTitle(wins: number): { label: string; remaining: number } | null
 interface Props {
   state: GameState;
   onClose: () => void;
+  onMarkTutorialDone?: () => void;
 }
 
 type FilterTab = 'tous' | 'captures' | 'shinies' | Rarity;
@@ -48,8 +49,10 @@ const ARENA_BADGES = ZONES.filter(z => z.boss?.badge).map(z => ({
 
 const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
 
-export function Collection({ state, onClose }: Props) {
-  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('collection'));
+export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
+  const [showTutorial, setShowTutorial] = useState(() =>
+    !state.completedTutorials?.includes('collection') && !isTutorialDone('collection')
+  );
   const [mainTab, setMainTab] = useState<MainTab>('collection');
   const [filter, setFilter] = useState<FilterTab>(() => {
     try { return (localStorage.getItem('katchii_pokedex_filter') as FilterTab) ?? 'tous'; } catch { return 'tous'; }
@@ -407,7 +410,7 @@ export function Collection({ state, onClose }: Props) {
       })()}
 
       {showTutorial && (
-        <TutorialOverlay tutorialKey="collection" steps={COLLECTION_TUTORIAL} onDone={() => setShowTutorial(false)} bottomOffset={72} />
+        <TutorialOverlay tutorialKey="collection" steps={COLLECTION_TUTORIAL} onDone={() => { setShowTutorial(false); onMarkTutorialDone?.(); }} bottomOffset={72} />
       )}
     </div>
   );

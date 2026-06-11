@@ -290,6 +290,7 @@ export function App() {
         <Collection
           state={gameState.state}
           onClose={() => persistView('hunt')}
+          onMarkTutorialDone={() => gameState.update(s => ({ ...s, completedTutorials: [...(s.completedTutorials ?? []), 'collection'] }))}
         />
       )}
 
@@ -314,6 +315,7 @@ export function App() {
           onSaveTeam={gameState.saveTeam}
           onDeleteTeam={gameState.deleteTeam}
           onSetFavoriteTeamId={gameState.setFavoriteTeamId}
+          onMarkTutorialDone={() => gameState.update(s => ({ ...s, completedTutorials: [...(s.completedTutorials ?? []), 'team'] }))}
         />
       )}
 
@@ -339,6 +341,7 @@ export function App() {
           state={gameState.state}
           onClose={() => persistView('hunt')}
           onDuelResult={handleDuelResult}
+          onMarkTutorialDone={() => gameState.update(s => ({ ...s, completedTutorials: [...(s.completedTutorials ?? []), 'duels'] }))}
         />
       )}
 
@@ -378,6 +381,7 @@ export function App() {
           onTrainingWin={gameState.addTrainingWin}
           onParkDuelResult={gameState.addParkDuelResult}
           currentZoneId={gameState.state.zoneProgress?.currentZoneId ?? 'zone1'}
+          onMarkTutorialDone={() => gameState.update(s => ({ ...s, completedTutorials: [...(s.completedTutorials ?? []), 'pokepark'] }))}
         />
       )}
 
