@@ -25,7 +25,7 @@ const MENU_ITEMS = [
   { view: 'shop'     as View, icon: '🏪', label: 'Boutique',   color: '#34d399' },
   { view: 'backpack' as View, icon: '🎒', label: 'Sac à dos',  color: '#fb923c' },
   { view: 'raid'     as View, icon: '🐉', label: 'Raid',       color: '#f87171' },
-  { view: 'clan'     as View, icon: '🛡️', label: 'Clan',       color: '#fbbf24' },
+  { view: 'clan'     as View, icon: '🛡️', label: 'Clan',       color: '#fbbf24', soon: true },
   { view: 'profile'  as View, icon: '👤', label: 'Mon profil', color: '#60a5fa' },
 ];
 
@@ -259,13 +259,17 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
             {MENU_ITEMS.map(item => (
               <button
                 key={item.view}
-                onClick={() => handleNavigate(item.view)}
-                className={`flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all ${
+                onClick={() => !('soon' in item && item.soon) && handleNavigate(item.view)}
+                className={`flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all relative ${
+                  'soon' in item && item.soon ? 'opacity-40 cursor-default' :
                   currentView === item.view ? 'bg-white/10 ring-1 ring-white/20' : 'bg-white/5 active:bg-white/10'
                 }`}
               >
                 <span className="text-2xl leading-none">{item.icon}</span>
                 <span className="text-xs font-bold" style={{ color: item.color }}>{item.label}</span>
+                {'soon' in item && item.soon && (
+                  <span className="text-[0.5rem] text-yellow-400 font-bold leading-none">Bientôt</span>
+                )}
               </button>
             ))}
             {onShowPlayers && (
