@@ -85,8 +85,8 @@ export function calcDamage(
 }
 
 export function xpGainedFromBattle(enemyLevel: number, won: boolean, enemyRarity?: Rarity): number {
-  const rarityBonus = enemyRarity ? RARITY_BASE[enemyRarity] * 15 : 0;
+  const rarityBonus = enemyRarity ? RARITY_BASE[enemyRarity] * 20 : 0;
   return won
-    ? Math.floor((10 + enemyLevel * 3 + rarityBonus) * 4)
-    : Math.floor((3 + enemyLevel) * 4);
+    ? Math.floor((15 + enemyLevel * 5 + rarityBonus) * 5)
+    : Math.floor((5 + enemyLevel * 2) * 3);
 }

@@ -523,14 +523,15 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
       boostActiveRef.current = false;
       setBoostActive(false);
       if (!wonSnap) { stopMusic(0.3); if (!suppressVictorySound) playSfxDefeat(); }
-      // Give bench pokemon 25% of the average XP earned by active fighters
+      // All team members earn the same XP — compute average of active fighters and apply to everyone
       const snap = { ...xpGains };
       const earned = Object.values(snap);
-      if (earned.length > 0) {
-        const avgXp = earned.reduce((a, b) => a + b, 0) / earned.length;
-        const benchXp = Math.max(1, Math.floor(avgXp * 0.25));
+      const avgXp = earned.length > 0
+        ? Math.max(1, Math.floor(earned.reduce((a, b) => a + b, 0) / earned.length))
+        : 0;
+      if (avgXp > 0) {
         playerTeam.forEach(m => {
-          if (!snap[m.pokemonId]) snap[m.pokemonId] = benchXp;
+          if (!snap[m.pokemonId]) snap[m.pokemonId] = avgXp;
         });
       }
       const finalTeam: TeamMember[] = playerFightersRef.current.map(f => ({ ...f }));
