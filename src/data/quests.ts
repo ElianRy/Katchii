@@ -17,6 +17,7 @@ export interface QuestDefinition {
   target: number;
   difficulty: QuestDifficulty;
   reward: { points: number; fragments?: number };
+  zones?: 'no_zone2'; // exclude from specific zones
 }
 
 export const QUEST_POOL: QuestDefinition[] = [
@@ -24,7 +25,6 @@ export const QUEST_POOL: QuestDefinition[] = [
   { id: 'capture_5',         label: 'Capture 5 Pokémon',              type: 'capture_n',      target: 5,  difficulty: 'facile',         reward: { points: 25 } },
   { id: 'capture_commun_5',  label: 'Capture 5 Pokémon communs',      type: 'capture_rarity', rarity: 'commun',     target: 5,  difficulty: 'facile',         reward: { points: 20 } },
   { id: 'activate_lure',     label: 'Active un leurre',               type: 'activate_lure',  target: 1,  difficulty: 'facile',         reward: { points: 25 } },
-  { id: 'capture_shiny_easy',label: 'Capture 1 Pokémon shiny',        type: 'capture_shiny',  target: 1,  difficulty: 'facile',         reward: { points: 30 } },
 
   // ── Moyen (récompense 50–65 pts) ─────────────────────────────────────────
   { id: 'capture_10',        label: 'Capture 10 Pokémon',             type: 'capture_n',      target: 10, difficulty: 'moyen',          reward: { points: 55 } },
@@ -41,7 +41,7 @@ export const QUEST_POOL: QuestDefinition[] = [
   // ── Très difficile (récompense 130–160 pts) ───────────────────────────────
   { id: 'capture_rare_3',    label: 'Capture 3 Pokémon rares',        type: 'capture_rarity', rarity: 'rare',       target: 3,  difficulty: 'tres_difficile', reward: { points: 140 } },
   { id: 'capture_elite_1',   label: 'Capture 1 Pokémon épique',       type: 'capture_rarity', rarity: 'elite',      target: 1,  difficulty: 'tres_difficile', reward: { points: 130 } },
-  { id: 'capture_shiny_1',   label: 'Capture 1 Shiny',                type: 'capture_shiny',  target: 1,  difficulty: 'tres_difficile', reward: { points: 160 } },
+  { id: 'capture_shiny_1',   label: 'Capture 1 Pokémon Shiny ✨',     type: 'capture_shiny',  target: 1,  difficulty: 'tres_difficile', reward: { points: 250 }, zones: 'no_zone2' },
 ];
 
 // Seeded random from string seed
@@ -65,6 +65,7 @@ export function pickDailyQuests(date: string, zoneId: string, availableRarities?
   // Filter pool to only include quests achievable in this zone
   const eligible = (diff: QuestDifficulty) => QUEST_POOL.filter(q => {
     if (q.difficulty !== diff) return false;
+    if (q.zones === 'no_zone2' && zoneId === 'zone2') return false;
     if (!q.rarity || !availableRarities) return true;
     return availableRarities.has(q.rarity);
   }).map(q => ({ ...q }));
