@@ -365,7 +365,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
 
       {/* Level-up notifications */}
       {levelUps.length > 0 && (
-        <div className="absolute inset-x-0 top-20 z-50 flex flex-col items-center gap-2 pointer-events-none" style={{ left: '50%', transform: 'translateX(-50%)', width: 'max-content', maxWidth: '90vw' }}>
+        <div className="absolute top-20 z-50 flex flex-col items-center gap-2 pointer-events-none" style={{ left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap' }}>
           {levelUps.map((lu, i) => {
             const p = POKEMON_BY_ID[lu.pokemonId];
             return (
