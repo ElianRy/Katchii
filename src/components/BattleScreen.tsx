@@ -10,7 +10,7 @@ function spriteFilter(pokemonId: number, _isShiny: boolean, _size = 4): string {
   return `drop-shadow(0 0 4px ${RARITY_COLORS[rarity]})`;
 }
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
-import { calcDamage, xpGainedFromBattle } from '../data/combatEngine';
+import { calcDamage, xpGainedFromBattle, xpToNextLevel } from '../data/combatEngine';
 import { TeamMember } from './TeamBuilder';
 
 const SHINY_INTRO_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string }[] = [
@@ -444,9 +444,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
           if (newEHp <= 0) {
             addLog(`${eName} est K.O. !`, '#f87171');
-            const xpBase = xpGainedFromBattle(eFighter.level, true, POKEMON_BY_ID[eFighter.pokemonId]?.rarity);
-            const levelBonus = 1 + pFighter.level * 0.025;
-            const xpEarned = Math.floor(xpBase * levelBonus);
+            const xpPct = xpGainedFromBattle(eFighter.level, true, POKEMON_BY_ID[eFighter.pokemonId]?.rarity);
+            const xpEarned = Math.max(1, Math.floor(xpToNextLevel(pFighter.level) * xpPct));
             setXpGains(prev => ({ ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned }));
             // Boost stays active — it was the enemy that fainted, not our pokemon
             const nextE = newEf.findIndex((f, i) => i > eIdx && f.currentHp > 0);
@@ -523,15 +522,21 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
       boostActiveRef.current = false;
       setBoostActive(false);
       if (!wonSnap) { stopMusic(0.3); if (!suppressVictorySound) playSfxDefeat(); }
-      // All team members earn the same XP — compute average of active fighters and apply to everyone
+      // Compute avg XP % from active fighters, apply to each team member's own xpToNextLevel
       const snap = { ...xpGains };
-      const earned = Object.values(snap);
-      const avgXp = earned.length > 0
-        ? Math.max(1, Math.floor(earned.reduce((a, b) => a + b, 0) / earned.length))
+      const activeLevels = playerFightersRef.current.map(f => f.level);
+      const activeXpPcts = activeLevels.map((lvl, i) => {
+        const earned = snap[playerFightersRef.current[i]?.pokemonId ?? 0] ?? 0;
+        return lvl > 0 ? earned / xpToNextLevel(lvl) : 0;
+      }).filter(p => p > 0);
+      const avgPct = activeXpPcts.length > 0
+        ? activeXpPcts.reduce((a, b) => a + b, 0) / activeXpPcts.length
         : 0;
-      if (avgXp > 0) {
+      if (avgPct > 0) {
         playerTeam.forEach(m => {
-          if (!snap[m.pokemonId]) snap[m.pokemonId] = avgXp;
+          if (!snap[m.pokemonId]) {
+            snap[m.pokemonId] = Math.max(1, Math.floor(xpToNextLevel(m.level) * avgPct));
+          }
         });
       }
       const finalTeam: TeamMember[] = playerFightersRef.current.map(f => ({ ...f }));

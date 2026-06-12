@@ -87,9 +87,13 @@ export function calcDamage(
   return { damage, effectiveness, moveName: move.name, isCrit, isMiss: false };
 }
 
+// Returns a fraction of xpToNextLevel to award per battle (0.0 – 1.0)
 export function xpGainedFromBattle(enemyLevel: number, won: boolean, enemyRarity?: Rarity): number {
-  const rarityBonus = enemyRarity ? RARITY_BASE[enemyRarity] * 20 : 0;
-  return won
-    ? Math.floor((15 + enemyLevel * 5 + rarityBonus) * 5)
-    : Math.floor((5 + enemyLevel * 2) * 3);
+  if (!won) return 0.05;
+  const rarityBonus = enemyRarity
+    ? { commun: 0, peu_commun: 0.03, rare: 0.07, elite: 0.12, legendaire: 0.18 }[enemyRarity] ?? 0
+    : 0;
+  // Base scales with enemy level: level 5 ≈ 15%, level 30 ≈ 25%, level 70 ≈ 35%
+  const base = 0.10 + Math.min(enemyLevel / 200, 0.25);
+  return base + rarityBonus;
 }
