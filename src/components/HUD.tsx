@@ -198,7 +198,7 @@ export function HUD({
             </button>
             {bossUnlocked && onFightBoss && (
               <button onClick={onFightBoss} className="w-full text-xs font-black py-1.5 rounded-xl mt-1 animate-pulse" style={{ background: 'linear-gradient(90deg,#f59e0b,#ef4444)', color: '#000' }}>
-                {currentZoneId === 'zone8' ? '🏆 Lancer le Défi de la Ligue !' : `⚔️ Affronter Maître ${bossName} !`}
+                {currentZoneId === 'zone8' ? '🏆 Lancer le Défi de la Ligue !' : `⚔️ Affronter ${bossName} !`}
               </button>
             )}
           </div>

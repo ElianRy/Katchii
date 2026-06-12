@@ -222,7 +222,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div>
           <h2 className="text-white font-black text-xl">👥 Joueurs</h2>
-          <p className="text-slate-400 text-xs">{players.length} dresseurs actifs</p>
+          <p className="text-slate-400 text-xs">{sorted.length} dresseurs actifs</p>
         </div>
       </div>
 

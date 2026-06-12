@@ -652,7 +652,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
             className="flex-1 py-3 rounded-2xl font-black text-sm text-black disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: selected.length > 0 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : '#374151' }}
           >
-            ⚔️ Combattre
+            🥊 Entraînement
           </button>
         </div>
       </div>
