@@ -64,12 +64,15 @@ export function calcDamage(
   const attackerTypes = POKEMON_TYPE[attackerId] ?? ['normal'];
   const defenderTypes = POKEMON_TYPE[defenderId] ?? ['normal'];
 
-  const primaryType = attackerTypes[0];
-  const move = TYPE_MOVES[primaryType];
+  // Pick the attacker type that deals the most damage to this defender
+  const bestType = attackerTypes.reduce<PokemonType>((best, t) =>
+    getTypeEffectiveness(t, defenderTypes) > getTypeEffectiveness(best, defenderTypes) ? t : best
+  , attackerTypes[0]);
+  const move = TYPE_MOVES[bestType];
 
   const atk = calcAttack(attackerId, attackerLevel);
   const def = calcDefense(defenderId, defenderLevel);
-  const effectiveness = getTypeEffectiveness(primaryType, defenderTypes);
+  const effectiveness = getTypeEffectiveness(bestType, defenderTypes);
 
   const roll = Math.random();
   if (roll < 0.10) {
