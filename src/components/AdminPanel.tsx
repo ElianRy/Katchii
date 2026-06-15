@@ -16,8 +16,8 @@ const RARITY_COLORS_ADMIN: Record<string, string> = {
 export function AdminPanel({ gameState, onClose }: Props) {
   const [tab, setTab] = useState<'pokemon' | 'zones' | 'misc' | 'throne'>('pokemon');
   const [throneData, setThroneData] = useState<ThroneData | null>(null);
-  const [throneInput, setThroneInput] = useState('');
   const [throneLoading, setThroneLoading] = useState(false);
+  const [allPlayers, setAllPlayers] = useState<Array<{ username: string; userId?: string }>>([]);
   const [filter, setFilter] = useState('');
   const [feedback, setFeedback] = useState('');
 
@@ -30,6 +30,18 @@ export function AdminPanel({ gameState, onClose }: Props) {
     setThroneLoading(true);
     const { data } = await supabase.from('game_saves').select('state').eq('user_id', '__throne__').single();
     setThroneData((data?.state as ThroneData) ?? null);
+    // Load all players
+    const { data: saves } = await supabase.from('game_saves').select('state').neq('user_id', '__throne__');
+    if (saves) {
+      const players = saves
+        .map(row => {
+          const s = row.state as { username?: string } | null;
+          return s?.username ? { username: s.username } : null;
+        })
+        .filter((p): p is { username: string } => p !== null)
+        .sort((a, b) => a.username.localeCompare(b.username));
+      setAllPlayers(players);
+    }
     setThroneLoading(false);
   };
 
@@ -59,7 +71,6 @@ export function AdminPanel({ gameState, onClose }: Props) {
     const newData: ThroneData = { champion: { username: newUsername, team, since: now }, records: newRecords, coinClaims: throneData?.coinClaims ?? {} };
     await supabase.from('game_saves').upsert({ user_id: '__throne__', state: newData, updated_at: now });
     setThroneData(newData);
-    setThroneInput('');
     flash(`👑 ${newUsername} est maintenant champion !`);
   };
 
@@ -321,24 +332,31 @@ export function AdminPanel({ gameState, onClose }: Props) {
                   ) : <p className="text-slate-400 text-sm">Aucun champion défini</p>}
                 </div>
 
-                {/* Set manual champion */}
+                {/* Set manual champion — player list */}
                 <div className="bg-slate-800 rounded-xl p-4 border border-slate-600/40">
-                  <p className="text-white font-black text-sm mb-2">⚔️ Définir un champion manuellement</p>
-                  <div className="flex gap-2">
-                    <input
-                      value={throneInput}
-                      onChange={e => setThroneInput(e.target.value)}
-                      placeholder="Nom d'utilisateur exact"
-                      className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
-                    />
-                    <button
-                      onClick={() => setManualChampion(throneInput)}
-                      disabled={!throneInput.trim()}
-                      className="px-4 py-2 rounded-lg bg-amber-600 text-black font-black text-sm disabled:opacity-40"
-                    >
-                      OK
-                    </button>
-                  </div>
+                  <p className="text-white font-black text-sm mb-3">⚔️ Définir un champion</p>
+                  {allPlayers.length === 0 ? (
+                    <p className="text-slate-500 text-xs">Aucun joueur trouvé.</p>
+                  ) : (
+                    <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+                      {allPlayers.map(p => (
+                        <button
+                          key={p.username}
+                          onClick={() => setManualChampion(p.username)}
+                          className={`flex items-center justify-between px-3 py-2 rounded-xl border transition-all text-left ${
+                            throneData?.champion?.username === p.username
+                              ? 'border-amber-500 bg-amber-900/30 text-amber-300'
+                              : 'border-slate-600 bg-slate-700/50 text-white hover:border-amber-500/60'
+                          }`}
+                        >
+                          <span className="font-bold text-sm">{p.username}</span>
+                          {throneData?.champion?.username === p.username && (
+                            <span className="text-amber-400 text-xs font-black">👑 Champion actuel</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Records list with delete */}
