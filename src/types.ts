@@ -55,6 +55,22 @@ export interface SpawnedPokemon {
   captured: boolean;
 }
 
+export interface PokemonIV {
+  hp: number; attack: number; defense: number;
+  spAttack: number; spDefense: number; speed: number;
+}
+
+export interface PokemonEV {
+  hp: number; attack: number; defense: number;
+  spAttack: number; spDefense: number; speed: number;
+}
+
+export interface PokemonInstanceData {
+  iv: PokemonIV;
+  ev: PokemonEV;
+  nature: string; // nature name key from NATURES
+}
+
 export interface GameState {
   username?: string; // stored in cloud for leaderboard
   points: number;
@@ -110,6 +126,7 @@ export interface GameState {
     firstPlayedAt: number;
   };
   pokemonLevels: Record<number, { level: number; xp: number }>;
+  pokemonData?: Record<number, PokemonInstanceData>; // IV/EV/Nature per pokemonId
   savedTeams?: Array<{ id: string; name: string; members: Array<{ pokemonId: number; isShiny?: boolean; level: number; xp: number; currentHp: number; maxHp: number }> }>;
   favoriteTeamId?: string;
   playerXp: number;

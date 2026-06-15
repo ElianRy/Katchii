@@ -16,8 +16,30 @@ function zoneRarities(zoneId: string): Set<Rarity> {
   return new Set(zone.pokemonIds.map(id => POKEMON_BY_ID[id]?.rarity).filter(Boolean) as Rarity[]);
 }
 import { getWeekId, todayDate, getTeamDamage } from '../components/RaidPanel';
-import { naturalLevel, xpToNextLevel } from '../data/combatEngine';
+import { naturalLevel, xpToNextLevel, randomIV, zeroEV } from '../data/combatEngine';
+import { randomNature } from '../data/natures';
+import type { PokemonInstanceData } from '../types';
 
+
+// Auto-assign IV/EV/Nature to any caught Pokémon that doesn't have pokemonData yet
+function migrateInstanceData(state: GameState): GameState {
+  const allCaught = new Set([
+    ...Object.keys(state.normalCollection).map(Number).filter(id => (state.normalCollection[id] ?? 0) > 0),
+    ...Object.keys(state.shinyCollection).map(Number).filter(id => (state.shinyCollection[id] ?? 0) > 0),
+  ]);
+  if (allCaught.size === 0) return state;
+  const existing = state.pokemonData ?? {};
+  let changed = false;
+  const next: Record<number, PokemonInstanceData> = { ...existing };
+  for (const id of allCaught) {
+    if (!next[id]) {
+      next[id] = { iv: randomIV(), ev: zeroEV(), nature: randomNature() };
+      changed = true;
+    }
+  }
+  if (!changed) return state;
+  return { ...state, pokemonData: next };
+}
 
 const COOLDOWN_MS = 30_000;
 const getCooldownMs = (state: GameState) =>
@@ -131,7 +153,7 @@ export function useGameState() {
         if (cloudState === 'error') {
           console.warn('[useGameState] cloud load failed, using user-local state');
           const local = loadUserState(userId) ?? { ...DEFAULT_STATE };
-          const stamped = username ? { ...local, username } : local;
+          const stamped = migrateInstanceData(username ? { ...local, username } : local);
           latestStateRef.current = stamped;
           isReadyToSaveRef.current = true;
           setState(() => { saveUserState(userId, stamped); return stamped; });
@@ -145,7 +167,7 @@ export function useGameState() {
         if (!cloudState) {
           const local = loadUserState(userId);
           if (local) {
-            const stamped = username ? { ...local, username } : local;
+            const stamped = migrateInstanceData(username ? { ...local, username } : local);
             latestStateRef.current = stamped;
             isReadyToSaveRef.current = true;
             setState(() => { saveUserState(userId, stamped); return stamped; });
@@ -168,7 +190,7 @@ export function useGameState() {
           supabase.auth.signOut();
           return;
         }
-        const stamped = username ? { ...cloudState, username } : cloudState;
+        const stamped = migrateInstanceData(username ? { ...cloudState, username } : cloudState);
         latestStateRef.current = stamped;
         isReadyToSaveRef.current = true;
         setState(() => { saveUserState(userId, stamped); return stamped; });
@@ -322,6 +344,11 @@ export function useGameState() {
             capturedLevel = current.level;
           }
         }
+      }
+
+      // Assign IV/EV/Nature on first capture
+      if (!next.pokemonData?.[pokemonId]) {
+        next.pokemonData = { ...(next.pokemonData ?? {}), [pokemonId]: { iv: randomIV(), ev: zeroEV(), nature: randomNature() } };
       }
 
       // Quest progress

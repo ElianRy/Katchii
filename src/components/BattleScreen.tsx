@@ -10,9 +10,10 @@ function spriteFilter(pokemonId: number, _isShiny: boolean, _size = 4): string {
   return `drop-shadow(0 0 4px ${RARITY_COLORS[rarity]})`;
 }
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
-import { calcDamage, calcXpGain } from '../data/combatEngine';
+import { calcDamage, calcStruggle, calcXpGain, calcSpeed } from '../data/combatEngine';
 import { GEN1_STATS } from '../data/gen1Stats';
 import { TeamMember } from './TeamBuilder';
+import type { PokemonInstanceData } from '../types';
 
 const SHINY_INTRO_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string }[] = [
   { color: '#fde047', dur: '1.2s', delay: '0s',    sym: '✦', size: 18, anim: 'park-persp-a' },
@@ -41,14 +42,19 @@ interface Props {
   trainerImage?: string;
   trainerColor?: string;
   sideOverlay?: React.ReactNode;
+  pokemonData?: Record<number, PokemonInstanceData>;
 }
 
-interface FighterState extends TeamMember { currentHp: number; }
+interface FighterState extends TeamMember {
+  currentHp: number;
+  currentPP: number[];
+}
+
 interface LogEntry { text: string; color: string; }
 
 interface AttackEvent {
   attacker: 'player' | 'enemy';
-  type: PokemonType; // used for VFX — set from move's animationType (cast to PokemonType)
+  type: PokemonType;
   uid: number;
 }
 
@@ -71,7 +77,6 @@ const STARS = Array.from({ length: 40 }, (_, i) => ({
   del: (i * 0.37) % 2.5,
 }));
 
-
 let dmgCounter = 0;
 
 const CONFETTI_BATTLE = Array.from({ length: 22 }, (_, i) => ({
@@ -84,16 +89,11 @@ const CONFETTI_BATTLE = Array.from({ length: 22 }, (_, i) => ({
   dur: `${0.7 + (i % 5) * 0.1}s`,
 }));
 
-// ── Type VFX — each type has a distinct trajectory and visual ────────────────
-// ltr = player (bottom-left) attacks enemy (top-right)
-// rtl = enemy (top-right) attacks player (bottom-left)
+// ── Type VFX ────────────────────────────────────────────────────────────────
 function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction: 'ltr' | 'rtl'; uid: number }) {
   const d = direction;
   type P = React.CSSProperties;
 
-  // Attacker origin follows the pokemon sprite positions which use max(7%, calc(50%-220px))
-  // Player (ltr): right edge of player sprite = left side + sprite width ≈ +110px
-  // Enemy  (rtl): left edge of enemy sprite = 100% - right offset - sprite width ≈ -110px
   const origin: P = {
     position: 'absolute', pointerEvents: 'none', zIndex: 15,
     left: d === 'ltr'
@@ -103,8 +103,6 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
   };
 
   switch (type) {
-
-    // FIRE: parabolic arc — big fireball rises high then comes down at target
     case 'fire': return (
       <div style={origin}>
         <div style={{ position:'absolute', fontSize:'3rem', filter:'drop-shadow(0 0 18px #f97316) drop-shadow(0 0 32px #ef4444)', animation:`fire-arc-${d} 1.05s ease-in-out forwards` } as P}>🔥</div>
@@ -112,8 +110,6 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
         <div style={{ position:'absolute', fontSize:'1.2rem', animation:`fire-arc-${d} 1.05s 0.2s ease-in-out forwards` } as P}>🔥</div>
       </div>
     );
-
-    // WATER: very high arc (different peak height from fire)
     case 'water': return (
       <div style={origin}>
         <div style={{ position:'absolute', fontSize:'2.6rem', filter:'drop-shadow(0 0 16px #38bdf8) drop-shadow(0 0 26px #0ea5e9)', animation:`water-arc-${d} 1.1s ease-in-out forwards` } as P}>💧</div>
@@ -121,10 +117,7 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
         <div style={{ position:'absolute', fontSize:'2rem', filter:'drop-shadow(0 0 10px #0ea5e9)', animation:`water-arc-${d} 1.1s 0.18s ease-in-out forwards` } as P}>🌊</div>
       </div>
     );
-
-    // ELECTRIC: SVG zigzag bolt drawn instantly across the arena
     case 'electric': {
-      // Zigzag from attacker front to target center in % coordinates
       const pts = d === 'ltr'
         ? '33,50 42,40 36,30 53,22 46,13 66,7 59,2 80,25'
         : '70,42 61,52 67,62 50,70 57,79 38,85 44,91 22,60';
@@ -141,8 +134,6 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
         </svg>
       );
     }
-
-    // GRASS: leaves rise from below, then spiral to target
     case 'grass': return (
       <div style={origin}>
         <div style={{ position:'absolute', fontSize:'2.4rem', filter:'drop-shadow(0 0 8px #4ade80)', animation:`grass-fly-${d} 1.1s ease-in-out forwards` } as P}>🍃</div>
@@ -150,8 +141,6 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
         <div style={{ position:'absolute', fontSize:'1.3rem', animation:`grass-fly-${d} 1.1s 0.18s ease-in-out forwards` } as P}>🍃</div>
       </div>
     );
-
-    // ICE: fast straight beam (very different from fire's slow arc)
     case 'ice': return (
       <div style={origin}>
         <div style={{ position:'absolute', fontSize:'2.8rem', filter:'drop-shadow(0 0 20px #bae6fd) drop-shadow(0 0 36px #38bdf8)', animation:`ice-beam-${d} 0.35s ease-out forwards` } as P}>❄️</div>
@@ -159,8 +148,6 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
         <div style={{ position:'absolute', fontSize:'1.4rem', animation:`ice-beam-${d} 0.35s 0.11s ease-out forwards` } as P}>❄️</div>
       </div>
     );
-
-    // PSYCHIC: gem travels to target; rings expand at target (dual element)
     case 'psychic': {
       const tgt: P = {
         position:'absolute', pointerEvents:'none', zIndex:15,
@@ -184,16 +171,12 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
         </>
       );
     }
-
-    // FIGHTING: fast direct punch (shorter than other animations)
     case 'fighting': return (
       <div style={origin}>
         <div style={{ position:'absolute', fontSize:'3rem', filter:'drop-shadow(0 0 16px #f97316)', animation:`fight-dash-${d} 0.5s ease-in forwards` } as P}>👊</div>
         <div style={{ position:'absolute', fontSize:'2.4rem', filter:'drop-shadow(0 0 16px #fbbf24)', animation:`fight-dash-${d} 0.5s 0.22s ease-out forwards` } as P}>💥</div>
       </div>
     );
-
-    // GHOST: slow, undulating wave (longest animation — opposite of fighting)
     case 'ghost': return (
       <div style={origin}>
         <div style={{ position:'absolute', fontSize:'3.5rem', top:-26, left:-18,
@@ -201,8 +184,6 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
           animation:`ghost-wave2-${d} 1.6s ease-in-out forwards` } as P}>👻</div>
       </div>
     );
-
-    // POISON: three purple bubbles drifting in slightly different paths
     case 'poison': return (
       <div style={origin}>
         {([
@@ -221,8 +202,6 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
           animation:`poison-drift-${d} 1.2s 0.08s ease-in-out forwards` } as P}>☠️</div>
       </div>
     );
-
-    // GROUND: rock rolls LOW along the ground, then rises to hit target
     case 'ground': return (
       <div style={{ ...origin, top: d === 'ltr' ? '67%' : '42%' }}>
         <div style={{ position:'absolute', fontSize:'2.6rem', filter:'drop-shadow(0 0 7px #92400e)', animation:`ground-roll-${d} 1.1s ease-in-out forwards` } as P}>🪨</div>
@@ -230,16 +209,10 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
         <div style={{ position:'absolute', fontSize:'1.4rem', filter:'drop-shadow(0 0 7px #f97316)', animation:`ground-roll-${d} 1.1s 0.32s ease-out forwards` } as P}>💥</div>
       </div>
     );
-
-    // FLYING: three parallel wind slash lines sweep horizontally
     case 'flying': {
       const slashBase: P = { position:'absolute', borderRadius:2, background:'rgba(186,230,253,0.9)',
         filter:'drop-shadow(0 0 4px #7dd3fc)', transformOrigin: d === 'ltr' ? 'left center' : 'right center' };
-      // ltr slashes: player (bottom) attacks up-right → slashes at ~50% height
-      // rtl slashes: enemy (top) attacks down-left   → slashes at ~20% height
-      const tops = d === 'ltr'
-        ? ['52%', '58%', '46%']
-        : ['20%', '26%', '14%'];
+      const tops = d === 'ltr' ? ['52%', '58%', '46%'] : ['20%', '26%', '14%'];
       return (
         <div style={{ position:'absolute', zIndex:15, pointerEvents:'none',
           left: d === 'ltr' ? '8%' : 'auto', right: d === 'ltr' ? 'auto' : '8%',
@@ -258,8 +231,6 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
         </div>
       );
     }
-
-    // DRAGON: slow powerful sweep with energy trail
     case 'dragon': return (
       <div style={{ ...origin, top: d === 'ltr' ? '55%' : '35%' }}>
         <div style={{ position:'absolute', fontSize:'4rem', top:-30, left:-20,
@@ -272,8 +243,6 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
           animation:`dragon-arc-${d} 1.2s 0.28s ease-in-out forwards` } as P}>✨</div>
       </div>
     );
-
-    // ROCK: tumbling rocks with rotation
     case 'rock': return (
       <div style={origin}>
         <div style={{ position:'absolute', fontSize:'2.6rem', filter:'drop-shadow(0 0 5px #a8a29e)', animation:`rock-throw-${d} 0.9s ease-in-out forwards` } as P}>🪨</div>
@@ -281,8 +250,6 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
         <div style={{ position:'absolute', fontSize:'1.5rem', filter:'drop-shadow(0 0 7px #fbbf24)', animation:`rock-throw-${d} 0.9s 0.22s ease-out forwards` } as P}>💥</div>
       </div>
     );
-
-    // BUG: four bugs in erratic zigzag paths
     case 'bug': return (
       <div style={origin}>
         {([0,1,2,3] as number[]).map(i => (
@@ -292,8 +259,6 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
         ))}
       </div>
     );
-
-    // NORMAL: star stream
     default: return (
       <div style={origin}>
         {([{s:2,d2:'0s'},{s:1.5,d2:'0.08s'},{s:1.1,d2:'0.15s'},{s:.8,d2:'0.22s'}] as Array<{s:number,d2:string}>).map((p,i)=>(
@@ -309,32 +274,57 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
   }
 }
 
-// ── Main component ───────────────────────────────────────────────────────
-export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBattleEnd, playerDamageMult = 1, isLeague = false, suppressVictorySound = false, keepMusic = false, keepMusicOnUnmount = false, autoCombat = false, onAutoCombatChange, speedLevel: speedLevelProp = 0, onSpeedLevelChange, onQuit, trainerImage, trainerColor, sideOverlay }: Props) {
-  const [playerFighters, setPlayerFighters] = useState<FighterState[]>(
-    playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp }))
-  );
-  const playerFightersRef = useRef<FighterState[]>(playerTeam.map(m => ({ ...m, currentHp: m.currentHp > 0 ? m.currentHp : m.maxHp })));
-  // Attack boost applies only to the first pokemon sent; once it faints, boost is spent
+// Helper to get PP array for a pokemon (4 moves)
+function initPP(pokemonId: number): number[] {
+  const s = GEN1_STATS[pokemonId];
+  const moves = (s as unknown as { moves?: Array<{ pp: number }> })?.moves;
+  if (moves) return moves.map(m => m.pp);
+  // Old format fallback
+  return [15, 15, 15, 15];
+}
+
+// Helper to get move list for display
+function getMoveList(pokemonId: number): Array<{ name: string; type: string; power: number; pp: number; category: string }> {
+  const s = GEN1_STATS[pokemonId];
+  const moves = (s as unknown as { moves?: Array<{ name: string; type: string; power: number; pp: number; category: string }> })?.moves;
+  if (moves) return moves;
+  const move = (s as unknown as { move?: { name: string; type: string; power: number; category: string } })?.move;
+  if (move) return [{ ...move, pp: 15 }, { ...move, pp: 15 }, { ...move, pp: 15 }, { ...move, pp: 15 }];
+  return [];
+}
+
+// ── Main component ───────────────────────────────────────────────────────────
+export function BattleScreen({
+  playerTeam, enemyTeam, bossName: _bossName, onBattleEnd,
+  playerDamageMult = 1, isLeague = false,
+  suppressVictorySound = false, keepMusic = false, keepMusicOnUnmount = false,
+  onQuit, trainerImage, trainerColor, sideOverlay, pokemonData,
+}: Props) {
+
+  const initFighters = (team: TeamMember[], useCurrentHp: boolean): FighterState[] =>
+    team.map(m => ({
+      ...m,
+      currentHp: useCurrentHp && m.currentHp > 0 ? m.currentHp : m.maxHp,
+      currentPP: initPP(m.pokemonId),
+    }));
+
+  const [playerFighters, setPlayerFighters] = useState<FighterState[]>(() => initFighters(playerTeam, true));
+  const playerFightersRef = useRef<FighterState[]>(initFighters(playerTeam, true));
   const boostActiveRef = useRef(playerDamageMult > 1);
   const [boostActive, setBoostActive] = useState(playerDamageMult > 1);
-  const [enemyFighters, setEnemyFighters] = useState<FighterState[]>(
-    enemyTeam.map(m => ({ ...m, currentHp: m.maxHp }))
-  );
+  const [enemyFighters, setEnemyFighters] = useState<FighterState[]>(() => initFighters(enemyTeam, false));
   const [playerIdx, setPlayerIdx] = useState(0);
   const [enemyIdx, setEnemyIdx] = useState(0);
-  // Refs that stay in sync with state — used inside interval to avoid stale closures
   const playerIdxRef = useRef(0);
   const enemyIdxRef = useRef(0);
   const [log, setLog] = useState<LogEntry[]>([]);
-  const [phase, setPhase] = useState<'intro' | 'battle' | 'switch' | 'end'>('intro');
-  const phaseRef = useRef<'intro' | 'battle' | 'switch' | 'end'>('intro');
+  const [phase, setPhase] = useState<'intro' | 'player_turn' | 'resolving' | 'switch' | 'end'>('intro');
+  const phaseRef = useRef<'intro' | 'player_turn' | 'resolving' | 'switch' | 'end'>('intro');
   const [attackEvt, setAttackEvt] = useState<AttackEvent | null>(null);
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [xpGains, setXpGains] = useState<Record<number, number>>({});
+  const xpGainsRef = useRef<Record<number, number>>({});
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
-  const [speedLevel, setSpeedLevelLocal] = useState(speedLevelProp);
-  const setSpeedLevel = (v: number) => { setSpeedLevelLocal(v); onSpeedLevelChange?.(v); };
   const won = useRef(false);
   const battleDone = useRef(false);
   const enemyDmgRef = useRef<Record<number, number>>({});
@@ -344,13 +334,13 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
   const [shinyIntro, setShinyIntro] = useState(false);
   const [shakePokemon, setShakePokemon] = useState<'player' | 'enemy' | null>(null);
 
-  // Keep refs in sync
   useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
   useEffect(() => { playerIdxRef.current = playerIdx; }, [playerIdx]);
   useEffect(() => { enemyIdxRef.current = enemyIdx; }, [enemyIdx]);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
+  useEffect(() => { xpGainsRef.current = xpGains; }, [xpGains]);
 
-  // Trainer KO reaction when enemy pokemon HP hits 0
+  // Trainer KO reaction
   useEffect(() => {
     const hp = enemyFighters[enemyIdx]?.currentHp ?? null;
     if (hp !== null && prevEfHp.current !== null && prevEfHp.current > 0 && hp === 0) {
@@ -366,35 +356,27 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     setLog(prev => [...prev.slice(-5), { text, color }]);
   }, []);
 
-  // Intro → battle transition + music + cry/tremble sequence
+  // Intro → battle
   useEffect(() => {
     if (phase !== 'intro') return;
     const hasShiny = [...playerTeam, ...enemyTeam].some(m => m.isShiny);
     if (!keepMusic) { if (isLeague) playLeagueBattleMusic(); else playBattleMusic(); }
-    if (hasShiny) {
-      playShinyBattleSfx();
-      setShinyIntro(true);
-      setTimeout(() => setShinyIntro(false), 2500);
-    }
-    // Player pokemon trembles + cry at 1.4s
+    if (hasShiny) { playShinyBattleSfx(); setShinyIntro(true); setTimeout(() => setShinyIntro(false), 2500); }
     const t1 = setTimeout(() => {
       setShakePokemon('player');
       if (playerTeam[0]) playPokemonCry(playerTeam[0].pokemonId);
       setTimeout(() => setShakePokemon(null), 600);
     }, 1400);
-    // Enemy pokemon trembles + cry at 2.1s
     const t2 = setTimeout(() => {
       setShakePokemon('enemy');
       if (enemyTeam[0]) playPokemonCry(enemyTeam[0].pokemonId);
       setTimeout(() => setShakePokemon(null), 600);
     }, 2100);
-    // Battle starts at 3s
-    const t3 = setTimeout(() => setPhase('battle'), 3000);
+    const t3 = setTimeout(() => { phaseRef.current = 'player_turn'; setPhase('player_turn'); }, 3000);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
-  // Stop music on unmount (unless keepMusicOnUnmount is set, e.g. for park duels where victory music must continue)
   useEffect(() => () => { if (!keepMusicOnUnmount) stopMusic(0.5); }, [keepMusicOnUnmount]);
 
   const addDmg = useCallback((value: number, target: 'player' | 'enemy', effectiveness: number, isCrit?: boolean, isMiss?: boolean) => {
@@ -403,135 +385,21 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     setTimeout(() => setFloatingDmg(prev => prev.filter(d => d.id !== id)), 1100);
   }, []);
 
-  useEffect(() => {
-    if (battleDone.current) return;
-    const intervalMs = speedLevel === 3 ? 160 : speedLevel === 2 ? 400 : speedLevel === 1 ? 800 : 1600;
+  const hpColor = (pct: number) => pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#f59e0b' : '#ef4444';
 
-    const runTurn = () => {
-      // Use refs so we always read current values, never stale closures
-      if (battleDone.current || phaseRef.current !== 'battle') return;
-      const pIdx = playerIdxRef.current;
-      const eIdx = enemyIdxRef.current;
-
-      setPlayerFighters(pf => {
-        setEnemyFighters(ef => {
-          const pFighter = pf[pIdx];
-          const eFighter = ef[eIdx];
-          if (!pFighter || !eFighter || pFighter.currentHp <= 0 || eFighter.currentHp <= 0) return ef;
-
-          const pName = POKEMON_BY_ID[pFighter.pokemonId]?.name ?? '???';
-          const eName = POKEMON_BY_ID[eFighter.pokemonId]?.name ?? '???';
-
-          const boostMult = boostActiveRef.current && pIdx === 0 ? playerDamageMult : 1;
-          const { damage: pDmg, effectiveness: pEff, moveName: pMove, isCrit: pCrit, isMiss: pMiss, animationType: pAnim } = calcDamage(
-            pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, boostMult
-          );
-          const eAnim = GEN1_STATS[eFighter.pokemonId]?.move.animationType ?? 'normal';
-
-          setAttackEvt(pMiss ? null : { attacker: 'player', type: pAnim as PokemonType, uid: dmgCounter++ });
-          if (!pMiss) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
-          setTimeout(() => setAttackEvt(null), 300);
-          addDmg(pDmg, 'enemy', pEff, pCrit, pMiss);
-          addLog(
-            pMiss ? `${pName} rate son attaque !` :
-            `${pName} → ${pMove}${pCrit ? ' ⚡ CRITIQUE !' : ''}${pEff >= 2 ? ' 💥 Super efficace !' : pEff === 0 ? ' (sans effet)' : pEff < 1 ? ' (peu efficace)' : ''}`,
-            pMiss ? '#94a3b8' : pCrit ? '#fbbf24' : pEff >= 2 ? '#4ade80' : '#fde68a');
-
-          const newEHp = Math.max(0, eFighter.currentHp - pDmg);
-          const newEf = ef.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
-
-          if (newEHp <= 0) {
-            addLog(`${eName} est K.O. !`, '#f87171');
-            const isTrainerBattle = !!_bossName;
-            const xpEarned = calcXpGain(eFighter.pokemonId, eFighter.level, isTrainerBattle);
-            setXpGains(prev => ({ ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned }));
-            // Boost stays active — it was the enemy that fainted, not our pokemon
-            const nextE = newEf.findIndex((f, i) => i > eIdx && f.currentHp > 0);
-            if (nextE < 0 && newEf.every(f => f.currentHp <= 0)) {
-              battleDone.current = true; won.current = true;
-              stopMusic(0); // cut battle music instantly so victory plays with no gap
-              if (!suppressVictorySound) { isLeague ? playLeagueVictory() : playVictory(); }
-              phaseRef.current = 'end'; setPhase('end');
-            } else if (nextE >= 0) {
-              enemyIdxRef.current = nextE;
-              setTimeout(() => setEnemyIdx(nextE), 200);
-            }
-            return newEf;
-          }
-
-          // Enemy counter
-          setTimeout(() => {
-            if (battleDone.current || phaseRef.current !== 'battle') return;
-            const pIdx2 = playerIdxRef.current;
-            setAttackEvt({ attacker: 'enemy', type: eAnim as PokemonType, uid: dmgCounter++ });
-            setTimeout(() => setHitFlash('player'), 120);
-            setTimeout(() => setHitFlash(null), 280);
-            setTimeout(() => setAttackEvt(null), 300);
-
-            const { damage: eDmg, effectiveness: eEff, moveName: eMove, isCrit: eCrit, isMiss: eMiss } = calcDamage(
-              eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level
-            );
-            addDmg(eDmg, 'player', eEff, eCrit, eMiss);
-            addLog(
-              eMiss ? `${eName} rate son attaque !` :
-              `${eName} → ${eMove}${eCrit ? ' ⚡ CRITIQUE !' : ''}${eEff >= 2 ? ' 💥 Super efficace !' : ''}`,
-              eMiss ? '#94a3b8' : eCrit ? '#fbbf24' : eEff >= 2 ? '#f87171' : '#fca5a5');
-
-            setPlayerFighters(pf2 => {
-              enemyDmgRef.current[eFighter.pokemonId] = (enemyDmgRef.current[eFighter.pokemonId] ?? 0) + eDmg;
-              const newPHp = Math.max(0, pf2[pIdx2].currentHp - eDmg);
-              const newPf = pf2.map((f, i) => i === pIdx2 ? { ...f, currentHp: newPHp } : f);
-              if (newPHp <= 0) {
-                addLog(`${pName} est K.O. !`, '#f87171');
-                // Boost is consumed when the boosted pokemon (first one) faints
-                if (pIdx2 === 0 && boostActiveRef.current) {
-                  boostActiveRef.current = false;
-                  setBoostActive(false);
-                }
-                const nextP = newPf.findIndex((f, i) => i > pIdx2 && f.currentHp > 0);
-                if (nextP < 0 && newPf.every(f => f.currentHp <= 0)) {
-                  battleDone.current = true; won.current = false;
-                  phaseRef.current = 'end'; setPhase('end');
-                } else {
-                  phaseRef.current = 'switch'; setPhase('switch');
-                }
-              }
-              return newPf;
-            });
-          }, Math.max(60, intervalMs / 2));
-
-          return newEf;
-        });
-        return pf;
-      });
-    };
-
-    if (phase !== 'battle' || battleDone.current) return;
-    const timer = setInterval(() => {
-      if (battleDone.current) { clearInterval(timer); return; }
-      runTurn();
-    }, intervalMs);
-    return () => clearInterval(timer);
-  }, [playerIdx, enemyIdx, phase, addLog, addDmg, speedLevel]);
-
+  // Handle end phase
   useEffect(() => {
     if (phase === 'end') {
       const wonSnap = won.current;
       boostActiveRef.current = false;
       setBoostActive(false);
       if (!wonSnap) { stopMusic(0.3); if (!suppressVictorySound) playSfxDefeat(); }
-      // Bench members get the average absolute XP that active fighters earned
-      const snap = { ...xpGains };
-      const activeEarned = playerFightersRef.current
-        .map(f => snap[f.pokemonId] ?? 0)
-        .filter(xp => xp > 0);
+      const snap = { ...xpGainsRef.current };
+      const activeEarned = playerFightersRef.current.map(f => snap[f.pokemonId] ?? 0).filter(xp => xp > 0);
       const avgXp = activeEarned.length > 0
-        ? Math.floor(activeEarned.reduce((a, b) => a + b, 0) / activeEarned.length)
-        : 0;
+        ? Math.floor(activeEarned.reduce((a, b) => a + b, 0) / activeEarned.length) : 0;
       if (avgXp > 0) {
-        playerTeam.forEach(m => {
-          if (!snap[m.pokemonId]) snap[m.pokemonId] = Math.max(1, avgXp);
-        });
+        playerTeam.forEach(m => { if (!snap[m.pokemonId]) snap[m.pokemonId] = Math.max(1, avgXp); });
       }
       const finalTeam: TeamMember[] = playerFightersRef.current.map(f => ({ ...f }));
       setTimeout(() => onBattleEnd(wonSnap, snap, finalTeam, enemyDmgRef.current), 1800);
@@ -544,32 +412,247 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
     setPlayerIdx(idx);
     const name = POKEMON_BY_ID[playerFighters[idx]?.pokemonId]?.name ?? '???';
     addLog(`Allez ${name} !`, '#4ade80');
-    // Cry + tremble before resuming battle
     setShakePokemon('player');
     if (playerFighters[idx]) playPokemonCry(playerFighters[idx].pokemonId);
     setTimeout(() => {
       setShakePokemon(null);
-      phaseRef.current = 'battle';
-      setPhase('battle');
+      phaseRef.current = 'player_turn';
+      setPhase('player_turn');
     }, 700);
   }, [playerFighters, addLog]);
 
+  // ── Core turn execution ──────────────────────────────────────────────────
+  const executeTurn = useCallback((playerMoveIndex: number) => {
+    if (battleDone.current || phaseRef.current !== 'player_turn') return;
+    phaseRef.current = 'resolving';
+    setPhase('resolving');
+
+    const pIdx = playerIdxRef.current;
+    const eIdx = enemyIdxRef.current;
+
+    setPlayerFighters(pf => {
+      setEnemyFighters(ef => {
+        const pFighter = pf[pIdx];
+        const eFighter = ef[eIdx];
+        if (!pFighter || !eFighter) return ef;
+
+        const pInst = pokemonData?.[pFighter.pokemonId];
+        const eInst = pokemonData?.[eFighter.pokemonId];
+        const pName = POKEMON_BY_ID[pFighter.pokemonId]?.name ?? '???';
+        const eName = POKEMON_BY_ID[eFighter.pokemonId]?.name ?? '???';
+
+        // Speed check — faster pokemon goes first
+        const pSpeed = calcSpeed(pFighter.pokemonId, pFighter.level, pInst);
+        const eSpeed = calcSpeed(eFighter.pokemonId, eFighter.level, eInst);
+        const playerGoesFirst = pSpeed >= eSpeed;
+
+        // Enemy picks a random move index (precomputed to avoid stale closures)
+        const eMoves = getMoveList(eFighter.pokemonId);
+        const eHasMoves = eMoves.length > 0;
+        const ePP = eFighter.currentPP;
+        const availableEMoves = eHasMoves ? ePP.map((pp, i) => pp > 0 ? i : -1).filter(i => i >= 0) : [];
+        const eMoveIndex = availableEMoves.length > 0
+          ? availableEMoves[Math.floor(Math.random() * availableEMoves.length)]
+          : -1; // -1 = Struggle
+
+        // Check player PP
+        const pHasMoves = getMoveList(pFighter.pokemonId).length > 0;
+        const playerUsesStruggle = pHasMoves && pFighter.currentPP[playerMoveIndex] <= 0;
+
+        // Deduct PP
+        let newPPf = pf.map((f, i) => {
+          if (i !== pIdx) return f;
+          const pp = [...f.currentPP];
+          if (!playerUsesStruggle && pHasMoves && pp[playerMoveIndex] > 0) pp[playerMoveIndex]--;
+          return { ...f, currentPP: pp };
+        });
+        let newEf = ef.map((f, i) => {
+          if (i !== eIdx || eMoveIndex < 0) return f;
+          const pp = [...f.currentPP];
+          if (pp[eMoveIndex] > 0) pp[eMoveIndex]--;
+          return { ...f, currentPP: pp };
+        });
+
+        const boostMult = boostActiveRef.current && pIdx === 0 ? playerDamageMult : 1;
+
+        // Compute both attacks
+        const pResult = playerUsesStruggle
+          ? calcStruggle(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, pInst, eInst)
+          : calcDamage(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, playerMoveIndex, pInst, eInst, boostMult > 1 ? 1 : 0);
+
+        const eResult = eMoveIndex < 0
+          ? calcStruggle(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eInst, pInst)
+          : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndex, eInst, pInst);
+
+        // Execute attacks in speed order
+        const doPlayerAttack = (pf_: FighterState[], ef_: FighterState[]) => {
+          setAttackEvt({ attacker: 'player', type: pResult.moveType, uid: dmgCounter++ });
+          if (!pResult.isMiss) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
+          setTimeout(() => setAttackEvt(null), 400);
+          addDmg(pResult.damage, 'enemy', pResult.effectiveness, pResult.isCrit, pResult.isMiss);
+          addLog(
+            pResult.isMiss ? `${pName} rate son attaque !` :
+            `${pName} → ${pResult.moveName}${pResult.isCrit ? ' ⚡ CRITIQUE !' : ''}${pResult.effectiveness >= 2 ? ' 💥 Super efficace !' : pResult.effectiveness === 0 ? ' (sans effet)' : pResult.effectiveness < 1 ? ' (peu efficace)' : ''}`,
+            pResult.isMiss ? '#94a3b8' : pResult.isCrit ? '#fbbf24' : pResult.effectiveness >= 2 ? '#4ade80' : '#fde68a');
+          const newEHp = Math.max(0, ef_[eIdx].currentHp - pResult.damage);
+          return ef_.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
+        };
+
+        const doEnemyAttack = (pf_: FighterState[], ef_: FighterState[]) => {
+          setAttackEvt({ attacker: 'enemy', type: eResult.moveType, uid: dmgCounter++ });
+          if (!eResult.isMiss) { setTimeout(() => setHitFlash('player'), 120); setTimeout(() => setHitFlash(null), 280); }
+          setTimeout(() => setAttackEvt(null), 400);
+          addDmg(eResult.damage, 'player', eResult.effectiveness, eResult.isCrit, eResult.isMiss);
+          addLog(
+            eResult.isMiss ? `${eName} rate son attaque !` :
+            `${eName} → ${eResult.moveName}${eResult.isCrit ? ' ⚡ CRITIQUE !' : ''}${eResult.effectiveness >= 2 ? ' 💥 Super efficace !' : ''}`,
+            eResult.isMiss ? '#94a3b8' : eResult.isCrit ? '#fbbf24' : eResult.effectiveness >= 2 ? '#f87171' : '#fca5a5');
+          const newPHp = Math.max(0, pf_[pIdx].currentHp - eResult.damage);
+          return pf_.map((f, i) => i === pIdx ? { ...f, currentHp: newPHp } : f);
+        };
+
+        let finalPf = newPPf;
+        let finalEf = newEf;
+
+        if (playerGoesFirst) {
+          finalEf = doPlayerAttack(finalPf, finalEf);
+          if (finalEf[eIdx].currentHp > 0) {
+            // Enemy attacks back after brief delay (handled below via setTimeout)
+          }
+        } else {
+          finalPf = doEnemyAttack(finalPf, finalEf);
+        }
+
+        // Check outcomes after first attack
+        const afterFirst_eKo = playerGoesFirst && finalEf[eIdx].currentHp <= 0;
+        const afterFirst_pKo = !playerGoesFirst && finalPf[pIdx].currentHp <= 0;
+
+        const finalizeTurn = (pf2: FighterState[], ef2: FighterState[], delayMs: number) => {
+          setTimeout(() => {
+            if (battleDone.current) return;
+
+            // If enemy is KO after player's first strike
+            if (ef2[eIdx].currentHp <= 0) {
+              addLog(`${eName} est K.O. !`, '#f87171');
+              const xpEarned = calcXpGain(eFighter.pokemonId, eFighter.level, !!_bossName);
+              setXpGains(prev => {
+                const next = { ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned };
+                xpGainsRef.current = next;
+                return next;
+              });
+              const nextE = ef2.findIndex((f, i) => i > eIdx && f.currentHp > 0);
+              if (nextE < 0 && ef2.every(f => f.currentHp <= 0)) {
+                battleDone.current = true; won.current = true;
+                stopMusic(0);
+                if (!suppressVictorySound) { isLeague ? playLeagueVictory() : playVictory(); }
+                phaseRef.current = 'end'; setPhase('end');
+              } else if (nextE >= 0) {
+                enemyIdxRef.current = nextE;
+                setEnemyIdx(nextE);
+                phaseRef.current = 'player_turn'; setPhase('player_turn');
+              }
+              setPlayerFighters(() => pf2);
+              setEnemyFighters(() => ef2);
+              return;
+            }
+
+            // If player is KO after enemy's first strike
+            if (pf2[pIdx].currentHp <= 0) {
+              addLog(`${pName} est K.O. !`, '#f87171');
+              enemyDmgRef.current[eFighter.pokemonId] = (enemyDmgRef.current[eFighter.pokemonId] ?? 0) + eResult.damage;
+              if (pIdx === 0 && boostActiveRef.current) { boostActiveRef.current = false; setBoostActive(false); }
+              const nextP = pf2.findIndex((f, i) => i > pIdx && f.currentHp > 0);
+              if (nextP < 0 && pf2.every(f => f.currentHp <= 0)) {
+                battleDone.current = true; won.current = false;
+                phaseRef.current = 'end'; setPhase('end');
+              } else {
+                phaseRef.current = 'switch'; setPhase('switch');
+              }
+              setPlayerFighters(() => pf2);
+              setEnemyFighters(() => ef2);
+              return;
+            }
+
+            // Both alive — do second attack
+            let pf3 = pf2;
+            let ef3 = ef2;
+            if (playerGoesFirst) {
+              pf3 = doEnemyAttack(pf2, ef2);
+            } else {
+              ef3 = doPlayerAttack(pf2, ef2);
+            }
+
+            // Check KOs after second attack
+            if (ef3[eIdx].currentHp <= 0) {
+              addLog(`${eName} est K.O. !`, '#f87171');
+              const xpEarned = calcXpGain(eFighter.pokemonId, eFighter.level, !!_bossName);
+              setXpGains(prev => {
+                const next = { ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned };
+                xpGainsRef.current = next;
+                return next;
+              });
+              const nextE = ef3.findIndex((f, i) => i > eIdx && f.currentHp > 0);
+              if (nextE < 0 && ef3.every(f => f.currentHp <= 0)) {
+                battleDone.current = true; won.current = true;
+                stopMusic(0);
+                if (!suppressVictorySound) { isLeague ? playLeagueVictory() : playVictory(); }
+                phaseRef.current = 'end'; setPhase('end');
+              } else if (nextE >= 0) {
+                enemyIdxRef.current = nextE;
+                setEnemyIdx(nextE);
+                phaseRef.current = 'player_turn'; setPhase('player_turn');
+              }
+            } else if (pf3[pIdx].currentHp <= 0) {
+              addLog(`${pName} est K.O. !`, '#f87171');
+              enemyDmgRef.current[eFighter.pokemonId] = (enemyDmgRef.current[eFighter.pokemonId] ?? 0) + eResult.damage;
+              if (pIdx === 0 && boostActiveRef.current) { boostActiveRef.current = false; setBoostActive(false); }
+              const nextP = pf3.findIndex((f, i) => i > pIdx && f.currentHp > 0);
+              if (nextP < 0 && pf3.every(f => f.currentHp <= 0)) {
+                battleDone.current = true; won.current = false;
+                phaseRef.current = 'end'; setPhase('end');
+              } else {
+                phaseRef.current = 'switch'; setPhase('switch');
+              }
+            } else {
+              // Both alive, player's turn again
+              phaseRef.current = 'player_turn'; setPhase('player_turn');
+            }
+
+            setPlayerFighters(() => pf3);
+            setEnemyFighters(() => ef3);
+          }, delayMs);
+        };
+
+        if (afterFirst_eKo || afterFirst_pKo) {
+          finalizeTurn(finalPf, finalEf, 600);
+        } else {
+          // Second attack happens after animation delay
+          finalizeTurn(finalPf, finalEf, playerGoesFirst ? 1200 : 600);
+        }
+
+        return finalEf;
+      });
+      return pf;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerIdx, enemyIdx, addLog, addDmg, pokemonData]);
+
   const activePF = playerFighters[playerIdx];
   const activeEF = enemyFighters[enemyIdx];
-  const hpColor = (pct: number) => pct > 0.5 ? '#22c55e' : pct > 0.25 ? '#f59e0b' : '#ef4444';
+  const playerMoves = activePF ? getMoveList(activePF.pokemonId) : [];
+  const allPPEmpty = activePF ? activePF.currentPP.every(pp => pp <= 0) : false;
 
-  // ── INTRO PHASE ──
+  // ── INTRO PHASE ─────────────────────────────────────────────────────────────
   if (phase === 'intro') {
     return (
       <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617' }}>
-        {/* sideOverlay visible during intro too */}
         {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
         <div className="relative flex-1 overflow-hidden">
           <div className="absolute inset-0" style={{
             background: 'radial-gradient(ellipse at 50% 20%, #1e1b4b 0%, #0f0720 55%, #020617 100%)',
           }} />
 
-          {/* Enemy pokemon slides in from top-right */}
+          {/* Enemy pokemon */}
           <div className="absolute" style={{ top:'calc(5% + env(safe-area-inset-top, 0px))', right:'max(7%, calc(50% - 220px))', animation:'battle-enter-enemy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
             <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]">
               <div className="flex items-center gap-1.5 mb-1">
@@ -607,7 +690,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             </div>
           </div>
 
-          {/* Player pokemon slides in from bottom-left */}
+          {/* Player pokemon */}
           <div className="absolute" style={{ bottom:'13%', left:'max(7%, calc(50% - 220px))', animation:'battle-enter-player 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
             {playerFighters[0] && (
               <div className="relative inline-flex items-center justify-center"
@@ -651,77 +734,48 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
   return (
     <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617' }}>
-      {/* Side overlay at root level — covers full screen, not clipped by arena overflow */}
       {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
 
       {/* ── Arena ── */}
-      <div className="relative flex-1 overflow-hidden">
-
-        {/* Sky */}
+      <div className="relative overflow-hidden" style={{ flex: '1 1 0', minHeight: 0 }}>
         <div className="absolute inset-0" style={{
           background: 'radial-gradient(ellipse at 50% 20%, #1e1b4b 0%, #0f0720 55%, #020617 100%)',
         }} />
         {STARS.map((s, i) => (
           <div key={i} className="absolute rounded-full bg-white pointer-events-none" style={{
-            width: s.size, height: s.size,
-            top: `${s.top}%`, left: `${s.left}%`,
-            opacity: s.opacity,
-            animation: `arena-twinkle ${s.dur}s ease-in-out ${s.del}s infinite`,
+            width: s.size, height: s.size, top: `${s.top}%`, left: `${s.left}%`,
+            opacity: s.opacity, animation: `arena-twinkle ${s.dur}s ease-in-out ${s.del}s infinite`,
           }} />
         ))}
-
-        {/* Stadium arc */}
         <div className="absolute inset-x-0 top-0 pointer-events-none" style={{
-          height: '55%',
-          background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.07) 0%, transparent 70%)',
+          height: '55%', background: 'radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.07) 0%, transparent 70%)',
         }} />
-
-        {/* Arena floor */}
         <div className="absolute bottom-0 inset-x-0 pointer-events-none" style={{
-          height: '38%',
-          background: 'linear-gradient(to top, rgba(30,27,75,0.85) 0%, transparent 100%)',
+          height: '38%', background: 'linear-gradient(to top, rgba(30,27,75,0.85) 0%, transparent 100%)',
         }} />
-
-        {/* Center divider */}
         <div className="absolute inset-y-0 pointer-events-none" style={{
-          left: '50%', width: 1,
-          background: 'linear-gradient(to bottom, transparent, rgba(148,163,184,0.12), transparent)',
+          left: '50%', width: 1, background: 'linear-gradient(to bottom, transparent, rgba(148,163,184,0.12), transparent)',
         }} />
 
         {/* Platform enemy */}
         <div className="absolute pointer-events-none" style={{
           top: '38%', right: 'max(12%, calc(50% - 200px))', width: 110, height: 22,
           background: 'radial-gradient(ellipse, rgba(248,113,113,0.55) 0%, transparent 100%)',
-          borderRadius: '50%', filter: 'blur(5px)',
-          animation: 'platform-pulse 2.2s ease-in-out infinite',
+          borderRadius: '50%', filter: 'blur(5px)', animation: 'platform-pulse 2.2s ease-in-out infinite',
         }} />
-
         {/* Platform player */}
         <div className="absolute pointer-events-none" style={{
           bottom: '28%', left: 'max(12%, calc(50% - 200px))', width: 110, height: 22,
           background: 'radial-gradient(ellipse, rgba(74,222,128,0.55) 0%, transparent 100%)',
-          borderRadius: '50%', filter: 'blur(5px)',
-          animation: 'platform-pulse 2.2s ease-in-out 0.4s infinite',
+          borderRadius: '50%', filter: 'blur(5px)', animation: 'platform-pulse 2.2s ease-in-out 0.4s infinite',
         }} />
 
-        {/* Attack VFX */}
-        {attackEvt && (
-          <TypeVfx key={attackEvt.uid} type={attackEvt.type}
-            direction={attackEvt.attacker === 'player' ? 'ltr' : 'rtl'}
-            uid={attackEvt.uid} />
-        )}
-
-        {/* Hit flash */}
-        {hitFlash && (
-          <div className="absolute inset-0 pointer-events-none battle-hit-flash" style={{
-            background: hitFlash === 'player' ? 'rgba(239,68,68,0.2)' : 'rgba(250,204,21,0.13)',
-          }} />
-        )}
+        {attackEvt && <TypeVfx key={attackEvt.uid} type={attackEvt.type} direction={attackEvt.attacker === 'player' ? 'ltr' : 'rtl'} uid={attackEvt.uid} />}
+        {hitFlash && <div className="absolute inset-0 pointer-events-none battle-hit-flash" style={{ background: hitFlash === 'player' ? 'rgba(239,68,68,0.2)' : 'rgba(250,204,21,0.13)' }} />}
 
         {/* Floating damage */}
         {floatingDmg.map(d => {
           const color = d.isMiss ? '#94a3b8' : d.isCrit ? '#fbbf24' : d.effectiveness === 0 ? '#94a3b8' : '#ef4444';
-          // Follow pokemon sprite positions (same max() formula as sprites)
           const pos = d.target === 'enemy'
             ? { top: '14%', right: 'max(7%, calc(50% - 220px))' }
             : { bottom: '32%', left: 'max(7%, calc(50% - 220px))' };
@@ -731,8 +785,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
               fontSize: d.isCrit ? '1.8rem' : d.effectiveness >= 2 ? '1.6rem' : '1.2rem',
               fontWeight: 900, color,
               textShadow: d.isCrit ? `0 0 18px #fbbf24, 0 0 32px #f59e0b` : `0 0 12px ${color}`,
-              animation: d.isCrit ? 'dmg-float 1.1s ease-out forwards' : 'dmg-float 1.1s ease-out forwards',
-              transform: 'translateX(-50%)',
+              animation: 'dmg-float 1.1s ease-out forwards', transform: 'translateX(-50%)',
             }}>
               {d.isMiss ? 'RATÉ!' : `−${d.value}`}
               {d.isCrit && <div style={{ fontSize: '0.6rem', textAlign: 'center', color: '#fde047', letterSpacing: '0.1em' }}>CRITIQUE !</div>}
@@ -748,23 +801,11 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
             <div className="flex items-center gap-1.5 mb-1">
               {trainerImage && (
                 <div style={{ flexShrink: 0, position: 'relative' }}>
-                  {isMasterTrainer && (
-                    <div style={{
-                      position: 'absolute', inset: -3, borderRadius: 4,
-                      background: `radial-gradient(ellipse, ${trainerColor}55 0%, transparent 70%)`,
-                      animation: 'trainer-master-float 2s ease-in-out infinite',
-                    }} />
-                  )}
+                  {isMasterTrainer && <div style={{ position: 'absolute', inset: -3, borderRadius: 4, background: `radial-gradient(ellipse, ${trainerColor}55 0%, transparent 70%)`, animation: 'trainer-master-float 2s ease-in-out infinite' }} />}
                   <img src={trainerImage} alt="" draggable={false}
-                    style={{
-                      width: 28, height: 38, objectFit: 'contain', objectPosition: 'top center',
-                      display: 'block', position: 'relative',
-                      filter: isMasterTrainer
-                        ? `drop-shadow(0 0 5px ${trainerColor}) drop-shadow(0 0 10px ${trainerColor}88)`
-                        : 'drop-shadow(0 1px 4px rgba(0,0,0,0.9))',
-                      animation: trainerKoAnim ? 'trainer-ko-react 0.9s ease-out'
-                        : isMasterTrainer ? 'trainer-master-float 2s ease-in-out infinite'
-                        : undefined,
+                    style={{ width: 28, height: 38, objectFit: 'contain', objectPosition: 'top center', display: 'block', position: 'relative',
+                      filter: isMasterTrainer ? `drop-shadow(0 0 5px ${trainerColor}) drop-shadow(0 0 10px ${trainerColor}88)` : 'drop-shadow(0 1px 4px rgba(0,0,0,0.9))',
+                      animation: trainerKoAnim ? 'trainer-ko-react 0.9s ease-out' : isMasterTrainer ? 'trainer-master-float 2s ease-in-out infinite' : undefined,
                     }} />
                 </div>
               )}
@@ -833,26 +874,24 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           </div>
         </div>
 
-        {/* VS / End banner */}
+        {/* VS faded */}
         {phase !== 'end' && (
           <div className="absolute inset-x-0 top-1/2 flex justify-center pointer-events-none" style={{ transform: 'translateY(-50%)' }}>
             <div className="text-slate-500/30 font-black text-6xl">VS</div>
           </div>
         )}
+
+        {/* End banner */}
         {phase === 'end' && (
           <>
-            {/* Confetti for victory */}
             {won.current && CONFETTI_BATTLE.map((c, i) => (
               <div key={i} style={{
-                position: 'absolute', top: 0, left: c.left,
-                width: 9, height: 9, borderRadius: 2,
-                background: c.color,
+                position: 'absolute', top: 0, left: c.left, width: 9, height: 9, borderRadius: 2, background: c.color,
                 '--cx': c.cx, '--cdx': c.cdx, '--cr': c.cr,
                 animation: `confetti-fall ${c.dur} ${c.delay} ease-in forwards`,
                 pointerEvents: 'none', zIndex: 24,
               } as React.CSSProperties} />
             ))}
-            {/* Victory/defeat text */}
             <div className="absolute inset-x-0 top-1/2 flex flex-col items-center gap-2 pointer-events-none"
               style={{ transform: 'translateY(-50%)', zIndex: 25 }}>
               {won.current ? (
@@ -879,23 +918,18 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           </>
         )}
 
-        {/* ── Switch overlay ── */}
+        {/* Switch overlay */}
         {phase === 'switch' && (
           <div className="absolute inset-0 z-30 bg-black/80 flex flex-col items-center justify-center gap-4 px-6">
-            <div className="text-white font-black text-xl text-center">
-              Choisissez votre prochain Pokémon !
-            </div>
+            <div className="text-white font-black text-xl text-center">Choisissez votre prochain Pokémon !</div>
             <div className="flex gap-3 flex-wrap justify-center">
               {playerFighters.map((f, i) => {
                 if (f.currentHp <= 0 || i === playerIdx) return null;
                 const p = POKEMON_BY_ID[f.pokemonId];
                 const hpPct = f.currentHp / f.maxHp;
                 return (
-                  <button
-                    key={i}
-                    onClick={() => handleSwitch(i)}
-                    className="flex flex-col items-center bg-slate-800/90 border-2 border-slate-500 hover:border-yellow-400 rounded-2xl px-4 py-3 transition-all hover:scale-105"
-                  >
+                  <button key={i} onClick={() => handleSwitch(i)}
+                    className="flex flex-col items-center bg-slate-800/90 border-2 border-slate-500 hover:border-yellow-400 rounded-2xl px-4 py-3 transition-all hover:scale-105">
                     <ShinySprite pokemonId={f.pokemonId} isShiny={f.isShiny ?? false} width={64} height={64} compact
                       style={{ filter: spriteFilter(f.pokemonId, f.isShiny ?? false, 6) }} />
                     <span className="text-white font-bold text-sm mt-1">{p?.name}</span>
@@ -912,54 +946,78 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
         )}
       </div>
 
-      {/* Battle log */}
-      <div className="shrink-0 bg-black/90 border-t border-slate-700/50 px-4 py-2" style={{ height: 80, overflow: 'hidden' }}>
-        <div className="flex justify-between items-start h-full">
-          <div className="flex-1 overflow-hidden">
-            {log.slice(-3).map((entry, i) => (
-              <div key={i} className="text-xs font-medium truncate" style={{ color: entry.color, opacity: 0.4 + i * 0.3 }}>
-                {entry.text}
-              </div>
-            ))}
-          </div>
-          {phase === 'battle' && (
-            <div className="flex gap-2 ml-2 shrink-0 items-center">
-              {onQuit && (
-                <button
-                  onClick={onQuit}
-                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-400 border border-slate-600 hover:border-red-500 hover:text-red-400 transition-colors"
-                >
-                  ✕ Quitter
-                </button>
-              )}
-              {/* Auto-combat toggle — only shown in training (when onAutoCombatChange is provided) */}
-              {onAutoCombatChange && (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-slate-400">Auto</span>
-                  <button
-                    onClick={() => onAutoCombatChange(!autoCombat)}
-                    className={`w-9 h-5 rounded-full transition-colors relative ${autoCombat ? 'bg-indigo-500' : 'bg-slate-600'}`}
-                  >
-                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${autoCombat ? 'left-4' : 'left-0.5'}`} />
-                  </button>
-                </div>
-              )}
-              <button
-                onClick={() => setSpeedLevel((speedLevel + 1) % 4)}
-                className="px-3 py-1.5 rounded-xl font-black text-sm"
-                style={{
-                  background: speedLevel === 3 ? 'linear-gradient(90deg, #ef4444, #7c3aed)' : speedLevel === 2 ? 'linear-gradient(90deg, #f59e0b, #ef4444)' : speedLevel === 1 ? 'linear-gradient(90deg, #eab308, #f59e0b)' : '#1e293b',
-                  border: speedLevel > 0 ? `2px solid ${speedLevel >= 3 ? '#ef4444' : '#f59e0b'}` : '2px solid #475569',
-                  color: speedLevel > 0 ? '#fff' : '#94a3b8',
-                }}
-              >
-                {speedLevel === 3 ? '⚡ x10' : speedLevel === 2 ? '⚡ x4' : speedLevel === 1 ? '⚡ x2' : '▶ x1'}
-              </button>
+      {/* ── Battle log + Move buttons ── */}
+      <div className="shrink-0 bg-black/95 border-t border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        {/* Log */}
+        <div className="px-4 pt-2 pb-1" style={{ height: 54, overflow: 'hidden' }}>
+          {log.slice(-2).map((entry, i) => (
+            <div key={i} className="text-xs font-medium truncate" style={{ color: entry.color, opacity: 0.5 + i * 0.5 }}>
+              {entry.text}
             </div>
-          )}
+          ))}
         </div>
-      </div>
 
+        {/* Move selection — shown during player_turn */}
+        {(phase === 'player_turn' || phase === 'resolving') && (
+          <div className="px-3 pb-3">
+            {playerMoves.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {playerMoves.map((move, i) => {
+                  const pp = activePF?.currentPP[i] ?? 0;
+                  const disabled = phase === 'resolving' || pp <= 0;
+                  const typeColor = TYPE_COLORS[move.type as PokemonType] ?? '#475569';
+                  return (
+                    <button key={i}
+                      disabled={disabled}
+                      onClick={() => executeTurn(i)}
+                      className="relative rounded-xl px-3 py-2 text-left transition-all active:scale-95"
+                      style={{
+                        background: disabled ? '#1e293b' : `linear-gradient(135deg, ${typeColor}cc, ${typeColor}66)`,
+                        border: `2px solid ${disabled ? '#334155' : typeColor}`,
+                        opacity: disabled ? 0.5 : 1,
+                      }}>
+                      <div className="flex justify-between items-start">
+                        <span className="text-white font-bold text-xs leading-tight">{move.name}</span>
+                        <span className="text-white/60 text-xs">{pp}/{(move as { pp: number }).pp ?? 15}</span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-white/70 text-xs uppercase font-bold" style={{ fontSize: '0.45rem' }}>{move.type}</span>
+                        <span className="text-white/50" style={{ fontSize: '0.45rem' }}>•</span>
+                        <span className="text-white/70" style={{ fontSize: '0.45rem' }}>
+                          {move.category === 'status' ? 'STATUT' : move.category === 'physical' ? 'PHYSIQUE' : 'SPÉCIAL'}
+                        </span>
+                        {move.power > 0 && (
+                          <>
+                            <span className="text-white/50" style={{ fontSize: '0.45rem' }}>•</span>
+                            <span className="text-white/70" style={{ fontSize: '0.45rem' }}>{move.power} puiss.</span>
+                          </>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : allPPEmpty ? (
+              /* Struggle button */
+              <button
+                disabled={phase === 'resolving'}
+                onClick={() => executeTurn(0)}
+                className="w-full rounded-xl px-4 py-3 text-center transition-all active:scale-95"
+                style={{ background: '#374151', border: '2px solid #6b7280', opacity: phase === 'resolving' ? 0.5 : 1 }}>
+                <span className="text-white font-bold text-sm">Lutte</span>
+                <div className="text-white/50 text-xs">Plus de PP !</div>
+              </button>
+            ) : null}
+
+            {/* Quit button */}
+            {onQuit && phase === 'player_turn' && (
+              <button onClick={onQuit} className="mt-2 w-full text-xs text-slate-500 hover:text-slate-300 transition-colors py-1">
+                ✕ Fuir le combat
+              </button>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
