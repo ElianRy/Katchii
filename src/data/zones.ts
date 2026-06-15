@@ -221,7 +221,7 @@ export const ZONES: Zone[] = [
     name: 'Route Victoire',
     description: 'Un chemin de montagne mystérieux menant à la Ligue Pokémon.',
     background: 'linear-gradient(180deg, #0a0808 0%, #1a1210 50%, #0f0a08 100%)',
-    pokemonIds: [2,3,5,6,8,9,66,67,68,112,124,129,130,131,143,144,145,146,147,148,149,150,151],
+    pokemonIds: [2,3,5,6,8,9,66,67,68,112,124,129,130,131,143,147,148,149],
     maxLevel: 73,
     spawnMinLevel: 48,
     spawnMaxLevel: 73,
@@ -239,7 +239,7 @@ export const ZONES: Zone[] = [
       reward: 'Débloque la Zone Libre — Tous les Pokémon !',
     },
     unlockRequirement: 'zone7',
-    includesLegendaries: true,
+    includesLegendaries: false,
   },
   {
     id: 'zone_libre',
