@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE } from '../data/pokemonTypes';
-import { getPlayerGrade, PARK_XP_PER_TICK } from '../lib/playerLevel';
+import { getPlayerGrade } from '../lib/playerLevel';
 import { xpToNextLevel, calcMaxHp } from '../data/combatEngine';
 import { playPokemonCry, stopMusic, playZoneMusic } from '../lib/audio';
 import { BattleScreen } from './BattleScreen';
@@ -833,8 +833,6 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   // Offline XP: on mount, award XP for time away (capped at 30h, only notified after 1h)
   useEffect(() => {
     if (!myFav) return;
-    const data = POKEMON_BY_ID[myFav.pokemonId];
-    const rarityBase = PARK_XP_PER_TICK[data?.rarity ?? 'commun'] ?? 5;
     const lastAt = state.lastParkXpAt;
     if (lastAt) {
       const elapsed = Date.now() - lastAt;
@@ -871,8 +869,6 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   // Live park XP tick every 2 min
   useEffect(() => {
     if (!myFav) return;
-    const data = POKEMON_BY_ID[myFav.pokemonId];
-    const rarityBase = PARK_XP_PER_TICK[data?.rarity ?? 'commun'] ?? 5;
     const id = setInterval(() => {
       const level = state.pokemonLevels?.[myFav.pokemonId]?.level ?? 1;
       const xp = Math.max(1, Math.floor(xpToNextLevel(level) * 0.008 * (myFav.isShiny ? 1.5 : 1)));

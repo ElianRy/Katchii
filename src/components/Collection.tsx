@@ -6,6 +6,7 @@ import { GEN1_POKEMON, POKEMON_BY_ID } from '../data/gen1';
 import { ZONES } from '../data/zones';
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
 import { xpToNextLevel } from '../data/combatEngine';
+import { GEN1_STATS } from '../data/gen1Stats';
 
 function getPokemonTitle(wins: number): string | null {
   if (wins >= 500) return '👑 Maître';
@@ -397,6 +398,39 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
                     ) : (
                       <div className="text-xs text-yellow-400 font-bold">Titre maximum atteint !</div>
                     )}
+                  </div>
+                );
+              })()}
+              {/* Base stats chart */}
+              {(() => {
+                const stats = GEN1_STATS[selectedId];
+                if (!stats) return null;
+                const rows: [string, number, string][] = [
+                  ['PV',   stats.hp,        '#4ade80'],
+                  ['ATK',  stats.attack,     '#f87171'],
+                  ['DEF',  stats.defense,    '#fb923c'],
+                  ['SpA',  stats.spAttack,   '#818cf8'],
+                  ['SpD',  stats.spDefense,  '#60a5fa'],
+                  ['VIT',  stats.speed,      '#fbbf24'],
+                ];
+                const maxStat = 255;
+                return (
+                  <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex flex-col gap-1.5">
+                    <div className="text-slate-400 text-xs font-bold mb-1">Stats de base</div>
+                    {rows.map(([label, val, color]) => (
+                      <div key={label} className="flex items-center gap-2">
+                        <span className="text-slate-400 font-bold text-xs w-8 shrink-0">{label}</span>
+                        <div className="flex-1 bg-slate-700 rounded-full h-2">
+                          <div className="h-2 rounded-full transition-all" style={{ width: `${Math.round((val / maxStat) * 100)}%`, background: color }} />
+                        </div>
+                        <span className="text-white text-xs font-black w-7 text-right">{val}</span>
+                      </div>
+                    ))}
+                    <div className="mt-1.5 pt-1.5 border-t border-slate-700 flex items-center gap-2 text-xs text-slate-400">
+                      <span className="font-bold">Attaque signature :</span>
+                      <span className="text-white font-bold">{stats.move.name}</span>
+                      <span className="text-slate-500">({stats.move.power} pts · {stats.move.category === 'physical' ? 'Physique' : 'Spéciale'})</span>
+                    </div>
                   </div>
                 );
               })()}

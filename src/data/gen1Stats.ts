@@ -578,7 +578,7 @@ export const GEN1_STATS: Record<number, PokemonStatData> = {
   108: {
     id: 108,
     hp: 90, attack: 55, defense: 75, spAttack: 60, spDefense: 75, speed: 30, baseXp: 127,
-    move: { name: 'Lick', type: 'ghost', power: 20, category: 'physical', animationType: 'ghost' },
+    move: { name: 'Lick', type: 'normal', power: 20, category: 'physical', animationType: 'normal' },
   },
   109: {
     id: 109,

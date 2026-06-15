@@ -10,7 +10,7 @@ function spriteFilter(pokemonId: number, _isShiny: boolean, _size = 4): string {
   return `drop-shadow(0 0 4px ${RARITY_COLORS[rarity]})`;
 }
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
-import { calcDamage, xpGainedFromBattle, xpToNextLevel } from '../data/combatEngine';
+import { calcDamage, calcXpGain } from '../data/combatEngine';
 import { TeamMember } from './TeamBuilder';
 
 const SHINY_INTRO_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string }[] = [
@@ -47,7 +47,7 @@ interface LogEntry { text: string; color: string; }
 
 interface AttackEvent {
   attacker: 'player' | 'enemy';
-  type: PokemonType;
+  type: PokemonType; // used for VFX — set from move's animationType (cast to PokemonType)
   uid: number;
 }
 
@@ -420,17 +420,14 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
           const pName = POKEMON_BY_ID[pFighter.pokemonId]?.name ?? '???';
           const eName = POKEMON_BY_ID[eFighter.pokemonId]?.name ?? '???';
-          const pType = (POKEMON_TYPE[pFighter.pokemonId] ?? ['normal'])[0] as PokemonType;
-          const eType = (POKEMON_TYPE[eFighter.pokemonId] ?? ['normal'])[0] as PokemonType;
 
-          const { damage: pDmgRaw, effectiveness: pEff, moveName: pMove, isCrit: pCrit, isMiss: pMiss } = calcDamage(
-            pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level
+          const boostMult = boostActiveRef.current && pIdx === 0 ? playerDamageMult : 1;
+          const { damage: pDmg, effectiveness: pEff, moveName: pMove, isCrit: pCrit, isMiss: pMiss, animationType: pAnim } = calcDamage(
+            pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, boostMult
           );
-          // Boost applies only while the original first pokemon is active
-          const activeMult = boostActiveRef.current && pIdx === 0 ? playerDamageMult : 1;
-          const pDmg = pMiss ? 0 : Math.round(pDmgRaw * activeMult);
+          const { animationType: eAnim } = calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level);
 
-          setAttackEvt(pMiss ? null : { attacker: 'player', type: pType, uid: dmgCounter++ });
+          setAttackEvt(pMiss ? null : { attacker: 'player', type: pAnim as PokemonType, uid: dmgCounter++ });
           if (!pMiss) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
           setTimeout(() => setAttackEvt(null), 300);
           addDmg(pDmg, 'enemy', pEff, pCrit, pMiss);
@@ -444,8 +441,8 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
 
           if (newEHp <= 0) {
             addLog(`${eName} est K.O. !`, '#f87171');
-            const xpPct = xpGainedFromBattle(eFighter.level, true, POKEMON_BY_ID[eFighter.pokemonId]?.rarity);
-            const xpEarned = Math.max(1, Math.floor(xpToNextLevel(pFighter.level) * xpPct));
+            const isTrainerBattle = !!_bossName;
+            const xpEarned = calcXpGain(eFighter.pokemonId, eFighter.level, isTrainerBattle);
             setXpGains(prev => ({ ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned }));
             // Boost stays active — it was the enemy that fainted, not our pokemon
             const nextE = newEf.findIndex((f, i) => i > eIdx && f.currentHp > 0);
@@ -465,7 +462,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           setTimeout(() => {
             if (battleDone.current || phaseRef.current !== 'battle') return;
             const pIdx2 = playerIdxRef.current;
-            setAttackEvt({ attacker: 'enemy', type: eType, uid: dmgCounter++ });
+            setAttackEvt({ attacker: 'enemy', type: eAnim as PokemonType, uid: dmgCounter++ });
             setTimeout(() => setHitFlash('player'), 120);
             setTimeout(() => setHitFlash(null), 280);
             setTimeout(() => setAttackEvt(null), 300);
@@ -522,21 +519,17 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
       boostActiveRef.current = false;
       setBoostActive(false);
       if (!wonSnap) { stopMusic(0.3); if (!suppressVictorySound) playSfxDefeat(); }
-      // Compute avg XP % from active fighters, apply to each team member's own xpToNextLevel
+      // Bench members get the average absolute XP that active fighters earned
       const snap = { ...xpGains };
-      const activeLevels = playerFightersRef.current.map(f => f.level);
-      const activeXpPcts = activeLevels.map((lvl, i) => {
-        const earned = snap[playerFightersRef.current[i]?.pokemonId ?? 0] ?? 0;
-        return lvl > 0 ? earned / xpToNextLevel(lvl) : 0;
-      }).filter(p => p > 0);
-      const avgPct = activeXpPcts.length > 0
-        ? activeXpPcts.reduce((a, b) => a + b, 0) / activeXpPcts.length
+      const activeEarned = playerFightersRef.current
+        .map(f => snap[f.pokemonId] ?? 0)
+        .filter(xp => xp > 0);
+      const avgXp = activeEarned.length > 0
+        ? Math.floor(activeEarned.reduce((a, b) => a + b, 0) / activeEarned.length)
         : 0;
-      if (avgPct > 0) {
+      if (avgXp > 0) {
         playerTeam.forEach(m => {
-          if (!snap[m.pokemonId]) {
-            snap[m.pokemonId] = Math.max(1, Math.floor(xpToNextLevel(m.level) * avgPct));
-          }
+          if (!snap[m.pokemonId]) snap[m.pokemonId] = Math.max(1, avgXp);
         });
       }
       const finalTeam: TeamMember[] = playerFightersRef.current.map(f => ({ ...f }));

@@ -1,10 +1,6 @@
 import { Rarity } from '../types';
-import { POKEMON_TYPE, TYPE_CHART, TYPE_MOVES, PokemonType } from './pokemonTypes';
-import { POKEMON_BY_ID } from './gen1';
-
-const RARITY_BASE: Record<Rarity, number> = {
-  commun: 0, peu_commun: 2, rare: 4, elite: 6, legendaire: 8
-};
+import { TYPE_CHART, POKEMON_TYPE, PokemonType } from './pokemonTypes';
+import { GEN1_STATS, AnimationType } from './gen1Stats';
 
 export const LEVEL_RANGE: Record<Rarity, [number, number]> = {
   commun: [1, 10],
@@ -26,25 +22,42 @@ export function xpToNextLevel(level: number): number {
   return level * level * 5;
 }
 
+// ── HeartGold/SoulSilver stat formulas ──────────────────────────────────────
+
 export function calcMaxHp(pokemonId: number, level: number): number {
-  const p = POKEMON_BY_ID[pokemonId];
-  if (!p) return 50;
-  const base = RARITY_BASE[p.rarity];
-  return Math.floor(50 + level * 8 + base * 12);
+  const s = GEN1_STATS[pokemonId];
+  if (!s) return Math.floor((2 * 45 * level) / 100) + level + 10;
+  return Math.floor((2 * s.hp * level) / 100) + level + 10;
 }
 
 export function calcAttack(pokemonId: number, level: number): number {
-  const p = POKEMON_BY_ID[pokemonId];
-  if (!p) return 10;
-  const base = RARITY_BASE[p.rarity];
-  return Math.floor(base * 3 + level * 3);
+  const s = GEN1_STATS[pokemonId];
+  if (!s) return Math.floor((2 * 50 * level) / 100) + 5;
+  return Math.floor((2 * s.attack * level) / 100) + 5;
 }
 
 export function calcDefense(pokemonId: number, level: number): number {
-  const p = POKEMON_BY_ID[pokemonId];
-  if (!p) return 5;
-  const base = RARITY_BASE[p.rarity];
-  return Math.floor(5 + level * 1.5 + base * 3);
+  const s = GEN1_STATS[pokemonId];
+  if (!s) return Math.floor((2 * 50 * level) / 100) + 5;
+  return Math.floor((2 * s.defense * level) / 100) + 5;
+}
+
+export function calcSpAttack(pokemonId: number, level: number): number {
+  const s = GEN1_STATS[pokemonId];
+  if (!s) return Math.floor((2 * 50 * level) / 100) + 5;
+  return Math.floor((2 * s.spAttack * level) / 100) + 5;
+}
+
+export function calcSpDefense(pokemonId: number, level: number): number {
+  const s = GEN1_STATS[pokemonId];
+  if (!s) return Math.floor((2 * 50 * level) / 100) + 5;
+  return Math.floor((2 * s.spDefense * level) / 100) + 5;
+}
+
+export function calcSpeed(pokemonId: number, level: number): number {
+  const s = GEN1_STATS[pokemonId];
+  if (!s) return Math.floor((2 * 50 * level) / 100) + 5;
+  return Math.floor((2 * s.speed * level) / 100) + 5;
 }
 
 export function getTypeEffectiveness(attackType: PokemonType, defenderTypes: PokemonType[]): number {
@@ -55,45 +68,88 @@ export function getTypeEffectiveness(attackType: PokemonType, defenderTypes: Pok
   return mult;
 }
 
+// ── HeartGold damage formula ─────────────────────────────────────────────────
+// Dégâts = Floor(Floor(Floor((2*L/5)+2) * Puissance * (A/D)) / 50) + 2
+// then STAB × 1.5, then type effectiveness, then random 85-100, then crit ×1.75
 export function calcDamage(
   attackerId: number,
   attackerLevel: number,
   defenderId: number,
-  defenderLevel: number
-): { damage: number; effectiveness: number; moveName: string; isCrit: boolean; isMiss: boolean } {
-  const attackerTypes = POKEMON_TYPE[attackerId] ?? ['normal'];
-  const defenderTypes = POKEMON_TYPE[defenderId] ?? ['normal'];
+  defenderLevel: number,
+  attackBoostMult = 1,
+): {
+  damage: number;
+  effectiveness: number;
+  moveName: string;
+  isCrit: boolean;
+  isMiss: boolean;
+  animationType: AnimationType;
+  moveType: PokemonType;
+} {
+  const move = GEN1_STATS[attackerId]?.move;
+  const moveName      = move?.name      ?? 'Charge';
+  const movePower     = move?.power     ?? 35;
+  const moveCategory  = move?.category  ?? 'physical';
+  const moveType      = (move?.type     ?? 'normal') as PokemonType;
+  const animationType = (move?.animationType ?? 'normal') as AnimationType;
 
-  // Pick the attacker type that deals the most damage to this defender
-  const bestType = attackerTypes.reduce<PokemonType>((best, t) =>
-    getTypeEffectiveness(t, defenderTypes) > getTypeEffectiveness(best, defenderTypes) ? t : best
-  , attackerTypes[0]);
-  const move = TYPE_MOVES[bestType];
+  // Stat selection based on category
+  let A = moveCategory === 'physical'
+    ? calcAttack(attackerId, attackerLevel)
+    : calcSpAttack(attackerId, attackerLevel);
+  if (moveCategory === 'physical' && attackBoostMult > 1) {
+    A = Math.floor(A * attackBoostMult);
+  }
+  const D = moveCategory === 'physical'
+    ? calcDefense(defenderId, defenderLevel)
+    : calcSpDefense(defenderId, defenderLevel);
 
-  const atk = calcAttack(attackerId, attackerLevel);
-  const def = calcDefense(defenderId, defenderLevel);
-  const effectiveness = getTypeEffectiveness(bestType, defenderTypes);
+  const defenderTypes  = (POKEMON_TYPE[defenderId]  ?? ['normal']) as PokemonType[];
+  const attackerTypes  = (POKEMON_TYPE[attackerId]  ?? ['normal']) as PokemonType[];
+  const effectiveness  = getTypeEffectiveness(moveType, defenderTypes);
 
-  const roll = Math.random();
-  if (roll < 0.10) {
-    return { damage: 0, effectiveness, moveName: move.name, isCrit: false, isMiss: true };
+  // 10 % miss chance
+  if (Math.random() < 0.10) {
+    return { damage: 0, effectiveness, moveName, isCrit: false, isMiss: true, animationType, moveType };
   }
 
-  const isCrit = Math.random() < 0.15;
-  const randomFactor = 0.85 + Math.random() * 0.15;
-  const critMult = isCrit ? 1.75 : 1;
-  const damage = Math.max(1, Math.floor((move.power * atk / def) * effectiveness * randomFactor * critMult / 10));
+  // Base damage
+  const L = attackerLevel;
+  let dmg = Math.floor(Math.floor(Math.floor((2 * L / 5) + 2) * movePower * (A / D)) / 50) + 2;
 
-  return { damage, effectiveness, moveName: move.name, isCrit, isMiss: false };
+  // STAB
+  if (attackerTypes.includes(moveType)) dmg = Math.floor(dmg * 1.5);
+
+  // Type effectiveness (no further calc if immune)
+  if (effectiveness === 0) return { damage: 0, effectiveness: 0, moveName, isCrit: false, isMiss: false, animationType, moveType };
+  dmg = Math.floor(dmg * effectiveness);
+
+  // Random factor 85–100
+  const rng = (85 + Math.floor(Math.random() * 16)) / 100;
+  dmg = Math.floor(dmg * rng);
+
+  // Critical hit (15 %, ×1.75)
+  const isCrit = Math.random() < 0.15;
+  if (isCrit) dmg = Math.floor(dmg * 1.75);
+
+  return { damage: Math.max(1, dmg), effectiveness, moveName, isCrit, isMiss: false, animationType, moveType };
 }
 
-// Returns a fraction of xpToNextLevel to award per battle (0.0 – 1.0)
+// ── HeartGold XP formula ─────────────────────────────────────────────────────
+// Gain = floor((a × baseXp × enemyLevel) / 7)
+// a = 1.5 for trainer battles, 1 for wild
+export function calcXpGain(enemyPokemonId: number, enemyLevel: number, isTrainer = false): number {
+  const baseXp = GEN1_STATS[enemyPokemonId]?.baseXp ?? 64;
+  const a = isTrainer ? 1.5 : 1;
+  return Math.floor((a * baseXp * enemyLevel) / 7);
+}
+
+// Kept for backwards-compat (PokéParc offline tick, bench XP share)
 export function xpGainedFromBattle(enemyLevel: number, won: boolean, enemyRarity?: Rarity): number {
   if (!won) return 0.02;
   const rarityBonus = enemyRarity
     ? { commun: 0, peu_commun: 0.02, rare: 0.05, elite: 0.08, legendaire: 0.12 }[enemyRarity] ?? 0
     : 0;
-  // Base: level 10 ≈ 8%, level 50 ≈ 22%, level 100 ≈ 38%
   const base = 0.05 + Math.min(enemyLevel / 300, 0.33);
   return base + rarityBonus;
 }
