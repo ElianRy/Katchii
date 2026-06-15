@@ -847,7 +847,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         if (ticks > 0) {
           const levelBefore = state.pokemonLevels?.[myFav.pokemonId]?.level ?? 1;
           const xpBefore = state.pokemonLevels?.[myFav.pokemonId]?.xp ?? 0;
-          const xpPerTick = Math.floor(rarityBase * (1 + levelBefore * 0.4) * (myFav.isShiny ? 2 : 1));
+          const xpPerTick = Math.max(1, Math.floor(xpToNextLevel(levelBefore) * 0.008 * (myFav.isShiny ? 1.5 : 1)));
           const totalXp = ticks * xpPerTick;
           // Compute level after (simulate leveling)
           let lAfter = levelBefore;
@@ -875,7 +875,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     const rarityBase = PARK_XP_PER_TICK[data?.rarity ?? 'commun'] ?? 5;
     const id = setInterval(() => {
       const level = state.pokemonLevels?.[myFav.pokemonId]?.level ?? 1;
-      const xp = Math.floor(rarityBase * (1 + level * 0.4) * (myFav.isShiny ? 2 : 1));
+      const xp = Math.max(1, Math.floor(xpToNextLevel(level) * 0.008 * (myFav.isShiny ? 1.5 : 1)));
       onAddPlayerXp(xp);
       onAddPokemonXp(myFav.pokemonId, xp);
       onSetLastParkXpAt?.(Date.now());

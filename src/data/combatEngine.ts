@@ -89,11 +89,11 @@ export function calcDamage(
 
 // Returns a fraction of xpToNextLevel to award per battle (0.0 – 1.0)
 export function xpGainedFromBattle(enemyLevel: number, won: boolean, enemyRarity?: Rarity): number {
-  if (!won) return 0.05;
+  if (!won) return 0.02;
   const rarityBonus = enemyRarity
-    ? { commun: 0, peu_commun: 0.03, rare: 0.07, elite: 0.12, legendaire: 0.18 }[enemyRarity] ?? 0
+    ? { commun: 0, peu_commun: 0.02, rare: 0.05, elite: 0.08, legendaire: 0.12 }[enemyRarity] ?? 0
     : 0;
-  // Base scales with enemy level: level 5 ≈ 15%, level 30 ≈ 25%, level 70 ≈ 35%
-  const base = 0.10 + Math.min(enemyLevel / 200, 0.25);
+  // Base: level 10 ≈ 8%, level 50 ≈ 22%, level 100 ≈ 38%
+  const base = 0.05 + Math.min(enemyLevel / 300, 0.33);
   return base + rarityBonus;
 }

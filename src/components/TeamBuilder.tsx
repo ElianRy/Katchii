@@ -136,7 +136,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     if (selected.length === 0) return;
     const zoneId = currentZoneId ?? 'zone1';
     const ZONE_XP_MULT: Record<string, number> = {
-      zone1: 1, zone2: 1.5, zone3: 2, zone4: 2.5, zone5: 3, zone6: 3.5, zone7: 4, zone8: 5, ligue: 6, zone_libre: 5
+      zone1: 1, zone2: 1.3, zone3: 1.6, zone4: 1.9, zone5: 2.2, zone6: 2.5, zone7: 2.8, zone8: 3.2, ligue: 4, zone_libre: 3.5
     };
     const mult = ZONE_XP_MULT[zoneId] ?? 1;
     const pseudoDiff: Difficulty = { id: zoneId, label: zoneId, emoji: '⚔️', enemyLevel: 0, color: '#f59e0b', xpMultiplier: mult, description: '' };
