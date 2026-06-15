@@ -24,10 +24,25 @@ export function xpToNextLevel(level: number): number {
 
 // ── HeartGold/SoulSilver stat formulas ──────────────────────────────────────
 
+export type PokemonProfile = 'tank' | 'equilibre' | 'attaquant';
+
+export function getPokemonProfile(baseHp: number): PokemonProfile {
+  if (baseHp >= 100) return 'tank';
+  if (baseHp >= 50)  return 'equilibre';
+  return 'attaquant';
+}
+
+function hpCoeff(baseHp: number): number {
+  if (baseHp >= 100) return 1.7;
+  if (baseHp >= 50)  return 2.5;
+  return 3.0;
+}
+
 export function calcMaxHp(pokemonId: number, level: number): number {
   const s = GEN1_STATS[pokemonId];
   if (!s) return Math.floor((2 * 45 * level) / 100) + level + 10;
-  return Math.floor((2 * s.hp * level) / 100) + level + 10;
+  const base = Math.floor((2 * s.hp * level) / 100) + level + 10;
+  return Math.floor(base * hpCoeff(s.hp));
 }
 
 export function calcAttack(pokemonId: number, level: number): number {

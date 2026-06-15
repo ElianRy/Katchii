@@ -5,7 +5,7 @@ import { GameState, RARITY_COLORS, RARITY_LABELS, Rarity } from '../types';
 import { GEN1_POKEMON, POKEMON_BY_ID } from '../data/gen1';
 import { ZONES } from '../data/zones';
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
-import { xpToNextLevel } from '../data/combatEngine';
+import { xpToNextLevel, getPokemonProfile } from '../data/combatEngine';
 import { GEN1_STATS } from '../data/gen1Stats';
 
 function getPokemonTitle(wins: number): string | null {
@@ -416,6 +416,17 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
                 const maxStat = 255;
                 return (
                   <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex flex-col gap-1.5">
+                    {(() => {
+                      const profile = getPokemonProfile(stats.hp);
+                      const profileLabel = profile === 'tank' ? '🛡️ Tank' : profile === 'equilibre' ? '⚖️ Équilibré' : '💥 Attaquant';
+                      const profileColor = profile === 'tank' ? '#4ade80' : profile === 'equilibre' ? '#60a5fa' : '#f87171';
+                      return (
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-slate-400 text-xs font-bold">Profil :</span>
+                          <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ color: profileColor, background: `${profileColor}22`, border: `1px solid ${profileColor}55` }}>{profileLabel}</span>
+                        </div>
+                      );
+                    })()}
                     <div className="text-slate-400 text-xs font-bold mb-1">Stats de base</div>
                     {rows.map(([label, val, color]) => (
                       <div key={label} className="flex items-center gap-2">
