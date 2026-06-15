@@ -12,6 +12,9 @@ export interface Zone {
   legendarySpecialIds?: number[];
   /** Natural level cap for pokemon caught in this zone (can be trained past this) */
   maxLevel: number;
+  /** Zone-based spawn level range (replaces rarity-based naturalLevel) */
+  spawnMinLevel: number;
+  spawnMaxLevel: number;
   completionThreshold: number;
   unlockCondition: ZoneUnlockCondition | null;
   boss: {
@@ -43,9 +46,10 @@ export const ZONES: Zone[] = [
     name: 'Forêt de Pallet',
     description: 'La forêt des débuts, pleine de Pokémon communs.',
     background: 'linear-gradient(180deg, #0a1a0a 0%, #1a3a1a 50%, #0f2a0f 100%)',
-    // C: 10,11,13,14,16,17,19,20,23,29,32,46 | PC: 1,63 | R: 25
-    pokemonIds: [10,11,13,14,16,17,19,20,21,22,23,29,32,46, 1,63, 25,39,52,74,83,95,108],
-    maxLevel: 25,
+    pokemonIds: [1,4,7,10,11,12,13,14,15,16,17,19,20,21,23,43,46,52],
+    maxLevel: 11,
+    spawnMinLevel: 6,
+    spawnMaxLevel: 11,
     completionThreshold: 0.70,
     unlockCondition: { type: 'total_pokemon', count: 10 },
     boss: {
@@ -67,9 +71,10 @@ export const ZONES: Zone[] = [
     name: 'Bords de Mer',
     description: 'Les côtes de Kanto, territoire des Pokémon aquatiques.',
     background: 'linear-gradient(180deg, #0a1a2e 0%, #0d2a4a 50%, #0a1a3a 100%)',
-    // C: 30,33,54,55,60,61,72,98,116,118 | PC: 7,18,79,90 | R: 115,121
-    pokemonIds: [30,33,54,55,60,61,72,98,116,118, 7,18,79,90, 62,73,86,87,91,99,117,119,120,139,141, 115,121],
-    maxLevel: 35,
+    pokemonIds: [22,24,29,30,31,32,33,34,41,42,60,61,62,72,73,86,87,98,99,116,117],
+    maxLevel: 19,
+    spawnMinLevel: 12,
+    spawnMaxLevel: 19,
     completionThreshold: 0.70,
     unlockCondition: { type: 'daily_quests_completed', count: 3 },
     boss: {
@@ -91,9 +96,10 @@ export const ZONES: Zone[] = [
     name: 'Centrale Électrique',
     description: 'Une zone industrielle chargée d\'électricité.',
     background: 'linear-gradient(180deg, #1a1a0a 0%, #2a2a00 50%, #1a1800 100%)',
-    // C: 41,42,84,85,96,97,100,101,109 | PC: 8,81,82 | R: 26,125
-    pokemonIds: [41,42,84,85,96,97,100,101,109, 8,81,82, 26,50,53,75,125],
-    maxLevel: 45,
+    pokemonIds: [18,25,26,27,28,44,45,48,49,50,51,53,81,82,83,84,85,100,101],
+    maxLevel: 27,
+    spawnMinLevel: 17,
+    spawnMaxLevel: 27,
     completionThreshold: 0.70,
     unlockCondition: { type: 'capture_n_times', pokemonId: 82, count: 10 },
     boss: {
@@ -115,9 +121,10 @@ export const ZONES: Zone[] = [
     name: 'Bois aux Fleurs',
     description: 'Une forêt fleurie peuplée de Pokémon Plante et Insecte.',
     background: 'linear-gradient(180deg, #0a1a10 0%, #1a3a20 50%, #0a2010 100%)',
-    // C: 43,44,45,46,47,48,69,70 | PC: 2,12,15,114 | R: 103,123,133 | E: 3
-    pokemonIds: [43,44,45,46,47,48,49,69,70,71, 2,12,15,114, 102,103,123,133, 3],
-    maxLevel: 55,
+    pokemonIds: [35,36,39,40,47,69,70,71,102,103,113,114,118,119,123,127,128],
+    maxLevel: 34,
+    spawnMinLevel: 21,
+    spawnMaxLevel: 34,
     completionThreshold: 0.70,
     unlockCondition: { type: 'capture_n_times', pokemonId: 3, count: 3 },
     boss: {
@@ -139,9 +146,10 @@ export const ZONES: Zone[] = [
     name: 'Tour Fantôme',
     description: 'Une tour hantée où les esprits errent.',
     background: 'linear-gradient(180deg, #0a0a1a 0%, #1a0a2a 50%, #0f0a1a 100%)',
-    // C: 41,88,96,97,109,110 | PC: 24,89,92,93 | R: 105,124,132 | E: 94
-    pokemonIds: [41,88,96,97,109,110, 24,89,92,93, 104,105,124,132, 94],
-    maxLevel: 65,
+    pokemonIds: [79,88,89,90,91,92,93,94,95,96,97,104,105,109,110,132],
+    maxLevel: 42,
+    spawnMinLevel: 27,
+    spawnMaxLevel: 42,
     completionThreshold: 0.70,
     unlockCondition: { type: 'training_battles', count: 15 },
     boss: {
@@ -163,9 +171,10 @@ export const ZONES: Zone[] = [
     name: 'Sylphe SARL',
     description: 'Le QG de Sylphe SARL, plein de mystères psychiques.',
     background: 'linear-gradient(180deg, #1a0a1a 0%, #2a1a3a 50%, #1a0a2a 100%)',
-    // C: 35,64,122,138,140 | PC: 36,40,63,79 | R: 38,51,113,137 | E: 9,31,65
-    pokemonIds: [35,64,122,138,140, 36,40,63,79,80, 38,51,113,137, 9,31,65],
-    maxLevel: 72,
+    pokemonIds: [54,55,56,57,63,64,65,80,106,107,108,115,120,121,122,133,134,135,136,137],
+    maxLevel: 50,
+    spawnMinLevel: 32,
+    spawnMaxLevel: 50,
     completionThreshold: 0.70,
     unlockCondition: { type: 'pokemon_level_in_team', level: 60 },
     boss: {
@@ -187,9 +196,10 @@ export const ZONES: Zone[] = [
     name: 'Île Cramoisie',
     description: 'Une île volcanique habitée par des Pokémon Feu.',
     background: 'linear-gradient(180deg, #1a0a0a 0%, #3a1a0a 50%, #2a0a0a 100%)',
-    // C: 37,58,129 | PC: 4,5,78 | R: 126,128,133,147,148 | E: 6,34,59,134,135
-    pokemonIds: [37,58,77,129, 4,5,78, 111,112,126,128,147,148, 6,34,59,133,134,135],
-    maxLevel: 80,
+    pokemonIds: [37,38,58,59,74,75,76,77,78,111,125,126,138,139,140,141,142],
+    maxLevel: 58,
+    spawnMinLevel: 37,
+    spawnMaxLevel: 58,
     completionThreshold: 0.70,
     unlockCondition: { type: 'total_pokemon', count: 80 },
     boss: {
@@ -211,9 +221,10 @@ export const ZONES: Zone[] = [
     name: 'Route Victoire',
     description: 'Un chemin de montagne mystérieux menant à la Ligue Pokémon.',
     background: 'linear-gradient(180deg, #0a0808 0%, #1a1210 50%, #0f0a08 100%)',
-    // C: 27,66 | PC: 28,67 | R: 76,105,106,107,127,142 | E: 68,130,131,136,143,149
-    pokemonIds: [27,56,66, 28,57,67, 76,106,107,127,142, 68,130,131,136,143,149],
-    maxLevel: 88,
+    pokemonIds: [2,3,5,6,8,9,66,67,68,112,124,129,130,131,143,144,145,146,147,148,149,150,151],
+    maxLevel: 73,
+    spawnMinLevel: 48,
+    spawnMaxLevel: 73,
     completionThreshold: 0.70,
     unlockCondition: { type: 'shiny_captures', count: 1 },
     boss: {
@@ -228,7 +239,7 @@ export const ZONES: Zone[] = [
       reward: 'Débloque la Zone Libre — Tous les Pokémon !',
     },
     unlockRequirement: 'zone7',
-    includesLegendaries: false,
+    includesLegendaries: true,
   },
   {
     id: 'zone_libre',
@@ -237,6 +248,8 @@ export const ZONES: Zone[] = [
     background: 'linear-gradient(180deg, #1a0a2a 0%, #2a1a4a 30%, #0a1a2a 70%, #0a0a1a 100%)',
     pokemonIds: NON_LEGENDARY_IDS.concat([144, 145, 146, 150, 151]),
     maxLevel: 100,
+    spawnMinLevel: 50,
+    spawnMaxLevel: 100,
     completionThreshold: 1.0,
     unlockCondition: null,
     boss: null,

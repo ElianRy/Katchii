@@ -16,7 +16,7 @@ function zoneRarities(zoneId: string): Set<Rarity> {
   return new Set(zone.pokemonIds.map(id => POKEMON_BY_ID[id]?.rarity).filter(Boolean) as Rarity[]);
 }
 import { getWeekId, todayDate, getTeamDamage } from '../components/RaidPanel';
-import { naturalLevel, xpToNextLevel, randomIV, zeroEV } from '../data/combatEngine';
+import { naturalLevel, zoneCaptureLevel, xpToNextLevel, randomIV, zeroEV } from '../data/combatEngine';
 import { randomNature } from '../data/natures';
 import type { PokemonInstanceData } from '../types';
 
@@ -301,8 +301,8 @@ export function useGameState() {
         // Initialize level if not set yet (e.g. first shiny before any normal catch)
         if (!next.pokemonLevels?.[pokemonId]) {
           const zoneId = prev.zoneProgress?.currentZoneId ?? 'zone1';
-          const zoneCap = ZONE_BY_ID[zoneId]?.maxLevel;
-          const lvl = naturalLevel(rarity, zoneCap);
+          const zone = ZONE_BY_ID[zoneId];
+          const lvl = zone ? zoneCaptureLevel(zone.spawnMinLevel, zone.spawnMaxLevel) : naturalLevel(rarity, undefined);
           next.pokemonLevels = { ...(next.pokemonLevels ?? {}), [pokemonId]: { level: lvl, xp: 0 } };
         }
         // Level for shiny: read after potential XP update
@@ -321,11 +321,11 @@ export function useGameState() {
           next.points = prev.points + pointsEarned;
         }
 
-        // Initialize level on first capture, capped by current zone's maxLevel
+        // Initialize level on first capture, based on current zone's spawn range
         if (!alreadyCaught && !next.pokemonLevels?.[pokemonId]) {
           const zoneId = prev.zoneProgress?.currentZoneId ?? 'zone1';
-          const zoneCap = ZONE_BY_ID[zoneId]?.maxLevel;
-          const lvl = naturalLevel(rarity, zoneCap);
+          const zone = ZONE_BY_ID[zoneId];
+          const lvl = zone ? zoneCaptureLevel(zone.spawnMinLevel, zone.spawnMaxLevel) : naturalLevel(rarity, undefined);
           capturedLevel = lvl;
           next.pokemonLevels = { ...(next.pokemonLevels ?? {}), [pokemonId]: { level: lvl, xp: 0 } };
         } else if (alreadyCaught) {
@@ -832,7 +832,9 @@ export function useGameState() {
         next.shinyCollection = { ...prev.shinyCollection, [pokemonId]: (prev.shinyCollection[pokemonId] ?? 0) + 1 };
       }
       if (!prev.pokemonLevels?.[pokemonId]) {
-        const lvl = naturalLevel(rarity, undefined);
+        const zoneId = prev.zoneProgress?.currentZoneId ?? 'zone1';
+        const zone = ZONE_BY_ID[zoneId];
+        const lvl = zone ? zoneCaptureLevel(zone.spawnMinLevel, zone.spawnMaxLevel) : naturalLevel(rarity, undefined);
         next.pokemonLevels = { ...(prev.pokemonLevels ?? {}), [pokemonId]: { level: lvl, xp: 0 } };
       }
       return next;
@@ -880,7 +882,9 @@ export function useGameState() {
   const initPokemonLevel = useCallback((pokemonId: number, rarity: Rarity) => {
     update(prev => {
       if (prev.pokemonLevels?.[pokemonId]) return prev;
-      const level = naturalLevel(rarity);
+      const zoneId = prev.zoneProgress?.currentZoneId ?? 'zone1';
+      const zone = ZONE_BY_ID[zoneId];
+      const level = zone ? zoneCaptureLevel(zone.spawnMinLevel, zone.spawnMaxLevel) : naturalLevel(rarity);
       return {
         ...prev,
         pokemonLevels: { ...prev.pokemonLevels, [pokemonId]: { level, xp: 0 } },

@@ -22,6 +22,10 @@ export function naturalLevel(rarity: Rarity, maxLevel?: number): number {
   return Math.floor(Math.random() * (effectiveMax - effectiveMin + 1)) + effectiveMin;
 }
 
+export function zoneCaptureLevel(spawnMin: number, spawnMax: number): number {
+  return Math.floor(Math.random() * (spawnMax - spawnMin + 1)) + spawnMin;
+}
+
 export function xpToNextLevel(level: number): number {
   return level * level * 5;
 }
