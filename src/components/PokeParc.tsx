@@ -61,15 +61,6 @@ interface Props {
   onMarkTutorialDone?: () => void;
 }
 
-function getPokemonTitle(wins: number): string | null {
-  if (wins >= 500) return '👑 Maître';
-  if (wins >= 200) return '🔥 Légende';
-  if (wins >= 100) return '💎 Champion';
-  if (wins >= 50) return '⚔️ Guerrier';
-  if (wins >= 25) return '🛡️ Combattant';
-  if (wins >= 10) return '🌱 Novice';
-  return null;
-}
 
 function formatChatTime(iso: string): string {
   const d = new Date(iso);
@@ -168,10 +159,10 @@ function ParkAttackVfx({ pokemonId, facingRight }: { pokemonId: number; facingRi
 }
 
 function ParkSprite({
-  pokemonId, isShiny, mood, username, isMine, onClick, waveTarget, wins, isOnline,
+  pokemonId, isShiny, mood, username, isMine, onClick, waveTarget, isOnline,
 }: {
   pokemonId: number; isShiny: boolean; mood: Mood; username: string;
-  isMine: boolean; onClick?: () => void; waveTarget?: boolean; wins?: number; isOnline?: boolean;
+  isMine: boolean; onClick?: () => void; waveTarget?: boolean; isOnline?: boolean;
 }) {
   const data = POKEMON_BY_ID[pokemonId];
   const rarityColor = data ? RARITY_COLORS[data.rarity] : '#6b7280';
@@ -294,11 +285,7 @@ function ParkSprite({
         }}>
           {isMine ? '★ ' : ''}{isOnline && !isMine && <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: '#4ade80', marginRight: 2, verticalAlign: 'middle' }} />}<span style={username?.toLowerCase() === 'pokelian' && !isMine ? { color: '#ef4444' } : {}}>{username}</span>
         </div>
-        {wins !== undefined && wins >= 10 && getPokemonTitle(wins) && (
-          <div style={{ fontSize: '0.45rem', color: '#fbbf24', fontWeight: 'bold', textAlign: 'center' }}>
-            {getPokemonTitle(wins)}
-          </div>
-        )}
+
       </div>
     </div>
   );
@@ -1342,7 +1329,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
                 username={username}
                 isMine={true}
                 onClick={() => {}}
-                wins={(state.pokemonWins ?? {})[myFav.pokemonId] ?? 0}
+
               />
             </div>
           )}

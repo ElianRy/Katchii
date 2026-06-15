@@ -8,27 +8,6 @@ import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
 import { xpToNextLevel, getPokemonProfile } from '../data/combatEngine';
 import { GEN1_STATS } from '../data/gen1Stats';
 
-function getPokemonTitle(wins: number): string | null {
-  if (wins >= 500) return '👑 Maître';
-  if (wins >= 200) return '🔥 Légende';
-  if (wins >= 100) return '💎 Champion';
-  if (wins >= 50) return '⚔️ Guerrier';
-  if (wins >= 25) return '🛡️ Combattant';
-  if (wins >= 10) return '🌱 Novice';
-  return null;
-}
-
-const TITLE_THRESHOLDS = [10, 25, 50, 100, 200, 500];
-const TITLE_LABELS = ['🌱 Novice', '🛡️ Combattant', '⚔️ Guerrier', '💎 Champion', '🔥 Légende', '👑 Maître'];
-
-function getNextTitle(wins: number): { label: string; remaining: number } | null {
-  for (let i = 0; i < TITLE_THRESHOLDS.length; i++) {
-    if (wins < TITLE_THRESHOLDS[i]) {
-      return { label: TITLE_LABELS[i], remaining: TITLE_THRESHOLDS[i] - wins };
-    }
-  }
-  return null;
-}
 
 interface Props {
   state: GameState;
@@ -334,7 +313,6 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
         const isShiny = (state.shinyCollection[selectedId] ?? 0) > 0;
         const lvData = state.pokemonLevels?.[selectedId] ?? { level: 1, xp: 0 };
         const xpPct = lvData.level >= 100 ? 100 : Math.min(100, Math.floor(lvData.xp / xpToNextLevel(lvData.level) * 100));
-        const wins = (state.pokemonWins ?? {})[selectedId] ?? 0;
         const types = POKEMON_TYPE[selectedId] ?? ['normal'];
         const rarityColor = RARITY_COLORS[p.rarity];
         const normalCount = state.normalCollection[selectedId] ?? 0;
@@ -357,9 +335,6 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
               </div>
               <div className="text-center">
                 <div className="font-black text-xl text-white">{p.name}</div>
-                {getPokemonTitle(wins) && (
-                  <div className="text-sm font-bold mt-0.5 text-yellow-300">{getPokemonTitle(wins)}</div>
-                )}
                 <div className="text-xs mt-0.5" style={{ color: rarityColor }}>{RARITY_LABELS[p.rarity]}</div>
               </div>
               <div className="flex gap-1.5">
@@ -382,25 +357,6 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
                   <div className="text-right text-xs text-slate-500">{lvData.xp} / {xpToNextLevel(lvData.level)} XP</div>
                 )}
               </div>
-              {(() => {
-                const next = getNextTitle(wins);
-                return (
-                  <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex flex-col gap-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-400 text-sm font-bold">Victoires</span>
-                      <span className="text-yellow-400 font-black text-lg">{wins}</span>
-                    </div>
-                    {next ? (
-                      <div className="text-xs text-slate-400">
-                        Prochain titre : <span className="text-white font-bold">{next.label}</span>
-                        <span className="text-slate-500"> — encore {next.remaining} victoire{next.remaining > 1 ? 's' : ''}</span>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-yellow-400 font-bold">Titre maximum atteint !</div>
-                    )}
-                  </div>
-                );
-              })()}
               {/* Base stats chart */}
               {(() => {
                 const stats = GEN1_STATS[selectedId];
