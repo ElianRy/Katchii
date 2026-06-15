@@ -76,6 +76,10 @@ export function ZoneInfoPanel({ state, onClose }: Props) {
 
         {/* Progress */}
         <div className="px-5 py-4 border-b border-slate-700/50 flex flex-col gap-3">
+          <div className="flex items-center justify-between text-xs mb-3">
+            <span className="text-slate-400">Niveaux à la capture</span>
+            <span className="font-bold text-blue-400">Lv {zone.spawnMinLevel} – {zone.spawnMaxLevel}</span>
+          </div>
           <div>
             <div className="flex justify-between text-xs text-slate-400 mb-1">
               <span>Pokémon capturés dans la zone</span>
