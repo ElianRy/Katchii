@@ -334,6 +334,7 @@ export function BattleScreen({
   const [shakePokemon, setShakePokemon] = useState<'player' | 'enemy' | null>(null);
   const [tooltipMoveIdx, setTooltipMoveIdx] = useState<number | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFiredRef = useRef(false);
   const turnNumberRef = useRef(0);
 
   useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
@@ -680,12 +681,18 @@ export function BattleScreen({
 
   // Long press handlers
   const startLongPress = (idx: number) => {
-    longPressTimerRef.current = setTimeout(() => setTooltipMoveIdx(idx), 700);
-  };
-  const endLongPress = (idx: number, didClick: boolean) => {
+    longPressFiredRef.current = false;
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-    if (tooltipMoveIdx !== null) { setTooltipMoveIdx(null); return; }
-    if (didClick && phase === 'player_turn') executeTurn(idx);
+    longPressTimerRef.current = setTimeout(() => {
+      longPressFiredRef.current = true;
+      setTooltipMoveIdx(idx);
+    }, 700);
+  };
+  const endLongPress = (idx: number) => {
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    if (longPressFiredRef.current) return; // long press showed tooltip — do nothing on release
+    if (tooltipMoveIdx !== null) { setTooltipMoveIdx(null); return; } // close tooltip on tap
+    if (phase === 'player_turn') executeTurn(idx);
   };
 
   // ── INTRO PHASE ─────────────────────────────────────────────────────────────
@@ -1057,10 +1064,10 @@ export function BattleScreen({
                     <button key={i}
                       disabled={disabled}
                       onPointerDown={() => !disabled && startLongPress(i)}
-                      onPointerUp={() => !disabled && endLongPress(i, true)}
-                      onPointerLeave={() => { if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current); }}
+                      onPointerUp={() => !disabled && endLongPress(i)}
+                      onPointerLeave={() => { if (longPressTimerRef.current) { clearTimeout(longPressTimerRef.current); longPressFiredRef.current = false; } }}
                       onTouchStart={e => { e.preventDefault(); !disabled && startLongPress(i); }}
-                      onTouchEnd={e => { e.preventDefault(); !disabled && endLongPress(i, true); }}
+                      onTouchEnd={e => { e.preventDefault(); !disabled && endLongPress(i); }}
                       onClick={e => e.preventDefault()}
                       className="relative rounded-xl px-3 py-2 text-left select-none"
                       style={{

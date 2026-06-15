@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { GEN1_POKEMON, POKEMON_BY_ID } from '../data/gen1';
 import { ZONE_ORDER, ZONE_BY_ID } from '../data/zones';
 import { useGameState } from '../hooks/useGameState';
+import { supabase } from '../lib/supabase';
+import type { ThroneData } from './ThroneScreen';
 
 interface Props {
   gameState: ReturnType<typeof useGameState>;
@@ -12,13 +14,62 @@ const RARITY_COLORS_ADMIN: Record<string, string> = {
 };
 
 export function AdminPanel({ gameState, onClose }: Props) {
-  const [tab, setTab] = useState<'pokemon' | 'zones' | 'misc'>('pokemon');
+  const [tab, setTab] = useState<'pokemon' | 'zones' | 'misc' | 'throne'>('pokemon');
+  const [throneData, setThroneData] = useState<ThroneData | null>(null);
+  const [throneInput, setThroneInput] = useState('');
+  const [throneLoading, setThroneLoading] = useState(false);
   const [filter, setFilter] = useState('');
   const [feedback, setFeedback] = useState('');
 
   const flash = (msg: string) => {
     setFeedback(msg);
     setTimeout(() => setFeedback(''), 1800);
+  };
+
+  const loadThrone = async () => {
+    setThroneLoading(true);
+    const { data } = await supabase.from('game_saves').select('state').eq('user_id', '__throne__').single();
+    setThroneData((data?.state as ThroneData) ?? null);
+    setThroneLoading(false);
+  };
+
+  const setManualChampion = async (newUsername: string) => {
+    if (!newUsername.trim()) return;
+    // Find the player's team from Supabase
+    const { data: allSaves } = await supabase.from('game_saves').select('state');
+    let team: Array<{ pokemonId: number; isShiny: boolean }> = [];
+    if (allSaves) {
+      for (const row of allSaves) {
+        const s = row.state as { username?: string; favoriteTeamId?: string; savedTeams?: Array<{ id: string; members: Array<{ pokemonId: number; isShiny?: boolean }> }>; pokemonLevels?: Record<number, { level: number }> } | null;
+        if (!s) continue;
+        if ((s.username ?? '').toLowerCase() === newUsername.toLowerCase()) {
+          const favTeam = s.favoriteTeamId ? (s.savedTeams ?? []).find(t => t.id === s.favoriteTeamId) : null;
+          if (favTeam) { team = favTeam.members.slice(0, 3).map(m => ({ pokemonId: m.pokemonId, isShiny: m.isShiny ?? false })); break; }
+          const topIds = Object.entries(s.pokemonLevels ?? {}).sort(([, a], [, b]) => b.level - a.level).slice(0, 3).map(([id]) => Number(id));
+          if (topIds.length) { team = topIds.map(id => ({ pokemonId: id, isShiny: false })); break; }
+        }
+      }
+    }
+    const now = new Date().toISOString();
+    const prev = throneData;
+    const newRecords = [...(prev?.records ?? [])];
+    if (prev?.champion && prev.champion.since !== 'Depuis toujours') {
+      newRecords.push({ username: prev.champion.username, duration: Date.now() - new Date(prev.champion.since).getTime(), start: prev.champion.since, end: now });
+    }
+    const newData: ThroneData = { champion: { username: newUsername, team, since: now }, records: newRecords };
+    await supabase.from('game_saves').upsert({ user_id: '__throne__', state: newData, updated_at: now });
+    setThroneData(newData);
+    setThroneInput('');
+    flash(`👑 ${newUsername} est maintenant champion !`);
+  };
+
+  const deleteRecord = async (idx: number) => {
+    if (!throneData) return;
+    const newRecords = throneData.records.filter((_, i) => i !== idx);
+    const newData: ThroneData = { ...throneData, records: newRecords };
+    await supabase.from('game_saves').upsert({ user_id: '__throne__', state: newData, updated_at: new Date().toISOString() });
+    setThroneData(newData);
+    flash('🗑️ Record supprimé.');
   };
 
   const giveAll = () => {
@@ -84,15 +135,15 @@ export function AdminPanel({ gameState, onClose }: Props) {
 
       {/* Tabs */}
       <div className="flex border-b border-slate-700 shrink-0">
-        {(['pokemon', 'zones', 'misc'] as const).map(t => (
+        {(['pokemon', 'zones', 'misc', 'throne'] as const).map(t => (
           <button
             key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 py-2 text-sm font-bold transition-colors ${
+            onClick={() => { setTab(t); if (t === 'throne' && !throneData) loadThrone(); }}
+            className={`flex-1 py-2 text-xs font-bold transition-colors ${
               tab === t ? 'bg-red-900 text-white border-b-2 border-red-400' : 'text-slate-400 hover:text-white'
             }`}
           >
-            {t === 'pokemon' ? '🎮 Pokémon' : t === 'zones' ? '🗺️ Zones' : '⚙️ Divers'}
+            {t === 'pokemon' ? '🎮 Pokémon' : t === 'zones' ? '🗺️ Zones' : t === 'misc' ? '⚙️ Divers' : '👑 Trône'}
           </button>
         ))}
       </div>
@@ -243,6 +294,82 @@ export function AdminPanel({ gameState, onClose }: Props) {
 
               </div>
             </div>
+          </div>
+        )}
+
+        {/* ── THRONE TAB ── */}
+        {tab === 'throne' && (
+          <div className="flex flex-col gap-4 p-4">
+            {throneLoading ? (
+              <div className="text-yellow-400 text-sm animate-pulse">Chargement…</div>
+            ) : (
+              <>
+                {/* Current champion */}
+                <div className="bg-slate-800 rounded-xl p-4 border border-amber-700/40">
+                  <p className="text-amber-400 font-black text-sm mb-2">👑 Champion actuel</p>
+                  {throneData?.champion ? (
+                    <div>
+                      <p className="text-white font-bold">{throneData.champion.username}</p>
+                      <p className="text-slate-400 text-xs">{throneData.champion.since === 'Depuis toujours' ? 'Depuis toujours' : new Date(throneData.champion.since).toLocaleString('fr-FR')}</p>
+                      <div className="flex gap-2 mt-2">
+                        {throneData.champion.team.map((m, i) => (
+                          <img key={i} src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${m.pokemonId}.png`}
+                            alt="" width={36} height={36} style={{ imageRendering: 'pixelated' }} draggable={false} />
+                        ))}
+                      </div>
+                    </div>
+                  ) : <p className="text-slate-400 text-sm">Aucun champion défini</p>}
+                </div>
+
+                {/* Set manual champion */}
+                <div className="bg-slate-800 rounded-xl p-4 border border-slate-600/40">
+                  <p className="text-white font-black text-sm mb-2">⚔️ Définir un champion manuellement</p>
+                  <div className="flex gap-2">
+                    <input
+                      value={throneInput}
+                      onChange={e => setThroneInput(e.target.value)}
+                      placeholder="Nom d'utilisateur exact"
+                      className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
+                    />
+                    <button
+                      onClick={() => setManualChampion(throneInput)}
+                      disabled={!throneInput.trim()}
+                      className="px-4 py-2 rounded-lg bg-amber-600 text-black font-black text-sm disabled:opacity-40"
+                    >
+                      OK
+                    </button>
+                  </div>
+                </div>
+
+                {/* Records list with delete */}
+                <div className="bg-slate-800 rounded-xl p-4 border border-slate-600/40">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-white font-black text-sm">📋 Historique des règnes</p>
+                    <button onClick={loadThrone} className="text-slate-400 text-xs hover:text-white">↻ Actualiser</button>
+                  </div>
+                  {(throneData?.records ?? []).length === 0 ? (
+                    <p className="text-slate-500 text-xs">Aucun règne enregistré.</p>
+                  ) : (
+                    <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+                      {[...(throneData?.records ?? [])].reverse().map((r, i, arr) => (
+                        <div key={i} className="flex items-center justify-between bg-slate-700/50 rounded-lg px-3 py-2">
+                          <div>
+                            <span className="text-white text-sm font-bold">{r.username}</span>
+                            <span className="text-slate-400 text-xs ml-2">{Math.floor(r.duration / 3600000)}h {Math.floor((r.duration % 3600000) / 60000)}m</span>
+                          </div>
+                          <button
+                            onClick={() => deleteRecord(arr.length - 1 - i)}
+                            className="text-red-400 hover:text-red-300 text-sm px-2"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>
