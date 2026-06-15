@@ -107,20 +107,3 @@ export const TYPE_CHART: Partial<Record<PokemonType, Partial<Record<PokemonType,
   normal:   { rock:0.5, ghost:0 },
 };
 
-export const TYPE_MOVES: Record<PokemonType, { name: string; power: number }> = {
-  normal:   { name: 'Coup Normal', power: 50 },
-  fire:     { name: 'Lance-Flammes', power: 90 },
-  water:    { name: 'Surf', power: 90 },
-  grass:    { name: "Tranch'Herbe", power: 85 },
-  electric: { name: 'Tonnerre', power: 90 },
-  ice:      { name: 'Blizzard', power: 95 },
-  fighting: { name: 'Close Combat', power: 100 },
-  poison:   { name: "Ball'Poison", power: 80 },
-  ground:   { name: 'Séisme', power: 100 },
-  flying:   { name: 'Aéropique', power: 75 },
-  psychic:  { name: 'Psyko', power: 90 },
-  bug:      { name: 'Vibrobuzz', power: 90 },
-  rock:     { name: 'Éboulement', power: 100 },
-  ghost:    { name: "Ball'Ombre", power: 80 },
-  dragon:   { name: 'Draco-Charge', power: 100 },
-};

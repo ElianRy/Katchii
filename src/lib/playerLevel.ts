@@ -35,7 +35,3 @@ export const CAPTURE_XP: Record<string, number> = {
   commun: 10, peu_commun: 25, rare: 60, elite: 150, legendaire: 400,
 };
 
-// XP awarded every 2 min while pokemon is in park (player + pokemon)
-export const PARK_XP_PER_TICK: Record<string, number> = {
-  commun: 5, peu_commun: 8, rare: 15, elite: 30, legendaire: 80,
-};

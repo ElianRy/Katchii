@@ -144,12 +144,3 @@ export function calcXpGain(enemyPokemonId: number, enemyLevel: number, isTrainer
   return Math.floor((a * baseXp * enemyLevel) / 7);
 }
 
-// Kept for backwards-compat (PokéParc offline tick, bench XP share)
-export function xpGainedFromBattle(enemyLevel: number, won: boolean, enemyRarity?: Rarity): number {
-  if (!won) return 0.02;
-  const rarityBonus = enemyRarity
-    ? { commun: 0, peu_commun: 0.02, rare: 0.05, elite: 0.08, legendaire: 0.12 }[enemyRarity] ?? 0
-    : 0;
-  const base = 0.05 + Math.min(enemyLevel / 300, 0.33);
-  return base + rarityBonus;
-}

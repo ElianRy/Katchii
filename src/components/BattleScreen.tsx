@@ -11,6 +11,7 @@ function spriteFilter(pokemonId: number, _isShiny: boolean, _size = 4): string {
 }
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
 import { calcDamage, calcXpGain } from '../data/combatEngine';
+import { GEN1_STATS } from '../data/gen1Stats';
 import { TeamMember } from './TeamBuilder';
 
 const SHINY_INTRO_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string }[] = [
@@ -425,7 +426,7 @@ export function BattleScreen({ playerTeam, enemyTeam, bossName: _bossName, onBat
           const { damage: pDmg, effectiveness: pEff, moveName: pMove, isCrit: pCrit, isMiss: pMiss, animationType: pAnim } = calcDamage(
             pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, boostMult
           );
-          const { animationType: eAnim } = calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level);
+          const eAnim = GEN1_STATS[eFighter.pokemonId]?.move.animationType ?? 'normal';
 
           setAttackEvt(pMiss ? null : { attacker: 'player', type: pAnim as PokemonType, uid: dmgCounter++ });
           if (!pMiss) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
