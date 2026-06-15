@@ -502,13 +502,16 @@ export function BattleScreen({
         const hitsLabel = (r: typeof pResult) => r.hits > 1 ? ` (×${r.hits})` : '';
 
         const doPlayerAttack = (_pf: FighterState[], ef_: FighterState[]) => { void _pf;
-          setAttackEvt({ attacker: 'player', type: pResult.moveType, uid: dmgCounter++ });
+          const pIsStatus = pResult.damage === 0 && !!pResult.statBoost;
+          if (!pIsStatus) {
+            setAttackEvt({ attacker: 'player', type: pResult.moveType, uid: dmgCounter++ });
+            setTimeout(() => setAttackEvt(null), 400);
+          }
           if (!pResult.isMiss && pResult.damage > 0) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
-          setTimeout(() => setAttackEvt(null), 400);
           if (pResult.damage > 0) addDmg(pResult.damage, 'enemy', pResult.effectiveness, pResult.isCrit, pResult.isMiss);
-          if (pResult.damage === 0 && pResult.statBoost && !pResult.isMiss) {
-            const positive = pResult.statBoost.target === 'self' ? pResult.statBoost.stages > 0 : pResult.statBoost.stages < 0;
-            const animTarget = pResult.statBoost.target === 'self' ? 'player' : 'enemy';
+          if (pIsStatus && !pResult.isMiss) {
+            const positive = pResult.statBoost!.target === 'self' ? pResult.statBoost!.stages > 0 : pResult.statBoost!.stages < 0;
+            const animTarget = pResult.statBoost!.target === 'self' ? 'player' : 'enemy';
             setStatusAnim({ target: animTarget, positive, uid: dmgCounter++ });
             setTimeout(() => setStatusAnim(null), 900);
           }
@@ -532,13 +535,16 @@ export function BattleScreen({
         };
 
         const doEnemyAttack = (pf_: FighterState[], _ef: FighterState[]) => { void _ef;
-          setAttackEvt({ attacker: 'enemy', type: eResult.moveType, uid: dmgCounter++ });
+          const eIsStatus = eResult.damage === 0 && !!eResult.statBoost;
+          if (!eIsStatus) {
+            setAttackEvt({ attacker: 'enemy', type: eResult.moveType, uid: dmgCounter++ });
+            setTimeout(() => setAttackEvt(null), 400);
+          }
           if (!eResult.isMiss && eResult.damage > 0) { setTimeout(() => setHitFlash('player'), 120); setTimeout(() => setHitFlash(null), 280); }
-          setTimeout(() => setAttackEvt(null), 400);
           if (eResult.damage > 0) addDmg(eResult.damage, 'player', eResult.effectiveness, eResult.isCrit, eResult.isMiss);
-          if (eResult.damage === 0 && eResult.statBoost && !eResult.isMiss) {
-            const positive = eResult.statBoost.target === 'self' ? eResult.statBoost.stages > 0 : eResult.statBoost.stages < 0;
-            const animTarget = eResult.statBoost.target === 'self' ? 'enemy' : 'player';
+          if (eIsStatus && !eResult.isMiss) {
+            const positive = eResult.statBoost!.target === 'self' ? eResult.statBoost!.stages > 0 : eResult.statBoost!.stages < 0;
+            const animTarget = eResult.statBoost!.target === 'self' ? 'enemy' : 'player';
             setStatusAnim({ target: animTarget, positive, uid: dmgCounter++ });
             setTimeout(() => setStatusAnim(null), 900);
           }
@@ -842,8 +848,8 @@ export function BattleScreen({
         {statusAnim && (() => {
           const isEnemy = statusAnim.target === 'enemy';
           const style: React.CSSProperties = isEnemy
-            ? { position: 'absolute', top: '5%', right: 'max(7%, calc(50% - 220px))', pointerEvents: 'none' as const, zIndex: 30 }
-            : { position: 'absolute', bottom: '12%', left: 'max(7%, calc(50% - 220px))', pointerEvents: 'none' as const, zIndex: 30 };
+            ? { position: 'absolute', top: 'calc(5% + env(safe-area-inset-top,0px) + 60px)', right: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 }
+            : { position: 'absolute', bottom: 'calc(14% + 60px)', left: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 };
           const color = statusAnim.positive ? '#4ade80' : '#f87171';
           const icons = statusAnim.positive ? ['⬆️','✨','💫'] : ['⬇️','💢','‼️'];
           return (
@@ -1034,7 +1040,7 @@ export function BattleScreen({
       </div>
 
       {/* ── Battle log + Move buttons ── */}
-      <div className="shrink-0 bg-black/95 border-t border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="shrink-0 border-t border-slate-700/40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: 'linear-gradient(180deg, rgba(10,12,28,0.97) 0%, rgba(5,8,20,0.99) 100%)' }}>
         {/* Log */}
         <div className="px-4 pt-2 pb-1 flex flex-col gap-0.5" style={{ minHeight: 76, maxHeight: 100, overflow: 'hidden', justifyContent: 'flex-end' }}>
           {log.slice(-4).map((entry, i, arr) => (
