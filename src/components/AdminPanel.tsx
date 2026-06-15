@@ -56,7 +56,7 @@ export function AdminPanel({ gameState, onClose }: Props) {
     if (prev?.champion && prev.champion.since !== 'Depuis toujours') {
       newRecords.push({ username: prev.champion.username, duration: Date.now() - new Date(prev.champion.since).getTime(), start: prev.champion.since, end: now });
     }
-    const newData: ThroneData = { champion: { username: newUsername, team, since: now }, records: newRecords };
+    const newData: ThroneData = { champion: { username: newUsername, team, since: now }, records: newRecords, coinClaims: throneData?.coinClaims ?? {} };
     await supabase.from('game_saves').upsert({ user_id: '__throne__', state: newData, updated_at: now });
     setThroneData(newData);
     setThroneInput('');

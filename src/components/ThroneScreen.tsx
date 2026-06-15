@@ -19,8 +19,9 @@ export interface ThroneData {
     username: string;
     team: Array<{ pokemonId: number; isShiny: boolean }>;
     since: string; // ISO
-  };
+  } | null;
   records: ThroneRecord[];
+  coinClaims: Record<string, string>; // username -> ISO of last claim
 }
 
 const CHAMPION_LEVEL = 80;
@@ -32,25 +33,6 @@ async function loadThroneData(): Promise<ThroneData | null> {
   return null;
 }
 
-async function fetchEliantestTeam(): Promise<Array<{ pokemonId: number; isShiny: boolean }>> {
-  const { data } = await supabase.from('game_saves').select('state');
-  if (data) {
-    for (const row of data) {
-      const s = row.state as GameState | null;
-      if (!s || typeof s !== 'object') continue;
-      if ((s.username ?? '').toLowerCase() === 'eliantest') {
-        const favTeamId = s.favoriteTeamId;
-        const favTeam = favTeamId ? (s.savedTeams ?? []).find(t => t.id === favTeamId) : null;
-        if (favTeam && favTeam.members.length >= 1)
-          return favTeam.members.slice(0, 3).map(m => ({ pokemonId: m.pokemonId, isShiny: m.isShiny ?? false }));
-        const levels = s.pokemonLevels ?? {};
-        const topIds = Object.entries(levels).sort(([, a], [, b]) => b.level - a.level).slice(0, 3).map(([id]) => Number(id));
-        if (topIds.length) return topIds.map(id => ({ pokemonId: id, isShiny: (s.shinyCollection?.[id] ?? 0) > 0 }));
-      }
-    }
-  }
-  return [{ pokemonId: 150, isShiny: false }, { pokemonId: 144, isShiny: false }, { pokemonId: 149, isShiny: false }];
-}
 
 function toTeamMember(pokemonId: number, isShiny: boolean, level: number): TeamMember {
   const stats = GEN1_STATS[pokemonId];
@@ -165,33 +147,53 @@ function Leaderboard({ records, currentChampion }: { records: ThroneRecord[]; cu
   );
 }
 
+const MAX_AFK_MS = 5 * 60 * 60 * 1000; // 5h
+const COINS_PER_MINUTE = 10;
+
+function calcUnclaimedCoins(since: string, lastClaim: string | undefined): { coins: number; claimFrom: number; claimTo: number } {
+  const sinceMs = new Date(since).getTime();
+  const claimFrom = lastClaim ? new Date(lastClaim).getTime() : sinceMs;
+  const maxClaimTo = sinceMs + MAX_AFK_MS;
+  const claimTo = Math.min(Date.now(), maxClaimTo);
+  const minutes = Math.floor((claimTo - claimFrom) / 60000);
+  return { coins: Math.max(0, minutes * COINS_PER_MINUTE), claimFrom, claimTo };
+}
+
 /* ─── Props ─────────────────────────────────────────────────────── */
 interface Props {
   state: GameState;
   username: string;
   onClose: () => void;
   onChallenge: (playerTeam: TeamMember[], enemyTeam: TeamMember[], enemyName: string, onDone: (won: boolean) => void) => void;
+  onClaimCoins: (amount: number) => void;
 }
 
 /* ─── Main component ────────────────────────────────────────────── */
-export function ThroneScreen({ state, username, onClose, onChallenge }: Props) {
+export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoins }: Props) {
   const [throneData, setThroneData] = useState<ThroneData | null>(null);
   const [phase, setPhase] = useState<'view' | 'pick_mode' | 'pick_pokemon'>('view');
   const [selectedPokemon, setSelectedPokemon] = useState<Array<{ pokemonId: number; isShiny: boolean }>>([]);
   const [loading, setLoading] = useState(true);
   const [resultMsg, setResultMsg] = useState<string | null>(null);
+  const [coinPopup, setCoinPopup] = useState<{ coins: number } | null>(null);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   /* Initial load + realtime */
   useEffect(() => {
     (async () => {
-      let data = await loadThroneData();
-      if (!data) {
-        const team = await fetchEliantestTeam();
-        data = { champion: { username: 'Eliantest', team, since: 'Depuis toujours' }, records: [] };
-      }
-      setThroneData(data);
+      const data = await loadThroneData();
+      const finalData: ThroneData = data ?? { champion: null, records: [], coinClaims: {} };
+      setThroneData(finalData);
       setLoading(false);
+
+      // Check for unclaimed throne coins
+      if (finalData.champion?.username === username && finalData.champion.since !== 'Depuis toujours') {
+        const { coins } = calcUnclaimedCoins(
+          finalData.champion.since,
+          finalData.coinClaims?.[username]
+        );
+        if (coins > 0) setCoinPopup({ coins });
+      }
     })();
 
     const channel = supabase.channel('throne_rt')
@@ -232,6 +234,7 @@ export function ThroneScreen({ state, username, onClose, onChallenge }: Props) {
             since: now,
           },
           records: newRecords,
+          coinClaims: throneData.coinClaims ?? {},
         };
         await supabase.from('game_saves').upsert({ user_id: '__throne__', state: newData, updated_at: now });
         setThroneData(newData);
@@ -240,6 +243,17 @@ export function ThroneScreen({ state, username, onClose, onChallenge }: Props) {
         setResultMsg('💀 Défaite — le champion tient son trône.');
       }
     });
+  }
+
+  async function claimCoins() {
+    if (!coinPopup || !throneData) return;
+    const now = new Date().toISOString();
+    const updatedClaims = { ...(throneData.coinClaims ?? {}), [username]: now };
+    const newData: ThroneData = { ...throneData, coinClaims: updatedClaims };
+    await supabase.from('game_saves').upsert({ user_id: '__throne__', state: newData, updated_at: now });
+    setThroneData(newData);
+    onClaimCoins(coinPopup.coins);
+    setCoinPopup(null);
   }
 
   function useFavoriteTeam() {
@@ -372,8 +386,35 @@ export function ThroneScreen({ state, username, onClose, onChallenge }: Props) {
           </div>
         )}
 
+        {/* Coin claim popup */}
+        {coinPopup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={claimCoins}>
+            <div
+              className="w-80 rounded-3xl border-2 border-yellow-500 flex flex-col items-center gap-4 p-7"
+              style={{ background: 'linear-gradient(160deg, #1a1000, #2a1800)', boxShadow: '0 0 60px rgba(245,158,11,0.5)' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <span className="text-6xl" style={{ animation: 'float-throne 2s ease-in-out infinite' }}>💰</span>
+              <div className="text-center">
+                <p className="text-yellow-300 font-black text-xl">Revenus du Trône</p>
+                <p className="text-slate-400 text-sm mt-1">Tu étais sur le Trône</p>
+              </div>
+              <div className="text-yellow-400 font-black text-4xl tabular-nums" style={{ textShadow: '0 0 20px rgba(245,158,11,0.8)' }}>
+                +{coinPopup.coins} 💎
+              </div>
+              <button
+                onClick={claimCoins}
+                className="w-full py-3 rounded-2xl font-black text-lg text-black"
+                style={{ background: 'linear-gradient(90deg, #f59e0b, #fbbf24)' }}
+              >
+                Réclamer
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Throne visual */}
-        {champion && (
+        {champion ? (
           <div className="w-full max-w-md flex flex-col items-center gap-5">
             {/* Crown + name */}
             <div className="flex flex-col items-center gap-1">
@@ -438,6 +479,12 @@ export function ThroneScreen({ state, username, onClose, onChallenge }: Props) {
                 Capture au moins 3 Pokémon pour challenger le champion.
               </div>
             )}
+          </div>
+        ) : (
+          <div className="w-full max-w-md flex flex-col items-center gap-4 py-10">
+            <span className="text-8xl opacity-30">👑</span>
+            <p className="text-slate-500 text-center text-base font-bold">Le trône est vide.</p>
+            <p className="text-slate-600 text-center text-sm">Aucun champion pour l'instant.</p>
           </div>
         )}
 

@@ -450,6 +450,7 @@ export function App() {
           onChallenge={(playerTeam, enemyTeam, enemyName, onResult) => {
             setBattle3v3({ playerTeam, enemyTeam, enemyName, onDone: (_dmg, won) => onResult(won) });
           }}
+          onClaimCoins={(amount) => gameState.update(s => ({ ...s, points: (s.points ?? 0) + amount }))}
         />
       )}
 
