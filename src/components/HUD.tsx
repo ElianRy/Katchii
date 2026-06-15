@@ -20,6 +20,7 @@ interface Props {
   capturedCount: number;
   totalPokemon: number;
   questsCompleted: number;
+  hasQuestReward?: boolean;
   currentZoneName?: string;
   missingInZone?: number[];
   zoneCaughtCount?: number;
@@ -96,6 +97,7 @@ export function HUD({
   conditionDescription,
   onFightBoss,
   currentZoneId,
+  hasQuestReward = false,
 }: Props) {
   const [showConditionDetail, setShowConditionDetail] = useState(false);
   const [showLureInfo, setShowLureInfo] = useState(false);
@@ -132,6 +134,19 @@ export function HUD({
               ℹ️
             </button>
           )}
+
+          {/* Quests button */}
+          <div className="relative shrink-0">
+            <button
+              onClick={onOpenQuests}
+              className="rounded-xl px-2.5 py-1.5 text-sm border border-yellow-500/40 bg-yellow-900/40 text-yellow-200 hover:bg-yellow-800/60"
+            >
+              📋
+            </button>
+            {hasQuestReward && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-yellow-400 border border-black animate-bounce" />
+            )}
+          </div>
 
           {/* Lure indicator */}
           {activeLure && Date.now() < activeLure.expiresAt && (

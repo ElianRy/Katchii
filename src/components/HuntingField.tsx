@@ -313,6 +313,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         capturedCount={capturedCount}
         totalPokemon={totalPokemon}
         questsCompleted={questsCompleted}
+        hasQuestReward={questsCompleted > 0}
         currentZoneName={currentZoneName}
         missingInZone={missingInZone}
         zoneCaughtCount={zoneCaughtCount}

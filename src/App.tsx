@@ -23,6 +23,7 @@ import { ShopPanel } from './components/ShopPanel';
 import { CaseOpenScreen } from './components/CaseOpenScreen';
 import { PlayersPanel } from './components/PlayersPanel';
 import { BattleScreen } from './components/BattleScreen';
+import { ThroneScreen } from './components/ThroneScreen';
 import { TeamMember } from './components/TeamBuilder';
 import { useGameState } from './hooks/useGameState';
 import { supabase } from './lib/supabase';
@@ -88,7 +89,7 @@ export function App() {
       setView('home');
     } else {
       const saved = localStorage.getItem('katchii_last_view') as View | null;
-      const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','pokepark','clan'];
+      const validViews: View[] = ['hunt','collection','team','lures','quests','duels','raid','pokepark','clan','throne'];
       setView(saved && validViews.includes(saved) ? saved : 'home');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -437,8 +438,18 @@ export function App() {
           onNavigate={persistView}
           questsCompleted={questsCompleted}
           favoritePokemon={gameState.state.favoritePokemon}
-          onOpenQuests={() => persistView('quests')}
           onShowPlayers={() => setShowPlayers(true)}
+        />
+      )}
+
+      {view === 'throne' && (
+        <ThroneScreen
+          state={gameState.state}
+          username={username}
+          onClose={() => persistView('hunt')}
+          onChallenge={(playerTeam, enemyTeam, enemyName, onResult) => {
+            setBattle3v3({ playerTeam, enemyTeam, enemyName, onDone: (_dmg, won) => onResult(won) });
+          }}
         />
       )}
 

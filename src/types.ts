@@ -1,6 +1,6 @@
 export type Rarity = 'commun' | 'peu_commun' | 'rare' | 'elite' | 'legendaire';
 export type LureType = 'rare' | 'epique' | 'legendaire' | 'shiny';
-export type View = 'auth' | 'loading' | 'home' | 'hunt' | 'collection' | 'team' | 'admin' | 'lures' | 'quests' | 'duels' | 'raid' | 'wrapped' | 'profile' | 'zones' | 'pokepark' | 'settings' | 'clan' | 'backpack' | 'shop';
+export type View = 'auth' | 'loading' | 'home' | 'hunt' | 'collection' | 'team' | 'admin' | 'lures' | 'quests' | 'duels' | 'raid' | 'wrapped' | 'profile' | 'zones' | 'pokepark' | 'settings' | 'clan' | 'backpack' | 'shop' | 'throne';
 
 export type XpCandySize = 'petit' | 'moyen' | 'grand';
 

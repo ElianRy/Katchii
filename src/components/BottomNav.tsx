@@ -19,6 +19,7 @@ const MAIN_ITEMS = [
   { view: 'collection' as View, icon: '📚', label: 'Collection', color: 'text-blue-400',    active: 'bg-blue-900/30' },
   { view: 'team'       as View, icon: '⚔️', label: 'Équipe',     color: 'text-emerald-400', active: 'bg-emerald-900/30' },
   { view: 'pokepark'   as View, icon: '🌿', label: 'PokéParc',   color: 'text-green-300',   active: 'bg-green-900/30' },
+  { view: 'throne'     as View, icon: '👑', label: 'Trône',      color: 'text-yellow-400',  active: 'bg-yellow-900/30' },
 ];
 
 const MENU_ITEMS = [
@@ -224,7 +225,7 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
   );
 }
 
-export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePokemon, onOpenQuests, onShowPlayers }: Props) {
+export function BottomNav({ currentView, onNavigate, favoritePokemon, onShowPlayers }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const inMenu = MENU_ITEMS.some(i => i.view === currentView);
@@ -321,25 +322,6 @@ export function BottomNav({ currentView, onNavigate, questsCompleted, favoritePo
               )}
             </button>
           ))}
-
-          {/* Quêtes button — same style as Menu */}
-          {onOpenQuests && (
-            <button
-              onClick={onOpenQuests}
-              className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${
-                currentView === 'quests' ? 'text-yellow-400' : 'text-slate-400 hover:bg-white/5'
-              }`}
-            >
-              <span className="text-2xl leading-none">📋</span>
-              <span className="text-[0.6rem] font-bold leading-none">Quêtes{questsCompleted > 0 ? ` (${questsCompleted})` : ''}</span>
-              {currentView === 'quests' && (
-                <span className="absolute" style={{ bottom: 2, left: '50%', transform: 'translateX(-50%)', width: 4, height: 4, borderRadius: '50%', background: '#fbbf24', opacity: 0.9 }} />
-              )}
-              {questsCompleted > 0 && currentView !== 'quests' && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-yellow-500" />
-              )}
-            </button>
-          )}
 
           {/* Menu "···" button */}
           <button
