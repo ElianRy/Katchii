@@ -485,7 +485,7 @@ export function BattleScreen({
           : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndex, eInst, pInst);
 
         // Execute attacks in speed order
-        const doPlayerAttack = (pf_: FighterState[], ef_: FighterState[]) => {
+        const doPlayerAttack = (_pf: FighterState[], ef_: FighterState[]) => { void _pf;
           setAttackEvt({ attacker: 'player', type: pResult.moveType, uid: dmgCounter++ });
           if (!pResult.isMiss) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
           setTimeout(() => setAttackEvt(null), 400);
@@ -498,7 +498,7 @@ export function BattleScreen({
           return ef_.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
         };
 
-        const doEnemyAttack = (pf_: FighterState[], ef_: FighterState[]) => {
+        const doEnemyAttack = (pf_: FighterState[], _ef: FighterState[]) => { void _ef;
           setAttackEvt({ attacker: 'enemy', type: eResult.moveType, uid: dmgCounter++ });
           if (!eResult.isMiss) { setTimeout(() => setHitFlash('player'), 120); setTimeout(() => setHitFlash(null), 280); }
           setTimeout(() => setAttackEvt(null), 400);

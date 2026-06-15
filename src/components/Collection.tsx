@@ -439,8 +439,8 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
                     ))}
                     <div className="mt-1.5 pt-1.5 border-t border-slate-700 flex items-center gap-2 text-xs text-slate-400">
                       <span className="font-bold">Attaque signature :</span>
-                      <span className="text-white font-bold">{stats.move.name}</span>
-                      <span className="text-slate-500">({stats.move.power} pts · {stats.move.category === 'physical' ? 'Physique' : 'Spéciale'})</span>
+                      <span className="text-white font-bold">{stats.moves[0].name}</span>
+                      <span className="text-slate-500">({stats.moves[0].power} pts · {stats.moves[0].category === 'physical' ? 'Physique' : 'Spéciale'})</span>
                     </div>
                   </div>
                 );
