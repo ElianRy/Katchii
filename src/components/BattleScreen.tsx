@@ -99,18 +99,10 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 
   const origin: P = {
     position: 'absolute', pointerEvents: 'none', zIndex: 15,
-    ...(d === 'ltr'
-      ? {
-          left: 'calc(max(7%, calc(50% - 220px)) + 48px)',
-          bottom: 'calc(13% + 64px)',
-          transform: 'translate(-50%, 50%)',
-        }
-      : {
-          left: 'calc(100% - max(7%, calc(50% - 220px)) - 44px)',
-          top: 'calc(5% + env(safe-area-inset-top, 0px) + 114px)',
-          transform: 'translate(-50%, -50%)',
-        }
-    ),
+    left: d === 'ltr'
+      ? 'calc(max(7%, calc(50% - 220px)) + 110px)'
+      : 'calc(100% - max(7%, calc(50% - 220px)) - 120px)',
+    top:  d === 'ltr' ? '56%' : '20%',
   };
 
   switch (type) {
@@ -363,13 +355,7 @@ export function BattleScreen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enemyFighters, enemyIdx]);
 
-  const logContainerRef = useRef<HTMLDivElement>(null);
   const [statusAnim, setStatusAnim] = useState<{ target: 'player' | 'enemy'; positive: boolean; uid: number } | null>(null);
-  useEffect(() => {
-    const el = logContainerRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [log]);
-
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
     setLog(prev => [...prev.slice(-8), { text, color }]);
   }, []);
@@ -862,22 +848,8 @@ export function BattleScreen({
         {statusAnim && (() => {
           const isEnemy = statusAnim.target === 'enemy';
           const style: React.CSSProperties = isEnemy
-            ? {
-                position: 'absolute',
-                left: 'calc(100% - max(7%, calc(50% - 220px)) - 44px)',
-                top: 'calc(5% + env(safe-area-inset-top, 0px) + 114px)',
-                transform: 'translate(-50%, -50%)',
-                pointerEvents: 'none' as const,
-                zIndex: 30,
-              }
-            : {
-                position: 'absolute',
-                left: 'calc(max(7%, calc(50% - 220px)) + 48px)',
-                bottom: 'calc(13% + 64px)',
-                transform: 'translate(-50%, 50%)',
-                pointerEvents: 'none' as const,
-                zIndex: 30,
-              };
+            ? { position: 'absolute', top: 'calc(5% + env(safe-area-inset-top,0px) + 60px)', right: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 }
+            : { position: 'absolute', bottom: 'calc(14% + 60px)', left: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 };
           const color = statusAnim.positive ? '#4ade80' : '#f87171';
           const icons = statusAnim.positive ? ['⬆️','✨','💫'] : ['⬇️','💢','‼️'];
           return (
@@ -1070,13 +1042,9 @@ export function BattleScreen({
       {/* ── Battle log + Move buttons ── */}
       <div className="shrink-0 border-t border-slate-700/40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: 'linear-gradient(180deg, rgba(10,12,28,0.97) 0%, rgba(5,8,20,0.99) 100%)' }}>
         {/* Log */}
-        <div
-          ref={logContainerRef}
-          className="px-4 pt-2 pb-1 flex flex-col gap-0.5"
-          style={{ height: 80, overflowY: 'auto' }}
-        >
-          {log.map((entry, i) => (
-            <div key={i} className="text-xs font-medium leading-tight shrink-0" style={{ color: entry.color }}>
+        <div className="px-4 pt-2 pb-1 flex flex-col gap-0.5" style={{ minHeight: 76, maxHeight: 100, overflow: 'hidden', justifyContent: 'flex-end' }}>
+          {log.slice(-4).map((entry, i, arr) => (
+            <div key={i} className="text-xs font-medium leading-tight" style={{ color: entry.color, opacity: 0.35 + (i / (arr.length - 1 || 1)) * 0.65 }}>
               {entry.text}
             </div>
           ))}
