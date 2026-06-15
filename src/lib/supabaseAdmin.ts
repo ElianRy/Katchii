@@ -14,12 +14,20 @@ export async function adminResetPassword(userId: string): Promise<{ error: strin
   return { error: null };
 }
 
+export async function adminDeleteUserFully(userId: string): Promise<{ error: string | null }> {
+  if (!adminClient) return { error: 'Clé service role manquante (VITE_SUPABASE_SERVICE_ROLE_KEY).' };
+  // Delete auth account permanently
+  const { error } = await adminClient.auth.admin.deleteUser(userId);
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
 export async function adminBanUser(userId: string): Promise<{ error: string | null }> {
-  if (!adminClient) {
-    // Fallback: mark as banned in game_saves without service key
-    return { error: null };
-  }
-  // Ban the auth account (prevents future logins) without deleting data
+  // Try hard delete first
+  const del = await adminDeleteUserFully(userId);
+  if (!del.error) return { error: null };
+  // Fallback: ban duration so they can't log in
+  if (!adminClient) return { error: null };
   const { error } = await adminClient.auth.admin.updateUserById(userId, { ban_duration: '876600h' });
   if (error) return { error: error.message };
   return { error: null };

@@ -172,18 +172,10 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
   }, []);
 
   const adminDeleteUser = useCallback(async (userId: string) => {
-    // Try auth-level ban (requires service role key — may fail in prod)
+    // Hard delete: remove from DB + revoke auth (requires service role key)
     await adminBanUser(userId);
-    // Mark banned in game_saves so the app blocks them even without service key
-    const { data: saveRow } = await supabase.from('game_saves').select('state').eq('user_id', userId).single();
-    if (saveRow?.state) {
-      await supabase.from('game_saves')
-        .update({ state: { ...(saveRow.state as object), banned: true } })
-        .eq('user_id', userId);
-    } else {
-      // No existing save — insert a stub so the banned flag persists on re-login
-      await supabase.from('game_saves').upsert({ user_id: userId, state: { banned: true } });
-    }
+    // Delete game_saves row entirely (account data gone)
+    await supabase.from('game_saves').delete().eq('user_id', userId);
     // Remove from pokepark presence
     await supabase.from('pokepark_presence').delete().eq('user_id', userId);
     // Broadcast ban so active sessions log out immediately

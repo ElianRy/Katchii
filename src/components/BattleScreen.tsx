@@ -680,7 +680,7 @@ export function BattleScreen({
 
   // Long press handlers
   const startLongPress = (idx: number) => {
-    longPressTimerRef.current = setTimeout(() => setTooltipMoveIdx(idx), 400);
+    longPressTimerRef.current = setTimeout(() => setTooltipMoveIdx(idx), 700);
   };
   const endLongPress = (idx: number, didClick: boolean) => {
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
