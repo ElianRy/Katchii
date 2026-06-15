@@ -10,8 +10,9 @@ function spriteFilter(pokemonId: number, _isShiny: boolean, _size = 4): string {
   return `drop-shadow(0 0 4px ${RARITY_COLORS[rarity]})`;
 }
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
-import { calcDamage, calcStruggle, calcXpGain, calcSpeed } from '../data/combatEngine';
-import { GEN1_STATS } from '../data/gen1Stats';
+import { calcDamage, calcStruggle, calcXpGain, calcSpeed, chooseEnemyMoveIndex, emptyStages, getMoveListRaw } from '../data/combatEngine';
+import type { Stages } from '../data/combatEngine';
+import type { } from '../data/gen1Stats';
 import { TeamMember } from './TeamBuilder';
 import type { PokemonInstanceData } from '../types';
 
@@ -43,11 +44,13 @@ interface Props {
   trainerColor?: string;
   sideOverlay?: React.ReactNode;
   pokemonData?: Record<number, PokemonInstanceData>;
+  pokemonMoves?: Record<number, number[]>;
 }
 
 interface FighterState extends TeamMember {
   currentHp: number;
   currentPP: number[];
+  stages: Stages;
 }
 
 interface LogEntry { text: string; color: string; }
@@ -274,23 +277,18 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
   }
 }
 
-// Helper to get PP array for a pokemon (4 moves)
-function initPP(pokemonId: number): number[] {
-  const s = GEN1_STATS[pokemonId];
-  const moves = (s as unknown as { moves?: Array<{ pp: number }> })?.moves;
-  if (moves) return moves.map(m => m.pp);
-  // Old format fallback
+// Helper to get PP array for a pokemon (4 moves), respecting custom move selection
+function initPP(pokemonId: number, customIndices?: number[]): number[] {
+  const rawMoves = getMoveListRaw(pokemonId, customIndices);
+  if (rawMoves.length > 0) return rawMoves.map(m => m.pp ?? 15);
   return [15, 15, 15, 15];
 }
 
-// Helper to get move list for display
-function getMoveList(pokemonId: number): Array<{ name: string; type: string; power: number; pp: number; category: string }> {
-  const s = GEN1_STATS[pokemonId];
-  const moves = (s as unknown as { moves?: Array<{ name: string; type: string; power: number; pp: number; category: string }> })?.moves;
-  if (moves) return moves;
-  const move = (s as unknown as { move?: { name: string; type: string; power: number; category: string } })?.move;
-  if (move) return [{ ...move, pp: 15 }, { ...move, pp: 15 }, { ...move, pp: 15 }, { ...move, pp: 15 }];
-  return [];
+type DisplayMove = { name: string; type: string; power: number; pp: number; category: string; description?: string; multiHit?: boolean; highCrit?: boolean; accuracy?: number };
+
+// Helper to get move list for display, respecting custom move selection
+function getMoveList(pokemonId: number, customIndices?: number[]): DisplayMove[] {
+  return getMoveListRaw(pokemonId, customIndices) as DisplayMove[];
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
@@ -298,14 +296,15 @@ export function BattleScreen({
   playerTeam, enemyTeam, bossName: _bossName, onBattleEnd,
   playerDamageMult = 1, isLeague = false,
   suppressVictorySound = false, keepMusic = false, keepMusicOnUnmount = false,
-  onQuit, trainerImage, trainerColor, sideOverlay, pokemonData,
+  onQuit, trainerImage, trainerColor, sideOverlay, pokemonData, pokemonMoves,
 }: Props) {
 
   const initFighters = (team: TeamMember[], useCurrentHp: boolean): FighterState[] =>
     team.map(m => ({
       ...m,
       currentHp: useCurrentHp && m.currentHp > 0 ? m.currentHp : m.maxHp,
-      currentPP: initPP(m.pokemonId),
+      currentPP: initPP(m.pokemonId, pokemonMoves?.[m.pokemonId]),
+      stages: emptyStages(),
     }));
 
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(() => initFighters(playerTeam, true));
@@ -333,6 +332,9 @@ export function BattleScreen({
   const isMasterTrainer = trainerColor === '#a855f7';
   const [shinyIntro, setShinyIntro] = useState(false);
   const [shakePokemon, setShakePokemon] = useState<'player' | 'enemy' | null>(null);
+  const [tooltipMoveIdx, setTooltipMoveIdx] = useState<number | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const turnNumberRef = useRef(0);
 
   useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
   useEffect(() => { playerIdxRef.current = playerIdx; }, [playerIdx]);
@@ -446,17 +448,15 @@ export function BattleScreen({
         const eSpeed = calcSpeed(eFighter.pokemonId, eFighter.level, eInst);
         const playerGoesFirst = pSpeed >= eSpeed;
 
-        // Enemy picks a random move index (precomputed to avoid stale closures)
-        const eMoves = getMoveList(eFighter.pokemonId);
-        const eHasMoves = eMoves.length > 0;
-        const ePP = eFighter.currentPP;
-        const availableEMoves = eHasMoves ? ePP.map((pp, i) => pp > 0 ? i : -1).filter(i => i >= 0) : [];
-        const eMoveIndex = availableEMoves.length > 0
-          ? availableEMoves[Math.floor(Math.random() * availableEMoves.length)]
-          : -1; // -1 = Struggle
+        // Smart enemy AI — considers type effectiveness and stat boost priority
+        const ePlayerTypes = (POKEMON_TYPE[pFighter.pokemonId] ?? ['normal']) as PokemonType[];
+        const eMoveIndex = chooseEnemyMoveIndex(
+          eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current
+        );
+        turnNumberRef.current++;
 
         // Check player PP
-        const pHasMoves = getMoveList(pFighter.pokemonId).length > 0;
+        const pHasMoves = getMoveList(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId]).length > 0;
         const playerUsesStruggle = pHasMoves && pFighter.currentPP[playerMoveIndex] <= 0;
 
         // Deduct PP
@@ -475,40 +475,76 @@ export function BattleScreen({
 
         const boostMult = boostActiveRef.current && pIdx === 0 ? playerDamageMult : 1;
 
-        // Compute both attacks
+        // Compute both attacks (pass current stat stages)
+        const pStages = { ...pFighter.stages, attack: pFighter.stages.attack + (boostMult > 1 ? 1 : 0) };
         const pResult = playerUsesStruggle
           ? calcStruggle(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, pInst, eInst)
-          : calcDamage(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, playerMoveIndex, pInst, eInst, boostMult > 1 ? 1 : 0);
+          : calcDamage(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, playerMoveIndex, pInst, eInst, pStages, eFighter.stages, getMoveListRaw(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId]));
 
         const eResult = eMoveIndex < 0
           ? calcStruggle(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eInst, pInst)
-          : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndex, eInst, pInst);
+          : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndex, eInst, pInst, eFighter.stages, pFighter.stages);
 
         // Execute attacks in speed order
+        // Apply a statBoost to a fighter's stages (clamped −6 to +6)
+        const applyBoost = (f: FighterState, boost: typeof pResult.statBoost): FighterState => {
+          if (!boost) return f;
+          const cur = f.stages[boost.stat as keyof typeof f.stages] ?? 0;
+          const next = Math.max(-6, Math.min(6, cur + boost.stages));
+          const label = boost.stages > 0 ? `↑ ${boost.stat}` : `↓ ${boost.stat}`;
+          const dir = boost.stages > 0 ? '+' : '';
+          addLog(`${dir}${boost.stages} ${label} !`, boost.stages > 0 ? '#4ade80' : '#f87171');
+          return { ...f, stages: { ...f.stages, [boost.stat]: next } };
+        };
+
+        const hitsLabel = (r: typeof pResult) => r.hits > 1 ? ` (×${r.hits})` : '';
+
         const doPlayerAttack = (_pf: FighterState[], ef_: FighterState[]) => { void _pf;
           setAttackEvt({ attacker: 'player', type: pResult.moveType, uid: dmgCounter++ });
-          if (!pResult.isMiss) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
+          if (!pResult.isMiss && pResult.damage > 0) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
           setTimeout(() => setAttackEvt(null), 400);
-          addDmg(pResult.damage, 'enemy', pResult.effectiveness, pResult.isCrit, pResult.isMiss);
+          if (pResult.damage > 0) addDmg(pResult.damage, 'enemy', pResult.effectiveness, pResult.isCrit, pResult.isMiss);
           addLog(
-            pResult.isMiss ? `${pName} rate son attaque !` :
-            `${pName} → ${pResult.moveName}${pResult.isCrit ? ' ⚡ CRITIQUE !' : ''}${pResult.effectiveness >= 2 ? ' 💥 Super efficace !' : pResult.effectiveness === 0 ? ' (sans effet)' : pResult.effectiveness < 1 ? ' (peu efficace)' : ''}`,
+            pResult.isMiss ? `${pName} rate !` :
+            pResult.damage === 0 && pResult.statBoost ? `${pName} → ${pResult.moveName}` :
+            `${pName} → ${pResult.moveName}${hitsLabel(pResult)}${pResult.isCrit ? ' ⚡ CRIT !' : ''}${pResult.effectiveness >= 2 ? ' 💥 Efficace !' : pResult.effectiveness === 0 ? ' (sans effet)' : pResult.effectiveness < 1 ? ' (peu eff.)' : ''}`,
             pResult.isMiss ? '#94a3b8' : pResult.isCrit ? '#fbbf24' : pResult.effectiveness >= 2 ? '#4ade80' : '#fde68a');
-          const newEHp = Math.max(0, ef_[eIdx].currentHp - pResult.damage);
-          return ef_.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
+          let nextEf = ef_;
+          // Apply player's statBoost to self
+          if (pResult.statBoost?.target === 'self') {
+            const updated = applyBoost(_pf[pIdx], pResult.statBoost);
+            setPlayerFighters(prev => prev.map((f, i) => i === pIdx ? updated : f));
+          }
+          // Apply player's statBoost to foe
+          if (pResult.statBoost?.target === 'foe') {
+            nextEf = ef_.map((f, i) => i === eIdx ? applyBoost(f, pResult.statBoost!) : f);
+          }
+          const newEHp = Math.max(0, nextEf[eIdx].currentHp - pResult.damage);
+          return nextEf.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
         };
 
         const doEnemyAttack = (pf_: FighterState[], _ef: FighterState[]) => { void _ef;
           setAttackEvt({ attacker: 'enemy', type: eResult.moveType, uid: dmgCounter++ });
-          if (!eResult.isMiss) { setTimeout(() => setHitFlash('player'), 120); setTimeout(() => setHitFlash(null), 280); }
+          if (!eResult.isMiss && eResult.damage > 0) { setTimeout(() => setHitFlash('player'), 120); setTimeout(() => setHitFlash(null), 280); }
           setTimeout(() => setAttackEvt(null), 400);
-          addDmg(eResult.damage, 'player', eResult.effectiveness, eResult.isCrit, eResult.isMiss);
+          if (eResult.damage > 0) addDmg(eResult.damage, 'player', eResult.effectiveness, eResult.isCrit, eResult.isMiss);
           addLog(
-            eResult.isMiss ? `${eName} rate son attaque !` :
-            `${eName} → ${eResult.moveName}${eResult.isCrit ? ' ⚡ CRITIQUE !' : ''}${eResult.effectiveness >= 2 ? ' 💥 Super efficace !' : ''}`,
+            eResult.isMiss ? `${eName} rate !` :
+            eResult.damage === 0 && eResult.statBoost ? `${eName} → ${eResult.moveName}` :
+            `${eName} → ${eResult.moveName}${hitsLabel(eResult)}${eResult.isCrit ? ' ⚡ CRIT !' : ''}${eResult.effectiveness >= 2 ? ' 💥 Efficace !' : ''}`,
             eResult.isMiss ? '#94a3b8' : eResult.isCrit ? '#fbbf24' : eResult.effectiveness >= 2 ? '#f87171' : '#fca5a5');
-          const newPHp = Math.max(0, pf_[pIdx].currentHp - eResult.damage);
-          return pf_.map((f, i) => i === pIdx ? { ...f, currentHp: newPHp } : f);
+          let nextPf = pf_;
+          // Apply enemy's statBoost to self
+          if (eResult.statBoost?.target === 'self') {
+            const updated = applyBoost(_ef[eIdx], eResult.statBoost!);
+            setEnemyFighters(prev => prev.map((f, i) => i === eIdx ? updated : f));
+          }
+          // Apply enemy's statBoost to foe (player)
+          if (eResult.statBoost?.target === 'foe') {
+            nextPf = pf_.map((f, i) => i === pIdx ? applyBoost(f, eResult.statBoost!) : f);
+          }
+          const newPHp = Math.max(0, nextPf[pIdx].currentHp - eResult.damage);
+          return nextPf.map((f, i) => i === pIdx ? { ...f, currentHp: newPHp } : f);
         };
 
         let finalPf = newPPf;
@@ -639,8 +675,18 @@ export function BattleScreen({
 
   const activePF = playerFighters[playerIdx];
   const activeEF = enemyFighters[enemyIdx];
-  const playerMoves = activePF ? getMoveList(activePF.pokemonId) : [];
+  const playerMoves = activePF ? getMoveList(activePF.pokemonId, pokemonMoves?.[activePF.pokemonId]) : [];
   const allPPEmpty = activePF ? activePF.currentPP.every(pp => pp <= 0) : false;
+
+  // Long press handlers
+  const startLongPress = (idx: number) => {
+    longPressTimerRef.current = setTimeout(() => setTooltipMoveIdx(idx), 400);
+  };
+  const endLongPress = (idx: number, didClick: boolean) => {
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    if (tooltipMoveIdx !== null) { setTooltipMoveIdx(null); return; }
+    if (didClick && phase === 'player_turn') executeTurn(idx);
+  };
 
   // ── INTRO PHASE ─────────────────────────────────────────────────────────────
   if (phase === 'intro') {
@@ -957,6 +1003,47 @@ export function BattleScreen({
           ))}
         </div>
 
+        {/* Long press tooltip */}
+        {tooltipMoveIdx !== null && playerMoves[tooltipMoveIdx] && (() => {
+          const m = playerMoves[tooltipMoveIdx];
+          const pp = activePF?.currentPP[tooltipMoveIdx] ?? 0;
+          const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
+          return (
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70"
+              onPointerUp={() => setTooltipMoveIdx(null)}
+              onTouchEnd={() => setTooltipMoveIdx(null)}>
+              <div className="mx-4 rounded-2xl p-4 max-w-xs w-full"
+                style={{ background: '#0f172a', border: `2px solid ${typeColor}`, boxShadow: `0 0 24px ${typeColor}66` }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="font-black text-white text-base">{m.name}</span>
+                  <span className="px-2 py-0.5 rounded text-white font-bold text-xs" style={{ background: typeColor }}>{m.type.toUpperCase()}</span>
+                  {m.highCrit && <span className="text-yellow-400 text-xs">⚡ Crit+</span>}
+                  {m.multiHit && <span className="text-purple-400 text-xs">×2–5</span>}
+                </div>
+                <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+                  <div className="bg-slate-800 rounded-lg py-1.5">
+                    <div className="text-slate-400 text-xs">Puissance</div>
+                    <div className="text-white font-black">{m.power > 0 ? m.power : '—'}</div>
+                  </div>
+                  <div className="bg-slate-800 rounded-lg py-1.5">
+                    <div className="text-slate-400 text-xs">Précision</div>
+                    <div className="text-white font-black">{m.accuracy ?? 100}%</div>
+                  </div>
+                  <div className="bg-slate-800 rounded-lg py-1.5">
+                    <div className="text-slate-400 text-xs">PP</div>
+                    <div className="font-black" style={{ color: pp === 0 ? '#ef4444' : pp <= 2 ? '#f59e0b' : '#4ade80' }}>{pp}/{m.pp}</div>
+                  </div>
+                </div>
+                <div className="text-slate-400 text-xs mb-1 uppercase tracking-wide">
+                  {m.category === 'status' ? 'Statut' : m.category === 'physical' ? 'Physique' : 'Spécial'}
+                </div>
+                {m.description && <div className="text-slate-200 text-sm">{m.description}</div>}
+                <div className="mt-3 text-center text-slate-500 text-xs">Relâchez pour fermer</div>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Move selection — shown during player_turn */}
         {(phase === 'player_turn' || phase === 'resolving') && (
           <div className="px-3 pb-3">
@@ -969,47 +1056,48 @@ export function BattleScreen({
                   return (
                     <button key={i}
                       disabled={disabled}
-                      onClick={() => executeTurn(i)}
-                      className="relative rounded-xl px-3 py-2 text-left transition-all active:scale-95"
+                      onPointerDown={() => !disabled && startLongPress(i)}
+                      onPointerUp={() => !disabled && endLongPress(i, true)}
+                      onPointerLeave={() => { if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current); }}
+                      onTouchStart={e => { e.preventDefault(); !disabled && startLongPress(i); }}
+                      onTouchEnd={e => { e.preventDefault(); !disabled && endLongPress(i, true); }}
+                      onClick={e => e.preventDefault()}
+                      className="relative rounded-xl px-3 py-2 text-left select-none"
                       style={{
                         background: disabled ? '#1e293b' : `linear-gradient(135deg, ${typeColor}cc, ${typeColor}66)`,
                         border: `2px solid ${disabled ? '#334155' : typeColor}`,
                         opacity: disabled ? 0.5 : 1,
+                        WebkitTapHighlightColor: 'transparent',
                       }}>
                       <div className="flex justify-between items-start">
                         <span className="text-white font-bold text-xs leading-tight">{move.name}</span>
-                        <span className="text-white/60 text-xs">{pp}/{(move as { pp: number }).pp ?? 15}</span>
+                        <span className="text-white/60 text-xs">{pp}/{move.pp ?? 15}</span>
                       </div>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="text-white/70 text-xs uppercase font-bold" style={{ fontSize: '0.45rem' }}>{move.type}</span>
+                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                        <span className="text-white/70 uppercase font-bold" style={{ fontSize: '0.45rem' }}>{move.type}</span>
                         <span className="text-white/50" style={{ fontSize: '0.45rem' }}>•</span>
                         <span className="text-white/70" style={{ fontSize: '0.45rem' }}>
-                          {move.category === 'status' ? 'STATUT' : move.category === 'physical' ? 'PHYSIQUE' : 'SPÉCIAL'}
+                          {move.category === 'status' ? 'STATUT' : move.category === 'physical' ? 'PHYS' : 'SPÉ'}
                         </span>
-                        {move.power > 0 && (
-                          <>
-                            <span className="text-white/50" style={{ fontSize: '0.45rem' }}>•</span>
-                            <span className="text-white/70" style={{ fontSize: '0.45rem' }}>{move.power} puiss.</span>
-                          </>
-                        )}
+                        {move.power > 0 && <><span className="text-white/50" style={{ fontSize: '0.45rem' }}>•</span><span className="text-white/70" style={{ fontSize: '0.45rem' }}>{move.power}</span></>}
+                        {move.highCrit && <span className="text-yellow-300" style={{ fontSize: '0.45rem' }}>⚡</span>}
+                        {move.multiHit && <span className="text-purple-300" style={{ fontSize: '0.45rem' }}>×2-5</span>}
                       </div>
                     </button>
                   );
                 })}
               </div>
             ) : allPPEmpty ? (
-              /* Struggle button */
               <button
                 disabled={phase === 'resolving'}
-                onClick={() => executeTurn(0)}
-                className="w-full rounded-xl px-4 py-3 text-center transition-all active:scale-95"
+                onPointerUp={() => phase === 'player_turn' && executeTurn(0)}
+                className="w-full rounded-xl px-4 py-3 text-center"
                 style={{ background: '#374151', border: '2px solid #6b7280', opacity: phase === 'resolving' ? 0.5 : 1 }}>
                 <span className="text-white font-bold text-sm">Lutte</span>
                 <div className="text-white/50 text-xs">Plus de PP !</div>
               </button>
             ) : null}
 
-            {/* Quit button */}
             {onQuit && phase === 'player_turn' && (
               <button onClick={onQuit} className="mt-2 w-full text-xs text-slate-500 hover:text-slate-300 transition-colors py-1">
                 ✕ Fuir le combat

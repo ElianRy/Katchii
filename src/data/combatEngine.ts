@@ -4,6 +4,7 @@ import { TYPE_CHART, POKEMON_TYPE, PokemonType } from './pokemonTypes';
 import { GEN1_STATS } from './gen1Stats';
 import { natureMult } from './natures';
 import type { StatKey } from './natures';
+import type { StatBoost } from './gen1Stats';
 
 export const LEVEL_RANGE: Record<Rarity, [number, number]> = {
   commun: [1, 10],
@@ -128,6 +129,14 @@ export function getTypeEffectiveness(attackType: PokemonType, defenderTypes: Pok
   return mult;
 }
 
+// Stat stage keys used in BattleScreen
+export type StageKey = 'attack' | 'defense' | 'spAttack' | 'spDefense' | 'speed';
+export type Stages = Record<StageKey, number>;
+
+export function emptyStages(): Stages {
+  return { attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 };
+}
+
 export type MoveResult = {
   damage: number;
   effectiveness: number;
@@ -136,12 +145,12 @@ export type MoveResult = {
   isMiss: boolean;
   moveType: PokemonType;
   recoil: number;
+  hits: number;               // number of times damage was dealt (for multi-hit display)
   statusEffect?: { type: string; chance: number };
+  statBoost?: StatBoost;      // stat stage change to apply after this move
 };
 
 // ── HeartGold damage formula ─────────────────────────────────────────────────
-// Dégâts = Floor(Floor(Floor((2*L/5)+2) * Puissance * (A/D)) / 50) + 2
-// then STAB × 1.5, then type effectiveness, then random 85-100, then crit ×1.75
 export function calcDamage(
   attackerId: number,
   attackerLevel: number,
@@ -150,76 +159,91 @@ export function calcDamage(
   moveIndex: number,
   attackerInst?: PokemonInstanceData,
   defenderInst?: PokemonInstanceData,
-  attackStage = 0,
-  defenseStage = 0,
+  attackerStages?: Partial<Stages>,
+  defenderStages?: Partial<Stages>,
+  customMoves?: ReturnType<typeof getMoveListRaw>,
 ): MoveResult {
-  const s = GEN1_STATS[attackerId];
-  // Support both new format (moves array) and old format (single move)
-  const movesArr = (s as unknown as { moves?: unknown[] })?.moves ?? ((s as unknown as { move?: unknown })?.move ? [(s as unknown as { move: unknown }).move] : []);
+  const movesArr = customMoves ?? getMoveListRaw(attackerId);
   const move = (movesArr[moveIndex] ?? movesArr[0] ?? {
     name: 'Lutte', type: 'normal', category: 'physical',
-    power: 50, accuracy: 100, pp: 999,
-  }) as { name: string; type: string; category: string; power: number; accuracy: number; pp: number; recoil?: number; effect?: { type: string; chance: number } };
+    power: 50, accuracy: 100, pp: 999, description: 'Attaque de dernier recours.',
+  }) as {
+    name: string; type: string; category: string; power: number;
+    accuracy: number; pp: number; recoil?: number;
+    effect?: { type: string; chance: number };
+    multiHit?: boolean; highCrit?: boolean;
+    statBoost?: StatBoost; description?: string;
+  };
 
-  const moveName      = move.name;
-  const movePower     = move.power;
-  const moveCategory  = move.category;
-  const moveType      = move.type as PokemonType;
-  const moveAccuracy  = move.accuracy ?? 100;
-  const recoilFrac    = (move as { recoil?: number }).recoil ?? 0;
+  void defenderLevel;
 
-  // Status-only moves do 0 damage
+  const moveName     = move.name;
+  const movePower    = move.power;
+  const moveCategory = move.category;
+  const moveType     = move.type as PokemonType;
+  const moveAccuracy = move.accuracy ?? 100;
+  const recoilFrac   = move.recoil ?? 0;
+
+  // Status-only or statBoost-only moves do 0 damage but may carry a boost
   if (moveCategory === 'status') {
     return {
       damage: 0, effectiveness: 1, moveName, isCrit: false,
-      isMiss: false, moveType, recoil: 0,
-      statusEffect: (move as { effect?: { type: string; chance: number } }).effect,
+      isMiss: false, moveType, recoil: 0, hits: 0,
+      statusEffect: move.effect,
+      statBoost: move.statBoost,
     };
   }
 
   // Miss check
   if (Math.random() * 100 >= moveAccuracy) {
-    return { damage: 0, effectiveness: 1, moveName, isCrit: false, isMiss: true, moveType, recoil: 0 };
+    return { damage: 0, effectiveness: 1, moveName, isCrit: false, isMiss: true, moveType, recoil: 0, hits: 0 };
   }
 
-  // Stat selection based on category
-  let A = moveCategory === 'physical'
-    ? applyStage(calcAttack(attackerId, attackerLevel, attackerInst), attackStage)
-    : applyStage(calcSpAttack(attackerId, attackerLevel, attackerInst), attackStage);
+  // Stat selection — use appropriate stage based on category
+  const atkStg = moveCategory === 'physical' ? (attackerStages?.attack ?? 0) : (attackerStages?.spAttack ?? 0);
+  const defStg = moveCategory === 'physical' ? (defenderStages?.defense ?? 0) : (defenderStages?.spDefense ?? 0);
+  const A = moveCategory === 'physical'
+    ? applyStage(calcAttack(attackerId, attackerLevel, attackerInst), atkStg)
+    : applyStage(calcSpAttack(attackerId, attackerLevel, attackerInst), atkStg);
   const D = moveCategory === 'physical'
-    ? applyStage(calcDefense(defenderId, defenderLevel, defenderInst), defenseStage)
-    : applyStage(calcSpDefense(defenderId, defenderLevel, defenderInst), defenseStage);
+    ? applyStage(calcDefense(defenderId, defenderLevel, defenderInst), defStg)
+    : applyStage(calcSpDefense(defenderId, defenderLevel, defenderInst), defStg);
 
-  const defenderTypes  = (POKEMON_TYPE[defenderId]  ?? ['normal']) as PokemonType[];
-  const attackerTypes  = (POKEMON_TYPE[attackerId]  ?? ['normal']) as PokemonType[];
-  const effectiveness  = getTypeEffectiveness(moveType, defenderTypes);
+  const defenderTypes = (POKEMON_TYPE[defenderId] ?? ['normal']) as PokemonType[];
+  const attackerTypes = (POKEMON_TYPE[attackerId] ?? ['normal']) as PokemonType[];
+  const effectiveness = getTypeEffectiveness(moveType, defenderTypes);
 
   if (effectiveness === 0) {
-    return { damage: 0, effectiveness: 0, moveName, isCrit: false, isMiss: false, moveType, recoil: 0 };
+    return { damage: 0, effectiveness: 0, moveName, isCrit: false, isMiss: false, moveType, recoil: 0, hits: 0 };
   }
 
-  const L = attackerLevel;
-  let dmg = Math.floor(Math.floor(Math.floor((2 * L / 5) + 2) * movePower * (A / D)) / 50) + 2;
+  // Multi-hit: 2-5 hits (distribution: 2→37.5%, 3→37.5%, 4→12.5%, 5→12.5%)
+  const hitCount = move.multiHit ? ([2,2,2,3,3,3,4,5][Math.floor(Math.random() * 8)]) : 1;
 
-  // STAB
-  if (attackerTypes.includes(moveType)) dmg = Math.floor(dmg * 1.5);
+  let totalDmg = 0;
+  let isCrit = false;
 
-  dmg = Math.floor(dmg * effectiveness);
+  for (let h = 0; h < hitCount; h++) {
+    const L = attackerLevel;
+    let dmg = Math.floor(Math.floor(Math.floor((2 * L / 5) + 2) * movePower * (A / D)) / 50) + 2;
+    if (attackerTypes.includes(moveType)) dmg = Math.floor(dmg * 1.5);
+    dmg = Math.floor(dmg * effectiveness);
+    const rng = (85 + Math.floor(Math.random() * 16)) / 100;
+    dmg = Math.floor(dmg * rng);
+    const critRate = move.highCrit ? 0.30 : 0.15;
+    const hitCrit = Math.random() < critRate;
+    if (hitCrit) { isCrit = true; dmg = Math.floor(dmg * 1.75); }
+    totalDmg += Math.max(1, dmg);
+  }
 
-  // Random factor 85–100
-  const rng = (85 + Math.floor(Math.random() * 16)) / 100;
-  dmg = Math.floor(dmg * rng);
-
-  // Critical hit (15 %, ×1.75)
-  const isCrit = Math.random() < 0.15;
-  if (isCrit) dmg = Math.floor(dmg * 1.75);
-
-  const finalDmg = Math.max(1, dmg);
+  const finalDmg = Math.max(1, totalDmg);
   const recoil = recoilFrac > 0 ? Math.max(1, Math.floor(finalDmg * recoilFrac)) : 0;
 
   return {
-    damage: finalDmg, effectiveness, moveName, isCrit, isMiss: false, moveType, recoil,
-    statusEffect: (move as { effect?: { type: string; chance: number } }).effect,
+    damage: finalDmg, effectiveness, moveName, isCrit, isMiss: false,
+    moveType, recoil, hits: hitCount,
+    statusEffect: move.effect,
+    statBoost: move.statBoost,
   };
 }
 
@@ -232,6 +256,7 @@ export function calcStruggle(
   attackerInst?: PokemonInstanceData,
   defenderInst?: PokemonInstanceData,
 ): MoveResult {
+  void defenderLevel; void defenderInst;
   const A = calcAttack(attackerId, attackerLevel, attackerInst);
   const D = calcDefense(defenderId, defenderLevel, defenderInst);
   const L = attackerLevel;
@@ -242,8 +267,103 @@ export function calcStruggle(
   return {
     damage: finalDmg, effectiveness: 1, moveName: 'Lutte', isCrit: false,
     isMiss: false, moveType: 'normal' as PokemonType,
-    recoil: Math.max(1, Math.floor(finalDmg * 0.25)),
+    recoil: Math.max(1, Math.floor(finalDmg * 0.25)), hits: 1,
   };
+}
+
+// ── Get move list (supports custom override from pokemonMoves) ───────────────
+export type RawMove = {
+  name: string; type: string; category: string; power: number;
+  accuracy: number; pp: number; description?: string;
+  multiHit?: boolean; highCrit?: boolean;
+  statBoost?: StatBoost;
+  effect?: { type: string; chance: number };
+  recoil?: number;
+};
+
+export function getMoveListRaw(pokemonId: number, customIndices?: number[]): RawMove[] {
+  const s = GEN1_STATS[pokemonId];
+  const pool = (s as unknown as { movepool?: unknown[] })?.movepool ?? s?.moves ?? [];
+  if (customIndices && pool.length > 0) {
+    return customIndices.map(i => pool[i]).filter(Boolean) as RawMove[];
+  }
+  return (s?.moves ?? []) as RawMove[];
+}
+
+// ── Smart enemy AI ───────────────────────────────────────────────────────────
+export function chooseEnemyMoveIndex(
+  attackerId: number,
+  defenderTypes: PokemonType[],
+  currentPP: number[],
+  attackerStages: Stages,
+  turnNumber: number,
+): number {
+  const s = GEN1_STATS[attackerId];
+  const moves = (s?.moves ?? []) as RawMove[];
+
+  const available = currentPP
+    .map((pp, i) => pp > 0 ? i : -1)
+    .filter(i => i >= 0);
+
+  if (available.length === 0) return -1; // Struggle
+
+  // Score each available move
+  const scored = available.map(i => {
+    const move = moves[i];
+    if (!move) return { i, score: 0 };
+    let score = 1;
+
+    if (move.category === 'status') {
+      if (move.statBoost) {
+        const { target, stat, stages } = move.statBoost;
+        if (target === 'self') {
+          const currentStage = attackerStages[stat as StageKey] ?? 0;
+          if (currentStage >= 6) {
+            score = 0; // already maxed, never use
+          } else if (turnNumber <= 2 && currentStage < 4) {
+            score = 5; // strongly prefer boost early
+          } else {
+            score = 2; // moderate use later
+          }
+        } else {
+          // debuff foe
+          score = stages < -1 ? 3 : 2; // prefer big debuffs
+        }
+      } else {
+        score = 1; // other status (sleep, poison) — moderate use
+      }
+    } else {
+      // Offensive move
+      const moveType = move.type as PokemonType;
+      const effectiveness = getTypeEffectiveness(moveType, defenderTypes);
+      score = move.power ?? 50;
+      score *= effectiveness;
+      if (move.highCrit) score *= 1.2;
+      if (move.multiHit) score *= 1.1;
+      // Normalize vs raw power
+      score = score / 10;
+    }
+
+    return { i, score };
+  }).filter(x => x.score > 0);
+
+  if (scored.length === 0) {
+    return available[Math.floor(Math.random() * available.length)];
+  }
+
+  // Weighted random selection among top-scoring moves
+  const maxScore = Math.max(...scored.map(x => x.score));
+  const weighted = scored.map(x => ({ ...x, weight: x.score / maxScore }));
+
+  // Soft selection: top 3 get weight, others get small chance
+  weighted.sort((a, b) => b.score - a.score);
+  const pool: number[] = [];
+  weighted.forEach((x, rank) => {
+    const tickets = rank === 0 ? 6 : rank === 1 ? 3 : rank === 2 ? 2 : 1;
+    for (let t = 0; t < tickets; t++) pool.push(x.i);
+  });
+
+  return pool[Math.floor(Math.random() * pool.length)];
 }
 
 // ── HeartGold XP formula ─────────────────────────────────────────────────────
@@ -264,7 +384,6 @@ export function calcEvGain(
   for (const [stat, amount] of Object.entries(s.evYield) as [keyof typeof next, number][]) {
     next[stat] = Math.min(255, next[stat] + amount);
   }
-  // Enforce 510 total cap — trim from the newly added stats if over
   let totalAfter = Object.values(next).reduce((a, b) => a + b, 0);
   if (totalAfter > 510) {
     let overflow = totalAfter - 510;

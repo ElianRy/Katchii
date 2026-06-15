@@ -127,6 +127,7 @@ export interface GameState {
   };
   pokemonLevels: Record<number, { level: number; xp: number }>;
   pokemonData?: Record<number, PokemonInstanceData>; // IV/EV/Nature per pokemonId
+  pokemonMoves?: Record<number, number[]>;           // pokemonId -> indices into movepool (4 selected moves)
   savedTeams?: Array<{ id: string; name: string; members: Array<{ pokemonId: number; isShiny?: boolean; level: number; xp: number; currentHp: number; maxHp: number }> }>;
   favoriteTeamId?: string;
   playerXp: number;
