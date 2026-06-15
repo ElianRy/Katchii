@@ -100,17 +100,28 @@ function LiveTimer({ since }: { since: string }) {
 }
 
 /* ─── Leaderboard ───────────────────────────────────────────────── */
-function Leaderboard({ records }: { records: ThroneRecord[] }) {
-  // Longest single reign
-  const longest = [...records].sort((a, b) => b.duration - a.duration).slice(0, 5);
-  // Total time per user
+function Leaderboard({ records, currentChampion }: { records: ThroneRecord[]; currentChampion?: { username: string; since: string } }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id); }, []);
+
+  // Include current champion's live elapsed time as a virtual record
+  const currentDuration = currentChampion && currentChampion.since !== 'Depuis toujours'
+    ? now - new Date(currentChampion.since).getTime() : 0;
+
+  const allRecords = currentDuration > 0
+    ? [...records, { username: currentChampion!.username, duration: currentDuration, start: currentChampion!.since, end: '' }]
+    : records;
+
+  // Longest single reign (including current)
+  const longest = [...allRecords].sort((a, b) => b.duration - a.duration).slice(0, 5);
+  // Total time per user (including current)
   const totals: Record<string, number> = {};
-  for (const r of records) {
+  for (const r of allRecords) {
     totals[r.username] = (totals[r.username] ?? 0) + r.duration;
   }
   const totalList = Object.entries(totals).sort(([, a], [, b]) => b - a).slice(0, 5);
 
-  if (records.length === 0) {
+  if (allRecords.length === 0) {
     return (
       <div className="text-slate-600 text-xs text-center py-2">Aucun règne enregistré pour l'instant.</div>
     );
@@ -128,6 +139,7 @@ function Leaderboard({ records }: { records: ThroneRecord[] }) {
                 {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`}
               </span>
               <span className="text-white text-sm font-bold">{r.username}</span>
+              {r.end === '' && <span className="text-[0.5rem] text-red-400 font-bold">EN COURS</span>}
             </div>
             <span className="text-yellow-300 text-sm font-mono font-bold">{formatDuration(r.duration)}</span>
           </div>
@@ -430,9 +442,9 @@ export function ThroneScreen({ state, username, onClose, onChallenge }: Props) {
         )}
 
         {/* Leaderboard */}
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md" style={{ paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))' }}>
           <h2 className="text-amber-400 font-black text-sm uppercase tracking-wider mb-4">📊 Classement des Champions</h2>
-          <Leaderboard records={records} />
+          <Leaderboard records={records} currentChampion={champion ? { username: champion.username, since: champion.since } : undefined} />
         </div>
       </div>
 

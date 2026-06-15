@@ -355,8 +355,9 @@ export function BattleScreen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enemyFighters, enemyIdx]);
 
+  const [statusAnim, setStatusAnim] = useState<{ target: 'player' | 'enemy'; positive: boolean; uid: number } | null>(null);
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
-    setLog(prev => [...prev.slice(-5), { text, color }]);
+    setLog(prev => [...prev.slice(-8), { text, color }]);
   }, []);
 
   // Intro → battle
@@ -505,10 +506,16 @@ export function BattleScreen({
           if (!pResult.isMiss && pResult.damage > 0) { setTimeout(() => setHitFlash('enemy'), 120); setTimeout(() => setHitFlash(null), 280); }
           setTimeout(() => setAttackEvt(null), 400);
           if (pResult.damage > 0) addDmg(pResult.damage, 'enemy', pResult.effectiveness, pResult.isCrit, pResult.isMiss);
+          if (pResult.damage === 0 && pResult.statBoost && !pResult.isMiss) {
+            const positive = pResult.statBoost.target === 'self' ? pResult.statBoost.stages > 0 : pResult.statBoost.stages < 0;
+            const animTarget = pResult.statBoost.target === 'self' ? 'player' : 'enemy';
+            setStatusAnim({ target: animTarget, positive, uid: dmgCounter++ });
+            setTimeout(() => setStatusAnim(null), 900);
+          }
           addLog(
             pResult.isMiss ? `${pName} rate !` :
             pResult.damage === 0 && pResult.statBoost ? `${pName} → ${pResult.moveName}` :
-            `${pName} → ${pResult.moveName}${hitsLabel(pResult)}${pResult.isCrit ? ' ⚡ CRIT !' : ''}${pResult.effectiveness >= 2 ? ' 💥 Efficace !' : pResult.effectiveness === 0 ? ' (sans effet)' : pResult.effectiveness < 1 ? ' (peu eff.)' : ''}`,
+            `${pName} → ${pResult.moveName}${hitsLabel(pResult)} (${pResult.damage} dégâts)${pResult.isCrit ? ' ⚡ CRIT !' : ''}${pResult.effectiveness >= 2 ? ' 💥 Efficace !' : pResult.effectiveness === 0 ? ' (sans effet)' : pResult.effectiveness < 1 ? ' (peu eff.)' : ''}`,
             pResult.isMiss ? '#94a3b8' : pResult.isCrit ? '#fbbf24' : pResult.effectiveness >= 2 ? '#4ade80' : '#fde68a');
           let nextEf = ef_;
           // Apply player's statBoost to self
@@ -529,10 +536,16 @@ export function BattleScreen({
           if (!eResult.isMiss && eResult.damage > 0) { setTimeout(() => setHitFlash('player'), 120); setTimeout(() => setHitFlash(null), 280); }
           setTimeout(() => setAttackEvt(null), 400);
           if (eResult.damage > 0) addDmg(eResult.damage, 'player', eResult.effectiveness, eResult.isCrit, eResult.isMiss);
+          if (eResult.damage === 0 && eResult.statBoost && !eResult.isMiss) {
+            const positive = eResult.statBoost.target === 'self' ? eResult.statBoost.stages > 0 : eResult.statBoost.stages < 0;
+            const animTarget = eResult.statBoost.target === 'self' ? 'enemy' : 'player';
+            setStatusAnim({ target: animTarget, positive, uid: dmgCounter++ });
+            setTimeout(() => setStatusAnim(null), 900);
+          }
           addLog(
             eResult.isMiss ? `${eName} rate !` :
             eResult.damage === 0 && eResult.statBoost ? `${eName} → ${eResult.moveName}` :
-            `${eName} → ${eResult.moveName}${hitsLabel(eResult)}${eResult.isCrit ? ' ⚡ CRIT !' : ''}${eResult.effectiveness >= 2 ? ' 💥 Efficace !' : ''}`,
+            `${eName} → ${eResult.moveName}${hitsLabel(eResult)} (${eResult.damage} dégâts)${eResult.isCrit ? ' ⚡ CRIT !' : ''}${eResult.effectiveness >= 2 ? ' 💥 Efficace !' : ''}`,
             eResult.isMiss ? '#94a3b8' : eResult.isCrit ? '#fbbf24' : eResult.effectiveness >= 2 ? '#f87171' : '#fca5a5');
           let nextPf = pf_;
           // Apply enemy's statBoost to self
@@ -825,6 +838,27 @@ export function BattleScreen({
 
         {attackEvt && <TypeVfx key={attackEvt.uid} type={attackEvt.type} direction={attackEvt.attacker === 'player' ? 'ltr' : 'rtl'} uid={attackEvt.uid} />}
         {hitFlash && <div className="absolute inset-0 pointer-events-none battle-hit-flash" style={{ background: hitFlash === 'player' ? 'rgba(239,68,68,0.2)' : 'rgba(250,204,21,0.13)' }} />}
+        {/* Status move animation */}
+        {statusAnim && (() => {
+          const isEnemy = statusAnim.target === 'enemy';
+          const style: React.CSSProperties = isEnemy
+            ? { position: 'absolute', top: '5%', right: 'max(7%, calc(50% - 220px))', pointerEvents: 'none' as const, zIndex: 30 }
+            : { position: 'absolute', bottom: '12%', left: 'max(7%, calc(50% - 220px))', pointerEvents: 'none' as const, zIndex: 30 };
+          const color = statusAnim.positive ? '#4ade80' : '#f87171';
+          const icons = statusAnim.positive ? ['⬆️','✨','💫'] : ['⬇️','💢','‼️'];
+          return (
+            <div key={statusAnim.uid} style={style}>
+              {icons.map((icon, i) => (
+                <span key={i} style={{
+                  position: 'absolute', fontSize: '1.6rem',
+                  left: `${(i - 1) * 28}px`, top: 0,
+                  animation: `status-burst-${i % 2 === 0 ? 'a' : 'b'} 0.9s ease-out forwards`,
+                  filter: `drop-shadow(0 0 6px ${color})`,
+                }}>{icon}</span>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Floating damage */}
         {floatingDmg.map(d => {
@@ -1002,9 +1036,9 @@ export function BattleScreen({
       {/* ── Battle log + Move buttons ── */}
       <div className="shrink-0 bg-black/95 border-t border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {/* Log */}
-        <div className="px-4 pt-2 pb-1" style={{ height: 54, overflow: 'hidden' }}>
-          {log.slice(-2).map((entry, i) => (
-            <div key={i} className="text-xs font-medium truncate" style={{ color: entry.color, opacity: 0.5 + i * 0.5 }}>
+        <div className="px-4 pt-2 pb-1 flex flex-col gap-0.5" style={{ minHeight: 76, maxHeight: 100, overflow: 'hidden', justifyContent: 'flex-end' }}>
+          {log.slice(-4).map((entry, i, arr) => (
+            <div key={i} className="text-xs font-medium leading-tight" style={{ color: entry.color, opacity: 0.35 + (i / (arr.length - 1 || 1)) * 0.65 }}>
               {entry.text}
             </div>
           ))}
