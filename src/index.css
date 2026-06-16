@@ -1049,3 +1049,83 @@ button:active{transform:scale(.93);transition:transform .08s ease}
 
 /* ── BRN flicker ── */
 @keyframes brn-flicker { 0%{opacity:0} 15%{opacity:.85} 35%{opacity:.3} 55%{opacity:.75} 75%{opacity:.2} 100%{opacity:0} }
+
+/* Vignette breathing */
+@keyframes vignette-breathe {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 0.7; }
+}
+
+/* Ember/ash rising (zone7) */
+@keyframes ember-rise {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.9; }
+  50% { transform: translateY(-40px) translateX(var(--ex, 8px)) scale(0.8); opacity: 0.7; }
+  100% { transform: translateY(-90px) translateX(var(--ex2, -5px)) scale(0.3); opacity: 0; }
+}
+
+/* Will-o'-wisp float (zone5) */
+@keyframes wisp-rise {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.85; }
+  33% { transform: translateY(-8px) scale(1.1); opacity: 1; }
+  66% { transform: translateY(-4px) scale(0.95); opacity: 0.75; }
+}
+
+/* Electric arc flicker (zone3) */
+@keyframes arc-flicker {
+  0%, 100% { opacity: 0; }
+  5%, 10% { opacity: 1; }
+  7% { opacity: 0.3; }
+  50%, 55% { opacity: 0.9; }
+  52% { opacity: 0.1; }
+}
+
+/* Smoke rise (zone3, zone7) */
+@keyframes smoke-rise {
+  0% { transform: translateY(0) translateX(0) scale(0.5); opacity: 0.5; }
+  100% { transform: translateY(-60px) translateX(var(--sx, 10px)) scale(2.5); opacity: 0; }
+}
+
+/* Sun ray pulse (zone1, zone4) */
+@keyframes sun-ray-pulse {
+  0%, 100% { opacity: 0.12; transform: scale(1); }
+  50% { opacity: 0.22; transform: scale(1.08); }
+}
+
+/* Bubble stream (zone2) */
+@keyframes bubble-stream {
+  0% { transform: translateY(0) translateX(0); opacity: 0.7; }
+  100% { transform: translateY(var(--by, -120px)) translateX(var(--bx, 5px)); opacity: 0; }
+}
+
+/* Lava glow pulse (zone7) */
+@keyframes lava-glow-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.15); }
+}
+
+/* Neon flicker (zone6) */
+@keyframes neon-flicker {
+  0%, 89%, 91%, 93%, 100% { opacity: 1; }
+  90%, 92% { opacity: 0.3; }
+}
+
+/* Butterfly flutter */
+@keyframes butterfly-drift {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(12px, -8px) rotate(15deg); }
+  50% { transform: translate(20px, 0px) rotate(0deg); }
+  75% { transform: translate(8px, 8px) rotate(-10deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* Cloud drift slow */
+@keyframes cloud-drift-slow {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(100vw + 200px)); }
+}
+
+/* Mist drift (zone8) */
+@keyframes mist-drift {
+  0%, 100% { transform: translateX(0) scaleX(1); opacity: 0.25; }
+  50% { transform: translateX(30px) scaleX(1.1); opacity: 0.4; }
+}
