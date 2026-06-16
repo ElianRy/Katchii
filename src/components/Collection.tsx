@@ -8,7 +8,7 @@ import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
 import { xpToNextLevel, getPokemonProfile } from '../data/combatEngine';
 import { GEN1_STATS } from '../data/gen1Stats';
 import { MOVES } from '../data/gen1Moves';
-import { GEN1_MOVEPOOL } from '../data/gen1Movepools';
+import { GEN1_MOVEPOOL, getAvailableMoves } from '../data/gen1Movepools';
 
 
 interface Props {
@@ -325,10 +325,9 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
         const normalCount = state.normalCollection[selectedId] ?? 0;
         const shinyCount = state.shinyCollection[selectedId] ?? 0;
 
-        // Level-gated pool: unlock 1 extra move every 10 levels starting from 4
+        // Level-gated pool: unlock moves based on level
         const pool = GEN1_MOVEPOOL[selectedId] ?? [];
-        const unlockedCount = Math.min(pool.length, 4 + Math.floor(lvData.level / 10));
-        const availablePool = pool.slice(0, unlockedCount);
+        const availablePool = getAvailableMoves(selectedId, lvData.level);
         const currentSlugs: string[] = state.pokemonCustomMoves?.[selectedId] ?? availablePool.slice(0, 4);
         const activeSlugs = editingMoves ? pendingMoves : currentSlugs;
 
@@ -391,9 +390,9 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                     {lvData.level < 100 && (
                       <div className="text-right text-xs text-slate-500">{lvData.xp} / {xpToNextLevel(lvData.level)} XP</div>
                     )}
-                    {pool.length > 0 && unlockedCount < pool.length && (
+                    {pool.length > 0 && availablePool.length < pool.length && (
                       <div className="text-xs text-slate-500 mt-0.5">
-                        🔓 {unlockedCount}/{pool.length} attaques débloquées · prochain débloc. niv. {(Math.floor(lvData.level / 10) + 1) * 10}
+                        🔓 {availablePool.length}/{pool.length} attaques débloquées
                       </div>
                     )}
                   </div>

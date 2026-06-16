@@ -320,6 +320,10 @@ export type MoveResult = {
   appliedStatus?: MajorStatus;  // status actually applied this turn (after chance roll)
   priority?: number;
   cureDefenderStatus?: boolean; // true when fire move thaws a frozen defender
+  allStatBoosted?: boolean;
+  appliedSeed?: boolean;
+  drainHeal?: number;
+  failedSpecial?: string;
 };
 
 // ── HeartGold damage formula ─────────────────────────────────────────────────
@@ -355,6 +359,11 @@ export function calcDamage(
   const recoilFrac   = move.recoil ?? 0;
   const movePriority = move.priority ?? 0;
 
+  // Miss check (alwaysHit moves bypass) — must happen before status block
+  if (!move.alwaysHit && moveAccuracy > 0 && Math.random() * 100 >= moveAccuracy) {
+    return { damage: 0, effectiveness: 1, moveName, isCrit: false, isMiss: true, moveType, recoil: 0, hits: 0, priority: movePriority };
+  }
+
   // Status-only moves: apply status if applicable
   if (moveCategory === 'status') {
     let appliedStatus: MajorStatus = null;
@@ -370,13 +379,14 @@ export function calcDamage(
       statusEffect: move.effect,
       statBoost: move.statBoost,
       appliedStatus,
+      appliedSeed: !!(move.isSeed),
       priority: movePriority,
     };
   }
 
-  // Miss check (alwaysHit moves bypass)
-  if (!move.alwaysHit && moveAccuracy > 0 && Math.random() * 100 >= moveAccuracy) {
-    return { damage: 0, effectiveness: 1, moveName, isCrit: false, isMiss: true, moveType, recoil: 0, hits: 0, priority: movePriority };
+  // Dream-eater: only works on sleeping targets
+  if (move.draining && move.id === 'dream-eater' && defenderStatus?.condition !== 'slp') {
+    return { damage: 0, effectiveness: 1, moveName, isCrit: false, isMiss: false, moveType, recoil: 0, hits: 0, failedSpecial: 'not-sleeping', priority: movePriority };
   }
 
   // Frozen defender thaws instantly on fire move (still takes full damage)
@@ -437,6 +447,11 @@ export function calcDamage(
     }
   }
 
+  const drainHeal = move.draining && finalDmg > 0 ? Math.floor(finalDmg * move.draining) : undefined;
+  const allStatBoosted = move.allStatBoost && finalDmg > 0
+    ? Math.random() * 100 < move.allStatBoost.chance
+    : undefined;
+
   return {
     damage: finalDmg, effectiveness, moveName, isCrit, isMiss: false,
     moveType, recoil, hits: hitCount,
@@ -445,6 +460,8 @@ export function calcDamage(
     appliedStatus,
     priority: movePriority,
     cureDefenderStatus,
+    drainHeal,
+    allStatBoosted,
   };
 }
 
@@ -487,6 +504,7 @@ export function calcStruggle(
 // ── Get move list ────────────────────────────────────────────────────────────
 
 export type RawMove = {
+  id?: string;
   name: string; type: string; category: string; power: number;
   accuracy: number; pp: number; description?: string;
   multiHit?: boolean; highCrit?: boolean;
@@ -495,6 +513,9 @@ export type RawMove = {
   recoil?: number;
   alwaysHit?: boolean;
   priority?: number;
+  draining?: number;
+  allStatBoost?: { stages: number; chance: number };
+  isSeed?: boolean;
 };
 
 /**

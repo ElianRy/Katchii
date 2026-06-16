@@ -151,3 +151,12 @@ export const GEN1_MOVEPOOL: Record<number, string[]> = {
   150: ['confusion', 'swift', 'psybeam', 'psychic-move', 'calm-mind', 'recover', 'amnesia', 'barrier', 'thunderbolt', 'ice-beam', 'flamethrower', 'earthquake', 'hyper-beam'],
   151: ['pound', 'transform', 'psychic-move', 'amnesia', 'nasty-plot', 'swords-dance', 'calm-mind', 'surf', 'thunderbolt', 'ice-beam', 'flamethrower', 'earthquake', 'sludge-bomb', 'x-scissor', 'hyper-beam'],
 };
+
+export function getAvailableMoves(pokemonId: number, level: number): string[] {
+  const pool = GEN1_MOVEPOOL[pokemonId] ?? [];
+  return pool.filter((_: string, i: number) => {
+    if (i < 4) return true;
+    const requiredLevel = 10 + (i - 4) * 8;
+    return level >= Math.min(50, requiredLevel);
+  });
+}

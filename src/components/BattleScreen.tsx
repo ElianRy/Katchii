@@ -60,6 +60,7 @@ interface FighterState extends TeamMember {
   currentPP: number[];
   stages: Stages;
   statusState: StatusState;
+  isSeeded?: boolean;
 }
 
 interface LogEntry { text: string; color: string; }
@@ -387,6 +388,7 @@ export function BattleScreen({
   playerTeam, enemyTeam, bossName: _bossName, onBattleEnd,
   playerDamageMult = 1, isLeague = false,
   suppressVictorySound = false, keepMusic = false, keepMusicOnUnmount = false,
+  autoCombat,
   onQuit, trainerImage, trainerColor, sideOverlay, pokemonData, pokemonMoves,
   pokemonCustomMoves,
 }: Props) {
@@ -402,6 +404,7 @@ export function BattleScreen({
 
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(() => initFighters(playerTeam, true));
   const playerFightersRef = useRef<FighterState[]>(initFighters(playerTeam, true));
+  const enemyFightersRef = useRef<FighterState[]>(initFighters(enemyTeam, false));
   const boostActiveRef = useRef(playerDamageMult > 1);
   const [boostActive, setBoostActive] = useState(playerDamageMult > 1);
   const [enemyFighters, setEnemyFighters] = useState<FighterState[]>(() => initFighters(enemyTeam, false));
@@ -431,6 +434,7 @@ export function BattleScreen({
   const turnNumberRef = useRef(0);
 
   useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
+  useEffect(() => { enemyFightersRef.current = enemyFighters; }, [enemyFighters]);
   useEffect(() => { playerIdxRef.current = playerIdx; }, [playerIdx]);
   useEffect(() => { enemyIdxRef.current = enemyIdx; }, [enemyIdx]);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
@@ -478,6 +482,31 @@ export function BattleScreen({
   }, [phase]);
 
   useEffect(() => () => { if (!keepMusicOnUnmount) stopMusic(0.5); }, [keepMusicOnUnmount]);
+
+  useEffect(() => {
+    if (phase !== 'player_turn' || !autoCombat) return;
+    const delay = 800 + Math.random() * 200;
+    const t = setTimeout(() => {
+      if (phaseRef.current !== 'player_turn') return;
+      const pIdx = playerIdxRef.current;
+      const eIdx = enemyIdxRef.current;
+      const pf = playerFightersRef.current;
+      const ef = enemyFightersRef.current;
+      const pFighter = pf[pIdx];
+      const eFighter = ef[eIdx];
+      if (!pFighter || !eFighter) return;
+      const eTypes = (POKEMON_TYPE[eFighter.pokemonId] ?? ['normal']) as PokemonType[];
+      const pCustomSlugs = pokemonCustomMoves?.[pFighter.pokemonId];
+      const pMoves = getMoveListRaw(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId], pCustomSlugs);
+      const autoIdx = chooseEnemyMoveIndex(
+        pFighter.pokemonId, eTypes, pFighter.currentPP,
+        pFighter.stages, turnNumberRef.current,
+        eFighter.statusState, pFighter.statusState, pMoves,
+      );
+      executeTurn(autoIdx < 0 ? 0 : autoIdx);
+    }, delay);
+    return () => clearTimeout(t);
+  }, [phase, autoCombat]);
 
   const addDmg = useCallback((value: number, target: 'player' | 'enemy', effectiveness: number, isCrit?: boolean, isMiss?: boolean) => {
     const id = dmgCounter++;
@@ -610,9 +639,14 @@ export function BattleScreen({
             return f;
           }
           const next = Math.max(-6, Math.min(6, cur + boost.stages));
-          const label = boost.stages > 0 ? `↑ ${boost.stat}` : `↓ ${boost.stat}`;
-          const dir = boost.stages > 0 ? '+' : '';
-          addLog(`${dir}${boost.stages} ${label} !`, boost.stages > 0 ? '#4ade80' : '#f87171');
+          const STAT_FR: Record<string, string> = {
+            attack: "l'Attaque", defense: 'la Défense',
+            spAttack: "l'Atk Spé", spDefense: 'la Déf Spé', speed: 'la Vitesse',
+          };
+          const statFr = STAT_FR[boost.stat] ?? boost.stat;
+          const magnitude = Math.abs(boost.stages) >= 2 ? ' fortement' : '';
+          const verb = boost.stages > 0 ? `augmente${magnitude}` : `baisse${magnitude}`;
+          addLog(`${statFr.charAt(0).toUpperCase() + statFr.slice(1)} de ${fighterName} ${verb} !`, boost.stages > 0 ? '#4ade80' : '#f87171');
           // Sprite bounce/wobble animation
           const bounceType = boost.stages > 0 ? 'buff' : 'debuff';
           setSpriteBounce({ target: animTarget, type: bounceType, uid: dmgCounter++ });
@@ -641,7 +675,38 @@ export function BattleScreen({
             pResult.damage === 0 && pResult.statBoost ? `${pName} → ${pResult.moveName}` :
             `${pName} → ${pResult.moveName}${hitsLabel(pResult)} (${pResult.damage} dégâts)${pResult.isCrit ? ' ⚡ CRIT !' : ''}${pResult.effectiveness >= 2 ? ' 💥 Efficace !' : pResult.effectiveness === 0 ? ' (sans effet)' : pResult.effectiveness < 1 ? ' (peu eff.)' : ''}`,
             pResult.isMiss ? '#94a3b8' : pResult.isCrit ? '#fbbf24' : pResult.effectiveness >= 2 ? '#4ade80' : '#fde68a');
+          // failedSpecial handling
+          if (pResult.failedSpecial === 'not-sleeping') {
+            addLog('La cible ne dort pas !', '#f87171');
+          }
+          // drainHeal
+          if (pResult.drainHeal && pResult.drainHeal > 0) {
+            setPlayerFighters(prev => prev.map((f, i) => i === pIdx ? { ...f, currentHp: Math.min(f.maxHp, f.currentHp + pResult.drainHeal!) } : f));
+            addLog(`${pName} récupère des PV !`, '#4ade80');
+          }
+          // allStatBoosted — boost all 5 stats on the player (attacker)
+          if (pResult.allStatBoosted) {
+            const allStats: Array<{ stat: keyof typeof pFighter.stages; stages: number; target: 'self' | 'foe' }> = [
+              { stat: 'attack', stages: 1, target: 'self' },
+              { stat: 'defense', stages: 1, target: 'self' },
+              { stat: 'spAttack', stages: 1, target: 'self' },
+              { stat: 'spDefense', stages: 1, target: 'self' },
+              { stat: 'speed', stages: 1, target: 'self' },
+            ];
+            setPlayerFighters(prev => {
+              let updated = [...prev];
+              for (const b of allStats) {
+                updated = updated.map((f, i) => i === pIdx ? applyBoost(f, b, pName, 'player') : f);
+              }
+              return updated;
+            });
+          }
           let nextEf = ef_;
+          // appliedSeed
+          if (pResult.appliedSeed) {
+            nextEf = nextEf.map((f, i) => i === eIdx ? { ...f, isSeeded: true } : f);
+            addLog(`${eName} est ensemencé(e) !`, '#4ade80');
+          }
           // FRZ thaw on fire move — applied before damage
           if (pResult.cureDefenderStatus && nextEf[eIdx].statusState.condition === 'frz') {
             addLog(`${eName} est dégelé(e) par la chaleur !`, '#38bdf8');
@@ -682,7 +747,38 @@ export function BattleScreen({
             eResult.damage === 0 && eResult.statBoost ? `${eName} → ${eResult.moveName}` :
             `${eName} → ${eResult.moveName}${hitsLabel(eResult)} (${eResult.damage} dégâts)${eResult.isCrit ? ' ⚡ CRIT !' : ''}${eResult.effectiveness >= 2 ? ' 💥 Efficace !' : ''}`,
             eResult.isMiss ? '#94a3b8' : eResult.isCrit ? '#fbbf24' : eResult.effectiveness >= 2 ? '#f87171' : '#fca5a5');
+          // failedSpecial handling (enemy dream-eater on non-sleeping player)
+          if (eResult.failedSpecial === 'not-sleeping') {
+            addLog('La cible ne dort pas !', '#f87171');
+          }
+          // drainHeal for enemy
+          if (eResult.drainHeal && eResult.drainHeal > 0) {
+            setEnemyFighters(prev => prev.map((f, i) => i === eIdx ? { ...f, currentHp: Math.min(f.maxHp, f.currentHp + eResult.drainHeal!) } : f));
+            addLog(`${eName} récupère des PV !`, '#4ade80');
+          }
+          // allStatBoosted — boost all 5 stats on the enemy (attacker)
+          if (eResult.allStatBoosted) {
+            const allStats: Array<{ stat: keyof typeof eFighter.stages; stages: number; target: 'self' | 'foe' }> = [
+              { stat: 'attack', stages: 1, target: 'self' },
+              { stat: 'defense', stages: 1, target: 'self' },
+              { stat: 'spAttack', stages: 1, target: 'self' },
+              { stat: 'spDefense', stages: 1, target: 'self' },
+              { stat: 'speed', stages: 1, target: 'self' },
+            ];
+            setEnemyFighters(prev => {
+              let updated = [...prev];
+              for (const b of allStats) {
+                updated = updated.map((f, i) => i === eIdx ? applyBoost(f, b, eName, 'enemy') : f);
+              }
+              return updated;
+            });
+          }
+          // appliedSeed (enemy uses leech-seed on player)
           let nextPf = pf_;
+          if (eResult.appliedSeed) {
+            nextPf = nextPf.map((f, i) => i === pIdx ? { ...f, isSeeded: true } : f);
+            addLog(`${pName} est ensemencé(e) !`, '#4ade80');
+          }
           // FRZ thaw on fire move — applied before damage
           if (eResult.cureDefenderStatus && nextPf[pIdx].statusState.condition === 'frz') {
             addLog(`${pName} est dégelé(e) par la chaleur !`, '#38bdf8');
@@ -831,6 +927,28 @@ export function BattleScreen({
                 setTimeout(() => setPoisonBubbles(b => b?.uid === uid ? null : b), 1100);
               }
               ef3 = ef3.map((f, i) => i === eIdx ? { ...f, currentHp: newHp, statusState: eEot.nextStatus } : f);
+            }
+
+            // Leech Seed drain
+            if (pf3[pIdx].isSeeded) {
+              const seedDmg = Math.floor(pf3[pIdx].maxHp / 8);
+              const newPHp = Math.max(0, pf3[pIdx].currentHp - seedDmg);
+              const newEHp = Math.min(ef3[eIdx].maxHp, ef3[eIdx].currentHp + seedDmg);
+              addDmg(seedDmg, 'player', 1);
+              addLog(`${pName} perd des PV à cause de la Vampigraine !`, '#4ade80');
+              addLog(`${eName} récupère des PV grâce à la Vampigraine !`, '#4ade80');
+              pf3 = pf3.map((f, i) => i === pIdx ? { ...f, currentHp: newPHp } : f);
+              ef3 = ef3.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
+            }
+            if (ef3[eIdx].isSeeded) {
+              const seedDmg = Math.floor(ef3[eIdx].maxHp / 8);
+              const newEHp = Math.max(0, ef3[eIdx].currentHp - seedDmg);
+              const newPHp = Math.min(pf3[pIdx].maxHp, pf3[pIdx].currentHp + seedDmg);
+              addDmg(seedDmg, 'enemy', 1);
+              addLog(`${eName} perd des PV à cause de la Vampigraine !`, '#4ade80');
+              addLog(`${pName} récupère des PV grâce à la Vampigraine !`, '#4ade80');
+              ef3 = ef3.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
+              pf3 = pf3.map((f, i) => i === pIdx ? { ...f, currentHp: newPHp } : f);
             }
 
             // Check KOs after second attack
@@ -1311,7 +1429,7 @@ export function BattleScreen({
               <div className="grid grid-cols-2 gap-2">
                 {playerMoves.map((move, i) => {
                   const pp = activePF?.currentPP[i] ?? 0;
-                  const disabled = phase === 'resolving' || pp <= 0;
+                  const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat;
                   const typeColor = TYPE_COLORS[move.type as PokemonType] ?? '#475569';
                   return (
                     <button key={i}

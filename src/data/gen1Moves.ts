@@ -23,6 +23,8 @@ export interface Move {
   recoil?: number;
   alwaysHit?: boolean;
   draining?: number;
+  allStatBoost?: { stages: number; chance: number };
+  isSeed?: boolean;
 }
 
 export const MOVES: Record<string, Move> = {
@@ -93,7 +95,7 @@ export const MOVES: Record<string, Move> = {
   'sleep-powder': {id:'sleep-powder', name:'Poudre Dodo', type:'grass', category:'status', power:0, accuracy:75, pp:15, priority:0, description:'Endort l\'adversaire.', effect:{type:'sleep', chance:100}},
   'stun-spore': {id:'stun-spore', name:'Para-Spore', type:'grass', category:'status', power:0, accuracy:75, pp:30, priority:0, description:'Paralyse l\'adversaire.', effect:{type:'paralysis', chance:100}},
   'poison-powder': {id:'poison-powder', name:'Poudre Toxik', type:'poison', category:'status', power:0, accuracy:75, pp:35, priority:0, description:'Empoisonne l\'adversaire.', effect:{type:'poison', chance:100}},
-  'leech-seed': {id:'leech-seed', name:'Vampigraine', type:'grass', category:'status', power:0, accuracy:90, pp:10, priority:0, description:'Draine les PV de l\'adversaire à chaque tour.'},
+  'leech-seed': {id:'leech-seed', name:'Vampigraine', type:'grass', category:'status', power:0, accuracy:90, pp:10, priority:0, description:'Draine les PV de l\'adversaire à chaque tour.', isSeed:true},
   'growth': {id:'growth', name:'Croissance', type:'grass', category:'status', power:0, accuracy:100, pp:40, priority:0, description:'Augmente l\'Attaque Spéciale.', statBoost:{stat:'spAttack', target:'self', stages:1}},
   'spore': {id:'spore', name:'Spore', type:'grass', category:'status', power:0, accuracy:100, pp:15, priority:0, description:'Endort infailliblement l\'adversaire.', effect:{type:'sleep', chance:100}},
 
@@ -149,7 +151,7 @@ export const MOVES: Record<string, Move> = {
   'psychic-move': {id:'psychic-move', name:'Psyko', type:'psychic', category:'special', power:90, accuracy:100, pp:10, priority:0, description:'Peut réduire la Défense Spéciale.', statBoost:{stat:'spDefense', target:'foe', stages:-1, chance:10}},
   'psybeam': {id:'psybeam', name:'Rayon Psy', type:'psychic', category:'special', power:65, accuracy:100, pp:20, priority:0, description:'Peut confondre.', effect:{type:'paralysis', chance:10}},
   'hypnosis': {id:'hypnosis', name:'Hypnose', type:'psychic', category:'status', power:0, accuracy:60, pp:20, priority:0, description:'Endort l\'adversaire.', effect:{type:'sleep', chance:100}},
-  'dream-eater': {id:'dream-eater', name:'Bouffe-Rêve', type:'psychic', category:'special', power:100, accuracy:100, pp:15, priority:0, description:'Fonctionne sur un Pokémon endormi.'},
+  'dream-eater': {id:'dream-eater', name:'Bouffe-Rêve', type:'psychic', category:'special', power:100, accuracy:100, pp:15, priority:0, description:'Fonctionne sur un Pokémon endormi.', draining:0.5},
   'amnesia': {id:'amnesia', name:'Amnésie', type:'psychic', category:'status', power:0, accuracy:100, pp:20, priority:0, description:'Augmente fortement l\'Attaque Spéciale.', statBoost:{stat:'spAttack', target:'self', stages:2}},
   'barrier': {id:'barrier', name:'Barrière', type:'psychic', category:'status', power:0, accuracy:100, pp:30, priority:0, description:'Augmente fortement la Défense.', statBoost:{stat:'defense', target:'self', stages:2}},
   'calm-mind': {id:'calm-mind', name:'Méditation', type:'psychic', category:'status', power:0, accuracy:100, pp:20, priority:0, description:'Augmente l\'Attaque Spéciale.', statBoost:{stat:'spAttack', target:'self', stages:1}},
@@ -173,6 +175,11 @@ export const MOVES: Record<string, Move> = {
   // Dragon
   'dragon-rage': {id:'dragon-rage', name:'Colère', type:'dragon', category:'special', power:80, accuracy:100, pp:10, priority:0, description:'Inflige des dégâts fixes.'},
   'dragon-breath': {id:'dragon-breath', name:'Draco-Souffle', type:'dragon', category:'special', power:60, accuracy:100, pp:20, priority:0, description:'Peut paralyser.', effect:{type:'paralysis', chance:30}},
+
+  'splash': {id:'splash', name:'Éclaboussure', type:'normal', category:'status', power:0, accuracy:100, pp:40, priority:0, description:'N\'a aucun effet.'},
+  'ancient-power': {id:'ancient-power', name:'Antique Pouvoir', type:'rock', category:'special', power:60, accuracy:100, pp:5, priority:0, description:'Peut augmenter toutes les stats.', allStatBoost:{stages:1, chance:10}},
+  'discharge': {id:'discharge', name:'Déflagration', type:'electric', category:'special', power:80, accuracy:100, pp:15, priority:0, description:'Peut paralyser.', effect:{type:'paralysis', chance:30}},
+  'drill-peck': {id:'drill-peck', name:'Picpic', type:'flying', category:'physical', power:80, accuracy:100, pp:20, priority:0, description:'Attaque en tournoyant comme une perceuse.'},
 };
 
 export const MOVE_IDS = Object.keys(MOVES);
