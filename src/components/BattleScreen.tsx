@@ -457,7 +457,7 @@ export function BattleScreen({
   const [statusBlockOverlay, setStatusBlockOverlay] = useState<{ target: 'player' | 'enemy'; condition: string | null; uid: number } | null>(null);
   const [poisonBubbles, setPoisonBubbles] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
-    setLog(prev => [...prev.slice(-8), { text, color }]);
+    setLog(prev => [...prev.slice(-100), { text, color }]);
   }, []);
 
   // Intro → battle
@@ -886,7 +886,8 @@ export function BattleScreen({
               const newStatus = applyMajorStatus(ef3[eIdx].statusState, pResult.appliedStatus);
               if (newStatus) {
                 const lbl = statusLabel(pResult.appliedStatus);
-                addLog(`${eName} est ${lbl?.text ?? pResult.appliedStatus} !`, lbl?.color ?? '#fde68a');
+                const STATUS_FR: Record<string, string> = { par: 'paralysé(e)', brn: 'brûlé(e)', psn: 'empoisonné(e)', tox: 'gravement empoisonné(e)', slp: 'endormi(e)', frz: 'gelé(e)' };
+                addLog(`${eName} est ${STATUS_FR[pResult.appliedStatus] ?? pResult.appliedStatus} !`, lbl?.color ?? '#fde68a');
                 ef3 = ef3.map((f, i) => i === eIdx ? { ...f, statusState: newStatus } : f);
               }
             }
@@ -894,7 +895,8 @@ export function BattleScreen({
               const newStatus = applyMajorStatus(pf3[pIdx].statusState, eResult.appliedStatus);
               if (newStatus) {
                 const lbl = statusLabel(eResult.appliedStatus);
-                addLog(`${pName} est ${lbl?.text ?? eResult.appliedStatus} !`, lbl?.color ?? '#fde68a');
+                const STATUS_FR: Record<string, string> = { par: 'paralysé(e)', brn: 'brûlé(e)', psn: 'empoisonné(e)', tox: 'gravement empoisonné(e)', slp: 'endormi(e)', frz: 'gelé(e)' };
+                addLog(`${pName} est ${STATUS_FR[eResult.appliedStatus] ?? eResult.appliedStatus} !`, lbl?.color ?? '#fde68a');
                 pf3 = pf3.map((f, i) => i === pIdx ? { ...f, statusState: newStatus } : f);
               }
             }
@@ -1369,8 +1371,12 @@ export function BattleScreen({
       {/* ── Battle log + Move buttons ── */}
       <div className="shrink-0 border-t border-slate-700/40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: 'linear-gradient(180deg, rgba(10,12,28,0.97) 0%, rgba(5,8,20,0.99) 100%)' }}>
         {/* Log */}
-        <div className="px-4 pt-2 pb-1 flex flex-col gap-0.5" style={{ minHeight: 76, maxHeight: 100, overflow: 'hidden', justifyContent: 'flex-end' }}>
-          {log.slice(-4).map((entry, i, arr) => (
+        <div
+          ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}
+          className="px-4 pt-2 pb-1 flex flex-col gap-0.5 overflow-y-auto"
+          style={{ minHeight: 76, maxHeight: 100 }}
+        >
+          {log.map((entry, i, arr) => (
             <div key={i} className="text-xs font-medium leading-tight" style={{ color: entry.color, opacity: 0.35 + (i / (arr.length - 1 || 1)) * 0.65 }}>
               {entry.text}
             </div>
