@@ -15,15 +15,6 @@ const LEAVES = Array.from({ length: 14 }, (_, i) => ({
   color: i % 3 === 0 ? '#4ade80' : i % 3 === 1 ? '#86efac' : '#bbf7d0',
 }));
 
-// Fireflies
-const FIREFLIES = Array.from({ length: 18 }, (_, i) => ({
-  x: (i * 73.4 + 5) % 90,
-  y: (i * 53.7 + 10) % 70,
-  fx: ((i * 37.1) % 80) - 40,
-  fy: ((i * 29.3) % 60) - 30,
-  duration: 4 + (i % 6) * 1.5,
-  delay: (i % 7) * 0.8,
-}));
 
 // Bubbles for ocean
 const BUBBLES = Array.from({ length: 16 }, (_, i) => ({
@@ -34,30 +25,8 @@ const BUBBLES = Array.from({ length: 16 }, (_, i) => ({
   duration: 3 + (i % 4) * 1.2,
 }));
 
-// Sparks for electric zone
-const SPARKS = Array.from({ length: 10 }, (_, i) => ({
-  x: 5 + (i * 89.7) % 90,
-  y: 10 + (i * 47.3) % 60,
-  delay: (i * 0.4) % 3,
-}));
 
-// Ghost wisps
-const WISPS = Array.from({ length: 6 }, (_, i) => ({
-  x: 10 + (i * 67.3) % 80,
-  y: 15 + (i * 43.1) % 55,
-  gx: ((i * 53) % 60) - 30,
-  gx2: ((i * 37) % 40) - 20,
-  duration: 6 + (i % 4) * 2,
-  delay: (i * 1.1) % 5,
-}));
 
-// Lava bubbles
-const LAVA_BUBBLES = Array.from({ length: 10 }, (_, i) => ({
-  x: 5 + (i * 79.3) % 88,
-  size: 6 + (i % 4) * 5,
-  delay: (i * 0.6) % 3.5,
-  duration: 2.5 + (i % 3) * 1,
-}));
 
 // Stars for night/space zones
 const STARS = Array.from({ length: 120 }, (_, i) => ({
@@ -69,15 +38,6 @@ const STARS = Array.from({ length: 120 }, (_, i) => ({
   duration: 1.5 + (i % 8) * 0.6,
 }));
 
-// Ground flowers for zone4 — scattered at multiple heights
-const GROUND_FLOWERS = Array.from({ length: 32 }, (_, i) => ({
-  x: (i * 31.7 + 3) % 96,
-  // Spread flowers from 10% to 80% from bottom (5 different heights)
-  bottomPct: 10 + ((i * 13 + 7) % 70),
-  size: 8 + (i % 4) * 4,
-  color: ['#f9a8d4', '#fbcfe8', '#fde68a', '#bbf7d0', '#c4b5fd', '#fca5a5', '#a5f3fc', '#fef08a'][i % 8],
-  delay: (i * 0.3) % 3,
-}));
 
 
 const ZONE_CONFIGS: Record<string, {
