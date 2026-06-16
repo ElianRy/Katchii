@@ -656,7 +656,9 @@ export function BattleScreen({
 
         const hitsLabel = (r: typeof pResult) => r.hits > 1 ? ` (×${r.hits})` : '';
 
-        const doPlayerAttack = (_pf: FighterState[], ef_: FighterState[]) => { void _pf;
+        const doPlayerAttack = (_pf: FighterState[], ef_: FighterState[]): [FighterState[], FighterState[]] => {
+          let newPf = [..._pf];
+          let nextEf = [...ef_];
           const pIsStatus = pResult.damage === 0 && !!pResult.statBoost;
           if (!pIsStatus) {
             setAttackEvt({ attacker: 'player', type: pResult.moveType, uid: dmgCounter++ });
@@ -681,7 +683,7 @@ export function BattleScreen({
           }
           // drainHeal
           if (pResult.drainHeal && pResult.drainHeal > 0) {
-            setPlayerFighters(prev => prev.map((f, i) => i === pIdx ? { ...f, currentHp: Math.min(f.maxHp, f.currentHp + pResult.drainHeal!) } : f));
+            newPf = newPf.map((f, i) => i === pIdx ? { ...f, currentHp: Math.min(f.maxHp, f.currentHp + pResult.drainHeal!) } : f);
             addLog(`${pName} récupère des PV !`, '#4ade80');
           }
           // allStatBoosted — boost all 5 stats on the player (attacker)
@@ -693,15 +695,10 @@ export function BattleScreen({
               { stat: 'spDefense', stages: 1, target: 'self' },
               { stat: 'speed', stages: 1, target: 'self' },
             ];
-            setPlayerFighters(prev => {
-              let updated = [...prev];
-              for (const b of allStats) {
-                updated = updated.map((f, i) => i === pIdx ? applyBoost(f, b, pName, 'player') : f);
-              }
-              return updated;
-            });
+            for (const b of allStats) {
+              newPf = newPf.map((f, i) => i === pIdx ? applyBoost(f, b, pName, 'player') : f);
+            }
           }
-          let nextEf = ef_;
           // appliedSeed
           if (pResult.appliedSeed) {
             nextEf = nextEf.map((f, i) => i === eIdx ? { ...f, isSeeded: true } : f);
@@ -714,21 +711,25 @@ export function BattleScreen({
           }
           // Apply player's statBoost to self
           if (pResult.statBoost?.target === 'self') {
-            const updated = applyBoost(_pf[pIdx], pResult.statBoost, pName, 'player');
-            setPlayerFighters(prev => prev.map((f, i) => i === pIdx ? updated : f));
+            newPf = newPf.map((f, i) => i === pIdx ? applyBoost(f, pResult.statBoost!, pName, 'player') : f);
           }
           // Apply player's statBoost to foe
           if (pResult.statBoost?.target === 'foe') {
-            nextEf = ef_.map((f, i) => i === eIdx ? applyBoost(f, pResult.statBoost!, eName, 'enemy') : f);
+            nextEf = nextEf.map((f, i) => i === eIdx ? applyBoost(f, pResult.statBoost!, eName, 'enemy') : f);
           }
           const newEHp = Math.max(0, nextEf[eIdx].currentHp - pResult.damage);
+          nextEf = nextEf.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
           // Recoil on player
-          const pRecoilHp = pResult.recoil > 0 ? Math.max(0, _pf[pIdx].currentHp - pResult.recoil) : _pf[pIdx].currentHp;
-          if (pResult.recoil > 0) setPlayerFighters(prev => prev.map((f, i) => i === pIdx ? { ...f, currentHp: pRecoilHp } : f));
-          return nextEf.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
+          if (pResult.recoil > 0) {
+            const pRecoilHp = Math.max(0, newPf[pIdx].currentHp - pResult.recoil);
+            newPf = newPf.map((f, i) => i === pIdx ? { ...f, currentHp: pRecoilHp } : f);
+          }
+          return [newPf, nextEf];
         };
 
-        const doEnemyAttack = (pf_: FighterState[], _ef: FighterState[]) => { void _ef;
+        const doEnemyAttack = (pf_: FighterState[], _ef: FighterState[]): [FighterState[], FighterState[]] => {
+          let nextPf = [...pf_];
+          let newEf = [..._ef];
           const eIsStatus = eResult.damage === 0 && !!eResult.statBoost;
           if (!eIsStatus) {
             setAttackEvt({ attacker: 'enemy', type: eResult.moveType, uid: dmgCounter++ });
@@ -753,7 +754,7 @@ export function BattleScreen({
           }
           // drainHeal for enemy
           if (eResult.drainHeal && eResult.drainHeal > 0) {
-            setEnemyFighters(prev => prev.map((f, i) => i === eIdx ? { ...f, currentHp: Math.min(f.maxHp, f.currentHp + eResult.drainHeal!) } : f));
+            newEf = newEf.map((f, i) => i === eIdx ? { ...f, currentHp: Math.min(f.maxHp, f.currentHp + eResult.drainHeal!) } : f);
             addLog(`${eName} récupère des PV !`, '#4ade80');
           }
           // allStatBoosted — boost all 5 stats on the enemy (attacker)
@@ -765,16 +766,11 @@ export function BattleScreen({
               { stat: 'spDefense', stages: 1, target: 'self' },
               { stat: 'speed', stages: 1, target: 'self' },
             ];
-            setEnemyFighters(prev => {
-              let updated = [...prev];
-              for (const b of allStats) {
-                updated = updated.map((f, i) => i === eIdx ? applyBoost(f, b, eName, 'enemy') : f);
-              }
-              return updated;
-            });
+            for (const b of allStats) {
+              newEf = newEf.map((f, i) => i === eIdx ? applyBoost(f, b, eName, 'enemy') : f);
+            }
           }
           // appliedSeed (enemy uses leech-seed on player)
-          let nextPf = pf_;
           if (eResult.appliedSeed) {
             nextPf = nextPf.map((f, i) => i === pIdx ? { ...f, isSeeded: true } : f);
             addLog(`${pName} est ensemencé(e) !`, '#4ade80');
@@ -786,15 +782,15 @@ export function BattleScreen({
           }
           // Apply enemy's statBoost to self
           if (eResult.statBoost?.target === 'self') {
-            const updated = applyBoost(_ef[eIdx], eResult.statBoost!, eName, 'enemy');
-            setEnemyFighters(prev => prev.map((f, i) => i === eIdx ? updated : f));
+            newEf = newEf.map((f, i) => i === eIdx ? applyBoost(f, eResult.statBoost!, eName, 'enemy') : f);
           }
           // Apply enemy's statBoost to foe (player)
           if (eResult.statBoost?.target === 'foe') {
-            nextPf = pf_.map((f, i) => i === pIdx ? applyBoost(f, eResult.statBoost!, pName, 'player') : f);
+            nextPf = nextPf.map((f, i) => i === pIdx ? applyBoost(f, eResult.statBoost!, pName, 'player') : f);
           }
           const newPHp = Math.max(0, nextPf[pIdx].currentHp - eResult.damage);
-          return nextPf.map((f, i) => i === pIdx ? { ...f, currentHp: newPHp } : f);
+          nextPf = nextPf.map((f, i) => i === pIdx ? { ...f, currentHp: newPHp } : f);
+          return [nextPf, newEf];
         };
 
         let finalPf = newPPf;
@@ -821,9 +817,9 @@ export function BattleScreen({
         }
 
         if (goesFirst) {
-          if (pCanActResult.canAct) finalEf = doPlayerAttack(finalPf, finalEf);
+          if (pCanActResult.canAct) [finalPf, finalEf] = doPlayerAttack(finalPf, finalEf);
         } else {
-          if (eCanActResult.canAct) finalPf = doEnemyAttack(finalPf, finalEf);
+          if (eCanActResult.canAct) [finalPf, finalEf] = doEnemyAttack(finalPf, finalEf);
         }
 
         // Check outcomes after first attack
@@ -880,9 +876,9 @@ export function BattleScreen({
             let pf3 = pf2;
             let ef3 = ef2;
             if (goesFirst) {
-              if (eCanActResult.canAct) pf3 = doEnemyAttack(pf2, ef2);
+              if (eCanActResult.canAct) [pf3, ef3] = doEnemyAttack(pf2, ef2);
             } else {
-              if (pCanActResult.canAct) ef3 = doPlayerAttack(pf2, ef2);
+              if (pCanActResult.canAct) [pf3, ef3] = doPlayerAttack(pf2, ef2);
             }
 
             // Apply status gained from attacks (from appliedStatus in results)
