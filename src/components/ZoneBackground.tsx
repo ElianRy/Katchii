@@ -279,12 +279,12 @@ export function ZoneBackground({ zoneId }: Props) {
       ══════════════════════════════════════════════════════ */}
       {zoneId === 'zone3' && (
         <>
-          {/* Electric spark nodes — mobile: petits nœuds lumineux sur les câbles */}
+          {/* Electric spark nodes — mobile: sur les isolateurs des câbles hauts */}
           {[
-            { left: '25%', top: '30%', delay: 0 },
-            { left: '42%', top: '24%', delay: 0.35 },
-            { left: '58%', top: '28%', delay: 0.7 },
-            { left: '74%', top: '32%', delay: 1.05 },
+            { left: '14%', top: '22%', delay: 0 },
+            { left: '34%', top: '18%', delay: 0.35 },
+            { left: '56%', top: '18%', delay: 0.7 },
+            { left: '78%', top: '22%', delay: 1.05 },
           ].map((pos, i) => (
             <div key={`arc3m${i}`} className="absolute pointer-events-none md:hidden" style={{
               left: pos.left, top: pos.top,
@@ -298,9 +298,9 @@ export function ZoneBackground({ zoneId }: Props) {
           ))}
           {/* Spark line between nodes — mobile */}
           {[
-            { left: '26%', top: '30.4%', w: '16%', delay: 0.1 },
-            { left: '43%', top: '24.4%', w: '14%', delay: 0.45 },
-            { left: '59%', top: '28.4%', w: '14%', delay: 0.8 },
+            { left: '15%', top: '21.5%', w: '19%', delay: 0.1 },
+            { left: '35%', top: '18.5%', w: '21%', delay: 0.45 },
+            { left: '57%', top: '18.5%', w: '20%', delay: 0.8 },
           ].map((l, i) => (
             <div key={`line3m${i}`} className="absolute pointer-events-none md:hidden" style={{
               left: l.left, top: l.top, width: l.w, height: 1,
@@ -312,11 +312,11 @@ export function ZoneBackground({ zoneId }: Props) {
           ))}
           {/* Electric spark nodes — PC */}
           {[
-            { left: '18%', top: '22%', delay: 0 },
-            { left: '32%', top: '18%', delay: 0.3 },
-            { left: '48%', top: '20%', delay: 0.6 },
-            { left: '64%', top: '19%', delay: 0.9 },
-            { left: '78%', top: '23%', delay: 0.45 },
+            { left: '10%', top: '18%', delay: 0 },
+            { left: '28%', top: '14%', delay: 0.3 },
+            { left: '46%', top: '16%', delay: 0.6 },
+            { left: '64%', top: '14%', delay: 0.9 },
+            { left: '82%', top: '18%', delay: 0.45 },
           ].map((pos, i) => (
             <div key={`arc3p${i}`} className="absolute pointer-events-none hidden md:block" style={{
               left: pos.left, top: pos.top,
@@ -330,10 +330,10 @@ export function ZoneBackground({ zoneId }: Props) {
           ))}
           {/* Spark lines — PC */}
           {[
-            { left: '19%', top: '22.4%', w: '12%', delay: 0.15 },
-            { left: '33%', top: '18.4%', w: '14%', delay: 0.45 },
-            { left: '49%', top: '20.4%', w: '14%', delay: 0.75 },
-            { left: '65%', top: '19.4%', w: '12%', delay: 0.5 },
+            { left: '11%', top: '17.5%', w: '17%', delay: 0.15 },
+            { left: '29%', top: '14.5%', w: '17%', delay: 0.45 },
+            { left: '47%', top: '15.5%', w: '17%', delay: 0.75 },
+            { left: '65%', top: '14.5%', w: '17%', delay: 0.5 },
           ].map((l, i) => (
             <div key={`line3p${i}`} className="absolute pointer-events-none hidden md:block" style={{
               left: l.left, top: l.top, width: l.w, height: 1,
@@ -495,10 +495,10 @@ export function ZoneBackground({ zoneId }: Props) {
       ══════════════════════════════════════════════════════ */}
       {zoneId === 'zone6' && (
         <>
-          {/* Neon strips — mobile: flanquent le panneau "Sylph Co." centré en haut */}
+          {/* Neon strips — mobile: juste à gauche et droite du logo S (centre ~48%) */}
           {[
-            { left: '28%', top: '10%', w: 3, h: 28 },
-            { left: '67%', top: '10%', w: 3, h: 28 },
+            { left: '35%', top: '12%', w: 3, h: 26 },
+            { left: '60%', top: '12%', w: 3, h: 26 },
           ].map((n, i) => (
             <div key={`neon6m${i}`} className="absolute pointer-events-none md:hidden" style={{
               left: n.left, top: n.top, width: n.w, height: n.h,
@@ -509,7 +509,7 @@ export function ZoneBackground({ zoneId }: Props) {
               animationDelay: `${i * 1.2}s`,
             }} />
           ))}
-          {/* Neon strips — PC: autour du panneau Sylph Co. */}
+          {/* Neon strips — PC */}
           {[
             { left: '32%', top: '8%', w: 3, h: 22 },
             { left: '62%', top: '8%', w: 3, h: 22 },
@@ -523,11 +523,11 @@ export function ZoneBackground({ zoneId }: Props) {
               animationDelay: `${i * 1.2}s`,
             }} />
           ))}
-          {/* Screen glow — mobile: bureaux gauche (~12%) et droite (~72%), rangée du milieu */}
+          {/* Screen glow — mobile: bureaux haut-gauche, haut-droite, bas-gauche */}
           {[
-            { left: '10%', top: '52%', w: 26, h: 16, color: 'rgba(80,180,255,0.3)' },
-            { left: '68%', top: '48%', w: 24, h: 15, color: 'rgba(160,80,255,0.3)' },
-            { left: '12%', top: '72%', w: 22, h: 14, color: 'rgba(80,180,255,0.25)' },
+            { left: '10%', top: '36%', w: 26, h: 16, color: 'rgba(80,180,255,0.3)' },
+            { left: '64%', top: '36%', w: 24, h: 15, color: 'rgba(160,80,255,0.3)' },
+            { left: '10%', top: '74%', w: 22, h: 14, color: 'rgba(80,180,255,0.25)' },
           ].map((s, i) => (
             <div key={`scr6m${i}`} className="absolute pointer-events-none rounded md:hidden" style={{
               left: s.left, top: s.top, width: s.w, height: s.h,
@@ -538,9 +538,9 @@ export function ZoneBackground({ zoneId }: Props) {
           ))}
           {/* Screen glow — PC */}
           {[
-            { left: '8%', top: '48%', w: 34, h: 20, color: 'rgba(80,180,255,0.22)' },
-            { left: '70%', top: '44%', w: 30, h: 18, color: 'rgba(160,80,255,0.22)' },
-            { left: '10%', top: '70%', w: 28, h: 16, color: 'rgba(80,180,255,0.2)' },
+            { left: '8%', top: '38%', w: 34, h: 20, color: 'rgba(80,180,255,0.22)' },
+            { left: '68%', top: '36%', w: 30, h: 18, color: 'rgba(160,80,255,0.22)' },
+            { left: '10%', top: '72%', w: 28, h: 16, color: 'rgba(80,180,255,0.2)' },
           ].map((s, i) => (
             <div key={`scr6p${i}`} className="absolute pointer-events-none rounded hidden md:block" style={{
               left: s.left, top: s.top, width: s.w, height: s.h,
