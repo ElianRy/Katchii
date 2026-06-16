@@ -279,34 +279,69 @@ export function ZoneBackground({ zoneId }: Props) {
       ══════════════════════════════════════════════════════ */}
       {zoneId === 'zone3' && (
         <>
-          {/* Electric arcs — mobile (⚡ flickers on wires) */}
+          {/* Electric spark nodes — mobile: petits nœuds lumineux sur les câbles */}
           {[
-            { left: '30%', top: '22%', delay: 0 },
-            { left: '50%', top: '18%', delay: 0.4 },
-            { left: '65%', top: '23%', delay: 0.8 },
+            { left: '25%', top: '30%', delay: 0 },
+            { left: '42%', top: '24%', delay: 0.35 },
+            { left: '58%', top: '28%', delay: 0.7 },
+            { left: '74%', top: '32%', delay: 1.05 },
           ].map((pos, i) => (
             <div key={`arc3m${i}`} className="absolute pointer-events-none md:hidden" style={{
               left: pos.left, top: pos.top,
-              fontSize: 14, lineHeight: 1,
-              textShadow: '0 0 8px #ffe000, 0 0 16px #ffe000',
-              animation: `arc-flicker ${0.8 + i * 0.3}s step-end infinite`,
+              width: 6, height: 6,
+              borderRadius: '50%',
+              background: '#fff9c4',
+              boxShadow: '0 0 6px 3px #ffe000, 0 0 14px 6px rgba(255,200,0,0.5)',
+              animation: `arc-flicker ${0.6 + i * 0.2}s step-end infinite`,
               animationDelay: `${pos.delay}s`,
-            }}>⚡</div>
+            }} />
           ))}
-          {/* Electric arcs — PC */}
+          {/* Spark line between nodes — mobile */}
           {[
-            { left: '20%', top: '16%', delay: 0 },
-            { left: '36%', top: '13%', delay: 0.3 },
-            { left: '54%', top: '14%', delay: 0.6 },
-            { left: '70%', top: '17%', delay: 0.9 },
+            { left: '26%', top: '30.4%', w: '16%', delay: 0.1 },
+            { left: '43%', top: '24.4%', w: '14%', delay: 0.45 },
+            { left: '59%', top: '28.4%', w: '14%', delay: 0.8 },
+          ].map((l, i) => (
+            <div key={`line3m${i}`} className="absolute pointer-events-none md:hidden" style={{
+              left: l.left, top: l.top, width: l.w, height: 1,
+              background: 'linear-gradient(90deg, #ffe000, #fff, #ffe000)',
+              boxShadow: '0 0 4px 2px rgba(255,220,0,0.6)',
+              animation: `arc-flicker ${0.5 + i * 0.15}s step-end infinite`,
+              animationDelay: `${l.delay}s`,
+            }} />
+          ))}
+          {/* Electric spark nodes — PC */}
+          {[
+            { left: '18%', top: '22%', delay: 0 },
+            { left: '32%', top: '18%', delay: 0.3 },
+            { left: '48%', top: '20%', delay: 0.6 },
+            { left: '64%', top: '19%', delay: 0.9 },
+            { left: '78%', top: '23%', delay: 0.45 },
           ].map((pos, i) => (
             <div key={`arc3p${i}`} className="absolute pointer-events-none hidden md:block" style={{
               left: pos.left, top: pos.top,
-              fontSize: 16, lineHeight: 1,
-              textShadow: '0 0 10px #ffe000, 0 0 20px #ffe000',
-              animation: `arc-flicker ${0.7 + i * 0.25}s step-end infinite`,
+              width: 7, height: 7,
+              borderRadius: '50%',
+              background: '#fff9c4',
+              boxShadow: '0 0 8px 4px #ffe000, 0 0 18px 8px rgba(255,200,0,0.4)',
+              animation: `arc-flicker ${0.55 + i * 0.18}s step-end infinite`,
               animationDelay: `${pos.delay}s`,
-            }}>⚡</div>
+            }} />
+          ))}
+          {/* Spark lines — PC */}
+          {[
+            { left: '19%', top: '22.4%', w: '12%', delay: 0.15 },
+            { left: '33%', top: '18.4%', w: '14%', delay: 0.45 },
+            { left: '49%', top: '20.4%', w: '14%', delay: 0.75 },
+            { left: '65%', top: '19.4%', w: '12%', delay: 0.5 },
+          ].map((l, i) => (
+            <div key={`line3p${i}`} className="absolute pointer-events-none hidden md:block" style={{
+              left: l.left, top: l.top, width: l.w, height: 1,
+              background: 'linear-gradient(90deg, #ffe000, #fff, #ffe000)',
+              boxShadow: '0 0 5px 2px rgba(255,220,0,0.7)',
+              animation: `arc-flicker ${0.45 + i * 0.12}s step-end infinite`,
+              animationDelay: `${l.delay}s`,
+            }} />
           ))}
           {/* Smoke from chimney — mobile (~50%, 43%) */}
           {Array.from({ length: 5 }, (_, i) => (
@@ -460,10 +495,10 @@ export function ZoneBackground({ zoneId }: Props) {
       ══════════════════════════════════════════════════════ */}
       {zoneId === 'zone6' && (
         <>
-          {/* Neon strips — mobile: top-left strip more left, bottom-right strip more left+down */}
+          {/* Neon strips — mobile: flanquent le panneau "Sylph Co." centré en haut */}
           {[
-            { left: '1%', top: '13%', w: 3, h: 30 },
-            { left: '80%', top: '22%', w: 3, h: 30 },
+            { left: '28%', top: '10%', w: 3, h: 28 },
+            { left: '67%', top: '10%', w: 3, h: 28 },
           ].map((n, i) => (
             <div key={`neon6m${i}`} className="absolute pointer-events-none md:hidden" style={{
               left: n.left, top: n.top, width: n.w, height: n.h,
@@ -474,7 +509,7 @@ export function ZoneBackground({ zoneId }: Props) {
               animationDelay: `${i * 1.2}s`,
             }} />
           ))}
-          {/* Neon strips — PC */}
+          {/* Neon strips — PC: autour du panneau Sylph Co. */}
           {[
             { left: '32%', top: '8%', w: 3, h: 22 },
             { left: '62%', top: '8%', w: 3, h: 22 },
@@ -488,28 +523,30 @@ export function ZoneBackground({ zoneId }: Props) {
               animationDelay: `${i * 1.2}s`,
             }} />
           ))}
-          {/* Screen glow flicker — mobile: blue screen raised, purple more top-left */}
+          {/* Screen glow — mobile: bureaux gauche (~12%) et droite (~72%), rangée du milieu */}
           {[
-            { left: '8%', top: '30%', w: 28, h: 18, color: 'rgba(80,180,255,0.25)' },
-            { left: '62%', top: '34%', w: 28, h: 18, color: 'rgba(160,80,255,0.25)' },
+            { left: '10%', top: '52%', w: 26, h: 16, color: 'rgba(80,180,255,0.3)' },
+            { left: '68%', top: '48%', w: 24, h: 15, color: 'rgba(160,80,255,0.3)' },
+            { left: '12%', top: '72%', w: 22, h: 14, color: 'rgba(80,180,255,0.25)' },
           ].map((s, i) => (
             <div key={`scr6m${i}`} className="absolute pointer-events-none rounded md:hidden" style={{
               left: s.left, top: s.top, width: s.w, height: s.h,
               background: s.color,
               animation: `neon-flicker ${3 + i * 0.5}s ease-in-out infinite`,
-              animationDelay: `${i * 0.8 + 0.5}s`,
+              animationDelay: `${i * 0.7}s`,
             }} />
           ))}
           {/* Screen glow — PC */}
           {[
-            { left: '3%', top: '18%', w: 36, h: 22, color: 'rgba(80,180,255,0.2)' },
-            { left: '62%', top: '22%', w: 32, h: 20, color: 'rgba(160,80,255,0.2)' },
+            { left: '8%', top: '48%', w: 34, h: 20, color: 'rgba(80,180,255,0.22)' },
+            { left: '70%', top: '44%', w: 30, h: 18, color: 'rgba(160,80,255,0.22)' },
+            { left: '10%', top: '70%', w: 28, h: 16, color: 'rgba(80,180,255,0.2)' },
           ].map((s, i) => (
             <div key={`scr6p${i}`} className="absolute pointer-events-none rounded hidden md:block" style={{
               left: s.left, top: s.top, width: s.w, height: s.h,
               background: s.color,
               animation: `neon-flicker ${3 + i * 0.5}s ease-in-out infinite`,
-              animationDelay: `${i * 0.8 + 0.5}s`,
+              animationDelay: `${i * 0.7}s`,
             }} />
           ))}
         </>
@@ -526,8 +563,8 @@ export function ZoneBackground({ zoneId }: Props) {
           {/* Embers rising — mobile crater */}
           {Array.from({ length: 8 }, (_, i) => (
             <div key={`em7m${i}`} className="absolute pointer-events-none rounded-full md:hidden" style={{
-              left: `${44 + (i % 5) - 2}%`,
-              top: '23%',
+              left: `${52 + (i % 5) - 2}%`,
+              top: '22%',
               width: 3 + (i % 2), height: 3 + (i % 2),
               background: i % 3 === 0 ? '#ff4500' : i % 3 === 1 ? '#ff8c00' : '#ffd700',
               boxShadow: `0 0 4px 1px ${i % 3 === 0 ? '#ff4500' : '#ff8c00'}`,
@@ -592,8 +629,8 @@ export function ZoneBackground({ zoneId }: Props) {
           {/* Smoke from main crater — mobile */}
           {Array.from({ length: 5 }, (_, i) => (
             <div key={`sm7m${i}`} className="absolute pointer-events-none rounded-full md:hidden" style={{
-              left: `${43 + (i % 3) - 1}%`,
-              top: '19%',
+              left: `${51 + (i % 3) - 1}%`,
+              top: '18%',
               width: 14 + i * 4, height: 14 + i * 4,
               background: 'rgba(80,70,60,0.2)',
               '--sx': `${(i % 2 === 0 ? 1 : -1) * (8 + i * 4)}px`,
