@@ -512,10 +512,18 @@ export function BattleScreen({
           : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndex, eInst, pInst, eFighter.stages, pFighter.stages, undefined, eFighter.statusState, pFighter.statusState);
 
         // Execute attacks in speed order
-        // Apply a statBoost to a fighter's stages (clamped −6 to +6)
-        const applyBoost = (f: FighterState, boost: typeof pResult.statBoost): FighterState => {
+        // Apply a statBoost to a fighter's stages (clamped −6 to +6, with cap messages)
+        const applyBoost = (f: FighterState, boost: typeof pResult.statBoost, fighterName: string): FighterState => {
           if (!boost) return f;
           const cur = f.stages[boost.stat as keyof typeof f.stages] ?? 0;
+          if (boost.stages > 0 && cur >= 6) {
+            addLog(`La stat de ${fighterName} ne peut plus monter !`, '#94a3b8');
+            return f;
+          }
+          if (boost.stages < 0 && cur <= -6) {
+            addLog(`La stat de ${fighterName} ne peut plus baisser !`, '#94a3b8');
+            return f;
+          }
           const next = Math.max(-6, Math.min(6, cur + boost.stages));
           const label = boost.stages > 0 ? `↑ ${boost.stat}` : `↓ ${boost.stat}`;
           const dir = boost.stages > 0 ? '+' : '';
@@ -545,14 +553,19 @@ export function BattleScreen({
             `${pName} → ${pResult.moveName}${hitsLabel(pResult)} (${pResult.damage} dégâts)${pResult.isCrit ? ' ⚡ CRIT !' : ''}${pResult.effectiveness >= 2 ? ' 💥 Efficace !' : pResult.effectiveness === 0 ? ' (sans effet)' : pResult.effectiveness < 1 ? ' (peu eff.)' : ''}`,
             pResult.isMiss ? '#94a3b8' : pResult.isCrit ? '#fbbf24' : pResult.effectiveness >= 2 ? '#4ade80' : '#fde68a');
           let nextEf = ef_;
+          // FRZ thaw on fire move — applied before damage
+          if (pResult.cureDefenderStatus && nextEf[eIdx].statusState.condition === 'frz') {
+            addLog(`${eName} est dégelé(e) par la chaleur !`, '#38bdf8');
+            nextEf = nextEf.map((f, i) => i === eIdx ? { ...f, statusState: { condition: null } } : f);
+          }
           // Apply player's statBoost to self
           if (pResult.statBoost?.target === 'self') {
-            const updated = applyBoost(_pf[pIdx], pResult.statBoost);
+            const updated = applyBoost(_pf[pIdx], pResult.statBoost, pName);
             setPlayerFighters(prev => prev.map((f, i) => i === pIdx ? updated : f));
           }
           // Apply player's statBoost to foe
           if (pResult.statBoost?.target === 'foe') {
-            nextEf = ef_.map((f, i) => i === eIdx ? applyBoost(f, pResult.statBoost!) : f);
+            nextEf = ef_.map((f, i) => i === eIdx ? applyBoost(f, pResult.statBoost!, eName) : f);
           }
           const newEHp = Math.max(0, nextEf[eIdx].currentHp - pResult.damage);
           // Recoil on player
@@ -581,14 +594,19 @@ export function BattleScreen({
             `${eName} → ${eResult.moveName}${hitsLabel(eResult)} (${eResult.damage} dégâts)${eResult.isCrit ? ' ⚡ CRIT !' : ''}${eResult.effectiveness >= 2 ? ' 💥 Efficace !' : ''}`,
             eResult.isMiss ? '#94a3b8' : eResult.isCrit ? '#fbbf24' : eResult.effectiveness >= 2 ? '#f87171' : '#fca5a5');
           let nextPf = pf_;
+          // FRZ thaw on fire move — applied before damage
+          if (eResult.cureDefenderStatus && nextPf[pIdx].statusState.condition === 'frz') {
+            addLog(`${pName} est dégelé(e) par la chaleur !`, '#38bdf8');
+            nextPf = nextPf.map((f, i) => i === pIdx ? { ...f, statusState: { condition: null } } : f);
+          }
           // Apply enemy's statBoost to self
           if (eResult.statBoost?.target === 'self') {
-            const updated = applyBoost(_ef[eIdx], eResult.statBoost!);
+            const updated = applyBoost(_ef[eIdx], eResult.statBoost!, eName);
             setEnemyFighters(prev => prev.map((f, i) => i === eIdx ? updated : f));
           }
           // Apply enemy's statBoost to foe (player)
           if (eResult.statBoost?.target === 'foe') {
-            nextPf = pf_.map((f, i) => i === pIdx ? applyBoost(f, eResult.statBoost!) : f);
+            nextPf = pf_.map((f, i) => i === pIdx ? applyBoost(f, eResult.statBoost!, pName) : f);
           }
           const newPHp = Math.max(0, nextPf[pIdx].currentHp - eResult.damage);
           return nextPf.map((f, i) => i === pIdx ? { ...f, currentHp: newPHp } : f);
@@ -597,9 +615,19 @@ export function BattleScreen({
         let finalPf = newPPf;
         let finalEf = newEf;
 
-        // Log status preventing action
-        if (!pCanActResult.canAct) addLog(`${pName} est immobilisé(e) !`, '#94a3b8');
-        if (!eCanActResult.canAct) addLog(`${eName} est immobilisé(e) !`, '#94a3b8');
+        // Wake-up messages (HG/SS: can act the turn they wake up)
+        if (pCanActResult.wokeUp) addLog(`${pName} se réveille !`, '#4ade80');
+        if (eCanActResult.wokeUp) addLog(`${eName} se réveille !`, '#4ade80');
+
+        // Status block messages — distinct for SLP vs PAR
+        if (!pCanActResult.canAct) {
+          if (pFighter.statusState.condition === 'slp') addLog(`${pName} dort profondément…`, '#94a3b8');
+          else addLog(`${pName} est totalement paralysé(e) !`, '#94a3b8');
+        }
+        if (!eCanActResult.canAct) {
+          if (eFighter.statusState.condition === 'slp') addLog(`${eName} dort profondément…`, '#94a3b8');
+          else addLog(`${eName} est totalement paralysé(e) !`, '#94a3b8');
+        }
 
         if (goesFirst) {
           if (pCanActResult.canAct) finalEf = doPlayerAttack(finalPf, finalEf);

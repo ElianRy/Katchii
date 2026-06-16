@@ -163,7 +163,7 @@ export function applyMajorStatus(
   if (newStatus === null) return null;
   const next: StatusState = { condition: newStatus };
   if (newStatus === 'slp') {
-    next.sleepTurns = 1 + Math.floor(Math.random() * 7); // 1-7 turns
+    next.sleepTurns = 1 + Math.floor(Math.random() * 3); // HG/SS: 1-3 turns
   }
   if (newStatus === 'tox') {
     next.toxicCounter = 0; // increments at start of each end-of-turn phase
@@ -175,14 +175,14 @@ export function applyMajorStatus(
  * Check if a Pokémon can act this turn. Returns true = can act, false = loses turn.
  * Also returns updated StatusState (sleep counter ticking, etc.)
  */
-export function checkCanAct(status: StatusState): { canAct: boolean; nextStatus: StatusState } {
+export function checkCanAct(status: StatusState): { canAct: boolean; nextStatus: StatusState; wokeUp?: boolean } {
   if (status.condition === null) return { canAct: true, nextStatus: status };
 
   if (status.condition === 'slp') {
     const remaining = (status.sleepTurns ?? 1) - 1;
     if (remaining <= 0) {
-      // Wakes up — can act this turn
-      return { canAct: true, nextStatus: { condition: null } };
+      // Wakes up this turn — can act immediately (HG/SS: no lost turn on wake)
+      return { canAct: true, nextStatus: { condition: null }, wokeUp: true };
     }
     return { canAct: false, nextStatus: { ...status, sleepTurns: remaining } };
   }
@@ -319,6 +319,7 @@ export type MoveResult = {
   statBoost?: StatBoost;
   appliedStatus?: MajorStatus;  // status actually applied this turn (after chance roll)
   priority?: number;
+  cureDefenderStatus?: boolean; // true when fire move thaws a frozen defender
 };
 
 // ── HeartGold damage formula ─────────────────────────────────────────────────
@@ -378,10 +379,8 @@ export function calcDamage(
     return { damage: 0, effectiveness: 1, moveName, isCrit: false, isMiss: true, moveType, recoil: 0, hits: 0, priority: movePriority };
   }
 
-  // Frozen defender thaws on fire move
-  if (defenderStatus?.condition === 'frz' && moveType === 'fire') {
-    // Thaw is handled by BattleScreen — just note it in the result
-  }
+  // Frozen defender thaws instantly on fire move (still takes full damage)
+  const cureDefenderStatus = defenderStatus?.condition === 'frz' && moveType === 'fire';
 
   // Stat selection
   const atkStg = moveCategory === 'physical' ? (attackerStages?.attack ?? 0) : (attackerStages?.spAttack ?? 0);
@@ -445,6 +444,7 @@ export function calcDamage(
     statBoost: move.statBoost,
     appliedStatus,
     priority: movePriority,
+    cureDefenderStatus,
   };
 }
 
