@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState } from '../types';
 import { supabase } from '../lib/supabase';
+import { throneRead, throneWrite } from '../lib/supabaseAdmin';
 import { calcMaxHp } from '../data/combatEngine';
 import { GEN1_STATS } from '../data/gen1Stats';
 import { POKEMON_BY_ID } from '../data/gen1';
@@ -28,8 +29,8 @@ const CHAMPION_LEVEL = 80;
 
 /* ─── Helpers ───────────────────────────────────────────────────── */
 async function loadThroneData(): Promise<ThroneData | null> {
-  const { data } = await supabase.from('game_saves').select('state').eq('user_id', '__throne__').single();
-  if (data?.state) return data.state as ThroneData;
+  const state = await throneRead();
+  if (state) return state as ThroneData;
   return null;
 }
 
@@ -236,7 +237,7 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
           records: newRecords,
           coinClaims: throneData.coinClaims ?? {},
         };
-        await supabase.from('game_saves').upsert({ user_id: '__throne__', state: newData, updated_at: now });
+        await throneWrite(newData);
         setThroneData(newData);
         setResultMsg('👑 Tu es le nouveau Champion du Trône !');
       } else {
