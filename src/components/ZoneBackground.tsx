@@ -138,7 +138,7 @@ export function ZoneBackground({ zoneId }: Props) {
 
       {/* ── Vignette breathing (all zones) ── */}
       <div className="absolute inset-0 pointer-events-none" style={{
-        background: 'radial-gradient(ellipse 90% 90% at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%)',
+        background: 'radial-gradient(ellipse 90% 90% at 50% 50%, transparent 30%, rgba(0,0,0,0.75) 100%)',
         animation: 'vignette-breathe 4s ease-in-out infinite',
       }} />
 
@@ -206,16 +206,14 @@ export function ZoneBackground({ zoneId }: Props) {
       ══════════════════════════════════════════════════════ */}
       {zoneId === 'zone2' && (
         <>
-          {/* Light rays from surface */}
+          {/* Light rays from surface — static */}
           {[20, 38, 55, 72].map((x, i) => (
             <div key={`ray2${i}`} className="absolute pointer-events-none" style={{
               left: `${x}%`, top: 0,
               width: `${3 + i % 2}%`, height: '50%',
-              background: 'linear-gradient(to bottom, rgba(120,210,255,0.15) 0%, transparent 100%)',
+              background: 'linear-gradient(to bottom, rgba(120,210,255,0.12) 0%, transparent 100%)',
               transform: `rotate(${(i - 1.5) * 3}deg)`,
               transformOrigin: 'top center',
-              animation: `sway ${4 + i * 0.9}s ease-in-out infinite`,
-              animationDelay: `${i * 0.7}s`,
             }} />
           ))}
           {/* Bubble stream 1 — mobile: 30% left */}
@@ -281,38 +279,34 @@ export function ZoneBackground({ zoneId }: Props) {
       ══════════════════════════════════════════════════════ */}
       {zoneId === 'zone3' && (
         <>
-          {/* Electric arcs — mobile positions */}
+          {/* Electric arcs — mobile (⚡ flickers on wires) */}
           {[
-            { left: '32%', top: '17%' },
-            { left: '48%', top: '14%' },
-            { left: '62%', top: '18%' },
+            { left: '30%', top: '22%', delay: 0 },
+            { left: '50%', top: '18%', delay: 0.4 },
+            { left: '65%', top: '23%', delay: 0.8 },
           ].map((pos, i) => (
             <div key={`arc3m${i}`} className="absolute pointer-events-none md:hidden" style={{
               left: pos.left, top: pos.top,
-              width: 18, height: 10,
-              background: 'linear-gradient(90deg, transparent, rgba(250,220,30,0.9), transparent)',
-              borderRadius: 4,
-              boxShadow: '0 0 6px 2px rgba(250,220,30,0.6)',
-              animation: `arc-flicker ${1.2 + i * 0.4}s ease-in-out infinite`,
-              animationDelay: `${i * 0.35}s`,
-            }} />
+              fontSize: 14, lineHeight: 1,
+              textShadow: '0 0 8px #ffe000, 0 0 16px #ffe000',
+              animation: `arc-flicker ${0.8 + i * 0.3}s step-end infinite`,
+              animationDelay: `${pos.delay}s`,
+            }}>⚡</div>
           ))}
-          {/* Electric arcs — PC positions */}
+          {/* Electric arcs — PC */}
           {[
-            { left: '22%', top: '12%' },
-            { left: '38%', top: '10%' },
-            { left: '52%', top: '11%' },
-            { left: '66%', top: '13%' },
+            { left: '20%', top: '16%', delay: 0 },
+            { left: '36%', top: '13%', delay: 0.3 },
+            { left: '54%', top: '14%', delay: 0.6 },
+            { left: '70%', top: '17%', delay: 0.9 },
           ].map((pos, i) => (
             <div key={`arc3p${i}`} className="absolute pointer-events-none hidden md:block" style={{
               left: pos.left, top: pos.top,
-              width: 22, height: 10,
-              background: 'linear-gradient(90deg, transparent, rgba(250,220,30,0.9), transparent)',
-              borderRadius: 4,
-              boxShadow: '0 0 8px 3px rgba(250,220,30,0.5)',
-              animation: `arc-flicker ${1.1 + i * 0.3}s ease-in-out infinite`,
-              animationDelay: `${i * 0.28}s`,
-            }} />
+              fontSize: 16, lineHeight: 1,
+              textShadow: '0 0 10px #ffe000, 0 0 20px #ffe000',
+              animation: `arc-flicker ${0.7 + i * 0.25}s step-end infinite`,
+              animationDelay: `${pos.delay}s`,
+            }}>⚡</div>
           ))}
           {/* Smoke from chimney — mobile (~50%, 43%) */}
           {Array.from({ length: 5 }, (_, i) => (
@@ -415,14 +409,14 @@ export function ZoneBackground({ zoneId }: Props) {
       ══════════════════════════════════════════════════════ */}
       {zoneId === 'zone5' && (
         <>
-          {/* Mobile will-o'-wisps */}
+          {/* Mobile will-o'-wisps — drift slowly across zone */}
           {[
-            { left: '67%', top: '32%', color: '#818cf8', size: 10, dur: 2.1, delay: 0 },
-            { left: '77%', top: '38%', color: '#a78bfa', size: 8, dur: 2.8, delay: 0.5 },
-            { left: '72%', top: '52%', color: '#7dd3fc', size: 9, dur: 2.4, delay: 1.0 },
-            { left: '52%', top: '68%', color: '#818cf8', size: 7, dur: 3.0, delay: 0.3 },
-            { left: '20%', top: '65%', color: '#a78bfa', size: 8, dur: 2.6, delay: 0.8 },
-            { left: '15%', top: '73%', color: '#7dd3fc', size: 7, dur: 2.2, delay: 1.4 },
+            { left: '67%', top: '32%', color: '#818cf8', size: 10, dur: 2.1, driftDur: 12, driftDelay: 0 },
+            { left: '77%', top: '38%', color: '#a78bfa', size: 8, dur: 2.8, driftDur: 16, driftDelay: -4 },
+            { left: '72%', top: '52%', color: '#7dd3fc', size: 9, dur: 2.4, driftDur: 14, driftDelay: -2 },
+            { left: '52%', top: '68%', color: '#818cf8', size: 7, dur: 3.0, driftDur: 18, driftDelay: -6 },
+            { left: '20%', top: '65%', color: '#a78bfa', size: 8, dur: 2.6, driftDur: 15, driftDelay: -8 },
+            { left: '15%', top: '73%', color: '#7dd3fc', size: 7, dur: 2.2, driftDur: 13, driftDelay: -3 },
           ].map((w, i) => (
             <div key={`w5m${i}`} className="absolute pointer-events-none md:hidden" style={{
               left: w.left, top: w.top,
@@ -430,20 +424,20 @@ export function ZoneBackground({ zoneId }: Props) {
               background: `radial-gradient(ellipse at 50% 30%, ${w.color} 0%, ${w.color}88 50%, transparent 100%)`,
               borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
               boxShadow: `0 0 8px 3px ${w.color}66`,
-              animation: `wisp-rise ${w.dur}s ease-in-out infinite`,
-              animationDelay: `${w.delay}s`,
+              animation: `wisp-rise ${w.dur}s ease-in-out infinite, wisp-drift ${w.driftDur}s ease-in-out infinite`,
+              animationDelay: `0s, ${w.driftDelay}s`,
             }} />
           ))}
-          {/* PC will-o'-wisps */}
+          {/* PC will-o'-wisps — drift slowly */}
           {[
-            { left: '12%', top: '58%', color: '#818cf8', size: 10, dur: 2.5, delay: 0 },
-            { left: '8%', top: '42%', color: '#a78bfa', size: 8, dur: 3.0, delay: 0.6 },
-            { left: '23%', top: '52%', color: '#7dd3fc', size: 9, dur: 2.2, delay: 1.1 },
-            { left: '38%', top: '65%', color: '#818cf8', size: 8, dur: 2.8, delay: 0.3 },
-            { left: '52%', top: '58%', color: '#a78bfa', size: 10, dur: 2.4, delay: 0.9 },
-            { left: '62%', top: '44%', color: '#7dd3fc', size: 8, dur: 3.2, delay: 1.5 },
-            { left: '74%', top: '36%', color: '#818cf8', size: 9, dur: 2.0, delay: 0.4 },
-            { left: '84%', top: '50%', color: '#a78bfa', size: 7, dur: 2.7, delay: 1.2 },
+            { left: '12%', top: '58%', color: '#818cf8', size: 10, dur: 2.5, driftDur: 14, driftDelay: 0 },
+            { left: '8%', top: '42%', color: '#a78bfa', size: 8, dur: 3.0, driftDur: 18, driftDelay: -5 },
+            { left: '23%', top: '52%', color: '#7dd3fc', size: 9, dur: 2.2, driftDur: 16, driftDelay: -2 },
+            { left: '38%', top: '65%', color: '#818cf8', size: 8, dur: 2.8, driftDur: 20, driftDelay: -8 },
+            { left: '52%', top: '58%', color: '#a78bfa', size: 10, dur: 2.4, driftDur: 15, driftDelay: -3 },
+            { left: '62%', top: '44%', color: '#7dd3fc', size: 8, dur: 3.2, driftDur: 17, driftDelay: -6 },
+            { left: '74%', top: '36%', color: '#818cf8', size: 9, dur: 2.0, driftDur: 13, driftDelay: -1 },
+            { left: '84%', top: '50%', color: '#a78bfa', size: 7, dur: 2.7, driftDur: 19, driftDelay: -7 },
           ].map((w, i) => (
             <div key={`w5p${i}`} className="absolute pointer-events-none hidden md:block" style={{
               left: w.left, top: w.top,
@@ -451,8 +445,8 @@ export function ZoneBackground({ zoneId }: Props) {
               background: `radial-gradient(ellipse at 50% 30%, ${w.color} 0%, ${w.color}88 50%, transparent 100%)`,
               borderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
               boxShadow: `0 0 8px 3px ${w.color}66`,
-              animation: `wisp-rise ${w.dur}s ease-in-out infinite`,
-              animationDelay: `${w.delay}s`,
+              animation: `wisp-rise ${w.dur}s ease-in-out infinite, wisp-drift ${w.driftDur}s ease-in-out infinite`,
+              animationDelay: `0s, ${w.driftDelay}s`,
             }} />
           ))}
         </>
@@ -466,10 +460,10 @@ export function ZoneBackground({ zoneId }: Props) {
       ══════════════════════════════════════════════════════ */}
       {zoneId === 'zone6' && (
         <>
-          {/* Neon strips — mobile */}
+          {/* Neon strips — mobile: top-left strip more left, bottom-right strip more left+down */}
           {[
-            { left: '6%', top: '13%', w: 3, h: 30 },
-            { left: '88%', top: '13%', w: 3, h: 30 },
+            { left: '1%', top: '13%', w: 3, h: 30 },
+            { left: '80%', top: '22%', w: 3, h: 30 },
           ].map((n, i) => (
             <div key={`neon6m${i}`} className="absolute pointer-events-none md:hidden" style={{
               left: n.left, top: n.top, width: n.w, height: n.h,
@@ -494,10 +488,10 @@ export function ZoneBackground({ zoneId }: Props) {
               animationDelay: `${i * 1.2}s`,
             }} />
           ))}
-          {/* Screen glow flicker — mobile */}
+          {/* Screen glow flicker — mobile: blue screen raised, purple more top-left */}
           {[
-            { left: '8%', top: '42%', w: 28, h: 18, color: 'rgba(80,180,255,0.25)' },
-            { left: '73%', top: '42%', w: 28, h: 18, color: 'rgba(160,80,255,0.25)' },
+            { left: '8%', top: '30%', w: 28, h: 18, color: 'rgba(80,180,255,0.25)' },
+            { left: '62%', top: '34%', w: 28, h: 18, color: 'rgba(160,80,255,0.25)' },
           ].map((s, i) => (
             <div key={`scr6m${i}`} className="absolute pointer-events-none rounded md:hidden" style={{
               left: s.left, top: s.top, width: s.w, height: s.h,
@@ -532,8 +526,8 @@ export function ZoneBackground({ zoneId }: Props) {
           {/* Embers rising — mobile crater */}
           {Array.from({ length: 8 }, (_, i) => (
             <div key={`em7m${i}`} className="absolute pointer-events-none rounded-full md:hidden" style={{
-              left: `${48 + (i % 5) - 2}%`,
-              top: '27%',
+              left: `${44 + (i % 5) - 2}%`,
+              top: '23%',
               width: 3 + (i % 2), height: 3 + (i % 2),
               background: i % 3 === 0 ? '#ff4500' : i % 3 === 1 ? '#ff8c00' : '#ffd700',
               boxShadow: `0 0 4px 1px ${i % 3 === 0 ? '#ff4500' : '#ff8c00'}`,
@@ -546,8 +540,8 @@ export function ZoneBackground({ zoneId }: Props) {
           {/* Embers rising — PC main crater */}
           {Array.from({ length: 8 }, (_, i) => (
             <div key={`em7pm${i}`} className="absolute pointer-events-none rounded-full hidden md:block" style={{
-              left: `${68 + (i % 5) - 2}%`,
-              top: '22%',
+              left: `${64 + (i % 5) - 2}%`,
+              top: '18%',
               width: 3 + (i % 2), height: 3 + (i % 2),
               background: i % 3 === 0 ? '#ff4500' : i % 3 === 1 ? '#ff8c00' : '#ffd700',
               boxShadow: `0 0 4px 1px ${i % 3 === 0 ? '#ff4500' : '#ff8c00'}`,
@@ -598,8 +592,8 @@ export function ZoneBackground({ zoneId }: Props) {
           {/* Smoke from main crater — mobile */}
           {Array.from({ length: 5 }, (_, i) => (
             <div key={`sm7m${i}`} className="absolute pointer-events-none rounded-full md:hidden" style={{
-              left: `${47 + (i % 3) - 1}%`,
-              top: '23%',
+              left: `${43 + (i % 3) - 1}%`,
+              top: '19%',
               width: 14 + i * 4, height: 14 + i * 4,
               background: 'rgba(80,70,60,0.2)',
               '--sx': `${(i % 2 === 0 ? 1 : -1) * (8 + i * 4)}px`,
@@ -610,8 +604,8 @@ export function ZoneBackground({ zoneId }: Props) {
           {/* Smoke — PC main crater */}
           {Array.from({ length: 5 }, (_, i) => (
             <div key={`sm7pm${i}`} className="absolute pointer-events-none rounded-full hidden md:block" style={{
-              left: `${67 + (i % 3) - 1}%`,
-              top: '18%',
+              left: `${63 + (i % 3) - 1}%`,
+              top: '14%',
               width: 16 + i * 5, height: 16 + i * 5,
               background: 'rgba(80,70,60,0.18)',
               '--sx': `${(i % 2 === 0 ? 1 : -1) * (8 + i * 4)}px`,

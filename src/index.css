@@ -1052,8 +1052,17 @@ button:active{transform:scale(.93);transition:transform .08s ease}
 
 /* Vignette breathing */
 @keyframes vignette-breathe {
-  0%, 100% { opacity: 0.45; }
-  50% { opacity: 0.7; }
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+}
+
+/* Will-o'-wisp slow horizontal drift */
+@keyframes wisp-drift {
+  0% { transform: translateX(0) translateY(0); }
+  25% { transform: translateX(20px) translateY(-8px); }
+  50% { transform: translateX(35px) translateY(0px); }
+  75% { transform: translateX(15px) translateY(10px); }
+  100% { transform: translateX(0) translateY(0); }
 }
 
 /* Ember/ash rising (zone7) */
