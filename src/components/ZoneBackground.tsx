@@ -148,8 +148,11 @@ const ZONE_CONFIGS: Record<string, {
   },
 };
 
+const ZONES_WITH_WALLPAPER = new Set(['zone1','zone2','zone3','zone4','zone5','zone6','zone7','zone8']);
+
 export function ZoneBackground({ zoneId }: Props) {
   const cfg = ZONE_CONFIGS[zoneId] ?? ZONE_CONFIGS['zone1'];
+  const hasWallpaper = ZONES_WITH_WALLPAPER.has(zoneId);
 
   const starsEls = useMemo(() => STARS.map((star, i) => (
     <div
@@ -168,10 +171,23 @@ export function ZoneBackground({ zoneId }: Props) {
   )), []);
 
   return (
-    <div className="absolute inset-0 overflow-hidden" style={{ background: cfg.sky }}>
+    <div className="absolute inset-0 overflow-hidden" style={{ background: hasWallpaper ? '#000' : cfg.sky }}>
+
+      {/* Background wallpaper image (zone1-zone8) */}
+      {hasWallpaper && (
+        <picture style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+          <source media="(min-width: 768px)" srcSet={`/wlppzones/${zoneId}pc.jpg`} />
+          <img
+            src={`/wlppzones/${zoneId}.jpg`}
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }}
+          />
+        </picture>
+      )}
+
 
       {/* ══ ZONE 1 — Forêt de Pallet : calm daytime ══ */}
-      {zoneId === 'zone1' && (
+      {!hasWallpaper && zoneId === 'zone1' && (
         <>
           {/* Sun — soft, top right */}
           <div className="absolute pointer-events-none" style={{
@@ -239,7 +255,7 @@ export function ZoneBackground({ zoneId }: Props) {
       ))}
 
       {/* ZONE 4 — Bois aux Fleurs : flowering forest */}
-      {zoneId === 'zone4' && (
+      {!hasWallpaper && zoneId === 'zone4' && (
         <>
           <svg className="absolute inset-0 w-full h-full pointer-events-none"
             viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -311,7 +327,7 @@ export function ZoneBackground({ zoneId }: Props) {
       ))}
 
       {/* ZONE 2 — Bords de Mer : underwater ocean */}
-      {zoneId === 'zone2' && (
+      {!hasWallpaper && zoneId === 'zone2' && (
         <>
           {/* Light rays from above */}
           {[15, 32, 50, 68, 85].map((x, i) => (
@@ -410,7 +426,7 @@ export function ZoneBackground({ zoneId }: Props) {
       ))}
 
       {/* ZONE 3 — Centrale Électrique : pylônes HTB, tours de refroidissement, usine */}
-      {zoneId === 'zone3' && (
+      {!hasWallpaper && zoneId === 'zone3' && (
         <>
           {/* Pollution haze overlay */}
           <div className="absolute inset-0 pointer-events-none" style={{
@@ -564,7 +580,7 @@ export function ZoneBackground({ zoneId }: Props) {
       )}
 
       {/* ZONE 5 — Tour Fantôme : single haunted Gothic tower */}
-      {zoneId === 'zone5' && (
+      {!hasWallpaper && zoneId === 'zone5' && (
         <>
           {/* Moon */}
           <div className="absolute pointer-events-none" style={{
@@ -664,7 +680,7 @@ export function ZoneBackground({ zoneId }: Props) {
       )}
 
       {/* INDOOR — zone6 Sylphe SARL psychic corporate lab */}
-      {zoneId === 'zone6' && (
+      {!hasWallpaper && zoneId === 'zone6' && (
         <>
           <svg className="absolute inset-0 w-full h-full pointer-events-none"
             viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -800,7 +816,7 @@ export function ZoneBackground({ zoneId }: Props) {
       ))}
 
       {/* ZONE 7 — Île Cramoisie : volcanic island with lava */}
-      {zoneId === 'zone7' && (
+      {!hasWallpaper && zoneId === 'zone7' && (
         <>
           {/* Distant ash cloud / smoke plume */}
           <div className="absolute pointer-events-none" style={{
@@ -910,7 +926,7 @@ export function ZoneBackground({ zoneId }: Props) {
       )}
 
       {/* ZONE 8 — Route Victoire : mountain path */}
-      {zoneId === 'zone8' && (
+      {!hasWallpaper && zoneId === 'zone8' && (
         <>
           {starsEls}
           <svg className="absolute inset-0 w-full h-full pointer-events-none"
