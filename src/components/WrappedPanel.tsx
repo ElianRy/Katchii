@@ -233,7 +233,7 @@ export function WrappedPanel({ state, onClose }: Props) {
         <button
           onClick={e => { e.stopPropagation(); onClose(); }}
           className="bg-white/20 hover:bg-white/30 rounded-full w-9 h-9 flex items-center justify-center font-bold text-white text-xl"
-        >←</button>
+        >✕</button>
       </div>
 
       {/* Back arrow (when not on first slide) */}

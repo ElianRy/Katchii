@@ -7,23 +7,24 @@ export const adminClient = serviceRoleKey
   ? createClient(url, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } })
   : null;
 
-// Throne operations bypass RLS via service role
+// Throne operations — use service role to bypass RLS, fall back to anon client
 export async function throneRead() {
-  const client = adminClient;
-  if (!client) return null;
+  const { supabase: fallback } = await import('./supabase');
+  const client = adminClient ?? fallback;
   const { data } = await client.from('game_saves').select('state').eq('user_id', '__throne__').single();
   return data?.state ?? null;
 }
 
 export async function throneWrite(state: unknown) {
-  const client = adminClient;
-  if (!client) return;
+  const { supabase: fallback } = await import('./supabase');
+  const client = adminClient ?? fallback;
   await client.from('game_saves').upsert({ user_id: '__throne__', state, updated_at: new Date().toISOString() });
 }
 
-export async function throneReadAllPlayers() {
-  const client = adminClient;
-  if (!client) return [];
+export async function throneReadAllPlayers(): Promise<string[]> {
+  // Use admin client if available, otherwise fall back to regular client (RLS allows reads for auth'd users)
+  const { supabase: fallback } = await import('./supabase');
+  const client = adminClient ?? fallback;
   const { data } = await client.from('game_saves').select('state').neq('user_id', '__throne__');
   if (!data) return [];
   return data
