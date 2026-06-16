@@ -282,24 +282,24 @@ export function ZoneBackground({ zoneId }: Props) {
           {/* Lueur de machine en bas à gauche — mobile */}
           <div className="absolute pointer-events-none md:hidden" style={{
             left: '2%', bottom: '12%', width: 70, height: 50,
-            background: 'radial-gradient(ellipse, rgba(80,200,255,0.18) 0%, rgba(80,200,255,0.06) 55%, transparent 100%)',
+            background: 'radial-gradient(ellipse, rgba(80,200,255,0.45) 0%, rgba(80,200,255,0.15) 55%, transparent 100%)',
             animation: 'lava-glow-pulse 3s ease-in-out infinite',
           }} />
           <div className="absolute pointer-events-none md:hidden" style={{
             left: '2%', bottom: '8%', width: 50, height: 30,
-            background: 'radial-gradient(ellipse, rgba(255,160,40,0.15) 0%, transparent 100%)',
+            background: 'radial-gradient(ellipse, rgba(255,160,40,0.4) 0%, transparent 100%)',
             animation: 'lava-glow-pulse 2.2s ease-in-out infinite',
             animationDelay: '1s',
           }} />
           {/* Lueur de machine en bas à gauche — PC */}
           <div className="absolute pointer-events-none hidden md:block" style={{
             left: '2%', bottom: '14%', width: 100, height: 65,
-            background: 'radial-gradient(ellipse, rgba(80,200,255,0.16) 0%, rgba(80,200,255,0.05) 55%, transparent 100%)',
+            background: 'radial-gradient(ellipse, rgba(80,200,255,0.4) 0%, rgba(80,200,255,0.12) 55%, transparent 100%)',
             animation: 'lava-glow-pulse 3.5s ease-in-out infinite',
           }} />
           <div className="absolute pointer-events-none hidden md:block" style={{
             left: '3%', bottom: '9%', width: 70, height: 40,
-            background: 'radial-gradient(ellipse, rgba(255,160,40,0.12) 0%, transparent 100%)',
+            background: 'radial-gradient(ellipse, rgba(255,160,40,0.35) 0%, transparent 100%)',
             animation: 'lava-glow-pulse 2.5s ease-in-out infinite',
             animationDelay: '1.2s',
           }} />
@@ -483,11 +483,10 @@ export function ZoneBackground({ zoneId }: Props) {
               animationDelay: `${i * 1.2}s`,
             }} />
           ))}
-          {/* Screen glow — mobile: bureaux haut-gauche, haut-droite, bas-gauche */}
+          {/* Screen glow — mobile: bureaux haut-gauche et haut-droite */}
           {[
             { left: '10%', top: '36%', w: 26, h: 16, color: 'rgba(80,180,255,0.3)' },
             { left: '64%', top: '36%', w: 24, h: 15, color: 'rgba(160,80,255,0.3)' },
-            { left: '10%', top: '74%', w: 22, h: 14, color: 'rgba(80,180,255,0.25)' },
           ].map((s, i) => (
             <div key={`scr6m${i}`} className="absolute pointer-events-none rounded md:hidden" style={{
               left: s.left, top: s.top, width: s.w, height: s.h,
@@ -500,7 +499,6 @@ export function ZoneBackground({ zoneId }: Props) {
           {[
             { left: '8%', top: '38%', w: 34, h: 20, color: 'rgba(80,180,255,0.22)' },
             { left: '68%', top: '36%', w: 30, h: 18, color: 'rgba(160,80,255,0.22)' },
-            { left: '10%', top: '72%', w: 28, h: 16, color: 'rgba(80,180,255,0.2)' },
           ].map((s, i) => (
             <div key={`scr6p${i}`} className="absolute pointer-events-none rounded hidden md:block" style={{
               left: s.left, top: s.top, width: s.w, height: s.h,

@@ -267,15 +267,14 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
           }}
           title={pokemonData.name}
         >
-          {/* Movement wrapper */}
+          {/* Movement wrapper — sprite only, name badge stays outside */}
           <div
             style={{
               animation: moveAnim.animation,
               animationDelay: moveDelay,
               display: 'flex',
-              flexDirection: 'column',
               alignItems: 'center',
-              gap: 0,
+              justifyContent: 'center',
             }}
           >
 
@@ -375,7 +374,9 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               ))}
             </div>
 
-            {/* Name badge */}
+          </div>
+
+            {/* Name badge — outside movement wrapper, stays aligned */}
             <div
               className="font-bold rounded"
               style={{
@@ -385,7 +386,7 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
                 padding: '2px 6px',
                 lineHeight: 1.3,
                 whiteSpace: 'nowrap',
-                margin: 0,
+                marginTop: 2,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 3,
@@ -402,7 +403,6 @@ export function SpawnedPokemonCard({ spawned, pokemonData, onCapture, disabled, 
               )}
               {pokemonData.name}
             </div>
-          </div>
         </div>
       ) : null}
     </div>
