@@ -7,12 +7,15 @@ import { ZONES } from '../data/zones';
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
 import { xpToNextLevel, getPokemonProfile } from '../data/combatEngine';
 import { GEN1_STATS } from '../data/gen1Stats';
+import { MOVES } from '../data/gen1Moves';
+import { GEN1_MOVEPOOL } from '../data/gen1Movepools';
 
 
 interface Props {
   state: GameState;
   onClose: () => void;
   onMarkTutorialDone?: () => void;
+  onSaveCustomMoves?: (pokemonId: number, slugs: string[]) => void;
 }
 
 type FilterTab = 'tous' | 'captures' | 'shinies' | Rarity;
@@ -29,7 +32,7 @@ const ARENA_BADGES = ZONES.filter(z => z.boss?.badge).map(z => ({
 
 const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
 
-export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
+export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMoves }: Props) {
   const [showTutorial, setShowTutorial] = useState(() =>
     !state.completedTutorials?.includes('collection') && !isTutorialDone('collection')
   );
@@ -42,7 +45,10 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
     try { localStorage.setItem('katchii_pokedex_filter', f); } catch {}
   };
   const [filterOpen, setFilterOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId_] = useState<number | null>(null);
+  const [editingMoves, setEditingMoves] = useState(false);
+  const [pendingMoves, setPendingMoves] = useState<string[]>([]);
+  const setSelectedId = (id: number | null) => { setSelectedId_(id); setEditingMoves(false); };
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState<'id' | 'rarity_desc' | 'level_desc'>(() => {
     try { return (localStorage.getItem('katchii_pokedex_sort') as 'id' | 'rarity_desc' | 'level_desc') ?? 'id'; } catch { return 'id'; }
@@ -398,6 +404,92 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
                       <span className="text-white font-bold">{stats.moves[0].name}</span>
                       <span className="text-slate-500">({stats.moves[0].power} pts · {stats.moves[0].category === 'physical' ? 'Physique' : 'Spéciale'})</span>
                     </div>
+                  </div>
+                );
+              })()}
+              {/* Movepool editor */}
+              {(() => {
+                const pool = GEN1_MOVEPOOL[selectedId] ?? [];
+                if (pool.length === 0) return null;
+                const currentSlugs: string[] = state.pokemonCustomMoves?.[selectedId] ?? pool.slice(0, 4);
+                const activeSlugs = editingMoves ? pendingMoves : currentSlugs;
+                return (
+                  <div className="w-full bg-slate-800 rounded-2xl px-4 py-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-slate-400 text-xs font-bold">Attaques actives</span>
+                      {onSaveCustomMoves && !editingMoves && (
+                        <button
+                          className="text-xs font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: '#3b82f633', color: '#60a5fa', border: '1px solid #3b82f655' }}
+                          onClick={() => { setPendingMoves([...currentSlugs]); setEditingMoves(true); }}
+                        >Modifier</button>
+                      )}
+                      {editingMoves && (
+                        <div className="flex gap-1.5">
+                          <button
+                            className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ background: '#ef444433', color: '#f87171', border: '1px solid #ef444455' }}
+                            onClick={() => setEditingMoves(false)}
+                          >Annuler</button>
+                          <button
+                            className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ background: '#22c55e33', color: '#4ade80', border: '1px solid #22c55e55', opacity: pendingMoves.length === 4 ? 1 : 0.4 }}
+                            onClick={() => { if (pendingMoves.length === 4) { onSaveCustomMoves?.(selectedId, pendingMoves); setEditingMoves(false); } }}
+                          >Sauvegarder</button>
+                        </div>
+                      )}
+                    </div>
+                    {!editingMoves ? (
+                      <div className="flex flex-col gap-1">
+                        {activeSlugs.map(slug => {
+                          const m = MOVES[slug];
+                          if (!m) return null;
+                          return (
+                            <div key={slug} className="flex items-center gap-2">
+                              <span className="text-white/60 text-xs rounded px-1" style={{ background: '#ffffff11', fontSize: '0.42rem', fontWeight: 700 }}>{m.type.toUpperCase()}</span>
+                              <span className="text-white text-xs font-bold flex-1">{m.name}</span>
+                              {m.power > 0 && <span className="text-slate-400 text-xs">{m.power}</span>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="text-slate-500 text-xs mb-2">Sélectionnez exactement 4 attaques ({pendingMoves.length}/4)</div>
+                        <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
+                          {pool.map(slug => {
+                            const m = MOVES[slug];
+                            if (!m) return null;
+                            const isSelected = pendingMoves.includes(slug);
+                            return (
+                              <button
+                                key={slug}
+                                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left"
+                                style={{
+                                  background: isSelected ? '#3b82f622' : '#ffffff08',
+                                  border: `1px solid ${isSelected ? '#3b82f6' : '#ffffff11'}`,
+                                }}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setPendingMoves(prev => prev.filter(s => s !== slug));
+                                  } else if (pendingMoves.length < 4) {
+                                    setPendingMoves(prev => [...prev, slug]);
+                                  }
+                                }}
+                              >
+                                <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-xs ${isSelected ? 'bg-blue-500 border-blue-400' : 'border-slate-600'}`}>
+                                  {isSelected ? '✓' : ''}
+                                </span>
+                                <span className="text-white/50 text-xs rounded px-1" style={{ fontSize: '0.4rem', fontWeight: 700 }}>{m.type.toUpperCase()}</span>
+                                <span className="text-white text-xs font-bold flex-1">{m.name}</span>
+                                {m.power > 0 && <span className="text-slate-400 text-xs">{m.power}</span>}
+                                <span className="text-slate-500 text-xs">{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })()}

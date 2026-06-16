@@ -10,8 +10,15 @@ function spriteFilter(pokemonId: number, _isShiny: boolean, _size = 4): string {
   return `drop-shadow(0 0 4px ${RARITY_COLORS[rarity]})`;
 }
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
-import { calcDamage, calcStruggle, calcXpGain, calcSpeed, chooseEnemyMoveIndex, emptyStages, getMoveListRaw } from '../data/combatEngine';
-import type { Stages } from '../data/combatEngine';
+import {
+  calcDamage, calcStruggle, calcXpGain, chooseEnemyMoveIndex,
+  emptyStages, getMoveListRaw, emptyStatus, checkCanAct, applyMajorStatus,
+  calcEndOfTurnDamage, statusLabel, playerGoesFirst as calcTurnOrder,
+  registerMoves,
+} from '../data/combatEngine';
+import type { Stages, StatusState } from '../data/combatEngine';
+import { MOVES } from '../data/gen1Moves';
+registerMoves(MOVES as Parameters<typeof registerMoves>[0]);
 import type { } from '../data/gen1Stats';
 import { TeamMember } from './TeamBuilder';
 import type { PokemonInstanceData } from '../types';
@@ -45,12 +52,14 @@ interface Props {
   sideOverlay?: React.ReactNode;
   pokemonData?: Record<number, PokemonInstanceData>;
   pokemonMoves?: Record<number, number[]>;
+  pokemonCustomMoves?: Record<number, string[]>;
 }
 
 interface FighterState extends TeamMember {
   currentHp: number;
   currentPP: number[];
   stages: Stages;
+  statusState: StatusState;
 }
 
 interface LogEntry { text: string; color: string; }
@@ -278,8 +287,8 @@ function TypeVfx({ type, direction, uid: _uid }: { type: PokemonType; direction:
 }
 
 // Helper to get PP array for a pokemon (4 moves), respecting custom move selection
-function initPP(pokemonId: number, customIndices?: number[]): number[] {
-  const rawMoves = getMoveListRaw(pokemonId, customIndices);
+function initPP(pokemonId: number, customIndices?: number[], customSlugs?: string[]): number[] {
+  const rawMoves = getMoveListRaw(pokemonId, customIndices, customSlugs);
   if (rawMoves.length > 0) return rawMoves.map(m => m.pp ?? 15);
   return [15, 15, 15, 15];
 }
@@ -287,8 +296,8 @@ function initPP(pokemonId: number, customIndices?: number[]): number[] {
 type DisplayMove = { name: string; type: string; power: number; pp: number; category: string; description?: string; multiHit?: boolean; highCrit?: boolean; accuracy?: number };
 
 // Helper to get move list for display, respecting custom move selection
-function getMoveList(pokemonId: number, customIndices?: number[]): DisplayMove[] {
-  return getMoveListRaw(pokemonId, customIndices) as DisplayMove[];
+function getMoveList(pokemonId: number, customIndices?: number[], customSlugs?: string[]): DisplayMove[] {
+  return getMoveListRaw(pokemonId, customIndices, customSlugs) as DisplayMove[];
 }
 
 // ── Main component ───────────────────────────────────────────────────────────
@@ -297,14 +306,16 @@ export function BattleScreen({
   playerDamageMult = 1, isLeague = false,
   suppressVictorySound = false, keepMusic = false, keepMusicOnUnmount = false,
   onQuit, trainerImage, trainerColor, sideOverlay, pokemonData, pokemonMoves,
+  pokemonCustomMoves,
 }: Props) {
 
   const initFighters = (team: TeamMember[], useCurrentHp: boolean): FighterState[] =>
     team.map(m => ({
       ...m,
       currentHp: useCurrentHp && m.currentHp > 0 ? m.currentHp : m.maxHp,
-      currentPP: initPP(m.pokemonId, pokemonMoves?.[m.pokemonId]),
+      currentPP: initPP(m.pokemonId, pokemonMoves?.[m.pokemonId], pokemonCustomMoves?.[m.pokemonId]),
       stages: emptyStages(),
+      statusState: emptyStatus(),
     }));
 
   const [playerFighters, setPlayerFighters] = useState<FighterState[]>(() => initFighters(playerTeam, true));
@@ -445,20 +456,33 @@ export function BattleScreen({
         const pName = POKEMON_BY_ID[pFighter.pokemonId]?.name ?? '???';
         const eName = POKEMON_BY_ID[eFighter.pokemonId]?.name ?? '???';
 
-        // Speed check — faster pokemon goes first
-        const pSpeed = calcSpeed(pFighter.pokemonId, pFighter.level, pInst);
-        const eSpeed = calcSpeed(eFighter.pokemonId, eFighter.level, eInst);
-        const playerGoesFirst = pSpeed >= eSpeed;
+        // Status: check if each fighter can act
+        const pCanActResult = checkCanAct(pFighter.statusState);
+        const eCanActResult = checkCanAct(eFighter.statusState);
 
         // Smart enemy AI — considers type effectiveness and stat boost priority
         const ePlayerTypes = (POKEMON_TYPE[pFighter.pokemonId] ?? ['normal']) as PokemonType[];
+        const pCustomSlugs = pokemonCustomMoves?.[pFighter.pokemonId];
+        const pRawMoves = getMoveListRaw(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId], pCustomSlugs);
         const eMoveIndex = chooseEnemyMoveIndex(
-          eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current
+          eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
+          pFighter.statusState, eFighter.statusState
         );
         turnNumberRef.current++;
 
+        // Turn order: priority, speed (with PAR), 50/50 tie
+        const goesFirst = calcTurnOrder(
+          playerMoveIndex, eMoveIndex < 0 ? 0 : eMoveIndex,
+          pFighter.pokemonId, eFighter.pokemonId,
+          pFighter.level, eFighter.level,
+          pFighter.stages, eFighter.stages,
+          pFighter.statusState, eFighter.statusState,
+          pInst, eInst,
+          pRawMoves,
+        );
+
         // Check player PP
-        const pHasMoves = getMoveList(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId]).length > 0;
+        const pHasMoves = getMoveList(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId], pCustomSlugs).length > 0;
         const playerUsesStruggle = pHasMoves && pFighter.currentPP[playerMoveIndex] <= 0;
 
         // Deduct PP
@@ -466,26 +490,26 @@ export function BattleScreen({
           if (i !== pIdx) return f;
           const pp = [...f.currentPP];
           if (!playerUsesStruggle && pHasMoves && pp[playerMoveIndex] > 0) pp[playerMoveIndex]--;
-          return { ...f, currentPP: pp };
+          return { ...f, currentPP: pp, statusState: pCanActResult.nextStatus };
         });
         let newEf = ef.map((f, i) => {
-          if (i !== eIdx || eMoveIndex < 0) return f;
+          if (i !== eIdx) return f;
           const pp = [...f.currentPP];
-          if (pp[eMoveIndex] > 0) pp[eMoveIndex]--;
-          return { ...f, currentPP: pp };
+          if (eMoveIndex >= 0 && pp[eMoveIndex] > 0) pp[eMoveIndex]--;
+          return { ...f, currentPP: pp, statusState: eCanActResult.nextStatus };
         });
 
         const boostMult = boostActiveRef.current && pIdx === 0 ? playerDamageMult : 1;
 
-        // Compute both attacks (pass current stat stages)
+        // Compute both attacks (pass current stat stages + statuses)
         const pStages = { ...pFighter.stages, attack: pFighter.stages.attack + (boostMult > 1 ? 1 : 0) };
         const pResult = playerUsesStruggle
           ? calcStruggle(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, pInst, eInst)
-          : calcDamage(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, playerMoveIndex, pInst, eInst, pStages, eFighter.stages, getMoveListRaw(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId]));
+          : calcDamage(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, playerMoveIndex, pInst, eInst, pStages, eFighter.stages, pRawMoves, pFighter.statusState, eFighter.statusState);
 
         const eResult = eMoveIndex < 0
           ? calcStruggle(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eInst, pInst)
-          : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndex, eInst, pInst, eFighter.stages, pFighter.stages);
+          : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndex, eInst, pInst, eFighter.stages, pFighter.stages, undefined, eFighter.statusState, pFighter.statusState);
 
         // Execute attacks in speed order
         // Apply a statBoost to a fighter's stages (clamped −6 to +6)
@@ -531,6 +555,9 @@ export function BattleScreen({
             nextEf = ef_.map((f, i) => i === eIdx ? applyBoost(f, pResult.statBoost!) : f);
           }
           const newEHp = Math.max(0, nextEf[eIdx].currentHp - pResult.damage);
+          // Recoil on player
+          const pRecoilHp = pResult.recoil > 0 ? Math.max(0, _pf[pIdx].currentHp - pResult.recoil) : _pf[pIdx].currentHp;
+          if (pResult.recoil > 0) setPlayerFighters(prev => prev.map((f, i) => i === pIdx ? { ...f, currentHp: pRecoilHp } : f));
           return nextEf.map((f, i) => i === eIdx ? { ...f, currentHp: newEHp } : f);
         };
 
@@ -570,18 +597,19 @@ export function BattleScreen({
         let finalPf = newPPf;
         let finalEf = newEf;
 
-        if (playerGoesFirst) {
-          finalEf = doPlayerAttack(finalPf, finalEf);
-          if (finalEf[eIdx].currentHp > 0) {
-            // Enemy attacks back after brief delay (handled below via setTimeout)
-          }
+        // Log status preventing action
+        if (!pCanActResult.canAct) addLog(`${pName} est immobilisé(e) !`, '#94a3b8');
+        if (!eCanActResult.canAct) addLog(`${eName} est immobilisé(e) !`, '#94a3b8');
+
+        if (goesFirst) {
+          if (pCanActResult.canAct) finalEf = doPlayerAttack(finalPf, finalEf);
         } else {
-          finalPf = doEnemyAttack(finalPf, finalEf);
+          if (eCanActResult.canAct) finalPf = doEnemyAttack(finalPf, finalEf);
         }
 
         // Check outcomes after first attack
-        const afterFirst_eKo = playerGoesFirst && finalEf[eIdx].currentHp <= 0;
-        const afterFirst_pKo = !playerGoesFirst && finalPf[pIdx].currentHp <= 0;
+        const afterFirst_eKo = goesFirst && pCanActResult.canAct && finalEf[eIdx].currentHp <= 0;
+        const afterFirst_pKo = !goesFirst && eCanActResult.canAct && finalPf[pIdx].currentHp <= 0;
 
         const finalizeTurn = (pf2: FighterState[], ef2: FighterState[], delayMs: number) => {
           setTimeout(() => {
@@ -632,10 +660,42 @@ export function BattleScreen({
             // Both alive — do second attack
             let pf3 = pf2;
             let ef3 = ef2;
-            if (playerGoesFirst) {
-              pf3 = doEnemyAttack(pf2, ef2);
+            if (goesFirst) {
+              if (eCanActResult.canAct) pf3 = doEnemyAttack(pf2, ef2);
             } else {
-              ef3 = doPlayerAttack(pf2, ef2);
+              if (pCanActResult.canAct) ef3 = doPlayerAttack(pf2, ef2);
+            }
+
+            // Apply status gained from attacks (from appliedStatus in results)
+            if (pResult.appliedStatus) {
+              const newStatus = applyMajorStatus(ef3[eIdx].statusState, pResult.appliedStatus);
+              if (newStatus) {
+                const lbl = statusLabel(pResult.appliedStatus);
+                addLog(`${eName} est ${lbl?.text ?? pResult.appliedStatus} !`, lbl?.color ?? '#fde68a');
+                ef3 = ef3.map((f, i) => i === eIdx ? { ...f, statusState: newStatus } : f);
+              }
+            }
+            if (eResult.appliedStatus) {
+              const newStatus = applyMajorStatus(pf3[pIdx].statusState, eResult.appliedStatus);
+              if (newStatus) {
+                const lbl = statusLabel(eResult.appliedStatus);
+                addLog(`${pName} est ${lbl?.text ?? eResult.appliedStatus} !`, lbl?.color ?? '#fde68a');
+                pf3 = pf3.map((f, i) => i === pIdx ? { ...f, statusState: newStatus } : f);
+              }
+            }
+
+            // End-of-turn damage (BRN/PSN/TOX)
+            const pEot = calcEndOfTurnDamage(pf3[pIdx].maxHp, pf3[pIdx].statusState);
+            if (pEot.damage > 0) {
+              const newHp = Math.max(0, pf3[pIdx].currentHp - pEot.damage);
+              addDmg(pEot.damage, 'player', 1);
+              pf3 = pf3.map((f, i) => i === pIdx ? { ...f, currentHp: newHp, statusState: pEot.nextStatus } : f);
+            }
+            const eEot = calcEndOfTurnDamage(ef3[eIdx].maxHp, ef3[eIdx].statusState);
+            if (eEot.damage > 0) {
+              const newHp = Math.max(0, ef3[eIdx].currentHp - eEot.damage);
+              addDmg(eEot.damage, 'enemy', 1);
+              ef3 = ef3.map((f, i) => i === eIdx ? { ...f, currentHp: newHp, statusState: eEot.nextStatus } : f);
             }
 
             // Check KOs after second attack
@@ -683,7 +743,7 @@ export function BattleScreen({
           finalizeTurn(finalPf, finalEf, 600);
         } else {
           // Second attack happens after animation delay
-          finalizeTurn(finalPf, finalEf, playerGoesFirst ? 1200 : 600);
+          finalizeTurn(finalPf, finalEf, goesFirst ? 1200 : 600);
         }
 
         return finalEf;
@@ -695,7 +755,7 @@ export function BattleScreen({
 
   const activePF = playerFighters[playerIdx];
   const activeEF = enemyFighters[enemyIdx];
-  const playerMoves = activePF ? getMoveList(activePF.pokemonId, pokemonMoves?.[activePF.pokemonId]) : [];
+  const playerMoves = activePF ? getMoveList(activePF.pokemonId, pokemonMoves?.[activePF.pokemonId], pokemonCustomMoves?.[activePF.pokemonId]) : [];
   const allPPEmpty = activePF ? activePF.currentPP.every(pp => pp <= 0) : false;
 
   // Long press handlers
@@ -705,7 +765,7 @@ export function BattleScreen({
     longPressTimerRef.current = setTimeout(() => {
       longPressFiredRef.current = true;
       setTooltipMoveIdx(idx);
-    }, 700);
+    }, 300);
   };
   const endLongPress = (idx: number) => {
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
@@ -911,7 +971,12 @@ export function BattleScreen({
               <div className="h-2.5 rounded-full transition-all duration-300"
                 style={{ width: `${activeEF ? (activeEF.currentHp / activeEF.maxHp) * 100 : 0}%`, background: hpColor(activeEF ? activeEF.currentHp / activeEF.maxHp : 0) }} />
             </div>
-            <div className="text-right text-xs text-slate-400 mt-0.5">{activeEF?.currentHp}/{activeEF?.maxHp}</div>
+            <div className="flex items-center justify-between mt-0.5">
+              <div className="flex gap-1">
+                {(() => { const sl = statusLabel(activeEF?.statusState?.condition ?? null); return sl ? <span className="font-black rounded px-1" style={{ background: sl.color + '33', color: sl.color, fontSize: '0.45rem', border: `1px solid ${sl.color}` }}>{sl.text}</span> : null; })()}
+              </div>
+              <span className="text-slate-400 text-xs">{activeEF?.currentHp}/{activeEF?.maxHp}</span>
+            </div>
             <div className="flex gap-1 mt-1">
               {(POKEMON_TYPE[activeEF?.pokemonId ?? 0] ?? []).map(t => (
                 <span key={t} className="text-white font-bold rounded px-1" style={{ background: TYPE_COLORS[t as PokemonType] ?? '#888', fontSize: '0.42rem' }}>
@@ -956,7 +1021,12 @@ export function BattleScreen({
               <div className="h-2.5 rounded-full transition-all duration-300"
                 style={{ width: `${activePF ? (activePF.currentHp / activePF.maxHp) * 100 : 0}%`, background: hpColor(activePF ? activePF.currentHp / activePF.maxHp : 0) }} />
             </div>
-            <div className="text-right text-xs text-slate-400 mt-0.5">{activePF?.currentHp}/{activePF?.maxHp}</div>
+            <div className="flex items-center justify-between mt-0.5">
+              <div className="flex gap-1">
+                {(() => { const sl = statusLabel(activePF?.statusState?.condition ?? null); return sl ? <span className="font-black rounded px-1" style={{ background: sl.color + '33', color: sl.color, fontSize: '0.45rem', border: `1px solid ${sl.color}` }}>{sl.text}</span> : null; })()}
+              </div>
+              <span className="text-slate-400 text-xs">{activePF?.currentHp}/{activePF?.maxHp}</span>
+            </div>
             <div className="flex gap-1 mt-1">
               {(POKEMON_TYPE[activePF?.pokemonId ?? 0] ?? []).map(t => (
                 <span key={t} className="text-white font-bold rounded px-1" style={{ background: TYPE_COLORS[t as PokemonType] ?? '#888', fontSize: '0.42rem' }}>

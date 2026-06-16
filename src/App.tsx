@@ -292,6 +292,7 @@ export function App() {
           state={gameState.state}
           onClose={() => persistView('hunt')}
           onMarkTutorialDone={() => gameState.update(s => ({ ...s, completedTutorials: [...(s.completedTutorials ?? []), 'collection'] }))}
+          onSaveCustomMoves={(pokemonId, slugs) => gameState.update(s => ({ ...s, pokemonCustomMoves: { ...(s.pokemonCustomMoves ?? {}), [pokemonId]: slugs } }))}
         />
       )}
 

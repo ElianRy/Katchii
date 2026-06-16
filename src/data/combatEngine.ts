@@ -68,7 +68,6 @@ export function calcMaxHp(pokemonId: number, level: number, inst?: PokemonInstan
   return Math.floor(raw * hpCoeff(base));
 }
 
-// Other stat formula: floor((floor((2*B + IV + floor(EV/4)) * L / 100) + 5) * nature)
 export function calcAttack(pokemonId: number, level: number, inst?: PokemonInstanceData): number {
   const s = GEN1_STATS[pokemonId];
   const base = s?.attack ?? 50;
@@ -114,7 +113,7 @@ export function calcSpeed(pokemonId: number, level: number, inst?: PokemonInstan
   return Math.floor(raw * getNatureMult(inst, 'speed'));
 }
 
-// Combat stage multiplier table (−6 to +6)
+// Combat stage multiplier table (−6 to +6) — Gen 4 values
 const STAGE_MULT: Record<number, number> = {
   [-6]: 2/8, [-5]: 2/7, [-4]: 2/6, [-3]: 2/5, [-2]: 2/4, [-1]: 2/3,
   0: 1, 1: 3/2, 2: 4/2, 3: 5/2, 4: 6/2, 5: 7/2, 6: 8/2,
@@ -141,6 +140,172 @@ export function emptyStages(): Stages {
   return { attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 };
 }
 
+// ── Major Status Conditions (Gen 4) ─────────────────────────────────────────
+
+export type MajorStatus = 'par' | 'brn' | 'psn' | 'tox' | 'slp' | 'frz' | null;
+
+export interface StatusState {
+  condition: MajorStatus;
+  sleepTurns?: number;    // turns remaining asleep (determined at sleep application)
+  toxicCounter?: number;  // N for Toxic (N/16 dmg per turn, resets on switch)
+}
+
+export function emptyStatus(): StatusState {
+  return { condition: null };
+}
+
+/** Apply a new major status. Returns null if already has one (can't stack). */
+export function applyMajorStatus(
+  current: StatusState,
+  newStatus: MajorStatus,
+): StatusState | null {
+  if (current.condition !== null) return null; // already afflicted
+  if (newStatus === null) return null;
+  const next: StatusState = { condition: newStatus };
+  if (newStatus === 'slp') {
+    next.sleepTurns = 1 + Math.floor(Math.random() * 7); // 1-7 turns
+  }
+  if (newStatus === 'tox') {
+    next.toxicCounter = 0; // increments at start of each end-of-turn phase
+  }
+  return next;
+}
+
+/**
+ * Check if a Pokémon can act this turn. Returns true = can act, false = loses turn.
+ * Also returns updated StatusState (sleep counter ticking, etc.)
+ */
+export function checkCanAct(status: StatusState): { canAct: boolean; nextStatus: StatusState } {
+  if (status.condition === null) return { canAct: true, nextStatus: status };
+
+  if (status.condition === 'slp') {
+    const remaining = (status.sleepTurns ?? 1) - 1;
+    if (remaining <= 0) {
+      // Wakes up — can act this turn
+      return { canAct: true, nextStatus: { condition: null } };
+    }
+    return { canAct: false, nextStatus: { ...status, sleepTurns: remaining } };
+  }
+
+  if (status.condition === 'frz') {
+    if (Math.random() < 0.20) {
+      // Defrosts — can act this turn
+      return { canAct: true, nextStatus: { condition: null } };
+    }
+    return { canAct: false, nextStatus: status };
+  }
+
+  if (status.condition === 'par') {
+    // 25% chance of full paralysis (loses turn)
+    if (Math.random() < 0.25) {
+      return { canAct: false, nextStatus: status };
+    }
+    return { canAct: true, nextStatus: status };
+  }
+
+  // BRN / PSN / TOX: don't prevent action
+  return { canAct: true, nextStatus: status };
+}
+
+/** Speed modifier from paralysis: ×0.25 */
+export function speedStatusMult(status: StatusState): number {
+  return status.condition === 'par' ? 0.25 : 1.0;
+}
+
+/** Attack modifier from burn: ×0.5 on physical moves */
+export function burnAtkMult(status: StatusState, category: string): number {
+  return (status.condition === 'brn' && category === 'physical') ? 0.5 : 1.0;
+}
+
+/**
+ * End-of-turn damage for BRN / PSN / TOX.
+ * Returns damage dealt (as integer HP loss) and updated status state.
+ */
+export function calcEndOfTurnDamage(
+  maxHp: number,
+  status: StatusState,
+): { damage: number; nextStatus: StatusState } {
+  if (status.condition === 'brn' || status.condition === 'psn') {
+    return {
+      damage: Math.max(1, Math.floor(maxHp / 8)),
+      nextStatus: status,
+    };
+  }
+  if (status.condition === 'tox') {
+    const N = (status.toxicCounter ?? 0) + 1;
+    return {
+      damage: Math.max(1, Math.floor(maxHp * N / 16)),
+      nextStatus: { ...status, toxicCounter: N },
+    };
+  }
+  return { damage: 0, nextStatus: status };
+}
+
+/** Label + color for displaying status in UI */
+export function statusLabel(status: MajorStatus): { text: string; color: string } | null {
+  switch (status) {
+    case 'par': return { text: 'PAR', color: '#facc15' };
+    case 'brn': return { text: 'BRL', color: '#f97316' };
+    case 'psn': return { text: 'PSN', color: '#a855f7' };
+    case 'tox': return { text: 'TOX', color: '#7c3aed' };
+    case 'slp': return { text: 'SOM', color: '#6b7280' };
+    case 'frz': return { text: 'GEL', color: '#38bdf8' };
+    default: return null;
+  }
+}
+
+// ── Turn order (priority + speed + PAR) ─────────────────────────────────────
+
+/**
+ * Returns true if the player goes first this turn.
+ * Takes into account: move priority, actual speed (with PAR and speed stages), speed tie RNG.
+ */
+export function playerGoesFirst(
+  playerMoveIndex: number,
+  enemyMoveIndex: number,
+  playerPokemonId: number,
+  enemyPokemonId: number,
+  playerLevel: number,
+  enemyLevel: number,
+  playerStages: Stages,
+  enemyStages: Stages,
+  playerStatus: StatusState,
+  enemyStatus: StatusState,
+  playerInst?: PokemonInstanceData,
+  enemyInst?: PokemonInstanceData,
+  playerMoves?: RawMove[],
+  enemyMoves?: RawMove[],
+): boolean {
+  const pMoves = playerMoves ?? getMoveListRaw(playerPokemonId);
+  const eMoves = enemyMoves ?? getMoveListRaw(enemyPokemonId);
+
+  const pMove = pMoves[playerMoveIndex] ?? pMoves[0];
+  const eMove = eMoves[enemyMoveIndex] ?? eMoves[0];
+
+  const pPriority = pMove?.priority ?? 0;
+  const ePriority = eMove?.priority ?? 0;
+
+  if (pPriority !== ePriority) return pPriority > ePriority;
+
+  // Same priority → compare speed
+  const pBaseSpd = calcSpeed(playerPokemonId, playerLevel, playerInst);
+  const eBaseSpd = calcSpeed(enemyPokemonId, enemyLevel, enemyInst);
+
+  const pSpd = Math.floor(
+    applyStage(pBaseSpd, playerStages.speed) * speedStatusMult(playerStatus)
+  );
+  const eSpd = Math.floor(
+    applyStage(eBaseSpd, enemyStages.speed) * speedStatusMult(enemyStatus)
+  );
+
+  if (pSpd !== eSpd) return pSpd > eSpd;
+
+  // Speed tie: 50/50
+  return Math.random() < 0.5;
+}
+
+// ── Move result type ─────────────────────────────────────────────────────────
+
 export type MoveResult = {
   damage: number;
   effectiveness: number;
@@ -149,12 +314,15 @@ export type MoveResult = {
   isMiss: boolean;
   moveType: PokemonType;
   recoil: number;
-  hits: number;               // number of times damage was dealt (for multi-hit display)
+  hits: number;
   statusEffect?: { type: string; chance: number };
-  statBoost?: StatBoost;      // stat stage change to apply after this move
+  statBoost?: StatBoost;
+  appliedStatus?: MajorStatus;  // status actually applied this turn (after chance roll)
+  priority?: number;
 };
 
 // ── HeartGold damage formula ─────────────────────────────────────────────────
+
 export function calcDamage(
   attackerId: number,
   attackerLevel: number,
@@ -166,18 +334,15 @@ export function calcDamage(
   attackerStages?: Partial<Stages>,
   defenderStages?: Partial<Stages>,
   customMoves?: ReturnType<typeof getMoveListRaw>,
+  attackerStatus?: StatusState,
+  defenderStatus?: StatusState,
 ): MoveResult {
   const movesArr = customMoves ?? getMoveListRaw(attackerId);
   const move = (movesArr[moveIndex] ?? movesArr[0] ?? {
     name: 'Lutte', type: 'normal', category: 'physical',
-    power: 50, accuracy: 100, pp: 999, description: 'Attaque de dernier recours.',
-  }) as {
-    name: string; type: string; category: string; power: number;
-    accuracy: number; pp: number; recoil?: number;
-    effect?: { type: string; chance: number };
-    multiHit?: boolean; highCrit?: boolean;
-    statBoost?: StatBoost; description?: string;
-  };
+    power: 50, accuracy: 100, pp: 999, priority: 0,
+    description: 'Attaque de dernier recours.',
+  }) as RawMove;
 
   void defenderLevel;
 
@@ -187,41 +352,61 @@ export function calcDamage(
   const moveType     = move.type as PokemonType;
   const moveAccuracy = move.accuracy ?? 100;
   const recoilFrac   = move.recoil ?? 0;
+  const movePriority = move.priority ?? 0;
 
-  // Status-only or statBoost-only moves do 0 damage but may carry a boost
+  // Status-only moves: apply status if applicable
   if (moveCategory === 'status') {
+    let appliedStatus: MajorStatus = null;
+    if (move.effect && defenderStatus) {
+      const roll = Math.random() * 100;
+      if (roll < move.effect.chance && defenderStatus.condition === null) {
+        appliedStatus = effectTypeToStatus(move.effect.type);
+      }
+    }
     return {
       damage: 0, effectiveness: 1, moveName, isCrit: false,
       isMiss: false, moveType, recoil: 0, hits: 0,
       statusEffect: move.effect,
       statBoost: move.statBoost,
+      appliedStatus,
+      priority: movePriority,
     };
   }
 
-  // Miss check
-  if (Math.random() * 100 >= moveAccuracy) {
-    return { damage: 0, effectiveness: 1, moveName, isCrit: false, isMiss: true, moveType, recoil: 0, hits: 0 };
+  // Miss check (alwaysHit moves bypass)
+  if (!move.alwaysHit && moveAccuracy > 0 && Math.random() * 100 >= moveAccuracy) {
+    return { damage: 0, effectiveness: 1, moveName, isCrit: false, isMiss: true, moveType, recoil: 0, hits: 0, priority: movePriority };
   }
 
-  // Stat selection — use appropriate stage based on category
+  // Frozen defender thaws on fire move
+  if (defenderStatus?.condition === 'frz' && moveType === 'fire') {
+    // Thaw is handled by BattleScreen — just note it in the result
+  }
+
+  // Stat selection
   const atkStg = moveCategory === 'physical' ? (attackerStages?.attack ?? 0) : (attackerStages?.spAttack ?? 0);
   const defStg = moveCategory === 'physical' ? (defenderStages?.defense ?? 0) : (defenderStages?.spDefense ?? 0);
-  const A = moveCategory === 'physical'
+  let A = moveCategory === 'physical'
     ? applyStage(calcAttack(attackerId, attackerLevel, attackerInst), atkStg)
     : applyStage(calcSpAttack(attackerId, attackerLevel, attackerInst), atkStg);
   const D = moveCategory === 'physical'
     ? applyStage(calcDefense(defenderId, defenderLevel, defenderInst), defStg)
     : applyStage(calcSpDefense(defenderId, defenderLevel, defenderInst), defStg);
 
+  // Burn halves physical attack
+  if (attackerStatus) {
+    A = Math.floor(A * burnAtkMult(attackerStatus, moveCategory));
+  }
+
   const defenderTypes = (POKEMON_TYPE[defenderId] ?? ['normal']) as PokemonType[];
   const attackerTypes = (POKEMON_TYPE[attackerId] ?? ['normal']) as PokemonType[];
   const effectiveness = getTypeEffectiveness(moveType, defenderTypes);
 
   if (effectiveness === 0) {
-    return { damage: 0, effectiveness: 0, moveName, isCrit: false, isMiss: false, moveType, recoil: 0, hits: 0 };
+    return { damage: 0, effectiveness: 0, moveName, isCrit: false, isMiss: false, moveType, recoil: 0, hits: 0, priority: movePriority };
   }
 
-  // Multi-hit: 2-5 hits (distribution: 2→37.5%, 3→37.5%, 4→12.5%, 5→12.5%)
+  // Multi-hit: 2-5 hits (HGSS distribution: 2→37.5%, 3→37.5%, 4→12.5%, 5→12.5%)
   const hitCount = move.multiHit ? ([2,2,2,3,3,3,4,5][Math.floor(Math.random() * 8)]) : 1;
 
   let totalDmg = 0;
@@ -230,25 +415,49 @@ export function calcDamage(
   for (let h = 0; h < hitCount; h++) {
     const L = attackerLevel;
     let dmg = Math.floor(Math.floor(Math.floor((2 * L / 5) + 2) * movePower * (A / D)) / 50) + 2;
-    if (attackerTypes.includes(moveType)) dmg = Math.floor(dmg * 1.5);
+    if (attackerTypes.includes(moveType)) dmg = Math.floor(dmg * 1.5); // STAB
     dmg = Math.floor(dmg * effectiveness);
     const rng = (85 + Math.floor(Math.random() * 16)) / 100;
     dmg = Math.floor(dmg * rng);
-    const critRate = move.highCrit ? 0.30 : 0.15;
+    // Crit: base 6.25%, highCrit = 12.5%
+    const critRate = move.highCrit ? 0.125 : 0.0625;
     const hitCrit = Math.random() < critRate;
-    if (hitCrit) { isCrit = true; dmg = Math.floor(dmg * 1.75); }
+    if (hitCrit) { isCrit = true; dmg = Math.floor(dmg * 1.5); }
     totalDmg += Math.max(1, dmg);
   }
 
   const finalDmg = Math.max(1, totalDmg);
   const recoil = recoilFrac > 0 ? Math.max(1, Math.floor(finalDmg * recoilFrac)) : 0;
 
+  // Secondary status effect (chance-based)
+  let appliedStatus: MajorStatus = null;
+  if (move.effect && defenderStatus) {
+    const roll = Math.random() * 100;
+    if (roll < move.effect.chance && defenderStatus.condition === null) {
+      appliedStatus = effectTypeToStatus(move.effect.type);
+    }
+  }
+
   return {
     damage: finalDmg, effectiveness, moveName, isCrit, isMiss: false,
     moveType, recoil, hits: hitCount,
     statusEffect: move.effect,
     statBoost: move.statBoost,
+    appliedStatus,
+    priority: movePriority,
   };
+}
+
+function effectTypeToStatus(effectType: string): MajorStatus {
+  switch (effectType) {
+    case 'burn':      return 'brn';
+    case 'poison':    return 'psn';
+    case 'toxic':     return 'tox';
+    case 'paralysis': return 'par';
+    case 'sleep':     return 'slp';
+    case 'freeze':    return 'frz';
+    default:          return null;
+  }
 }
 
 // Struggle: used when all PP are depleted (power 50, 25% recoil)
@@ -271,11 +480,12 @@ export function calcStruggle(
   return {
     damage: finalDmg, effectiveness: 1, moveName: 'Lutte', isCrit: false,
     isMiss: false, moveType: 'normal' as PokemonType,
-    recoil: Math.max(1, Math.floor(finalDmg * 0.25)), hits: 1,
+    recoil: Math.max(1, Math.floor(finalDmg * 0.25)), hits: 1, priority: 0,
   };
 }
 
-// ── Get move list (supports custom override from pokemonMoves) ───────────────
+// ── Get move list ────────────────────────────────────────────────────────────
+
 export type RawMove = {
   name: string; type: string; category: string; power: number;
   accuracy: number; pp: number; description?: string;
@@ -283,27 +493,71 @@ export type RawMove = {
   statBoost?: StatBoost;
   effect?: { type: string; chance: number };
   recoil?: number;
+  alwaysHit?: boolean;
+  priority?: number;
 };
 
-export function getMoveListRaw(pokemonId: number, customIndices?: number[]): RawMove[] {
+/**
+ * Get the 4 active moves for a Pokémon.
+ * Priority order: customSlugs (from gen1Moves) > customIndices (old system) > hardcoded moves in gen1Stats
+ */
+export function getMoveListRaw(
+  pokemonId: number,
+  customIndices?: number[],
+  customSlugs?: string[],
+): RawMove[] {
+  // New system: slug-based custom moves from gen1Moves
+  if (customSlugs && customSlugs.length > 0) {
+    try {
+      // Dynamic import would cause issues — use lazy require pattern
+      // We'll resolve this via the MOVES_BY_ID map if available
+      const movesMap = getMovesBySlug();
+      if (movesMap) {
+        return customSlugs.map(slug => movesMap[slug]).filter(Boolean) as RawMove[];
+      }
+    } catch {
+      // fall through to old system
+    }
+  }
+
   const s = GEN1_STATS[pokemonId];
   const pool = (s as unknown as { movepool?: unknown[] })?.movepool ?? s?.moves ?? [];
+
   if (customIndices && pool.length > 0) {
     return customIndices.map(i => pool[i]).filter(Boolean) as RawMove[];
   }
   return (s?.moves ?? []) as RawMove[];
 }
 
-// ── Smart enemy AI ───────────────────────────────────────────────────────────
+// Registry for gen1Moves — populated at runtime by calling registerMoves()
+let _movesCache: Record<string, RawMove> | null = null;
+export function registerMoves(moves: Record<string, RawMove>): void {
+  _movesCache = moves;
+}
+export function getMovesBySlug(): Record<string, RawMove> | null {
+  return _movesCache;
+}
+
+/** Get moves from gen1Moves by slug array */
+export function getMovesBySlugList(slugs: string[]): RawMove[] {
+  const map = getMovesBySlug();
+  if (!map) return [];
+  return slugs.map(s => map[s]).filter(Boolean) as RawMove[];
+}
+
+// ── Smart enemy AI (Gen 4 style) ─────────────────────────────────────────────
+
 export function chooseEnemyMoveIndex(
   attackerId: number,
   defenderTypes: PokemonType[],
   currentPP: number[],
   attackerStages: Stages,
   turnNumber: number,
+  defenderStatus?: StatusState,
+  _attackerStatus?: StatusState,
+  enemyMoves?: RawMove[],
 ): number {
-  const s = GEN1_STATS[attackerId];
-  const moves = (s?.moves ?? []) as RawMove[];
+  const moves = enemyMoves ?? (GEN1_STATS[attackerId]?.moves ?? []) as RawMove[];
 
   const available = currentPP
     .map((pp, i) => pp > 0 ? i : -1)
@@ -311,41 +565,53 @@ export function chooseEnemyMoveIndex(
 
   if (available.length === 0) return -1; // Struggle
 
-  // Score each available move
   const scored = available.map(i => {
     const move = moves[i];
     if (!move) return { i, score: 0 };
     let score = 1;
 
     if (move.category === 'status') {
+      // Status moves: apply if target doesn't already have one
+      if (move.effect) {
+        const effectStatus = effectTypeToStatus(move.effect.type);
+        if (effectStatus && defenderStatus?.condition !== null) {
+          score = 0; // target already has a status → useless
+        } else if (effectStatus === 'slp' || effectStatus === 'par' || effectStatus === 'psn' || effectStatus === 'tox') {
+          // Prefer to apply status moves early (turn 1-2), especially if foe has no status
+          score = turnNumber <= 2 ? 8 : 3;
+        }
+      }
       if (move.statBoost) {
         const { target, stat, stages } = move.statBoost;
         if (target === 'self') {
           const currentStage = attackerStages[stat as StageKey] ?? 0;
-          if (currentStage >= 6) {
-            score = 0; // already maxed, never use
-          } else if (turnNumber <= 2 && currentStage < 4) {
-            score = 5; // strongly prefer boost early
+          if (currentStage >= 4) {
+            score = 0; // maxed — waste of turn
+          } else if (turnNumber <= 2 && currentStage < 2) {
+            score = 6; // strongly prefer early boosts
           } else {
-            score = 2; // moderate use later
+            score = 2;
           }
         } else {
-          // debuff foe
-          score = stages < -1 ? 3 : 2; // prefer big debuffs
+          // Debuff foe defense
+          score = Math.abs(stages) >= 2 ? 4 : 2;
         }
-      } else {
-        score = 1; // other status (sleep, poison) — moderate use
       }
     } else {
       // Offensive move
       const moveType = move.type as PokemonType;
       const effectiveness = getTypeEffectiveness(moveType, defenderTypes);
-      score = move.power ?? 50;
-      score *= effectiveness;
-      if (move.highCrit) score *= 1.2;
-      if (move.multiHit) score *= 1.1;
-      // Normalize vs raw power
-      score = score / 10;
+
+      if (effectiveness === 0) {
+        score = 0; // never use immune moves
+      } else {
+        score = (move.power ?? 50) * effectiveness;
+        if (move.highCrit) score *= 1.15;
+        if (move.multiHit) score *= 1.1;
+        // Bonus for super effective
+        if (effectiveness >= 2) score *= 1.5;
+        score = score / 10;
+      }
     }
 
     return { i, score };
@@ -355,15 +621,11 @@ export function chooseEnemyMoveIndex(
     return available[Math.floor(Math.random() * available.length)];
   }
 
-  // Weighted random selection among top-scoring moves
-  const maxScore = Math.max(...scored.map(x => x.score));
-  const weighted = scored.map(x => ({ ...x, weight: x.score / maxScore }));
-
-  // Soft selection: top 3 get weight, others get small chance
-  weighted.sort((a, b) => b.score - a.score);
+  // Weighted random: top moves get more tickets
+  scored.sort((a, b) => b.score - a.score);
   const pool: number[] = [];
-  weighted.forEach((x, rank) => {
-    const tickets = rank === 0 ? 6 : rank === 1 ? 3 : rank === 2 ? 2 : 1;
+  scored.forEach((x, rank) => {
+    const tickets = rank === 0 ? 8 : rank === 1 ? 4 : rank === 2 ? 2 : 1;
     for (let t = 0; t < tickets; t++) pool.push(x.i);
   });
 

@@ -205,6 +205,8 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         speedLevel={battleSpeed}
         onSpeedLevelChange={setBattleSpeed}
         onQuit={() => { setMode('team'); setBattleResult(null); }}
+        pokemonData={state.pokemonData}
+        pokemonCustomMoves={state.pokemonCustomMoves}
       />
     );
   }
