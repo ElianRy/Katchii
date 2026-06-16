@@ -279,70 +279,30 @@ export function ZoneBackground({ zoneId }: Props) {
       ══════════════════════════════════════════════════════ */}
       {zoneId === 'zone3' && (
         <>
-          {/* Electric spark nodes — mobile: sur les isolateurs des câbles hauts */}
-          {[
-            { left: '14%', top: '22%', delay: 0 },
-            { left: '34%', top: '18%', delay: 0.35 },
-            { left: '56%', top: '18%', delay: 0.7 },
-            { left: '78%', top: '22%', delay: 1.05 },
-          ].map((pos, i) => (
-            <div key={`arc3m${i}`} className="absolute pointer-events-none md:hidden" style={{
-              left: pos.left, top: pos.top,
-              width: 6, height: 6,
-              borderRadius: '50%',
-              background: '#fff9c4',
-              boxShadow: '0 0 6px 3px #ffe000, 0 0 14px 6px rgba(255,200,0,0.5)',
-              animation: `arc-flicker ${0.6 + i * 0.2}s step-end infinite`,
-              animationDelay: `${pos.delay}s`,
-            }} />
-          ))}
-          {/* Spark line between nodes — mobile */}
-          {[
-            { left: '15%', top: '21.5%', w: '19%', delay: 0.1 },
-            { left: '35%', top: '18.5%', w: '21%', delay: 0.45 },
-            { left: '57%', top: '18.5%', w: '20%', delay: 0.8 },
-          ].map((l, i) => (
-            <div key={`line3m${i}`} className="absolute pointer-events-none md:hidden" style={{
-              left: l.left, top: l.top, width: l.w, height: 1,
-              background: 'linear-gradient(90deg, #ffe000, #fff, #ffe000)',
-              boxShadow: '0 0 4px 2px rgba(255,220,0,0.6)',
-              animation: `arc-flicker ${0.5 + i * 0.15}s step-end infinite`,
-              animationDelay: `${l.delay}s`,
-            }} />
-          ))}
-          {/* Electric spark nodes — PC */}
-          {[
-            { left: '10%', top: '18%', delay: 0 },
-            { left: '28%', top: '14%', delay: 0.3 },
-            { left: '46%', top: '16%', delay: 0.6 },
-            { left: '64%', top: '14%', delay: 0.9 },
-            { left: '82%', top: '18%', delay: 0.45 },
-          ].map((pos, i) => (
-            <div key={`arc3p${i}`} className="absolute pointer-events-none hidden md:block" style={{
-              left: pos.left, top: pos.top,
-              width: 7, height: 7,
-              borderRadius: '50%',
-              background: '#fff9c4',
-              boxShadow: '0 0 8px 4px #ffe000, 0 0 18px 8px rgba(255,200,0,0.4)',
-              animation: `arc-flicker ${0.55 + i * 0.18}s step-end infinite`,
-              animationDelay: `${pos.delay}s`,
-            }} />
-          ))}
-          {/* Spark lines — PC */}
-          {[
-            { left: '11%', top: '17.5%', w: '17%', delay: 0.15 },
-            { left: '29%', top: '14.5%', w: '17%', delay: 0.45 },
-            { left: '47%', top: '15.5%', w: '17%', delay: 0.75 },
-            { left: '65%', top: '14.5%', w: '17%', delay: 0.5 },
-          ].map((l, i) => (
-            <div key={`line3p${i}`} className="absolute pointer-events-none hidden md:block" style={{
-              left: l.left, top: l.top, width: l.w, height: 1,
-              background: 'linear-gradient(90deg, #ffe000, #fff, #ffe000)',
-              boxShadow: '0 0 5px 2px rgba(255,220,0,0.7)',
-              animation: `arc-flicker ${0.45 + i * 0.12}s step-end infinite`,
-              animationDelay: `${l.delay}s`,
-            }} />
-          ))}
+          {/* Lueur de machine en bas à gauche — mobile */}
+          <div className="absolute pointer-events-none md:hidden" style={{
+            left: '2%', bottom: '12%', width: 70, height: 50,
+            background: 'radial-gradient(ellipse, rgba(80,200,255,0.18) 0%, rgba(80,200,255,0.06) 55%, transparent 100%)',
+            animation: 'lava-glow-pulse 3s ease-in-out infinite',
+          }} />
+          <div className="absolute pointer-events-none md:hidden" style={{
+            left: '2%', bottom: '8%', width: 50, height: 30,
+            background: 'radial-gradient(ellipse, rgba(255,160,40,0.15) 0%, transparent 100%)',
+            animation: 'lava-glow-pulse 2.2s ease-in-out infinite',
+            animationDelay: '1s',
+          }} />
+          {/* Lueur de machine en bas à gauche — PC */}
+          <div className="absolute pointer-events-none hidden md:block" style={{
+            left: '2%', bottom: '14%', width: 100, height: 65,
+            background: 'radial-gradient(ellipse, rgba(80,200,255,0.16) 0%, rgba(80,200,255,0.05) 55%, transparent 100%)',
+            animation: 'lava-glow-pulse 3.5s ease-in-out infinite',
+          }} />
+          <div className="absolute pointer-events-none hidden md:block" style={{
+            left: '3%', bottom: '9%', width: 70, height: 40,
+            background: 'radial-gradient(ellipse, rgba(255,160,40,0.12) 0%, transparent 100%)',
+            animation: 'lava-glow-pulse 2.5s ease-in-out infinite',
+            animationDelay: '1.2s',
+          }} />
           {/* Smoke from chimney — mobile (~50%, 43%) */}
           {Array.from({ length: 5 }, (_, i) => (
             <div key={`sm3m${i}`} className="absolute pointer-events-none rounded-full md:hidden" style={{
@@ -497,7 +457,7 @@ export function ZoneBackground({ zoneId }: Props) {
         <>
           {/* Neon strips — mobile: juste à gauche et droite du logo S (centre ~48%) */}
           {[
-            { left: '35%', top: '12%', w: 3, h: 26 },
+            { left: '41%', top: '12%', w: 3, h: 26 },
             { left: '60%', top: '12%', w: 3, h: 26 },
           ].map((n, i) => (
             <div key={`neon6m${i}`} className="absolute pointer-events-none md:hidden" style={{
