@@ -300,6 +300,88 @@ function getMoveList(pokemonId: number, customIndices?: number[], customSlugs?: 
   return getMoveListRaw(pokemonId, customIndices, customSlugs) as DisplayMove[];
 }
 
+// ── Status block VFX (sleep ZZZ / paralysis flash / freeze / burn) ──────────
+function StatusBlockVfx({ condition, uid: _uid }: { condition: string | null; uid: number }) {
+  type P = React.CSSProperties;
+  const base: P = { position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 20 };
+
+  if (condition === 'slp') {
+    return (
+      <div style={base}>
+        {(['Z','Z','z'] as string[]).map((char, i) => (
+          <span key={i} style={{
+            position: 'absolute',
+            top: `${15 + i * 14}%`, left: `${30 + i * 12}%`,
+            fontSize: `${1.1 - i * 0.18}rem`, fontWeight: 900, color: '#94a3b8',
+            textShadow: '0 0 8px #64748b',
+            animation: `slp-zzz-${i} ${0.9 + i * 0.15}s ${i * 0.18}s ease-out forwards`,
+          } as P}>{char}</span>
+        ))}
+      </div>
+    );
+  }
+
+  if (condition === 'par') {
+    return (
+      <div style={{ ...base, borderRadius: 8, background: '#facc1555',
+        animation: 'par-flash 0.7s ease-out forwards' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: '1.8rem', filter: 'drop-shadow(0 0 8px #facc15)', animation: 'par-flash 0.7s ease-out forwards' }}>⚡</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (condition === 'frz') {
+    return (
+      <div style={{ ...base, borderRadius: 8, background: '#bae6fd44',
+        animation: 'frz-pulse 0.8s ease-out forwards' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: '2rem', filter: 'drop-shadow(0 0 10px #38bdf8)', animation: 'frz-pulse 0.8s ease-out forwards' }}>❄️</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (condition === 'brn') {
+    return (
+      <div style={{ ...base, borderRadius: 8, background: '#f9731622',
+        animation: 'brn-flicker 0.7s ease-out forwards' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: '1.8rem', filter: 'drop-shadow(0 0 8px #f97316)', animation: 'brn-flicker 0.7s ease-out forwards' }}>🔥</span>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// ── Poison bubbles VFX ───────────────────────────────────────────────────────
+function PoisonBubblesVfx({ uid: _uid }: { uid: number }) {
+  type P = React.CSSProperties;
+  const bubbles = [
+    { size: 10, left: '20%', top: '55%', anim: 'psn-bubble-0', dur: '0.9s', delay: '0s'   },
+    { size: 7,  left: '55%', top: '60%', anim: 'psn-bubble-1', dur: '1.0s', delay: '0.1s' },
+    { size: 12, left: '35%', top: '50%', anim: 'psn-bubble-2', dur: '0.85s', delay: '0.05s' },
+    { size: 8,  left: '70%', top: '65%', anim: 'psn-bubble-3', dur: '0.95s', delay: '0.15s' },
+  ];
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 20 } as P}>
+      {bubbles.map((b, i) => (
+        <div key={i} style={{
+          position: 'absolute', left: b.left, top: b.top,
+          width: b.size, height: b.size, borderRadius: '50%',
+          background: 'radial-gradient(circle at 35% 35%, #e879f9, #7c3aed)',
+          border: '1px solid #d946ef',
+          filter: 'drop-shadow(0 0 3px #a855f7)',
+          animation: `${b.anim} ${b.dur} ${b.delay} ease-out forwards`,
+        } as P} />
+      ))}
+    </div>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 export function BattleScreen({
   playerTeam, enemyTeam, bossName: _bossName, onBattleEnd,
@@ -367,6 +449,9 @@ export function BattleScreen({
   }, [enemyFighters, enemyIdx]);
 
   const [statusAnim, setStatusAnim] = useState<{ target: 'player' | 'enemy'; positive: boolean; uid: number } | null>(null);
+  const [spriteBounce, setSpriteBounce] = useState<{ target: 'player' | 'enemy'; type: 'buff' | 'debuff'; uid: number } | null>(null);
+  const [statusBlockOverlay, setStatusBlockOverlay] = useState<{ target: 'player' | 'enemy'; condition: string | null; uid: number } | null>(null);
+  const [poisonBubbles, setPoisonBubbles] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
     setLog(prev => [...prev.slice(-8), { text, color }]);
   }, []);
@@ -512,8 +597,8 @@ export function BattleScreen({
           : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndex, eInst, pInst, eFighter.stages, pFighter.stages, undefined, eFighter.statusState, pFighter.statusState);
 
         // Execute attacks in speed order
-        // Apply a statBoost to a fighter's stages (clamped −6 to +6, with cap messages)
-        const applyBoost = (f: FighterState, boost: typeof pResult.statBoost, fighterName: string): FighterState => {
+        // Apply a statBoost to a fighter's stages (clamped −6 to +6, with cap messages + sprite bounce)
+        const applyBoost = (f: FighterState, boost: typeof pResult.statBoost, fighterName: string, animTarget: 'player' | 'enemy'): FighterState => {
           if (!boost) return f;
           const cur = f.stages[boost.stat as keyof typeof f.stages] ?? 0;
           if (boost.stages > 0 && cur >= 6) {
@@ -528,6 +613,10 @@ export function BattleScreen({
           const label = boost.stages > 0 ? `↑ ${boost.stat}` : `↓ ${boost.stat}`;
           const dir = boost.stages > 0 ? '+' : '';
           addLog(`${dir}${boost.stages} ${label} !`, boost.stages > 0 ? '#4ade80' : '#f87171');
+          // Sprite bounce/wobble animation
+          const bounceType = boost.stages > 0 ? 'buff' : 'debuff';
+          setSpriteBounce({ target: animTarget, type: bounceType, uid: dmgCounter++ });
+          setTimeout(() => setSpriteBounce(null), 700);
           return { ...f, stages: { ...f.stages, [boost.stat]: next } };
         };
 
@@ -560,12 +649,12 @@ export function BattleScreen({
           }
           // Apply player's statBoost to self
           if (pResult.statBoost?.target === 'self') {
-            const updated = applyBoost(_pf[pIdx], pResult.statBoost, pName);
+            const updated = applyBoost(_pf[pIdx], pResult.statBoost, pName, 'player');
             setPlayerFighters(prev => prev.map((f, i) => i === pIdx ? updated : f));
           }
           // Apply player's statBoost to foe
           if (pResult.statBoost?.target === 'foe') {
-            nextEf = ef_.map((f, i) => i === eIdx ? applyBoost(f, pResult.statBoost!, eName) : f);
+            nextEf = ef_.map((f, i) => i === eIdx ? applyBoost(f, pResult.statBoost!, eName, 'enemy') : f);
           }
           const newEHp = Math.max(0, nextEf[eIdx].currentHp - pResult.damage);
           // Recoil on player
@@ -601,12 +690,12 @@ export function BattleScreen({
           }
           // Apply enemy's statBoost to self
           if (eResult.statBoost?.target === 'self') {
-            const updated = applyBoost(_ef[eIdx], eResult.statBoost!, eName);
+            const updated = applyBoost(_ef[eIdx], eResult.statBoost!, eName, 'enemy');
             setEnemyFighters(prev => prev.map((f, i) => i === eIdx ? updated : f));
           }
           // Apply enemy's statBoost to foe (player)
           if (eResult.statBoost?.target === 'foe') {
-            nextPf = pf_.map((f, i) => i === pIdx ? applyBoost(f, eResult.statBoost!, pName) : f);
+            nextPf = pf_.map((f, i) => i === pIdx ? applyBoost(f, eResult.statBoost!, pName, 'player') : f);
           }
           const newPHp = Math.max(0, nextPf[pIdx].currentHp - eResult.damage);
           return nextPf.map((f, i) => i === pIdx ? { ...f, currentHp: newPHp } : f);
@@ -619,14 +708,20 @@ export function BattleScreen({
         if (pCanActResult.wokeUp) addLog(`${pName} se réveille !`, '#4ade80');
         if (eCanActResult.wokeUp) addLog(`${eName} se réveille !`, '#4ade80');
 
-        // Status block messages — distinct for SLP vs PAR
+        // Status block messages + overlay animation
         if (!pCanActResult.canAct) {
           if (pFighter.statusState.condition === 'slp') addLog(`${pName} dort profondément…`, '#94a3b8');
           else addLog(`${pName} est totalement paralysé(e) !`, '#94a3b8');
+          const uid = dmgCounter++;
+          setStatusBlockOverlay({ target: 'player', condition: pFighter.statusState.condition, uid });
+          setTimeout(() => setStatusBlockOverlay(s => s?.uid === uid ? null : s), 1400);
         }
         if (!eCanActResult.canAct) {
           if (eFighter.statusState.condition === 'slp') addLog(`${eName} dort profondément…`, '#94a3b8');
           else addLog(`${eName} est totalement paralysé(e) !`, '#94a3b8');
+          const uid = dmgCounter++;
+          setStatusBlockOverlay({ target: 'enemy', condition: eFighter.statusState.condition, uid });
+          setTimeout(() => setStatusBlockOverlay(s => s?.uid === uid ? null : s), 1400);
         }
 
         if (goesFirst) {
@@ -717,12 +812,24 @@ export function BattleScreen({
             if (pEot.damage > 0) {
               const newHp = Math.max(0, pf3[pIdx].currentHp - pEot.damage);
               addDmg(pEot.damage, 'player', 1);
+              const pCond = pf3[pIdx].statusState.condition;
+              if (pCond === 'psn' || pCond === 'tox') {
+                const uid = dmgCounter++;
+                setPoisonBubbles({ target: 'player', uid });
+                setTimeout(() => setPoisonBubbles(b => b?.uid === uid ? null : b), 1100);
+              }
               pf3 = pf3.map((f, i) => i === pIdx ? { ...f, currentHp: newHp, statusState: pEot.nextStatus } : f);
             }
             const eEot = calcEndOfTurnDamage(ef3[eIdx].maxHp, ef3[eIdx].statusState);
             if (eEot.damage > 0) {
               const newHp = Math.max(0, ef3[eIdx].currentHp - eEot.damage);
               addDmg(eEot.damage, 'enemy', 1);
+              const eCond = ef3[eIdx].statusState.condition;
+              if (eCond === 'psn' || eCond === 'tox') {
+                const uid = dmgCounter++;
+                setPoisonBubbles({ target: 'enemy', uid });
+                setTimeout(() => setPoisonBubbles(b => b?.uid === uid ? null : b), 1100);
+              }
               ef3 = ef3.map((f, i) => i === eIdx ? { ...f, currentHp: newHp, statusState: eEot.nextStatus } : f);
             }
 
@@ -1013,9 +1120,13 @@ export function BattleScreen({
               ))}
             </div>
           </div>
-          <div className={`flex justify-end ${attackEvt?.attacker === 'enemy' ? 'battle-lunge-left' : ''} ${activeEF?.currentHp === 0 ? 'opacity-30' : ''}`}>
+          <div className={`flex justify-end relative ${attackEvt?.attacker === 'enemy' ? 'battle-lunge-left' : ''} ${activeEF?.currentHp === 0 ? 'opacity-30' : ''} ${spriteBounce?.target === 'enemy' ? (spriteBounce.type === 'buff' ? 'pokemon-buff' : 'pokemon-debuff') : ''}`}>
             {activeEF && <ShinySprite pokemonId={activeEF.pokemonId} isShiny={activeEF.isShiny ?? false} width={88} height={88} flip
               style={{ filter: spriteFilter(activeEF.pokemonId, activeEF.isShiny ?? false) }} />}
+            {/* Status block overlay on enemy */}
+            {statusBlockOverlay?.target === 'enemy' && <StatusBlockVfx condition={statusBlockOverlay.condition} uid={statusBlockOverlay.uid} />}
+            {/* Poison bubbles on enemy */}
+            {poisonBubbles?.target === 'enemy' && <PoisonBubblesVfx uid={poisonBubbles.uid} />}
           </div>
           <div className="flex gap-1.5 justify-end mt-1">
             {enemyFighters.map((f, i) => (
@@ -1031,9 +1142,13 @@ export function BattleScreen({
               <div key={i} className={`w-3 h-3 rounded-full ${i === playerIdx ? 'ring-2 ring-white' : ''} ${f.currentHp > 0 ? 'bg-green-400' : 'bg-slate-600'}`} />
             ))}
           </div>
-          <div className={`${attackEvt?.attacker === 'player' ? 'battle-lunge-right' : ''} ${activePF?.currentHp === 0 ? 'opacity-30' : ''}`}>
+          <div className={`relative ${attackEvt?.attacker === 'player' ? 'battle-lunge-right' : ''} ${activePF?.currentHp === 0 ? 'opacity-30' : ''} ${spriteBounce?.target === 'player' ? (spriteBounce.type === 'buff' ? 'pokemon-buff' : 'pokemon-debuff') : ''}`}>
             {activePF && <ShinySprite pokemonId={activePF.pokemonId} isShiny={activePF.isShiny ?? false} width={96} height={96}
               style={{ filter: spriteFilter(activePF.pokemonId, activePF.isShiny ?? false, 12) }} />}
+            {/* Status block overlay on player */}
+            {statusBlockOverlay?.target === 'player' && <StatusBlockVfx condition={statusBlockOverlay.condition} uid={statusBlockOverlay.uid} />}
+            {/* Poison bubbles on player */}
+            {poisonBubbles?.target === 'player' && <PoisonBubblesVfx uid={poisonBubbles.uid} />}
           </div>
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
             <div className="flex justify-between items-center mb-1">

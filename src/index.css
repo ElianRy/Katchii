@@ -1010,3 +1010,42 @@ button:active{transform:scale(.93);transition:transform .08s ease}
   60%  { transform: translate(4px,-42px) scale(1.4); opacity:1; }
   100% { transform: translate(8px,-58px) scale(0.9); opacity:0; }
 }
+
+/* ── Buff / Debuff sprite animations ── */
+@keyframes pokemon-buff {
+  0%   { transform: translateY(0) scale(1); }
+  20%  { transform: translateY(-14px) scale(1.12); }
+  45%  { transform: translateY(-6px) scale(1.06); }
+  65%  { transform: translateY(-10px) scale(1.09); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes pokemon-debuff {
+  0%   { transform: rotate(0deg) scale(1); }
+  15%  { transform: rotate(-7deg) scale(0.94) translateX(-4px); }
+  35%  { transform: rotate(7deg) scale(0.94) translateX(4px); }
+  55%  { transform: rotate(-4deg) scale(0.97) translateX(-2px); }
+  75%  { transform: rotate(4deg) scale(0.97) translateX(2px); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.pokemon-buff   { animation: pokemon-buff   0.65s cubic-bezier(.175,.885,.32,1.275); }
+.pokemon-debuff { animation: pokemon-debuff 0.65s ease-in-out; }
+
+/* ── Sleep ZZZ ── */
+@keyframes slp-zzz-0 { 0%{opacity:0;transform:translate(0,0) scale(.5)} 25%{opacity:1} 85%{opacity:.7} 100%{opacity:0;transform:translate(12px,-52px) scale(.9)} }
+@keyframes slp-zzz-1 { 0%{opacity:0;transform:translate(6px,-8px) scale(.4)} 30%{opacity:1} 85%{opacity:.7} 100%{opacity:0;transform:translate(20px,-64px) scale(1.1)} }
+@keyframes slp-zzz-2 { 0%{opacity:0;transform:translate(-4px,-4px) scale(.45)} 35%{opacity:1} 85%{opacity:.6} 100%{opacity:0;transform:translate(-8px,-56px) scale(.85)} }
+
+/* ── Paralysis flash ── */
+@keyframes par-flash { 0%{opacity:0} 10%{opacity:.9} 30%{opacity:.2} 50%{opacity:.85} 70%{opacity:.1} 85%{opacity:.7} 100%{opacity:0} }
+
+/* ── Poison bubbles ── */
+@keyframes psn-bubble-0 { 0%{opacity:1;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(-8px,-58px) scale(.3)} }
+@keyframes psn-bubble-1 { 0%{opacity:1;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(14px,-70px) scale(.4)} }
+@keyframes psn-bubble-2 { 0%{opacity:1;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(-16px,-50px) scale(.25)} }
+@keyframes psn-bubble-3 { 0%{opacity:1;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(6px,-64px) scale(.35)} }
+
+/* ── FRZ pulse ── */
+@keyframes frz-pulse { 0%,100%{opacity:0} 25%,75%{opacity:.75} 50%{opacity:.4} }
+
+/* ── BRN flicker ── */
+@keyframes brn-flicker { 0%{opacity:0} 15%{opacity:.85} 35%{opacity:.3} 55%{opacity:.75} 75%{opacity:.2} 100%{opacity:0} }

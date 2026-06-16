@@ -48,7 +48,8 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
   const [selectedId, setSelectedId_] = useState<number | null>(null);
   const [editingMoves, setEditingMoves] = useState(false);
   const [pendingMoves, setPendingMoves] = useState<string[]>([]);
-  const setSelectedId = (id: number | null) => { setSelectedId_(id); setEditingMoves(false); };
+  const [detailTab, setDetailTab] = useState<'attaques' | 'stats'>('attaques');
+  const setSelectedId = (id: number | null) => { setSelectedId_(id); setEditingMoves(false); setDetailTab('attaques'); };
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState<'id' | 'rarity_desc' | 'level_desc'>(() => {
     try { return (localStorage.getItem('katchii_pokedex_sort') as 'id' | 'rarity_desc' | 'level_desc') ?? 'id'; } catch { return 'id'; }
@@ -323,19 +324,28 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
         const rarityColor = RARITY_COLORS[p.rarity];
         const normalCount = state.normalCollection[selectedId] ?? 0;
         const shinyCount = state.shinyCollection[selectedId] ?? 0;
+
+        // Level-gated pool: unlock 1 extra move every 10 levels starting from 4
+        const pool = GEN1_MOVEPOOL[selectedId] ?? [];
+        const unlockedCount = Math.min(pool.length, 4 + Math.floor(lvData.level / 10));
+        const availablePool = pool.slice(0, unlockedCount);
+        const currentSlugs: string[] = state.pokemonCustomMoves?.[selectedId] ?? availablePool.slice(0, 4);
+        const activeSlugs = editingMoves ? pendingMoves : currentSlugs;
+
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setSelectedId(null)}>
             <div
-              className="relative bg-slate-900 rounded-3xl p-6 w-72 flex flex-col items-center gap-4 border-2"
+              className="relative bg-slate-900 rounded-3xl p-5 w-80 flex flex-col items-center gap-3 border-2 max-h-[90vh] overflow-y-auto"
               style={{ borderColor: rarityColor }}
               onClick={e => e.stopPropagation()}
             >
               <button className="absolute top-3 right-4 text-slate-400 text-xl" onClick={() => setSelectedId(null)}>✕</button>
+
+              {/* Header: sprite + name + type */}
               <div className={isShiny ? 'shiny-rainbow' : ''} style={{ display: 'inline-block' }}>
                 <img
                   src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${isShiny ? 'shiny/' : ''}${selectedId}.png`}
-                  alt={p.name}
-                  width={80} height={80}
+                  alt={p.name} width={80} height={80}
                   style={{ imageRendering: 'pixelated', filter: `drop-shadow(0 0 8px ${rarityColor})` }}
                 />
               </div>
@@ -351,20 +361,141 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                   </span>
                 ))}
               </div>
-              <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex flex-col gap-1">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-400 font-bold">Niveau</span>
-                  <span className="text-white font-black">{lvData.level >= 100 ? 'MAX' : lvData.level}</span>
-                </div>
-                <div className="w-full bg-slate-700 rounded-full h-2">
-                  <div className="h-2 rounded-full transition-all" style={{ width: `${xpPct}%`, background: `linear-gradient(90deg, ${rarityColor}, #fbbf24)` }} />
-                </div>
-                {lvData.level < 100 && (
-                  <div className="text-right text-xs text-slate-500">{lvData.xp} / {xpToNextLevel(lvData.level)} XP</div>
-                )}
+
+              {/* Tab selector */}
+              <div className="flex w-full border-b border-slate-700">
+                {(['attaques', 'stats'] as const).map(tab => (
+                  <button key={tab} onClick={() => setDetailTab(tab)}
+                    className={`flex-1 py-2 text-xs font-bold border-b-2 transition-colors ${
+                      detailTab === tab
+                        ? 'border-blue-500 text-blue-400'
+                        : 'border-transparent text-slate-500 hover:text-slate-300'
+                    }`}>
+                    {tab === 'attaques' ? '⚔️ Attaques' : '📊 Stats'}
+                  </button>
+                ))}
               </div>
-              {/* Base stats chart */}
-              {(() => {
+
+              {/* Tab: Attaques */}
+              {detailTab === 'attaques' && (
+                <>
+                  {/* Level / XP */}
+                  <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex flex-col gap-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-400 font-bold">Niveau</span>
+                      <span className="text-white font-black">{lvData.level >= 100 ? 'MAX' : lvData.level}</span>
+                    </div>
+                    <div className="w-full bg-slate-700 rounded-full h-2">
+                      <div className="h-2 rounded-full transition-all" style={{ width: `${xpPct}%`, background: `linear-gradient(90deg, ${rarityColor}, #fbbf24)` }} />
+                    </div>
+                    {lvData.level < 100 && (
+                      <div className="text-right text-xs text-slate-500">{lvData.xp} / {xpToNextLevel(lvData.level)} XP</div>
+                    )}
+                    {pool.length > 0 && unlockedCount < pool.length && (
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        🔓 {unlockedCount}/{pool.length} attaques débloquées · prochain débloc. niv. {(Math.floor(lvData.level / 10) + 1) * 10}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Movepool editor */}
+                  {pool.length > 0 && (
+                    <div className="w-full bg-slate-800 rounded-2xl px-4 py-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-slate-400 text-xs font-bold">Attaques actives</span>
+                        {onSaveCustomMoves && !editingMoves && (
+                          <button
+                            className="text-xs font-bold px-2 py-0.5 rounded-full"
+                            style={{ background: '#3b82f633', color: '#60a5fa', border: '1px solid #3b82f655' }}
+                            onClick={() => { setPendingMoves([...currentSlugs]); setEditingMoves(true); }}
+                          >Modifier</button>
+                        )}
+                        {editingMoves && (
+                          <div className="flex gap-1.5">
+                            <button
+                              className="text-xs font-bold px-2 py-0.5 rounded-full"
+                              style={{ background: '#ef444433', color: '#f87171', border: '1px solid #ef444455' }}
+                              onClick={() => setEditingMoves(false)}
+                            >Annuler</button>
+                            <button
+                              className="text-xs font-bold px-2 py-0.5 rounded-full"
+                              style={{ background: '#22c55e33', color: '#4ade80', border: '1px solid #22c55e55', opacity: pendingMoves.length === 4 ? 1 : 0.4 }}
+                              onClick={() => { if (pendingMoves.length === 4) { onSaveCustomMoves?.(selectedId, pendingMoves); setEditingMoves(false); } }}
+                            >Sauvegarder</button>
+                          </div>
+                        )}
+                      </div>
+                      {!editingMoves ? (
+                        <div className="flex flex-col gap-2">
+                          {activeSlugs.map(slug => {
+                            const m = MOVES[slug];
+                            if (!m) return null;
+                            const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
+                            return (
+                              <div key={slug} className="rounded-lg px-2 py-1.5" style={{ background: `${typeColor}18`, border: `1px solid ${typeColor}44` }}>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-white font-bold rounded px-1.5 py-0.5 shrink-0" style={{ background: typeColor, fontSize: '0.42rem' }}>{m.type.toUpperCase()}</span>
+                                  <span className="text-white text-xs font-bold flex-1">{m.name}</span>
+                                  <span className="text-slate-400 text-xs shrink-0">{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
+                                  {m.power > 0 && <span className="text-slate-300 text-xs font-black shrink-0">{m.power}</span>}
+                                </div>
+                                {m.description && (
+                                  <div className="text-slate-400 mt-0.5" style={{ fontSize: '0.6rem', lineHeight: 1.4 }}>{m.description}</div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="text-slate-500 text-xs mb-2">Sélectionnez exactement 4 attaques ({pendingMoves.length}/4)</div>
+                          <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto">
+                            {availablePool.map(slug => {
+                              const m = MOVES[slug];
+                              if (!m) return null;
+                              const isSelected = pendingMoves.includes(slug);
+                              const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
+                              return (
+                                <button
+                                  key={slug}
+                                  className="flex flex-col rounded-lg px-2 py-1.5 text-left gap-0.5"
+                                  style={{
+                                    background: isSelected ? '#3b82f622' : '#ffffff06',
+                                    border: `1px solid ${isSelected ? '#3b82f6' : '#ffffff11'}`,
+                                  }}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      setPendingMoves(prev => prev.filter(s => s !== slug));
+                                    } else if (pendingMoves.length < 4) {
+                                      setPendingMoves(prev => [...prev, slug]);
+                                    }
+                                  }}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-xs ${isSelected ? 'bg-blue-500 border-blue-400' : 'border-slate-600'}`}>
+                                      {isSelected ? '✓' : ''}
+                                    </span>
+                                    <span className="text-white font-bold rounded px-1 py-0.5 shrink-0" style={{ background: typeColor, fontSize: '0.4rem' }}>{m.type.toUpperCase()}</span>
+                                    <span className="text-white text-xs font-bold flex-1">{m.name}</span>
+                                    {m.power > 0 && <span className="text-slate-400 text-xs shrink-0">{m.power}</span>}
+                                    <span className="text-slate-500 text-xs shrink-0">{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
+                                  </div>
+                                  {m.description && (
+                                    <div className="text-slate-500 pl-6" style={{ fontSize: '0.58rem', lineHeight: 1.3 }}>{m.description}</div>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Tab: Stats */}
+              {detailTab === 'stats' && (() => {
                 const stats = GEN1_STATS[selectedId];
                 if (!stats) return null;
                 const rows: [string, number, string][] = [
@@ -376,19 +507,15 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                   ['VIT',  stats.speed,      '#fbbf24'],
                 ];
                 const maxStat = 255;
+                const profile = getPokemonProfile(stats.hp);
+                const profileLabel = profile === 'tank' ? '🛡️ Tank' : profile === 'equilibre' ? '⚖️ Équilibré' : '💥 Attaquant';
+                const profileColor = profile === 'tank' ? '#4ade80' : profile === 'equilibre' ? '#60a5fa' : '#f87171';
                 return (
                   <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex flex-col gap-1.5">
-                    {(() => {
-                      const profile = getPokemonProfile(stats.hp);
-                      const profileLabel = profile === 'tank' ? '🛡️ Tank' : profile === 'equilibre' ? '⚖️ Équilibré' : '💥 Attaquant';
-                      const profileColor = profile === 'tank' ? '#4ade80' : profile === 'equilibre' ? '#60a5fa' : '#f87171';
-                      return (
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-slate-400 text-xs font-bold">Profil :</span>
-                          <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ color: profileColor, background: `${profileColor}22`, border: `1px solid ${profileColor}55` }}>{profileLabel}</span>
-                        </div>
-                      );
-                    })()}
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-slate-400 text-xs font-bold">Profil :</span>
+                      <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ color: profileColor, background: `${profileColor}22`, border: `1px solid ${profileColor}55` }}>{profileLabel}</span>
+                    </div>
                     <div className="text-slate-400 text-xs font-bold mb-1">Stats de base</div>
                     {rows.map(([label, val, color]) => (
                       <div key={label} className="flex items-center gap-2">
@@ -407,92 +534,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                   </div>
                 );
               })()}
-              {/* Movepool editor */}
-              {(() => {
-                const pool = GEN1_MOVEPOOL[selectedId] ?? [];
-                if (pool.length === 0) return null;
-                const currentSlugs: string[] = state.pokemonCustomMoves?.[selectedId] ?? pool.slice(0, 4);
-                const activeSlugs = editingMoves ? pendingMoves : currentSlugs;
-                return (
-                  <div className="w-full bg-slate-800 rounded-2xl px-4 py-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-slate-400 text-xs font-bold">Attaques actives</span>
-                      {onSaveCustomMoves && !editingMoves && (
-                        <button
-                          className="text-xs font-bold px-2 py-0.5 rounded-full"
-                          style={{ background: '#3b82f633', color: '#60a5fa', border: '1px solid #3b82f655' }}
-                          onClick={() => { setPendingMoves([...currentSlugs]); setEditingMoves(true); }}
-                        >Modifier</button>
-                      )}
-                      {editingMoves && (
-                        <div className="flex gap-1.5">
-                          <button
-                            className="text-xs font-bold px-2 py-0.5 rounded-full"
-                            style={{ background: '#ef444433', color: '#f87171', border: '1px solid #ef444455' }}
-                            onClick={() => setEditingMoves(false)}
-                          >Annuler</button>
-                          <button
-                            className="text-xs font-bold px-2 py-0.5 rounded-full"
-                            style={{ background: '#22c55e33', color: '#4ade80', border: '1px solid #22c55e55', opacity: pendingMoves.length === 4 ? 1 : 0.4 }}
-                            onClick={() => { if (pendingMoves.length === 4) { onSaveCustomMoves?.(selectedId, pendingMoves); setEditingMoves(false); } }}
-                          >Sauvegarder</button>
-                        </div>
-                      )}
-                    </div>
-                    {!editingMoves ? (
-                      <div className="flex flex-col gap-1">
-                        {activeSlugs.map(slug => {
-                          const m = MOVES[slug];
-                          if (!m) return null;
-                          return (
-                            <div key={slug} className="flex items-center gap-2">
-                              <span className="text-white/60 text-xs rounded px-1" style={{ background: '#ffffff11', fontSize: '0.42rem', fontWeight: 700 }}>{m.type.toUpperCase()}</span>
-                              <span className="text-white text-xs font-bold flex-1">{m.name}</span>
-                              {m.power > 0 && <span className="text-slate-400 text-xs">{m.power}</span>}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div>
-                        <div className="text-slate-500 text-xs mb-2">Sélectionnez exactement 4 attaques ({pendingMoves.length}/4)</div>
-                        <div className="flex flex-col gap-1 max-h-48 overflow-y-auto">
-                          {pool.map(slug => {
-                            const m = MOVES[slug];
-                            if (!m) return null;
-                            const isSelected = pendingMoves.includes(slug);
-                            return (
-                              <button
-                                key={slug}
-                                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left"
-                                style={{
-                                  background: isSelected ? '#3b82f622' : '#ffffff08',
-                                  border: `1px solid ${isSelected ? '#3b82f6' : '#ffffff11'}`,
-                                }}
-                                onClick={() => {
-                                  if (isSelected) {
-                                    setPendingMoves(prev => prev.filter(s => s !== slug));
-                                  } else if (pendingMoves.length < 4) {
-                                    setPendingMoves(prev => [...prev, slug]);
-                                  }
-                                }}
-                              >
-                                <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-xs ${isSelected ? 'bg-blue-500 border-blue-400' : 'border-slate-600'}`}>
-                                  {isSelected ? '✓' : ''}
-                                </span>
-                                <span className="text-white/50 text-xs rounded px-1" style={{ fontSize: '0.4rem', fontWeight: 700 }}>{m.type.toUpperCase()}</span>
-                                <span className="text-white text-xs font-bold flex-1">{m.name}</span>
-                                {m.power > 0 && <span className="text-slate-400 text-xs">{m.power}</span>}
-                                <span className="text-slate-500 text-xs">{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+
               <div className="flex flex-col items-center gap-0.5 text-xs text-slate-500">
                 <span>Capturé {normalCount} fois</span>
                 {shinyCount > 0 && <span className="text-yellow-400">✨ Shiny capturé {shinyCount} fois</span>}
