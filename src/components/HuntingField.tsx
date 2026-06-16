@@ -268,7 +268,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       <div
         className="absolute bottom-0 left-0 right-0 pointer-events-none"
         style={{
-          height: '20%',
+          height: '8%',
           background: zoneGround.ground,
         }}
       />
