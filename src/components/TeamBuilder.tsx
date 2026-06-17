@@ -113,9 +113,11 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const owned = GEN1_POKEMON.filter(p =>
     (state.normalCollection[p.id] ?? 0) > 0 || (state.shinyCollection[p.id] ?? 0) > 0
   );
-  const maxPokemonLevel = owned.length > 0
-    ? Math.max(...owned.map(p => state.pokemonLevels?.[p.id]?.level ?? 1))
-    : 30;
+  const maxPokemonLevel = selected.length > 0
+    ? Math.max(...selected.map(id => state.pokemonLevels?.[id]?.level ?? 1))
+    : owned.length > 0
+      ? Math.max(...owned.map(p => state.pokemonLevels?.[p.id]?.level ?? 1))
+      : 30;
 
   const sorted = [...owned].sort((a, b) => {
     if (sort === 'level') {
