@@ -1878,19 +1878,25 @@ export function BattleScreen({
               </button>
             ) : null}
 
-            {/* Voluntary switch button */}
-            {phase === 'player_turn' && playerFighters.filter((f, i) => i !== playerIdx && f.currentHp > 0).length > 0 && (
-              <button
-                onClick={() => setSwitchMenuOpen(true)}
-                className="mt-2 w-full text-xs text-slate-400 hover:text-yellow-300 transition-colors py-1 flex items-center justify-center gap-1">
-                🔄 Changer de Pokémon <span className="text-slate-600">(coûte un tour)</span>
-              </button>
-            )}
-
-            {onQuit && phase === 'player_turn' && (
-              <button onClick={onQuit} className="mt-1 w-full text-xs text-slate-500 hover:text-slate-300 transition-colors py-1">
-                ✕ Fuir le combat
-              </button>
+            {phase === 'player_turn' && (
+              <div className="mt-2 flex gap-2">
+                {playerFighters.filter((f, i) => i !== playerIdx && f.currentHp > 0).length > 0 && (
+                  <button
+                    onClick={() => setSwitchMenuOpen(true)}
+                    className="flex-1 rounded-xl py-2 text-xs font-bold text-slate-300 hover:text-yellow-300 transition-colors flex items-center justify-center gap-1.5"
+                    style={{ background: '#1e293b', border: '1px solid #334155' }}>
+                    🔄 Changer
+                  </button>
+                )}
+                {onQuit && (
+                  <button
+                    onClick={onQuit}
+                    className="flex-1 rounded-xl py-2 text-xs font-bold text-slate-400 hover:text-red-400 transition-colors flex items-center justify-center gap-1.5"
+                    style={{ background: '#1e293b', border: '1px solid #334155' }}>
+                    🏃 Fuir
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}
