@@ -878,9 +878,10 @@ export function BattleScreen({
           const newPHp = Math.max(0, pf[idx].currentHp - eResult.damage);
           pf[idx] = { ...pf[idx], currentHp: newPHp };
           flush();
-          if (eResult.effectiveness >= 2) playHitSuper();
-          else if (eResult.effectiveness > 0 && eResult.effectiveness < 1) playHitLow();
-          else playHit();
+          if      (eResult.effectiveness === 0) { /* immunité */ }
+          else if (eResult.effectiveness >= 2)   playHitSuper();
+          else if (eResult.effectiveness < 1)    playHitLow();
+          else                                   playHit();
           const hUid = dmgCounter++;
           setHitFlash('player');
           setHitEffect({ target: 'player', uid: hUid });
@@ -1169,10 +1170,11 @@ export function BattleScreen({
         else          pf[defIdx] = { ...pf[defIdx], currentHp: newHp };
         flush();
 
-        // Step D: hit sound
-        if (result.effectiveness >= 2) playHitSuper();
-        else if (result.effectiveness > 0 && result.effectiveness < 1) playHitLow();
-        else playHit();
+        // Step D: hit sound — silent on immunity
+        if      (result.effectiveness === 0) { /* aucun son : immunité */ }
+        else if (result.effectiveness >= 2)   playHitSuper();
+        else if (result.effectiveness < 1)    playHitLow();
+        else                                  playHit();
 
         // Hit flash + effect on target
         setHitFlash(defSide);
@@ -1187,6 +1189,9 @@ export function BattleScreen({
           `${atkName} → ${result.moveName}${hitsLabel} (${result.damage} dégâts)${result.isCrit ? ' ⚡ CRIT !' : ''}${result.effectiveness >= 2 ? ' 💥 Efficace !' : result.effectiveness === 0 ? ' (sans effet)' : result.effectiveness < 1 ? ' (peu eff.)' : ''}`,
           result.isCrit ? '#fbbf24' : result.effectiveness >= 2 ? (isPlayer ? '#4ade80' : '#f87171') : '#fde68a',
         );
+      } else if (result.effectiveness === 0) {
+        addDmg(0, defSide, 0, false, false);
+        addLog(`${defName} n'est pas affecté !`, '#94a3b8');
       } else if (!isStatusOnly) {
         addLog(`${defName} n'est pas affecté !`, '#94a3b8');
       }
@@ -1299,43 +1304,73 @@ export function BattleScreen({
       }
     };
 
+    // ── Helper : appliquer l'altération d'état d'un attaquant sur sa cible ──
+    // Appelé immédiatement après l'attaque (pas en fin de tour) pour que le sommeil
+    // infligé par le premier attaquant bloque le second dans le même tour (règle Gen 4).
+    const applyAttackerStatus = (attacker: 'player' | 'enemy', result: typeof pResult) => {
+      if (!result.appliedStatus) return;
+      if (attacker === 'player') {
+        const ns = applyMajorStatus(ef[eIdx].statusState, result.appliedStatus);
+        if (ns) {
+          addLog(`${eName} est ${STATUS_FR[result.appliedStatus] ?? result.appliedStatus} !`, statusLabel(result.appliedStatus)?.color ?? '#fde68a');
+          ef[eIdx] = { ...ef[eIdx], statusState: ns };
+          flush();
+        }
+      } else {
+        const ns = applyMajorStatus(pf[pIdx].statusState, result.appliedStatus);
+        if (ns) {
+          addLog(`${pName} est ${STATUS_FR[result.appliedStatus] ?? result.appliedStatus} !`, statusLabel(result.appliedStatus)?.color ?? '#fde68a');
+          pf[pIdx] = { ...pf[pIdx], statusState: ns };
+          flush();
+        }
+      }
+    };
+
+    // Vérifie si le statut vient d'être appliqué à l'instant et bloque instantanément
+    // (sommeil, gel — pas la paralysie qui n'agit qu'au tour suivant).
+    const isFreshBlock = (cond: string | null) => cond === 'slp' || cond === 'frz';
+
     // ── Execute in turn order ──
     if (goesFirst) {
-      // Player goes first
+      // ── Premier : le joueur ──
       const eKo = await executeOneAttack(pResult, 'player', pCanActResult, pRawMoveSelected);
       if (battleDone.current) return;
       if (eKo) { handleEnemyKo(); return; }
       if (pf[pIdx].currentHp <= 0) { handlePlayerKo(); return; }
-      // Enemy's turn
-      await executeOneAttack(eResult, 'enemy', eCanActResult, eRawMoveSelected);
+
+      // Applique immédiatement l'état du joueur sur l'adversaire
+      if (pCanActResult.canAct) applyAttackerStatus('player', pResult);
+
+      // Si l'adversaire vient d'être endormi/gelé CE tour-ci → annule son action
+      const eFreshlyBlocked = isFreshBlock(ef[eIdx].statusState.condition ?? null);
+      const eCanActFinal = eFreshlyBlocked ? { ...eCanActResult, canAct: false } : eCanActResult;
+
+      // ── Second : l'adversaire ──
+      await executeOneAttack(eResult, 'enemy', eCanActFinal, eRawMoveSelected);
+      if (battleDone.current) return;
+
+      // Applique l'état de l'adversaire uniquement s'il a effectivement agi
+      if (!eFreshlyBlocked && eCanActResult.canAct) applyAttackerStatus('enemy', eResult);
     } else {
-      // Enemy goes first
+      // ── Premier : l'adversaire ──
       const pKo = await executeOneAttack(eResult, 'enemy', eCanActResult, eRawMoveSelected);
       if (battleDone.current) return;
       if (pKo) { handlePlayerKo(); return; }
       if (ef[eIdx].currentHp <= 0) { handleEnemyKo(); return; }
-      // Player's turn
-      await executeOneAttack(pResult, 'player', pCanActResult, pRawMoveSelected);
-    }
 
-    if (battleDone.current) return;
+      // Applique immédiatement l'état de l'adversaire sur le joueur
+      if (eCanActResult.canAct) applyAttackerStatus('enemy', eResult);
 
-    // ── Apply statuses from attacks ──
-    if (pResult.appliedStatus) {
-      const ns = applyMajorStatus(ef[eIdx].statusState, pResult.appliedStatus);
-      if (ns) {
-        addLog(`${eName} est ${STATUS_FR[pResult.appliedStatus] ?? pResult.appliedStatus} !`, statusLabel(pResult.appliedStatus)?.color ?? '#fde68a');
-        ef[eIdx] = { ...ef[eIdx], statusState: ns };
-        flush();
-      }
-    }
-    if (eResult.appliedStatus) {
-      const ns = applyMajorStatus(pf[pIdx].statusState, eResult.appliedStatus);
-      if (ns) {
-        addLog(`${pName} est ${STATUS_FR[eResult.appliedStatus] ?? eResult.appliedStatus} !`, statusLabel(eResult.appliedStatus)?.color ?? '#fde68a');
-        pf[pIdx] = { ...pf[pIdx], statusState: ns };
-        flush();
-      }
+      // Si le joueur vient d'être endormi/gelé CE tour-ci → annule son action
+      const pFreshlyBlocked = isFreshBlock(pf[pIdx].statusState.condition ?? null);
+      const pCanActFinal = pFreshlyBlocked ? { ...pCanActResult, canAct: false } : pCanActResult;
+
+      // ── Second : le joueur ──
+      await executeOneAttack(pResult, 'player', pCanActFinal, pRawMoveSelected);
+      if (battleDone.current) return;
+
+      // Applique l'état du joueur uniquement s'il a effectivement agi
+      if (!pFreshlyBlocked && pCanActResult.canAct) applyAttackerStatus('player', pResult);
     }
 
     // ── End-of-turn: BRN/PSN/TOX ──
@@ -1582,14 +1617,23 @@ export function BattleScreen({
           return (
             <div key={d.id} className="absolute pointer-events-none" style={{
               ...pos, zIndex: 20,
-              fontSize: d.isCrit ? '1.8rem' : d.effectiveness >= 2 ? '1.6rem' : '1.2rem',
+              fontSize: d.isCrit ? '1.8rem' : d.effectiveness >= 2 ? '1.6rem' : d.effectiveness === 0 ? '1rem' : '1.2rem',
               fontWeight: 900, color,
               textShadow: d.isCrit ? `0 0 18px #fbbf24, 0 0 32px #f59e0b` : `0 0 12px ${color}`,
               animation: 'dmg-float 1.6s ease-out forwards', transform: 'translateX(-50%)',
             }}>
-              {d.isMiss ? 'RATÉ!' : `−${d.value}`}
+              {d.isMiss ? 'RATÉ!' : d.value === 0 && d.effectiveness === 0 ? 'IMMUNISÉ' : `−${d.value}`}
               {d.isCrit && <div style={{ fontSize: '0.6rem', textAlign: 'center', color: '#fde047', letterSpacing: '0.1em' }}>CRITIQUE !</div>}
-              {!d.isMiss && !d.isCrit && d.effectiveness >= 2 && <div style={{ fontSize: '0.55rem', textAlign: 'center' }}>SUPER EFFICACE</div>}
+              {!d.isMiss && d.effectiveness >= 2 && (
+                <div style={{ fontSize: '0.58rem', textAlign: 'center', color: '#fde047', fontWeight: 900, letterSpacing: '0.04em', marginTop: 2 }}>
+                  C'est très efficace !
+                </div>
+              )}
+              {!d.isMiss && d.effectiveness > 0 && d.effectiveness < 1 && (
+                <div style={{ fontSize: '0.52rem', textAlign: 'center', color: '#94a3b8', marginTop: 2 }}>
+                  Pas très efficace…
+                </div>
+              )}
             </div>
           );
         })}
