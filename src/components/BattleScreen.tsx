@@ -1019,7 +1019,6 @@ export function BattleScreen({
           setHitEffect({ target: 'player', uid: hUid });
           setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 450);
           addDmg(eResult.damage, 'player', eResult.effectiveness, eResult.isCrit, false);
-          addLog(`→ ${eResult.damage} dégâts${eResult.isCrit ? ' ⚡ CRIT !' : ''}`, eResult.isCrit ? '#fbbf24' : '#fca5a5');
         } else if (eResult.isMiss) {
           addLog(`L'attaque de ${eName} a raté !`, '#94a3b8');
         }
@@ -1354,12 +1353,10 @@ export function BattleScreen({
         setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 450);
 
         // floating damage
-        const hitsLabel = result.hits > 1 ? ` (×${result.hits})` : '';
         addDmg(result.damage, defSide, result.effectiveness, result.isCrit, false);
         if (result.isCrit) addLog('Coup critique !', '#fbbf24');
         if (result.effectiveness >= 2) addLog('C\'est super efficace !', isPlayer ? '#4ade80' : '#f87171');
         else if (result.effectiveness < 1 && result.effectiveness > 0) addLog('Ça ne semble pas très efficace...', '#94a3b8');
-        addLog(`→ ${result.damage} dégâts${hitsLabel}`, '#cbd5e1');
       } else if (result.effectiveness === 0) {
         addDmg(0, defSide, 0, false, false);
         addLog('Ça n\'a aucun effet...', '#94a3b8');
@@ -2104,15 +2101,16 @@ export function BattleScreen({
 
         {/* Move selection — shown during player_turn */}
         {(phase === 'player_turn' || phase === 'resolving') && (
-          <div className="px-3 pb-3">
+          <div className="px-2 pb-2 pt-1">
             {playerMoves.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-1.5">
                 {playerMoves.map((move, i) => {
                   const pp = activePF?.currentPP[i] ?? 0;
                   const isCharging = !!(activePF?.chargingMove);
                   const isThisChargingMove = activePF?.chargingMove?.moveIndex === i;
                   const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat || !!(pvpControls?.isWaiting) || isCharging;
-                  const typeColor = TYPE_COLORS[move.type as PokemonType] ?? '#475569';
+                  const typeColor = TYPE_COLORS[move.type as PokemonType] ?? '#888';
+                  const ppLow = pp <= Math.floor((move.pp ?? 15) / 4);
                   return (
                     <button key={i}
                       disabled={disabled}
@@ -2122,29 +2120,27 @@ export function BattleScreen({
                       onTouchStart={e => { e.preventDefault(); !disabled && startLongPress(i); }}
                       onTouchEnd={e => { e.preventDefault(); !disabled && endLongPress(i); }}
                       onClick={e => e.preventDefault()}
-                      className="relative rounded-xl px-3 py-2 text-left select-none"
+                      className="relative text-left select-none"
                       style={{
-                        background: isThisChargingMove ? 'linear-gradient(135deg, #adff2f88, #4ade8066)' : disabled ? '#1e293b' : `linear-gradient(135deg, ${typeColor}cc, ${typeColor}66)`,
-                        border: `2px solid ${isThisChargingMove ? '#adff2f' : disabled ? '#334155' : typeColor}`,
-                        opacity: disabled && !isThisChargingMove ? 0.4 : 1,
+                        background: disabled && !isThisChargingMove ? '#b0b890' : '#c8d848',
+                        border: isThisChargingMove ? '3px dashed #e8a000' : `3px solid #706890`,
+                        borderRadius: 6,
+                        boxShadow: 'inset 2px 2px 0 #e8f098, inset -2px -2px 0 #8a9830',
+                        padding: '6px 10px 5px',
+                        opacity: disabled && !isThisChargingMove ? 0.55 : 1,
                         WebkitTapHighlightColor: 'transparent',
                       }}>
-                      <div className="flex justify-between items-start">
-                        {isThisChargingMove
-                          ? <span className="text-yellow-300 font-black text-xs animate-pulse">☀️ Prêt !</span>
-                          : <span className="text-white font-bold text-xs leading-tight">{move.name}</span>
-                        }
-                        <span className="text-white/60 text-xs">{pp}/{move.pp ?? 15}</span>
+                      <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.52rem', color: '#111', lineHeight: 1.4, marginBottom: 4 }}>
+                        {isThisChargingMove ? '☀️ Prêt !' : move.name}
                       </div>
-                      <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                        <span className="text-white/70 uppercase font-bold" style={{ fontSize: '0.45rem' }}>{move.type}</span>
-                        <span className="text-white/50" style={{ fontSize: '0.45rem' }}>•</span>
-                        <span className="text-white/70" style={{ fontSize: '0.45rem' }}>
-                          {move.category === 'status' ? 'STATUT' : move.category === 'physical' ? 'PHYS' : 'SPÉ'}
+                      <div className="flex items-center gap-1.5">
+                        <span style={{
+                          fontFamily: "'Press Start 2P', monospace", fontSize: '0.38rem', fontWeight: 700,
+                          background: typeColor, color: 'white', padding: '1px 4px', borderRadius: 3,
+                        }}>{move.type.slice(0,6).toUpperCase()}</span>
+                        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: ppLow ? '#c00' : '#333' }}>
+                          PP {pp}/{move.pp ?? 15}
                         </span>
-                        {move.power > 0 && <><span className="text-white/50" style={{ fontSize: '0.45rem' }}>•</span><span className="text-white/70" style={{ fontSize: '0.45rem' }}>{move.power}</span></>}
-                        {move.highCrit && <span className="text-yellow-300" style={{ fontSize: '0.45rem' }}>⚡</span>}
-                        {move.multiHit && <span className="text-purple-300" style={{ fontSize: '0.45rem' }}>×2-5</span>}
                       </div>
                     </button>
                   );
@@ -2158,36 +2154,47 @@ export function BattleScreen({
                   if (pvpControls) { pvpControls.onMoveSelect(0); phaseRef.current = 'resolving'; setPhase('resolving'); }
                   else executeTurn(0);
                 }}
-                className="w-full rounded-xl px-4 py-3 text-center"
-                style={{ background: '#374151', border: '2px solid #6b7280', opacity: phase === 'resolving' ? 0.5 : 1 }}>
-                <span className="text-white font-bold text-sm">Lutte</span>
-                <div className="text-white/50 text-xs">Plus de PP !</div>
+                className="w-full text-center"
+                style={{ background: '#c8d848', border: '3px solid #706890', borderRadius: 6, boxShadow: 'inset 2px 2px 0 #e8f098, inset -2px -2px 0 #8a9830', padding: '10px', opacity: phase === 'resolving' ? 0.5 : 1 }}>
+                <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.55rem', color: '#111' }}>Lutte</span>
               </button>
             ) : null}
 
             {pvpControls?.isWaiting && (
-              <div className="mt-2 py-2.5 rounded-xl text-center text-slate-400 text-sm animate-pulse"
-                style={{ background: '#1e293b', border: '1px solid #334155' }}>
+              <div className="mt-1.5 py-2.5 rounded text-center text-slate-400 text-xs animate-pulse"
+                style={{ background: '#1e293b', border: '1px solid #334155', fontFamily: "'Press Start 2P', monospace", fontSize: '0.45rem' }}>
                 ⏳ En attente de l'adversaire…
               </div>
             )}
 
             {phase === 'player_turn' && !pvpControls && (
-              <div className="mt-2 flex gap-2">
+              <div className="mt-1.5 flex gap-1.5">
                 {playerFighters.filter((f, i) => i !== playerIdx && f.currentHp > 0).length > 0 && (
                   <button
                     onClick={() => setSwitchMenuOpen(true)}
-                    className="flex-1 rounded-xl py-2 text-xs font-bold text-slate-300 hover:text-yellow-300 transition-colors flex items-center justify-center gap-1.5"
-                    style={{ background: '#1e293b', border: '1px solid #334155' }}>
-                    🔄 Changer
+                    className="flex-1 flex items-center justify-center"
+                    style={{
+                      background: '#3060c8', border: '3px solid #1a3880', borderRadius: 6,
+                      boxShadow: 'inset 2px 2px 0 #6090e8, inset -2px -2px 0 #182860',
+                      padding: '7px 4px',
+                      fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: 'white',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}>
+                    CHANGER
                   </button>
                 )}
                 {onQuit && (
                   <button
                     onClick={onQuit}
-                    className="flex-1 rounded-xl py-2 text-xs font-bold text-slate-400 hover:text-red-400 transition-colors flex items-center justify-center gap-1.5"
-                    style={{ background: '#1e293b', border: '1px solid #334155' }}>
-                    🏃 Fuir
+                    className="flex-1 flex items-center justify-center"
+                    style={{
+                      background: '#3060c8', border: '3px solid #1a3880', borderRadius: 6,
+                      boxShadow: 'inset 2px 2px 0 #6090e8, inset -2px -2px 0 #182860',
+                      padding: '7px 4px',
+                      fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: 'white',
+                      WebkitTapHighlightColor: 'transparent',
+                    }}>
+                    FUITE
                   </button>
                 )}
               </div>
