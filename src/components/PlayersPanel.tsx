@@ -53,10 +53,13 @@ function muteRemaining(expiry: number | null): string {
   return `${Math.floor(m / 60)}h ${m % 60}min`;
 }
 
+import type { TeamMember } from './TeamBuilder';
+
 interface Props {
   onClose: () => void;
   isAdmin?: boolean;
   onBattle3v3?: (enemyPokemon: Array<{ pokemonId: number; level: number; isShiny?: boolean }>, enemyName: string) => void;
+  onPvpChallenge?: (userId: string, username: string, opponentTeam: TeamMember[]) => void;
 }
 
 function formatLastSeen(iso: string): string {
@@ -68,7 +71,7 @@ function formatLastSeen(iso: string): string {
   return `${Math.floor(h / 24)}j`;
 }
 
-export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
+export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3, onPvpChallenge }: Props) {
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [myUserId, setMyUserId] = useState<string | null>(null);
@@ -324,6 +327,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3 }: Props) {
           lastSeen={selectedPlayer.lastSeen}
           onClose={() => setSelectedPlayer(null)}
           onBattle3v3={onBattle3v3}
+          onPvpChallenge={onPvpChallenge}
         />
       )}
 

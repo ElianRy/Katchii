@@ -4,6 +4,7 @@ import { POKEMON_BY_ID } from '../data/gen1';
 import { RARITY_COLORS } from '../types';
 import { playerLevelFromXp, xpToNextLevel, getPlayerGrade } from '../lib/playerLevel';
 import { ShinySprite } from './ShinySprite';
+import type { TeamMember } from './TeamBuilder';
 
 interface Props {
   userId: string;
@@ -12,6 +13,7 @@ interface Props {
   lastSeen?: string;
   onClose: () => void;
   onBattle3v3?: (enemyPokemon: Array<{ pokemonId: number; level: number; isShiny?: boolean }>, enemyName: string) => void;
+  onPvpChallenge?: (userId: string, username: string, opponentTeam: TeamMember[]) => void;
 }
 
 function formatLastSeen(iso: string): string {
@@ -35,7 +37,7 @@ function formatPlayTime(ms: number): string {
 
 const RARITY_ORDER: Record<string, number> = { commun: 0, peu_commun: 1, rare: 2, elite: 3, legendaire: 4 };
 
-export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, onBattle3v3 }: Props) {
+export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, onBattle3v3, onPvpChallenge }: Props) {
   const [state, setState] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [fallbackLastSeen, setFallbackLastSeen] = useState<string | undefined>(undefined);
@@ -151,16 +153,27 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
             })}
           </div>
 
-          {/* ── 3v3 challenge button ── */}
-          {onBattle3v3 && teamToShow.length >= 1 && (
-            <button
-              onClick={() => onBattle3v3(teamToShow.map(m => ({ pokemonId: m.pokemonId, level: m.level, isShiny: m.isShiny })), username)}
-              className="w-full py-2 rounded-xl font-black text-sm"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)', color: 'white', boxShadow: '0 0 12px #a855f733' }}
-            >
-              ⚔️ Défier en 3v3
-            </button>
-          )}
+          {/* ── Challenge buttons ── */}
+          <div className="flex gap-2">
+            {onBattle3v3 && teamToShow.length >= 1 && (
+              <button
+                onClick={() => onBattle3v3(teamToShow.map(m => ({ pokemonId: m.pokemonId, level: m.level, isShiny: m.isShiny })), username)}
+                className="flex-1 py-2 rounded-xl font-black text-sm"
+                style={{ background: 'linear-gradient(135deg, #374151, #4b5563)', color: 'white' }}
+              >
+                🤖 Simuler
+              </button>
+            )}
+            {onPvpChallenge && teamToShow.length >= 1 && (
+              <button
+                onClick={() => onPvpChallenge(userId, username, teamToShow as TeamMember[])}
+                className="flex-1 py-2 rounded-xl font-black text-sm"
+                style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)', color: 'white', boxShadow: '0 0 12px #a855f733' }}
+              >
+                ⚔️ Défier en PvP
+              </button>
+            )}
+          </div>
 
           {/* ── Collection (collapsible) ── */}
           <div>

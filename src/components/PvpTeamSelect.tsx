@@ -7,7 +7,7 @@
  *  - Section "Équipes sauvegardées" permet de valider une équipe en un clic
  *  - Bouton "Valider" actif quand exactement 3 Pokémon sont sélectionnés
  */
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { ShinySprite } from './ShinySprite';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
@@ -144,7 +144,7 @@ export function PvpTeamSelect({ ownedPokemon, savedTeams, favoriteTeamId, oppone
     return b.level - a.level;
   }), [ownedPokemon]);
 
-  const favoriteTeam = savedTeams.find(t => t.id === favoriteTeamId);
+  // favoriteTeamId used directly in render for highlighting
 
   const toggleSelect = useCallback((pokemonId: number) => {
     setSelectedIds(prev => {

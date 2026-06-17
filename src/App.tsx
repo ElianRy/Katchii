@@ -25,6 +25,14 @@ import { PlayersPanel } from './components/PlayersPanel';
 import { BattleScreen } from './components/BattleScreen';
 import { ThroneScreen } from './components/ThroneScreen';
 import { TeamMember } from './components/TeamBuilder';
+import { PvpChallengePopup } from './components/PvpChallengePopup';
+import { PvpTeamSelect } from './components/PvpTeamSelect';
+import { PvpBattleScreen } from './components/PvpBattleScreen';
+import {
+  sendChallenge, acceptChallenge, declineChallenge, cancelChallenge,
+  subscribeToIncomingChallenges, subscribeToChallengeStatus, subscribeToSession, submitTeam,
+} from './lib/pvp';
+import type { PvpChallenge, PvpSession } from './lib/pvp';
 import { useGameState } from './hooks/useGameState';
 import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
@@ -49,6 +57,16 @@ export function App() {
   const [forcePwLoading, setForcePwLoading] = useState(false);
   const prevViewRef = useRef<View>('auth');
   const gameState = useGameState();
+
+  // ── PvP state ────────────────────────────────────────────────────────────────
+  const [pvpIncoming, setPvpIncoming] = useState<PvpChallenge | null>(null);
+  const [pvpSession, setPvpSession] = useState<PvpSession | null>(null);
+  const [pvpPhase, setPvpPhase] = useState<'idle' | 'team_select' | 'battle'>('idle');
+  const [pvpIsHost, setPvpIsHost] = useState(false);
+  const [pvpMyTeam, setPvpMyTeam] = useState<TeamMember[]>([]);
+  const [pvpOpponentTeam, setPvpOpponentTeam] = useState<TeamMember[]>([]);
+  const [pvpOpponentName, setPvpOpponentName] = useState('');
+  const pvpCleanupRef = useRef<(() => void) | null>(null);
 
   // Persist & restore last view
   const persistView = useCallback((v: View) => {
@@ -223,6 +241,103 @@ export function App() {
     setView('auth');
     setUsername('Joueur');
   }, []);
+
+  const handlePvpAccept = useCallback(async (challenge: PvpChallenge) => {
+    // Guest accepts: create session (host=challenger, guest=me)
+    const session = await acceptChallenge(challenge.id, challenge.challenger_id, userId);
+    if (!session) return;
+    setPvpIncoming(null);
+    setPvpSession(session);
+    setPvpIsHost(false);
+    setPvpOpponentName(challenge.challenger_name);
+    // Fetch opponent team from their saved state
+    const { data } = await supabase.from('game_states').select('state').eq('user_id', challenge.challenger_id).maybeSingle();
+    if (data?.state) {
+      const gs = data.state as { savedTeams?: Array<{ id: string; members: TeamMember[] }>; favoriteTeamId?: string };
+      const fav = gs.favoriteTeamId ? gs.savedTeams?.find(t => t.id === gs.favoriteTeamId) : null;
+      const members = (fav ?? gs.savedTeams?.[0])?.members?.slice(0, 3) ?? [];
+      setPvpOpponentTeam(members);
+    }
+    setPvpPhase('team_select');
+  }, [userId]);
+
+  const handlePvpDecline = useCallback(async (challenge: PvpChallenge) => {
+    await declineChallenge(challenge.id);
+    setPvpIncoming(null);
+  }, []);
+
+  // ── PvP: listen for incoming challenges ──────────────────────────────────────
+  useEffect(() => {
+    if (!userId) return;
+    const chan = subscribeToIncomingChallenges(userId, c => setPvpIncoming(c));
+    return () => { supabase.removeChannel(chan); };
+  }, [userId]);
+
+  const cleanupPvp = useCallback(() => {
+    pvpCleanupRef.current?.();
+    pvpCleanupRef.current = null;
+    setPvpIncoming(null);
+    setPvpSession(null);
+    setPvpPhase('idle');
+    setPvpMyTeam([]);
+    setPvpOpponentTeam([]);
+    setPvpOpponentName('');
+  }, []);
+
+  // Called when user clicks "Défier en 3v3 PvP" on another player's profile
+  const handlePvpChallenge = useCallback(async (
+    challengedId: string, challengedName: string, opponentTeam: TeamMember[],
+  ) => {
+    if (!userId) return;
+    const challenge = await sendChallenge(userId, username, challengedId);
+    if (!challenge) return;
+    setPvpOpponentName(challengedName);
+    setPvpOpponentTeam(opponentTeam);
+    setPvpIsHost(true);
+    setShowPlayers(false);
+
+    // Subscribe to challenge status changes
+    const statusChan = subscribeToChallengeStatus(challenge.id, async updated => {
+      if (updated.status === 'accepted') {
+        supabase.removeChannel(statusChan);
+        // Fetch the newly-created session
+        const { data } = await supabase
+          .from('pvp_sessions')
+          .select()
+          .eq('challenge_id', challenge.id)
+          .maybeSingle();
+        if (!data) return;
+        setPvpSession(data as PvpSession);
+        setPvpPhase('team_select');
+      } else if (updated.status === 'declined' || updated.status === 'cancelled') {
+        supabase.removeChannel(statusChan);
+        cleanupPvp();
+      }
+    });
+    pvpCleanupRef.current = () => {
+      supabase.removeChannel(statusChan);
+      cancelChallenge(challenge.id);
+    };
+  }, [userId, username, cleanupPvp]);
+
+  // Host submitted team — wait for guest + session to go active
+  const handlePvpTeamConfirm = useCallback(async (team: TeamMember[]) => {
+    if (!pvpSession) return;
+    setPvpMyTeam(team);
+    await submitTeam(pvpSession.id, pvpIsHost, team);
+    // Subscribe to session updates to detect when both teams ready
+    const sessChan = subscribeToSession(pvpSession.id, updated => {
+      if (updated.host_ready && updated.guest_ready) {
+        supabase.removeChannel(sessChan);
+        // Resolve opponent's team from session
+        const oppRaw = pvpIsHost ? updated.guest_team : updated.host_team;
+        if (oppRaw) {
+          setPvpOpponentTeam(oppRaw as TeamMember[]);
+        }
+        setPvpPhase('battle');
+      }
+    });
+  }, [pvpSession, pvpIsHost]);
 
   // Listen for ban broadcast — log out immediately if current user is banned
   useEffect(() => {
@@ -455,7 +570,7 @@ export function App() {
         />
       )}
 
-      {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} isAdmin={['admin', 'elian'].includes(username.toLowerCase())} onBattle3v3={handleBattle3v3} />}
+      {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} isAdmin={['admin', 'elian'].includes(username.toLowerCase())} onBattle3v3={handleBattle3v3} onPvpChallenge={handlePvpChallenge} />}
 
       {battle3v3 && (() => {
         const hasAttackBoost = (gameState.state.attackBoostCharges ?? 0) > 0;
@@ -489,6 +604,54 @@ export function App() {
             }
           }}
         />
+      )}
+
+      {/* ── PvP overlays ── */}
+      <PvpChallengePopup
+        challenge={pvpIncoming}
+        onAccept={handlePvpAccept}
+        onDecline={handlePvpDecline}
+        onDismiss={() => setPvpIncoming(null)}
+      />
+
+      {pvpPhase === 'team_select' && pvpSession && (
+        <div className="fixed inset-0 z-[700]">
+          <PvpTeamSelect
+            ownedPokemon={Object.entries(gameState.state.normalCollection)
+              .filter(([, c]) => (c as number) > 0)
+              .map(([id]) => {
+                const numId = Number(id);
+                const lvl = gameState.state.pokemonLevels?.[numId]?.level ?? 1;
+                return {
+                  pokemonId: numId,
+                  isShiny: (gameState.state.shinyCollection[numId] ?? 0) > 0,
+                  level: lvl,
+                  xp: gameState.state.pokemonLevels?.[numId]?.xp ?? 0,
+                  instance: gameState.state.pokemonData?.[numId],
+                };
+              })}
+            savedTeams={gameState.state.savedTeams ?? []}
+            favoriteTeamId={gameState.state.favoriteTeamId}
+            opponentName={pvpOpponentName}
+            onConfirm={handlePvpTeamConfirm}
+            onCancel={cleanupPvp}
+          />
+        </div>
+      )}
+
+      {pvpPhase === 'battle' && pvpSession && pvpMyTeam.length > 0 && (
+        <div className="fixed inset-0 z-[700]">
+          <PvpBattleScreen
+            session={pvpSession}
+            isHost={pvpIsHost}
+            myTeam={pvpMyTeam}
+            opponentTeam={pvpOpponentTeam}
+            opponentName={pvpOpponentName}
+            userId={userId}
+            onBattleEnd={_won => { cleanupPvp(); }}
+            onQuit={cleanupPvp}
+          />
+        </div>
       )}
 
       {/* Forced password change modal (set by admin) */}

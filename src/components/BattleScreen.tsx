@@ -22,6 +22,14 @@ registerMoves(MOVES as Parameters<typeof registerMoves>[0]);
 import type { } from '../data/gen1Stats';
 import { TeamMember } from './TeamBuilder';
 import type { PokemonInstanceData } from '../types';
+import type { PvpMoveResult } from '../lib/pvp';
+
+interface PvpTurnOverride {
+  playerMoveIndex: number;
+  enemyMoveIndex: number;
+  pResult?: PvpMoveResult;
+  eResult?: PvpMoveResult;
+}
 
 const SHINY_INTRO_STARS: { color: string; dur: string; delay: string; sym: string; size: number; anim: string }[] = [
   { color: '#fde047', dur: '1.2s', delay: '0s',    sym: '✦', size: 18, anim: 'park-persp-a' },
@@ -53,6 +61,12 @@ interface Props {
   pokemonData?: Record<number, PokemonInstanceData>;
   pokemonMoves?: Record<number, number[]>;
   pokemonCustomMoves?: Record<number, string[]>;
+  pvpControls?: {
+    isWaiting: boolean;
+    onMoveSelect: (moveIndex: number) => void;
+    pendingPayload: PvpTurnOverride | null;
+    onTurnComputed?: (payload: Required<PvpTurnOverride>) => void;
+  };
 }
 
 interface FighterState extends TeamMember {
@@ -649,7 +663,7 @@ export function BattleScreen({
   suppressVictorySound = false, keepMusic = false, keepMusicOnUnmount = false,
   autoCombat,
   onQuit, trainerImage, trainerColor, sideOverlay, pokemonData, pokemonMoves,
-  pokemonCustomMoves,
+  pokemonCustomMoves, pvpControls,
 }: Props) {
 
   const initFighters = (team: TeamMember[], useCurrentHp: boolean): FighterState[] =>
@@ -744,8 +758,18 @@ export function BattleScreen({
 
   useEffect(() => () => { if (!keepMusicOnUnmount) stopMusic(0.5); }, [keepMusicOnUnmount]);
 
+  // PvP: when a pre-computed turn payload arrives, trigger execution
+  const executeTurnRef = useRef<((idx: number, pvp?: PvpTurnOverride) => Promise<void>) | null>(null);
   useEffect(() => {
-    if (phase !== 'player_turn' || !autoCombat) return;
+    const payload = pvpControls?.pendingPayload;
+    if (!payload) return;
+    if (phaseRef.current !== 'player_turn') return;
+    executeTurnRef.current?.(payload.playerMoveIndex, payload);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pvpControls?.pendingPayload]);
+
+  useEffect(() => {
+    if (phase !== 'player_turn' || !autoCombat || pvpControls) return;
     const delay = 800 + Math.random() * 200;
     const t = setTimeout(() => {
       if (phaseRef.current !== 'player_turn') return;
@@ -918,7 +942,7 @@ export function BattleScreen({
   }, [playerFighters, enemyFighters, addLog, addDmg, pokemonData]);
 
   // ── Core turn execution (async — strict sequential VFX → damage → sound) ──
-  const executeTurn = useCallback(async (playerMoveIndex: number) => {
+  const executeTurn = useCallback(async (playerMoveIndex: number, pvpPayload?: PvpTurnOverride) => {
     if (battleDone.current || phaseRef.current !== 'player_turn') return;
     phaseRef.current = 'resolving';
     setPhase('resolving');
@@ -959,10 +983,12 @@ export function BattleScreen({
     const ePlayerTypes = (POKEMON_TYPE[pFighter.pokemonId] ?? ['normal']) as PokemonType[];
     const pCustomSlugs = pokemonCustomMoves?.[pFighter.pokemonId];
     const pRawMoves = getMoveListRaw(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId], pCustomSlugs);
-    const eMoveIndex = chooseEnemyMoveIndex(
+    const eMoveIndexAI = chooseEnemyMoveIndex(
       eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
       pFighter.statusState, eFighter.statusState
     );
+    // PvP: override with opponent's actual move; otherwise use AI choice
+    const eMoveIndex = pvpPayload ? pvpPayload.enemyMoveIndex : eMoveIndexAI;
     turnNumberRef.current++;
 
     // Turn order
@@ -997,16 +1023,23 @@ export function BattleScreen({
     const TRANSFORM_PLACEHOLDER: MoveResult = { damage: 0, effectiveness: 1, moveName: 'Morphing', isCrit: false, isMiss: false, moveType: 'normal' as PokemonType, recoil: 0, hits: 0 };
     const boostMult = boostActiveRef.current && pIdx === 0 ? playerDamageMult : 1;
     const pStages = { ...pf[pIdx].stages, attack: pf[pIdx].stages.attack + (boostMult > 1 ? 1 : 0) };
-    const pResult = pRawMoveSelected?.id === 'transform'
+    let pResult: MoveResult = pRawMoveSelected?.id === 'transform'
       ? TRANSFORM_PLACEHOLDER
       : playerUsesStruggle
         ? calcStruggle(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, pInst, eInst)
         : calcDamage(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, playerMoveIndex, pInst, eInst, pStages, eFighter.stages, pEffectiveMoves, pFighter.statusState, eFighter.statusState);
-    const eResult = eRawMoveSelected?.id === 'transform'
+    let eResult: MoveResult = eRawMoveSelected?.id === 'transform'
       ? TRANSFORM_PLACEHOLDER
       : eMoveIndex < 0
         ? calcStruggle(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eInst, pInst)
         : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndex, eInst, pInst, eFighter.stages, pFighter.stages, eEffectiveMoves, eFighter.statusState, pFighter.statusState);
+    // PvP guest: use host-computed results; PvP host: broadcast computed results
+    if (pvpPayload?.pResult) {
+      pResult = pvpPayload.pResult as unknown as MoveResult;
+      eResult = pvpPayload.eResult as unknown as MoveResult;
+    } else if (pvpControls?.onTurnComputed) {
+      pvpControls.onTurnComputed({ playerMoveIndex, enemyMoveIndex: eMoveIndex, pResult, eResult });
+    }
 
     const STAT_FR: Record<string, string> = {
       attack: "l'Attaque", defense: 'la Défense',
@@ -1449,11 +1482,19 @@ export function BattleScreen({
       setTooltipMoveIdx(idx);
     }, 300);
   };
+  executeTurnRef.current = executeTurn;
+
   const endLongPress = (idx: number) => {
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-    if (longPressFiredRef.current) return; // long press showed tooltip — do nothing on release
-    if (tooltipMoveIdx !== null) { setTooltipMoveIdx(null); return; } // close tooltip on tap
-    if (phase === 'player_turn') executeTurn(idx);
+    if (longPressFiredRef.current) return;
+    if (tooltipMoveIdx !== null) { setTooltipMoveIdx(null); return; }
+    if (phase !== 'player_turn') return;
+    if (pvpControls) {
+      pvpControls.onMoveSelect(idx);
+      phaseRef.current = 'resolving'; setPhase('resolving');
+    } else {
+      executeTurn(idx);
+    }
   };
 
   // ── INTRO PHASE ─────────────────────────────────────────────────────────────
@@ -1875,7 +1916,7 @@ export function BattleScreen({
               <div className="grid grid-cols-2 gap-2">
                 {playerMoves.map((move, i) => {
                   const pp = activePF?.currentPP[i] ?? 0;
-                  const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat;
+                  const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat || !!(pvpControls?.isWaiting);
                   const typeColor = TYPE_COLORS[move.type as PokemonType] ?? '#475569';
                   return (
                     <button key={i}
@@ -1914,7 +1955,11 @@ export function BattleScreen({
             ) : allPPEmpty ? (
               <button
                 disabled={phase === 'resolving'}
-                onPointerUp={() => phase === 'player_turn' && executeTurn(0)}
+                onPointerUp={() => {
+                  if (phase !== 'player_turn') return;
+                  if (pvpControls) { pvpControls.onMoveSelect(0); phaseRef.current = 'resolving'; setPhase('resolving'); }
+                  else executeTurn(0);
+                }}
                 className="w-full rounded-xl px-4 py-3 text-center"
                 style={{ background: '#374151', border: '2px solid #6b7280', opacity: phase === 'resolving' ? 0.5 : 1 }}>
                 <span className="text-white font-bold text-sm">Lutte</span>
@@ -1922,7 +1967,14 @@ export function BattleScreen({
               </button>
             ) : null}
 
-            {phase === 'player_turn' && (
+            {pvpControls?.isWaiting && (
+              <div className="mt-2 py-2.5 rounded-xl text-center text-slate-400 text-sm animate-pulse"
+                style={{ background: '#1e293b', border: '1px solid #334155' }}>
+                ⏳ En attente de l'adversaire…
+              </div>
+            )}
+
+            {phase === 'player_turn' && !pvpControls && (
               <div className="mt-2 flex gap-2">
                 {playerFighters.filter((f, i) => i !== playerIdx && f.currentHp > 0).length > 0 && (
                   <button

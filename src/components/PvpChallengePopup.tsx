@@ -7,7 +7,7 @@
  *  - "Accepter" → déclenche onAccept(challenge).
  *  - "Refuser" → déclenche onDecline(challenge) et ferme.
  */
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { PvpChallenge } from '../lib/pvp';
 
 interface Props {
