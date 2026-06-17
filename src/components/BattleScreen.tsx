@@ -2045,11 +2045,11 @@ export function BattleScreen({
           position: 'relative',
         }}>
           {/* Previous line */}
-          <div style={{ fontSize: '0.82rem', color: '#555', lineHeight: 1.45, fontWeight: 500, minHeight: '1.2rem', fontFamily: 'system-ui, sans-serif' }}>
+          <div style={{ fontSize: '0.55rem', color: '#666', lineHeight: 1.8, fontWeight: 400, minHeight: '1rem', fontFamily: "'Press Start 2P', monospace" }}>
             {hgDialog.topLine || ' '}
           </div>
           {/* Current line (typing) */}
-          <div style={{ fontSize: '0.82rem', color: '#111', lineHeight: 1.45, fontWeight: 600, minHeight: '1.2rem', fontFamily: 'system-ui, sans-serif' }}>
+          <div style={{ fontSize: '0.55rem', color: '#111', lineHeight: 1.8, fontWeight: 400, minHeight: '1rem', fontFamily: "'Press Start 2P', monospace" }}>
             {hgDialog.curLine}
             {!hgDialog.showArrow && hgDialog.curLine.length < hgDialog.curFull.length && (
               <span style={{ display: 'inline-block', width: 7, height: 11, background: '#111', verticalAlign: 'middle', marginLeft: 1, animation: 'hg-blink-cursor 0.55s step-end infinite' }} />
