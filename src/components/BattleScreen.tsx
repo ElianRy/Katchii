@@ -657,6 +657,27 @@ function MorphBlinkOverlay({ uid: _uid }: { uid: number }) {
   );
 }
 
+function SleepAppliedZzz({ uid: _uid }: { uid: number }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 25 }}>
+      {(['Z', 'Z', 'z'] as string[]).map((char, i) => (
+        <span key={i} style={{
+          position: 'absolute',
+          left: `${25 + i * 18}%`,
+          top: `${40 - i * 18}%`,
+          fontSize: `${1.6 - i * 0.25}rem`,
+          fontWeight: 900,
+          color: '#94a3b8',
+          textShadow: '0 0 12px #64748b, 0 0 24px #475569',
+          animation: `slp-zzz-${i} ${1.0 + i * 0.2}s ${i * 0.25}s ease-out forwards`,
+        }}>
+          {char}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 export function BattleScreen({
   playerTeam, enemyTeam, bossName: _bossName, onBattleEnd,
@@ -732,6 +753,7 @@ export function BattleScreen({
   const [statusBlockOverlay, setStatusBlockOverlay] = useState<{ target: 'player' | 'enemy'; condition: string | null; uid: number } | null>(null);
   const [poisonBubbles, setPoisonBubbles] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const [morphVfxState, setMorphVfxState] = useState<{ target: 'player' | 'enemy'; phase: 'blink' | 'squish'; uid: number } | null>(null);
+  const [sleepApplied, setSleepApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
     setLog(prev => [...prev.slice(-100), { text, color }]);
   }, []);
@@ -1381,12 +1403,20 @@ export function BattleScreen({
     // infligé par le premier attaquant bloque le second dans le même tour (règle Gen 4).
     const applyAttackerStatus = (attacker: 'player' | 'enemy', result: typeof pResult) => {
       if (!result.appliedStatus) return;
+      const triggerSleep = (target: 'player' | 'enemy') => {
+        if (result.appliedStatus === 'slp') {
+          const uid = dmgCounter++;
+          setSleepApplied({ target, uid });
+          setTimeout(() => setSleepApplied(s => s?.uid === uid ? null : s), 2000);
+        }
+      };
       if (attacker === 'player') {
         const ns = applyMajorStatus(ef[eIdx].statusState, result.appliedStatus);
         if (ns) {
           addLog(`${eName} est ${STATUS_FR[result.appliedStatus] ?? result.appliedStatus} !`, statusLabel(result.appliedStatus)?.color ?? '#fde68a');
           ef[eIdx] = { ...ef[eIdx], statusState: ns };
           flush();
+          triggerSleep('enemy');
         }
       } else {
         const ns = applyMajorStatus(pf[pIdx].statusState, result.appliedStatus);
@@ -1394,6 +1424,7 @@ export function BattleScreen({
           addLog(`${pName} est ${STATUS_FR[result.appliedStatus] ?? result.appliedStatus} !`, statusLabel(result.appliedStatus)?.color ?? '#fde68a');
           pf[pIdx] = { ...pf[pIdx], statusState: ns };
           flush();
+          triggerSleep('player');
         }
       }
     };
@@ -1765,6 +1796,8 @@ export function BattleScreen({
             {poisonBubbles?.target === 'enemy' && <PoisonBubblesVfx uid={poisonBubbles.uid} />}
             {/* Morph VFX on enemy */}
             {morphVfxState?.target === 'enemy' && morphVfxState.phase === 'blink' && <MorphBlinkOverlay uid={morphVfxState.uid} />}
+            {/* Sleep applied Zzz on enemy */}
+            {sleepApplied?.target === 'enemy' && <SleepAppliedZzz uid={sleepApplied.uid} />}
           </div>
           <div className="flex gap-1.5 justify-end mt-1">
             {enemyFighters.map((f, i) => (
@@ -1789,6 +1822,8 @@ export function BattleScreen({
             {poisonBubbles?.target === 'player' && <PoisonBubblesVfx uid={poisonBubbles.uid} />}
             {/* Morph VFX on player */}
             {morphVfxState?.target === 'player' && morphVfxState.phase === 'blink' && <MorphBlinkOverlay uid={morphVfxState.uid} />}
+            {/* Sleep applied Zzz on player */}
+            {sleepApplied?.target === 'player' && <SleepAppliedZzz uid={sleepApplied.uid} />}
           </div>
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
             <div className="flex justify-between items-center mb-1">
