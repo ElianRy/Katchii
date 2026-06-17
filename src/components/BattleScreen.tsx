@@ -16,7 +16,7 @@ import {
   calcEndOfTurnDamage, statusLabel, playerGoesFirst as calcTurnOrder,
   registerMoves,
 } from '../data/combatEngine';
-import type { Stages, StatusState } from '../data/combatEngine';
+import type { Stages, StatusState, RawMove, MoveResult } from '../data/combatEngine';
 import { MOVES } from '../data/gen1Moves';
 registerMoves(MOVES as Parameters<typeof registerMoves>[0]);
 import type { } from '../data/gen1Stats';
@@ -61,6 +61,9 @@ interface FighterState extends TeamMember {
   stages: Stages;
   statusState: StatusState;
   isSeeded?: boolean;
+  // Morphing (Transform) — ephemeral, only lives during combat
+  transformOriginalId?: number;
+  transformMoveOverride?: RawMove[];
 }
 
 interface LogEntry { text: string; color: string; }
@@ -628,6 +631,17 @@ function PoisonBubblesVfx({ uid: _uid }: { uid: number }) {
   );
 }
 
+// ── Morph VFX overlays ───────────────────────────────────────────────────────
+function MorphBlinkOverlay({ uid: _uid }: { uid: number }) {
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 25, borderRadius: 8,
+      background: 'radial-gradient(ellipse at 50% 60%, #a855f7cc 0%, #7c3aed44 55%, transparent 80%)',
+      animation: 'morph-blink-overlay 0.35s steps(2) forwards',
+    }} />
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 export function BattleScreen({
   playerTeam, enemyTeam, bossName: _bossName, onBattleEnd,
@@ -702,6 +716,7 @@ export function BattleScreen({
   const [hitEffect, setHitEffect] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const [statusBlockOverlay, setStatusBlockOverlay] = useState<{ target: 'player' | 'enemy'; condition: string | null; uid: number } | null>(null);
   const [poisonBubbles, setPoisonBubbles] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
+  const [morphVfxState, setMorphVfxState] = useState<{ target: 'player' | 'enemy'; phase: 'blink' | 'squish'; uid: number } | null>(null);
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
     setLog(prev => [...prev.slice(-100), { text, color }]);
   }, []);
@@ -776,7 +791,12 @@ export function BattleScreen({
       if (avgXp > 0) {
         playerTeam.forEach(m => { if (!snap[m.pokemonId]) snap[m.pokemonId] = Math.max(1, avgXp); });
       }
-      const finalTeam: TeamMember[] = playerFightersRef.current.map(f => ({ ...f }));
+      const finalTeam: TeamMember[] = playerFightersRef.current.map(f => {
+        const { transformOriginalId, transformMoveOverride, ...rest } = f as FighterState;
+        return transformOriginalId !== undefined
+          ? { ...rest, pokemonId: transformOriginalId }
+          : { ...rest };
+      });
       setTimeout(() => onBattleEnd(wonSnap, snap, finalTeam, enemyDmgRef.current), 1800);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -964,15 +984,28 @@ export function BattleScreen({
     if (eMoveIndex >= 0 && ePP[eMoveIndex] > 0) ePP[eMoveIndex]--;
     ef[eIdx] = { ...ef[eIdx], currentPP: ePP };
 
+    // Raw move references for transform detection
+    const pEffectiveMoves = pf[pIdx].transformMoveOverride ?? pRawMoves;
+    const pRawMoveSelected: RawMove | undefined = !playerUsesStruggle && pHasMoves ? pEffectiveMoves[playerMoveIndex] : undefined;
+    const eEffectiveMoves = ef[eIdx].transformMoveOverride
+      ?? getMoveListRaw(ef[eIdx].pokemonId, pokemonMoves?.[ef[eIdx].pokemonId], pokemonCustomMoves?.[ef[eIdx].pokemonId]);
+    const eRawMoveSelected: RawMove | undefined = eMoveIndex >= 0 ? eEffectiveMoves[eMoveIndex] : undefined;
+
     // Calculate results upfront (Gen 1 style — pre-calculated)
+    // Transform moves bypass calcDamage — their result is a no-op placeholder
+    const TRANSFORM_PLACEHOLDER: MoveResult = { damage: 0, effectiveness: 1, moveName: 'Morphing', isCrit: false, isMiss: false, moveType: 'normal' as PokemonType, recoil: 0, hits: 0 };
     const boostMult = boostActiveRef.current && pIdx === 0 ? playerDamageMult : 1;
     const pStages = { ...pf[pIdx].stages, attack: pf[pIdx].stages.attack + (boostMult > 1 ? 1 : 0) };
-    const pResult = playerUsesStruggle
-      ? calcStruggle(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, pInst, eInst)
-      : calcDamage(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, playerMoveIndex, pInst, eInst, pStages, eFighter.stages, pRawMoves, pFighter.statusState, eFighter.statusState);
-    const eResult = eMoveIndex < 0
-      ? calcStruggle(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eInst, pInst)
-      : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndex, eInst, pInst, eFighter.stages, pFighter.stages, undefined, eFighter.statusState, pFighter.statusState);
+    const pResult = pRawMoveSelected?.id === 'transform'
+      ? TRANSFORM_PLACEHOLDER
+      : playerUsesStruggle
+        ? calcStruggle(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, pInst, eInst)
+        : calcDamage(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, playerMoveIndex, pInst, eInst, pStages, eFighter.stages, pEffectiveMoves, pFighter.statusState, eFighter.statusState);
+    const eResult = eRawMoveSelected?.id === 'transform'
+      ? TRANSFORM_PLACEHOLDER
+      : eMoveIndex < 0
+        ? calcStruggle(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eInst, pInst)
+        : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndex, eInst, pInst, eFighter.stages, pFighter.stages, eEffectiveMoves, eFighter.statusState, pFighter.statusState);
 
     const STAT_FR: Record<string, string> = {
       attack: "l'Attaque", defense: 'la Défense',
@@ -998,11 +1031,76 @@ export function BattleScreen({
       return { ...f, stages: { ...f.stages, [boost.stat]: next } };
     };
 
+    // ── Morphing (Transform) effect ──────────────────────────────────────────
+    const executeTransformEffect = async (
+      isPlayer: boolean, atkIdx: number, defIdx: number, atkName: string, defName: string,
+    ): Promise<void> => {
+      const atkArr = isPlayer ? pf : ef;
+      const defArr = isPlayer ? ef : pf;
+      const atkSide: 'player' | 'enemy' = isPlayer ? 'player' : 'enemy';
+
+      if (atkArr[atkIdx].transformOriginalId !== undefined) {
+        addLog(`${atkName} est déjà transformé(e) !`, '#94a3b8');
+        return;
+      }
+
+      const morphUid = dmgCounter++;
+
+      // Phase 1 — purple blink overlay 350ms
+      setMorphVfxState({ target: atkSide, phase: 'blink', uid: morphUid });
+      await sleep(350);
+
+      // Phase 2 — squish (scaleX 1→0→1); apply state change at peak (invisible at 250ms)
+      setMorphVfxState({ target: atkSide, phase: 'squish', uid: morphUid });
+      await sleep(250);
+
+      // ── Apply transform at peak of squish (sprite is invisible) ──
+      const target = defArr[defIdx];
+      // Use the target's already-copied moves if it too is transformed
+      const srcMoves: RawMove[] = target.transformMoveOverride
+        ?? getMoveListRaw(
+            target.pokemonId,
+            pokemonMoves?.[target.pokemonId],
+            pokemonCustomMoves?.[target.pokemonId],
+          );
+      // All copied PP are capped at 5 (Gen 4 rule)
+      const copiedMoves: RawMove[] = srcMoves.map(m => ({ ...m, pp: 5 }));
+
+      if (isPlayer) {
+        pf[atkIdx] = {
+          ...pf[atkIdx],
+          pokemonId: target.pokemonId,
+          transformOriginalId: pf[atkIdx].pokemonId,
+          transformMoveOverride: copiedMoves,
+          stages: { ...target.stages },           // copy target's stat stages
+          currentPP: copiedMoves.map(() => 5),
+        };
+      } else {
+        ef[atkIdx] = {
+          ...ef[atkIdx],
+          pokemonId: target.pokemonId,
+          transformOriginalId: ef[atkIdx].pokemonId,
+          transformMoveOverride: copiedMoves,
+          stages: { ...target.stages },
+          currentPP: copiedMoves.map(() => 5),
+        };
+      }
+      flush();
+      playPokemonCry(target.pokemonId);
+
+      // Let the sprite re-expand (remaining 250ms of squish)
+      await sleep(270);
+      setMorphVfxState(null);
+      addLog(`${atkName} se transforme en ${defName} !`, '#c084fc');
+      await sleep(400);
+    };
+
     // ── Execute one attacker's turn ──
     const executeOneAttack = async (
       result: typeof pResult,
       attackerSide: 'player' | 'enemy',
       canActResult: ReturnType<typeof checkCanAct>,
+      rawMove?: RawMove,
     ): Promise<boolean> => { // returns true if target fainted
       const isPlayer = attackerSide === 'player';
       const atkName  = isPlayer ? pName : eName;
@@ -1021,6 +1119,13 @@ export function BattleScreen({
         setStatusBlockOverlay({ target: atkSide, condition: cond, uid });
         await sleep(900);
         setStatusBlockOverlay(s => s?.uid === uid ? null : s);
+        return false;
+      }
+
+      // Morphing: delegate entirely to transform handler, no damage
+      if (rawMove?.id === 'transform') {
+        addLog(`${atkName} utilise Morphing !`, '#fde68a');
+        await executeTransformEffect(isPlayer, atkIdx, defIdx, atkName, defName);
         return false;
       }
 
@@ -1156,9 +1261,12 @@ export function BattleScreen({
     const handleEnemyKo = () => {
       addLog(`${eName} est K.O. !`, '#f87171');
       playDeath();
-      const xpEarned = calcXpGain(eFighter.pokemonId, eFighter.level, !!_bossName);
+      // Use original IDs — fighter may have been transformed
+      const realEId = eFighter.transformOriginalId ?? eFighter.pokemonId;
+      const realPId = pf[pIdx].transformOriginalId ?? pFighter.pokemonId;
+      const xpEarned = calcXpGain(realEId, eFighter.level, !!_bossName);
       setXpGains(prev => {
-        const next = { ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned };
+        const next = { ...prev, [realPId]: (prev[realPId] ?? 0) + xpEarned };
         xpGainsRef.current = next;
         return next;
       });
@@ -1194,20 +1302,20 @@ export function BattleScreen({
     // ── Execute in turn order ──
     if (goesFirst) {
       // Player goes first
-      const eKo = await executeOneAttack(pResult, 'player', pCanActResult);
+      const eKo = await executeOneAttack(pResult, 'player', pCanActResult, pRawMoveSelected);
       if (battleDone.current) return;
       if (eKo) { handleEnemyKo(); return; }
       if (pf[pIdx].currentHp <= 0) { handlePlayerKo(); return; }
       // Enemy's turn
-      await executeOneAttack(eResult, 'enemy', eCanActResult);
+      await executeOneAttack(eResult, 'enemy', eCanActResult, eRawMoveSelected);
     } else {
       // Enemy goes first
-      const pKo = await executeOneAttack(eResult, 'enemy', eCanActResult);
+      const pKo = await executeOneAttack(eResult, 'enemy', eCanActResult, eRawMoveSelected);
       if (battleDone.current) return;
       if (pKo) { handlePlayerKo(); return; }
       if (ef[eIdx].currentHp <= 0) { handleEnemyKo(); return; }
       // Player's turn
-      await executeOneAttack(pResult, 'player', pCanActResult);
+      await executeOneAttack(pResult, 'player', pCanActResult, pRawMoveSelected);
     }
 
     if (battleDone.current) return;
@@ -1290,7 +1398,11 @@ export function BattleScreen({
 
   const activePF = playerFighters[playerIdx];
   const activeEF = enemyFighters[enemyIdx];
-  const playerMoves = activePF ? getMoveList(activePF.pokemonId, pokemonMoves?.[activePF.pokemonId], pokemonCustomMoves?.[activePF.pokemonId]) : [];
+  const playerMoves = activePF
+    ? (activePF.transformMoveOverride
+        ? activePF.transformMoveOverride as DisplayMove[]
+        : getMoveList(activePF.pokemonId, pokemonMoves?.[activePF.pokemonId], pokemonCustomMoves?.[activePF.pokemonId]))
+    : [];
   const allPPEmpty = activePF ? activePF.currentPP.every(pp => pp <= 0) : false;
 
   // Long press handlers
@@ -1520,13 +1632,15 @@ export function BattleScreen({
               ))}
             </div>
           </div>
-          <div className={`flex justify-end relative ${attackEvt?.attacker === 'enemy' ? 'battle-lunge-left' : ''} ${activeEF?.currentHp === 0 ? 'opacity-30' : ''} ${spriteBounce?.target === 'enemy' ? (spriteBounce.type === 'buff' ? 'pokemon-buff' : 'pokemon-debuff') : ''} ${hitEffect?.target === 'enemy' ? 'vfx-hit-target-left' : ''} ${attackEvt?.type === 'electric' && attackEvt.attacker === 'player' ? 'vfx-electric-vibrate' : ''}`}>
+          <div className={`flex justify-end relative ${attackEvt?.attacker === 'enemy' ? 'battle-lunge-left' : ''} ${activeEF?.currentHp === 0 ? 'opacity-30' : ''} ${spriteBounce?.target === 'enemy' ? (spriteBounce.type === 'buff' ? 'pokemon-buff' : 'pokemon-debuff') : ''} ${hitEffect?.target === 'enemy' ? 'vfx-hit-target-left' : ''} ${attackEvt?.type === 'electric' && attackEvt.attacker === 'player' ? 'vfx-electric-vibrate' : ''} ${morphVfxState?.target === 'enemy' && morphVfxState.phase === 'squish' ? 'morph-squish' : ''}`}>
             {activeEF && <ShinySprite pokemonId={activeEF.pokemonId} isShiny={activeEF.isShiny ?? false} width={88} height={88} flip
               style={{ filter: spriteFilter(activeEF.pokemonId, activeEF.isShiny ?? false) }} />}
             {/* Status block overlay on enemy */}
             {statusBlockOverlay?.target === 'enemy' && <StatusBlockVfx condition={statusBlockOverlay.condition} uid={statusBlockOverlay.uid} />}
             {/* Poison bubbles on enemy */}
             {poisonBubbles?.target === 'enemy' && <PoisonBubblesVfx uid={poisonBubbles.uid} />}
+            {/* Morph VFX on enemy */}
+            {morphVfxState?.target === 'enemy' && morphVfxState.phase === 'blink' && <MorphBlinkOverlay uid={morphVfxState.uid} />}
           </div>
           <div className="flex gap-1.5 justify-end mt-1">
             {enemyFighters.map((f, i) => (
@@ -1542,13 +1656,15 @@ export function BattleScreen({
               <div key={i} className={`w-3 h-3 rounded-full ${i === playerIdx ? 'ring-2 ring-white' : ''} ${f.currentHp > 0 ? 'bg-green-400' : 'bg-slate-600'}`} />
             ))}
           </div>
-          <div className={`relative ${attackEvt?.attacker === 'player' ? 'battle-lunge-right' : ''} ${activePF?.currentHp === 0 ? 'opacity-30' : ''} ${spriteBounce?.target === 'player' ? (spriteBounce.type === 'buff' ? 'pokemon-buff' : 'pokemon-debuff') : ''} ${hitEffect?.target === 'player' ? 'vfx-hit-target-right' : ''} ${attackEvt?.type === 'electric' && attackEvt.attacker === 'enemy' ? 'vfx-electric-vibrate' : ''}`}>
+          <div className={`relative ${attackEvt?.attacker === 'player' ? 'battle-lunge-right' : ''} ${activePF?.currentHp === 0 ? 'opacity-30' : ''} ${spriteBounce?.target === 'player' ? (spriteBounce.type === 'buff' ? 'pokemon-buff' : 'pokemon-debuff') : ''} ${hitEffect?.target === 'player' ? 'vfx-hit-target-right' : ''} ${attackEvt?.type === 'electric' && attackEvt.attacker === 'enemy' ? 'vfx-electric-vibrate' : ''} ${morphVfxState?.target === 'player' && morphVfxState.phase === 'squish' ? 'morph-squish' : ''}`}>
             {activePF && <ShinySprite pokemonId={activePF.pokemonId} isShiny={activePF.isShiny ?? false} width={96} height={96}
               style={{ filter: spriteFilter(activePF.pokemonId, activePF.isShiny ?? false, 12) }} />}
             {/* Status block overlay on player */}
             {statusBlockOverlay?.target === 'player' && <StatusBlockVfx condition={statusBlockOverlay.condition} uid={statusBlockOverlay.uid} />}
             {/* Poison bubbles on player */}
             {poisonBubbles?.target === 'player' && <PoisonBubblesVfx uid={poisonBubbles.uid} />}
+            {/* Morph VFX on player */}
+            {morphVfxState?.target === 'player' && morphVfxState.phase === 'blink' && <MorphBlinkOverlay uid={morphVfxState.uid} />}
           </div>
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
             <div className="flex justify-between items-center mb-1">

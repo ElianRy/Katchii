@@ -718,6 +718,25 @@ input, textarea, select {
 .battle-lunge-right { animation: lunge-right 0.7s ease-in-out; }
 .battle-lunge-left  { animation: lunge-left  0.7s ease-in-out; }
 
+/* ── Morphing (Transform) VFX ── */
+@keyframes morph-blink-overlay {
+  0%   { opacity: 0; }
+  20%  { opacity: 0.85; }
+  40%  { opacity: 0.15; }
+  60%  { opacity: 0.9; }
+  80%  { opacity: 0.2; }
+  100% { opacity: 0.8; }
+}
+/* Squish: scaleX collapses to 0 at 45%, identity returns at 100% — sprite swap happens at 45% (invisible) */
+@keyframes morph-squish {
+  0%   { transform: scaleX(1)   scaleY(1);    filter: saturate(1) brightness(1); }
+  20%  { transform: scaleX(0.5) scaleY(1.08); filter: saturate(0.4) hue-rotate(270deg) brightness(1.4); }
+  45%  { transform: scaleX(0)   scaleY(1.15); filter: saturate(0) brightness(2); }
+  70%  { transform: scaleX(0.5) scaleY(1.08); filter: saturate(0.4) hue-rotate(270deg) brightness(1.4); }
+  100% { transform: scaleX(1)   scaleY(1);    filter: saturate(1) brightness(1); }
+}
+.morph-squish { animation: morph-squish 0.52s cubic-bezier(.4,0,.2,1) forwards; }
+
 /* ── Per-type custom attack trajectories ── */
 /* ltr: player (bottom-left) → enemy (top-right)   endpoint ≈ translate(190px,-200px) */
 /* rtl: enemy  (top-right)  → player (bottom-left) endpoint ≈ translate(-190px,200px) */
