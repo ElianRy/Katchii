@@ -69,8 +69,12 @@ export function App() {
   const pvpCleanupRef = useRef<(() => void) | null>(null);
   const [pvpWaiting, setPvpWaiting] = useState<{ name: string; cancel: () => void } | null>(null);
 
-  // Persist & restore last view
+  // Persist & restore last view — throttled to prevent rapid-tap page bugs
+  const lastNavRef = useRef(0);
   const persistView = useCallback((v: View) => {
+    const now = Date.now();
+    if (now - lastNavRef.current < 400) return; // throttle rapid taps
+    lastNavRef.current = now;
     setView(prev => {
       if (v === 'profile') setPreviousView(prev);
       return v;

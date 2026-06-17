@@ -123,12 +123,12 @@ const CONFETTI_BATTLE = Array.from({ length: 22 }, (_, i) => ({
 
 // ── VFX duration map (ms) ───────────────────────────────────────────────────
 const VFX_DURATION: Partial<Record<PokemonType | 'status', number>> = {
-  normal: 1100, fire: 1700, water: 1800, grass: 1800,
-  electric: 1500, ice: 1200, fighting: 1200, poison: 1600,
-  ground: 1700, flying: 1400, psychic: 1900, bug: 1600,
-  rock: 1500, ghost: 2000, dragon: 1900,
+  normal: 850, fire: 1300, water: 1400, grass: 1400,
+  electric: 1150, ice: 950, fighting: 950, poison: 1250,
+  ground: 1300, flying: 1100, psychic: 1450, bug: 1250,
+  rock: 1150, ghost: 1550, dragon: 1450,
 };
-const VFX_STATUS_DURATION = 1600;
+const VFX_STATUS_DURATION = 1250;
 
 // ── Precomputed random particle offsets (deterministic, no Math.random in render) ──
 const FIRE_PARTICLES = Array.from({ length: 8 }, (_, i) => ({
@@ -1023,7 +1023,7 @@ export function BattleScreen({
           addLog(`L'attaque de ${eName} a raté !`, '#94a3b8');
         }
 
-        await sleep(1150);
+        await sleep(850);
 
         if (pf[idx].currentHp <= 0) {
           addLog(`${newName} est mis K.O. !`, '#f87171');
@@ -1446,7 +1446,7 @@ export function BattleScreen({
       }
 
       // Step E: pause
-      await sleep(1150);
+      await sleep(850);
 
       // Check if target fainted
       const defArr = isPlayer ? ef : pf;

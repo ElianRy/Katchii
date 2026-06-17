@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { TutorialOverlay, isTutorialDone } from './TutorialOverlay';
+import { THRONE_TUTORIAL } from './TutorialContent';
 import { GameState } from '../types';
 import { supabase } from '../lib/supabase';
 import { throneRead, throneWrite } from '../lib/supabaseAdmin';
@@ -171,6 +173,7 @@ interface Props {
 
 /* ─── Main component ────────────────────────────────────────────── */
 export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoins }: Props) {
+  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('throne'));
   const [throneData, setThroneData] = useState<ThroneData | null>(null);
   const [phase, setPhase] = useState<'view' | 'pick_mode' | 'pick_pokemon'>('view');
   const [selectedPokemon, setSelectedPokemon] = useState<Array<{ pokemonId: number; isShiny: boolean }>>([]);
@@ -510,6 +513,13 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
           50% { transform: translateY(3px) scale(1); }
         }
       `}</style>
+      {showTutorial && (
+        <TutorialOverlay
+          steps={THRONE_TUTORIAL}
+          tutorialKey="throne"
+          onDone={() => setShowTutorial(false)}
+        />
+      )}
     </div>
   );
 }

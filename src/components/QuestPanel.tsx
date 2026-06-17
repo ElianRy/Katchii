@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameState } from '../types';
-import { playSfxQuestComplete } from '../lib/audio';
+import { playSfxConfirm } from '../lib/audio';
 
 interface Props {
   state: GameState;
@@ -76,7 +76,7 @@ export function QuestPanel({ state, onClaim, onClose }: Props) {
   useEffect(() => {
     const newlyCompleted = quests.filter(q => q.completed && !q.rewardClaimed && !prevCompletedRef.current.has(q.id));
     if (newlyCompleted.length > 0) {
-      playSfxQuestComplete();
+      playSfxConfirm();
       setClaimedToast(newlyCompleted[0].label);
       const t = setTimeout(() => setClaimedToast(null), 3000);
       prevCompletedRef.current = new Set(quests.filter(q => q.completed && !q.rewardClaimed).map(q => q.id));
@@ -86,7 +86,7 @@ export function QuestPanel({ state, onClaim, onClose }: Props) {
   }, [quests]);
 
   const handleClaim = (questId: string) => {
-    playSfxQuestComplete();
+    playSfxConfirm();
     onClaim(questId);
   };
 

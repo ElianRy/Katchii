@@ -5,6 +5,8 @@ import { GameState, RARITY_COLORS } from '../types';
 import { GEN1_POKEMON, POKEMON_BY_ID } from '../data/gen1';
 import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
 import { calcMaxHp, calcAttack, xpToNextLevel } from '../data/combatEngine';
+import { getAvailableMoves } from '../data/gen1Movepools';
+import { MOVES } from '../data/gen1Moves';
 import { BattleScreen } from './BattleScreen';
 import { ShinySprite } from './ShinySprite';
 import { playLevelUp } from '../lib/audio';
@@ -54,7 +56,7 @@ function buildEnemyTeam(zoneId: string, customLevel?: number): TeamMember[] {
   }
   return picked.map(id => {
     const level = customLevel !== undefined
-      ? Math.min(100, Math.max(1, customLevel + Math.round((Math.random() - 0.5) * 10)))
+      ? customLevel >= 100 ? 100 : Math.min(100, Math.max(1, customLevel + Math.round((Math.random() - 0.5) * 10)))
       : (minLv + Math.floor(Math.random() * (maxLv - minLv + 1)));
     const maxHp = calcMaxHp(id, level);
     return { pokemonId: id, level, xp: 0, currentHp: maxHp, maxHp };
@@ -64,6 +66,7 @@ function buildEnemyTeam(zoneId: string, customLevel?: number): TeamMember[] {
 interface LevelUpNotif {
   pokemonId: number;
   newLevel: number;
+  newMoves: string[]; // slugs of newly unlocked moves
 }
 
 interface Props {
@@ -97,11 +100,11 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [autoCombat, setAutoCombat] = useState(false);
   type TrainingPreset = 'facile' | 'moyen' | 'difficile' | 'tres_difficile' | 'impossible';
   const TRAINING_PRESETS: { key: TrainingPreset; label: string; emoji: string; level: number; range: string; color: string }[] = [
-    { key: 'facile',         label: 'Facile',         emoji: '🟢', level: 15,  range: 'Niv. 1–25',   color: '#22c55e' },
-    { key: 'moyen',          label: 'Moyen',          emoji: '🔵', level: 35,  range: 'Niv. 25–45',  color: '#3b82f6' },
-    { key: 'difficile',      label: 'Difficile',      emoji: '🟠', level: 55,  range: 'Niv. 45–65',  color: '#f97316' },
-    { key: 'tres_difficile', label: 'Très difficile', emoji: '🔴', level: 75,  range: 'Niv. 65–85',  color: '#ef4444' },
-    { key: 'impossible',     label: 'Impossible',     emoji: '💀', level: 92,  range: 'Niv. 85–100', color: '#7c3aed' },
+    { key: 'facile',         label: 'Facile',         emoji: '🟢', level: 8,   range: 'Niv. 6–11',   color: '#22c55e' },
+    { key: 'moyen',          label: 'Moyen',          emoji: '🔵', level: 25,  range: 'Niv. 20–30',  color: '#3b82f6' },
+    { key: 'difficile',      label: 'Difficile',      emoji: '🟠', level: 45,  range: 'Niv. 40–50',  color: '#f97316' },
+    { key: 'tres_difficile', label: 'Très difficile', emoji: '🔴', level: 65,  range: 'Niv. 60–70',  color: '#ef4444' },
+    { key: 'impossible',     label: 'Impossible',     emoji: '💀', level: 100, range: 'Niv. 100',    color: '#7c3aed' },
   ];
   const [trainingPreset, setTrainingPreset_] = useState<TrainingPreset>(() => {
     try { return (localStorage.getItem('katchii_training_preset') as TrainingPreset) ?? 'difficile'; } catch { return 'difficile'; }
@@ -179,7 +182,11 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         while (l < 100 && xpAcc >= xpToNextLevel(l)) { xpAcc -= xpToNextLevel(l); l++; }
         return l;
       })();
-      if (newLevel > level) ups.push({ pokemonId: id, newLevel });
+      if (newLevel > level) {
+        const oldMoves = new Set(getAvailableMoves(id, level));
+        const newMoves = getAvailableMoves(id, newLevel).filter(m => !oldMoves.has(m));
+        ups.push({ pokemonId: id, newLevel, newMoves });
+      }
       if (onAddXp) onAddXp(id, Math.floor(xp * (chosenDifficulty?.xpMultiplier ?? 1)));
     });
     setLevelUps(ups);
@@ -462,11 +469,31 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
                 const id = Number(idStr);
                 const xp = Math.floor(rawXp * (chosenDifficulty?.xpMultiplier ?? 1));
                 const p = POKEMON_BY_ID[id];
+                const lu = levelUps.find(u => u.pokemonId === id);
                 return (
-                  <div key={id} className="flex items-center gap-2 bg-slate-800 rounded-xl px-3 py-2">
-                    <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`} width={32} height={32} style={{ imageRendering: 'pixelated' }} />
-                    <span className="text-white text-sm flex-1">{p?.name ?? '???'}</span>
-                    <span className="text-yellow-400 font-black text-sm">+{xp} XP</span>
+                  <div key={id} className="flex flex-col gap-1.5 bg-slate-800 rounded-xl px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`} width={32} height={32} style={{ imageRendering: 'pixelated' }} />
+                      <span className="text-white text-sm flex-1">{p?.name ?? '???'}</span>
+                      <span className="text-yellow-400 font-black text-sm">+{xp} XP</span>
+                    </div>
+                    {lu && (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-1.5 bg-yellow-500/15 border border-yellow-500/40 rounded-lg px-2 py-1">
+                          <span className="text-base">⭐</span>
+                          <span className="text-yellow-300 font-black text-xs">Niveau {lu.newLevel} !</span>
+                        </div>
+                        {lu.newMoves.map(slug => {
+                          const move = MOVES[slug];
+                          return move ? (
+                            <div key={slug} className="flex items-center gap-1.5 bg-blue-500/15 border border-blue-500/30 rounded-lg px-2 py-1">
+                              <span className="text-base">✨</span>
+                              <span className="text-blue-300 font-black text-xs">Nouvelle attaque : {move.name}</span>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}

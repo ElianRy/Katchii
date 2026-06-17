@@ -206,6 +206,21 @@ export const COLLECTION_TUTORIAL: TutorialStep[] = [
       </div>
     ),
   },
+  {
+    title: 'Personnaliser les Attaques ⚔️',
+    body: "Dans la fiche de chaque Pokémon, clique sur l'onglet « Attaques » pour voir ses capacités disponibles. Plus ton Pokémon monte en niveau, plus de nouvelles attaques se débloquent. Tu peux choisir exactement 4 attaques parmi celles disponibles !",
+    illustration: (
+      <div className="flex flex-col items-center gap-3">
+        <div style={{ fontSize: 52, animation: 'badge-pop 0.5s ease-out both, alakazam-float 2.5s ease-in-out infinite' }}>⚔️</div>
+        <div className="flex gap-2 text-xs text-slate-300 font-bold">
+          <span className="px-2 py-1 rounded-lg" style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}>PHY</span>
+          <span className="px-2 py-1 rounded-lg" style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)' }}>SPÉ</span>
+          <span className="px-2 py-1 rounded-lg" style={{ background: 'rgba(80,128,48,0.15)', border: '1px solid rgba(80,128,48,0.3)' }}>STA</span>
+        </div>
+        <div className="text-slate-400 text-xs text-center px-4">Débloque de nouvelles attaques en montant de niveau</div>
+      </div>
+    ),
+  },
 ];
 
 export const TEAM_TUTORIAL: TutorialStep[] = [
@@ -260,6 +275,38 @@ export const POKEPARK_TUTORIAL: TutorialStep[] = [
           <div style={{ fontSize: 36, animation: 'alakazam-float 2.6s 0.6s ease-in-out infinite' }}>⚡</div>
         </div>
         <p className="text-xs text-slate-400 text-center px-4">Clique sur un Pokémon pour voir les options</p>
+      </div>
+    ),
+  },
+];
+
+function ThroneAnim() {
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div style={{ fontSize: 64, animation: 'badge-pop 0.5s ease-out both, alakazam-float 2.5s ease-in-out infinite' }}>👑</div>
+      <div className="flex gap-2">
+        {['🔴','🔵','🟢'].map((c, i) => (
+          <div key={i} className="rounded-xl flex items-center justify-center"
+            style={{ width: 44, height: 44, fontSize: 24, background: 'rgba(250,204,21,0.12)', border: '1px solid rgba(250,204,21,0.25)', animation: `badge-pop 0.4s ${i * 0.1}s ease-out both` }}>{c}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export const THRONE_TUTORIAL: TutorialStep[] = [
+  {
+    title: 'Le Trône 👑',
+    body: "Un seul joueur peut être Champion à la fois. Pour défier le Champion actuel, compose une équipe de 3 Pokémon et bats-le en combat. Si tu gagnes, tu deviens le nouveau Champion !",
+    illustration: <ThroneAnim />,
+  },
+  {
+    title: 'Récompenses du Champion 💰',
+    body: "Tant que tu es Champion, tu gagnes des PokéCoins à la minute. Plus tu règnes longtemps, plus tu en accumules ! Clique sur « Réclamer » pour récupérer tes gains. Si personne ne te bat, tu gardes le trône indéfiniment.",
+    illustration: (
+      <div className="flex flex-col items-center gap-3">
+        <div style={{ fontSize: 52, animation: 'alakazam-float 2s ease-in-out infinite' }}>💰</div>
+        <div className="text-slate-400 text-xs text-center px-4">10 coins / minute tant que tu es Champion</div>
       </div>
     ),
   },

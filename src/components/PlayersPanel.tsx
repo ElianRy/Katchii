@@ -103,7 +103,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3, onPvpChall
           const ms = new Date(p.updated_at).getTime();
           presenceMap.set(p.user_id, {
             lastSeen: p.updated_at,
-            isOnline: nowMs - ms < 60 * 1000,
+            isOnline: nowMs - ms < 3 * 60 * 1000,
           });
         }
       }
@@ -286,7 +286,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3, onPvpChall
                 </div>
                 <div className="flex items-center gap-1 text-xs mt-0.5">
                   {p.isOnline
-                    ? <span className="text-green-400 font-semibold">En ligne</span>
+                    ? <span className="text-green-400 font-semibold">🟢 En ligne</span>
                     : p.lastSeen
                       ? <span className="text-slate-500">Actif il y a {formatLastSeen(p.lastSeen)}</span>
                       : null}
