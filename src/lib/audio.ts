@@ -250,7 +250,12 @@ function playSfxFile(name: string, volMult = 1) {
     sfxMult.gain.value = volMult;
     source.connect(sfxMult);
     sfxMult.connect(_sfxGain!);
-    audio.play().catch(() => {});
+    // Ensure context is running before playing (resume is async but we start it)
+    if (c.state !== 'running') {
+      c.resume().then(() => audio.play()).catch(() => {});
+    } else {
+      audio.play().catch(() => {});
+    }
   } catch {
     // Fallback
     audio.volume = Math.min(1, s.sfxVolume * s.globalVolume * volMult);

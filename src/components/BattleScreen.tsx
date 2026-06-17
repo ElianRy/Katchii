@@ -998,7 +998,7 @@ export function BattleScreen({
           setHitEffect({ target: 'player', uid: hUid });
           setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 450);
           addDmg(eResult.damage, 'player', eResult.effectiveness, eResult.isCrit, false);
-          addLog(`${eName} → ${eResult.moveName} (${eResult.damage} dégâts)${eResult.isCrit ? ' ⚡ CRIT !' : ''}`, eResult.isCrit ? '#fbbf24' : '#fca5a5');
+          addLog(`→ ${eResult.damage} dégâts${eResult.isCrit ? ' ⚡ CRIT !' : ''}`, eResult.isCrit ? '#fbbf24' : '#fca5a5');
         } else if (eResult.isMiss) {
           addLog(`${eName} rate !`, '#94a3b8');
         }

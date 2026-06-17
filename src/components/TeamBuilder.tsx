@@ -93,7 +93,16 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
   const [autoCombat, setAutoCombat] = useState(false);
-  const [trainingLevel, setTrainingLevel] = useState<number | null>(null);
+  const [trainingLevel, setTrainingLevel_] = useState<number | null>(() => {
+    try { const v = localStorage.getItem('katchii_training_level'); return v ? Number(v) : null; } catch { return null; }
+  });
+  const setTrainingLevel = (updater: number | null | ((p: number | null) => number | null)) => {
+    setTrainingLevel_(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try { if (next !== null) localStorage.setItem('katchii_training_level', String(next)); } catch {}
+      return next;
+    });
+  };
   const [battleSpeed, setBattleSpeed] = useState(0);
   const [levelUps, setLevelUps] = useState<LevelUpNotif[]>([]);
   const [showNameInput, setShowNameInput] = useState(false);
@@ -104,6 +113,9 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const owned = GEN1_POKEMON.filter(p =>
     (state.normalCollection[p.id] ?? 0) > 0 || (state.shinyCollection[p.id] ?? 0) > 0
   );
+  const maxPokemonLevel = owned.length > 0
+    ? Math.max(...owned.map(p => state.pokemonLevels?.[p.id]?.level ?? 1))
+    : 30;
 
   const sorted = [...owned].sort((a, b) => {
     if (sort === 'level') {
@@ -190,7 +202,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   }, [levelUps]);
 
   if (mode === 'level_select') {
-    const defaultLv = trainingLevel ?? 30;
+    const defaultLv = trainingLevel ?? maxPokemonLevel;
     return (
       <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 px-6">
         <div className="w-full max-w-xs rounded-2xl p-6 text-center"
