@@ -88,7 +88,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   );
   const [selected, setSelected] = useState<number[]>([]);
   const [sort, setSort] = useState<'level' | 'rarity'>('level');
-  const [mode, setMode] = useState<'team' | 'battle' | 'result' | 'savedTeams'>('team');
+  const [mode, setMode] = useState<'team' | 'level_select' | 'battle' | 'result' | 'savedTeams'>('team');
   const [chosenDifficulty, setChosenDifficulty] = useState<Difficulty | null>(null);
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
@@ -188,6 +188,53 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     const t = setTimeout(() => setLevelUps([]), 4000);
     return () => clearTimeout(t);
   }, [levelUps]);
+
+  if (mode === 'level_select') {
+    const defaultLv = trainingLevel ?? 30;
+    return (
+      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 px-6">
+        <div className="w-full max-w-xs rounded-2xl p-6 text-center"
+          style={{ background: '#0f172a', border: '2px solid #f59e0b', boxShadow: '0 0 32px #f59e0b44' }}>
+          <div className="text-3xl mb-2">⚔️</div>
+          <div className="text-white font-black text-lg mb-1">Niveau de l'adversaire</div>
+          <div className="text-slate-400 text-sm mb-6">Choisissez la difficulté</div>
+          <div className="flex items-center justify-center gap-4 mb-2">
+            <button
+              onClick={() => setTrainingLevel(l => Math.max(1, (l ?? defaultLv) - 10))}
+              className="w-12 h-12 rounded-2xl bg-slate-700 text-white font-black text-xl active:scale-95 transition-transform"
+            >−</button>
+            <div className="flex flex-col items-center">
+              <span className="text-white font-black text-4xl w-20 text-center">
+                {trainingLevel ?? defaultLv}
+              </span>
+              <span className="text-slate-500 text-xs">/ 100</span>
+            </div>
+            <button
+              onClick={() => setTrainingLevel(l => Math.min(100, (l ?? defaultLv) + 10))}
+              className="w-12 h-12 rounded-2xl bg-slate-700 text-white font-black text-xl active:scale-95 transition-transform"
+            >+</button>
+          </div>
+          <input
+            type="range" min={1} max={100} value={trainingLevel ?? defaultLv}
+            onChange={e => setTrainingLevel(Number(e.target.value))}
+            className="w-full mb-6 accent-yellow-400"
+          />
+          <div className="flex gap-3">
+            <button
+              onClick={() => setMode('team')}
+              className="flex-1 py-2.5 rounded-xl text-sm font-bold text-slate-400"
+              style={{ background: '#1e293b', border: '1px solid #334155' }}
+            >Annuler</button>
+            <button
+              onClick={() => startBattle()}
+              className="flex-1 py-2.5 rounded-xl text-sm font-black text-black"
+              style={{ background: 'linear-gradient(90deg, #f59e0b, #ef4444)' }}
+            >🥊 Lancer !</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (mode === 'battle' && chosenDifficulty) {
     const playerTeam: TeamMember[] = selected.map(id => {
@@ -646,35 +693,12 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
             </button>
           )}
 
-          {/* Training level selector */}
-          {!onConfirm && (
-            <div className="flex items-center justify-between bg-slate-800/60 rounded-xl px-3 py-2 border border-slate-700/40">
-              <span className="text-slate-400 text-xs font-bold">Niveau adverse</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setTrainingLevel(l => Math.max(1, (l ?? 50) - 5))}
-                  className="w-7 h-7 rounded-lg bg-slate-700 text-white font-black text-sm flex items-center justify-center"
-                >−</button>
-                <span className="text-white font-black text-sm w-12 text-center">
-                  {trainingLevel !== null ? `Nv.${trainingLevel}` : 'Auto'}
-                </span>
-                <button
-                  onClick={() => setTrainingLevel(l => Math.min(100, (l ?? 45) + 5))}
-                  className="w-7 h-7 rounded-lg bg-slate-700 text-white font-black text-sm flex items-center justify-center"
-                >+</button>
-                {trainingLevel !== null && (
-                  <button onClick={() => setTrainingLevel(null)} className="text-slate-500 text-xs underline ml-1">Auto</button>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Trainer battle */}
           <button
             onClick={() => {
               if (selected.length === 0) return;
               if (onConfirm) { handleSave(); return; }
-              startBattle();
+              setMode('level_select');
             }}
             disabled={selected.length === 0}
             className="flex-1 py-3 rounded-2xl font-black text-sm text-black disabled:opacity-40 disabled:cursor-not-allowed"
