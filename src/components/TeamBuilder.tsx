@@ -53,7 +53,9 @@ function buildEnemyTeam(zoneId: string, customLevel?: number): TeamMember[] {
     if (!picked.includes(p.id)) picked.push(p.id);
   }
   return picked.map(id => {
-    const level = customLevel ?? (minLv + Math.floor(Math.random() * (maxLv - minLv + 1)));
+    const level = customLevel !== undefined
+      ? Math.min(100, Math.max(1, customLevel + Math.round((Math.random() - 0.5) * 10)))
+      : (minLv + Math.floor(Math.random() * (maxLv - minLv + 1)));
     const maxHp = calcMaxHp(id, level);
     return { pokemonId: id, level, xp: 0, currentHp: maxHp, maxHp };
   });

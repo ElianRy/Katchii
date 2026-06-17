@@ -963,7 +963,7 @@ export function BattleScreen({
 
       if (!eCanActResult.canAct) {
         const cond = ef[eIdx].statusState.condition;
-        addLog(cond === 'slp' ? `${eName} dort profondément…` : `${eName} est totalement paralysé(e) !`, '#94a3b8');
+        addLog(cond === 'slp' ? `${eName} dort profondément.` : `${eName} est complètement paralysé(e) ! Il ne peut pas bouger !`, '#94a3b8');
       } else {
         const ePlayerTypes = (POKEMON_TYPE[pFighterNew?.pokemonId ?? 0] ?? ['normal']) as PokemonType[];
         const eMoveIndex = chooseEnemyMoveIndex(
@@ -1000,13 +1000,13 @@ export function BattleScreen({
           addDmg(eResult.damage, 'player', eResult.effectiveness, eResult.isCrit, false);
           addLog(`→ ${eResult.damage} dégâts${eResult.isCrit ? ' ⚡ CRIT !' : ''}`, eResult.isCrit ? '#fbbf24' : '#fca5a5');
         } else if (eResult.isMiss) {
-          addLog(`${eName} rate !`, '#94a3b8');
+          addLog(`L'attaque de ${eName} a raté !`, '#94a3b8');
         }
 
         await sleep(1150);
 
         if (pf[idx].currentHp <= 0) {
-          addLog(`${newName} est K.O. !`, '#f87171');
+          addLog(`${newName} est mis K.O. !`, '#f87171');
           playDeath();
           flush();
           enemyDmgRef.current[eFighter.pokemonId] = (enemyDmgRef.current[eFighter.pokemonId] ?? 0) + eResult.damage;
@@ -1063,8 +1063,8 @@ export function BattleScreen({
     pf[pIdx] = { ...pf[pIdx], statusState: pCanActResult.nextStatus };
     ef[eIdx] = { ...ef[eIdx], statusState: eCanActResult.nextStatus };
 
-    if (pCanActResult.wokeUp) addLog(`${pName} se réveille !`, '#4ade80');
-    if (eCanActResult.wokeUp) addLog(`${eName} se réveille !`, '#4ade80');
+    if (pCanActResult.wokeUp) addLog(`${pName} se réveille !`, '#86efac');
+    if (eCanActResult.wokeUp) addLog(`${eName} se réveille !`, '#86efac');
 
     // Enemy AI
     const ePlayerTypes = (POKEMON_TYPE[pFighter.pokemonId] ?? ['normal']) as PokemonType[];
@@ -1135,8 +1135,12 @@ export function BattleScreen({
       spAttack: "l'Atk Spé", spDefense: 'la Déf Spé', speed: 'la Vitesse',
     };
     const STATUS_FR: Record<string, string> = {
-      par: 'paralysé(e)', brn: 'brûlé(e)', psn: 'empoisonné(e)',
-      tox: 'gravement empoisonné(e)', slp: 'endormi(e)', frz: 'gelé(e)',
+      par: 'paralysé(e) ! Il risque de ne plus pouvoir bouger',
+      brn: 'brûlé(e)',
+      psn: 'empoisonné(e)',
+      tox: 'gravement empoisonné(e)',
+      slp: 'endormi(e)',
+      frz: 'gelé(e)',
     };
 
     const applyBoostToFighter = (f: FighterState, boost: typeof pResult.statBoost, fighterName: string, animTarget: 'player' | 'enemy'): FighterState => {
@@ -1236,8 +1240,8 @@ export function BattleScreen({
       // Status block
       if (!canActResult.canAct) {
         const cond = (isPlayer ? pf : ef)[atkIdx].statusState.condition;
-        if (cond === 'slp') addLog(`${atkName} dort profondément…`, '#94a3b8');
-        else addLog(`${atkName} est totalement paralysé(e) !`, '#94a3b8');
+        if (cond === 'slp') addLog(`${atkName} dort profondément.`, '#94a3b8');
+        else addLog(`${atkName} est complètement paralysé(e) ! Il ne peut pas bouger !`, '#94a3b8');
         const uid = dmgCounter++;
         setStatusBlockOverlay({ target: atkSide, condition: cond, uid });
         await sleep(1600);
@@ -1297,13 +1301,13 @@ export function BattleScreen({
 
       // failedSpecial
       if (result.failedSpecial === 'not-sleeping') {
-        addLog('La cible ne dort pas !', '#f87171');
+        addLog('Mais ça n\'a aucun effet !', '#94a3b8');
         return false;
       }
 
       // Miss
       if (result.isMiss) {
-        addLog(`${atkName} rate !`, '#94a3b8');
+        addLog(`L'attaque de ${atkName} a raté !`, '#94a3b8');
         addDmg(0, defSide, 1, false, true);
         return false;
       }
@@ -1331,22 +1335,22 @@ export function BattleScreen({
         // floating damage
         const hitsLabel = result.hits > 1 ? ` (×${result.hits})` : '';
         addDmg(result.damage, defSide, result.effectiveness, result.isCrit, false);
-        addLog(
-          `→ ${result.damage} dégâts${hitsLabel}${result.isCrit ? ' ⚡ CRIT !' : ''}${result.effectiveness >= 2 ? ' 💥 Efficace !' : result.effectiveness === 0 ? ' (sans effet)' : result.effectiveness < 1 ? ' (peu eff.)' : ''}`,
-          result.isCrit ? '#fbbf24' : result.effectiveness >= 2 ? (isPlayer ? '#4ade80' : '#f87171') : '#fde68a',
-        );
+        if (result.isCrit) addLog('Coup critique !', '#fbbf24');
+        if (result.effectiveness >= 2) addLog('C\'est super efficace !', isPlayer ? '#4ade80' : '#f87171');
+        else if (result.effectiveness < 1 && result.effectiveness > 0) addLog('Ça ne semble pas très efficace...', '#94a3b8');
+        addLog(`→ ${result.damage} dégâts${hitsLabel}`, '#cbd5e1');
       } else if (result.effectiveness === 0) {
         addDmg(0, defSide, 0, false, false);
-        addLog(`${defName} n'est pas affecté !`, '#94a3b8');
+        addLog('Ça n\'a aucun effet...', '#94a3b8');
       } else if (!isStatusOnly && !result.appliedStatus) {
-        addLog(`${defName} n'est pas affecté !`, '#94a3b8');
+        addLog('Ça n\'a aucun effet...', '#94a3b8');
       }
 
       // FRZ thaw on fire move
       if (result.cureDefenderStatus) {
         const defArr = isPlayer ? ef : pf;
         if (defArr[defIdx].statusState.condition === 'frz') {
-          addLog(`${defName} est dégelé(e) par la chaleur !`, '#38bdf8');
+          addLog(`${defName} a dégel grâce à la chaleur !`, '#38bdf8');
           if (isPlayer) ef[defIdx] = { ...ef[defIdx], statusState: { condition: null } };
           else          pf[defIdx] = { ...pf[defIdx], statusState: { condition: null } };
         }
@@ -1382,7 +1386,7 @@ export function BattleScreen({
       if (result.drainHeal && result.drainHeal > 0) {
         if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], currentHp: Math.min(pf[atkIdx].maxHp, pf[atkIdx].currentHp + result.drainHeal) };
         else          ef[atkIdx] = { ...ef[atkIdx], currentHp: Math.min(ef[atkIdx].maxHp, ef[atkIdx].currentHp + result.drainHeal) };
-        addLog(`${atkName} récupère des PV !`, '#4ade80');
+        addLog(`${atkName} récupère des PV !`, '#86efac');
         flush();
       }
 
@@ -1390,7 +1394,7 @@ export function BattleScreen({
       if (result.recoil > 0) {
         if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], currentHp: Math.max(0, pf[atkIdx].currentHp - result.recoil) };
         else          ef[atkIdx] = { ...ef[atkIdx], currentHp: Math.max(0, ef[atkIdx].currentHp - result.recoil) };
-        addLog(`${atkName} subit des dégâts de recul !`, '#f87171');
+        addLog(`${atkName} est blessé(e) par le choc en retour !`, '#f87171');
         flush();
       }
 
@@ -1398,7 +1402,7 @@ export function BattleScreen({
       if (result.appliedSeed) {
         if (isPlayer) ef[defIdx] = { ...ef[defIdx], isSeeded: true };
         else          pf[defIdx] = { ...pf[defIdx], isSeeded: true };
-        addLog(`${defName} est ensemencé(e) !`, '#4ade80');
+        addLog(`${defName} est ensemencé(e) par la Vampigraine !`, '#86efac');
       }
 
       // Step E: pause
@@ -1410,7 +1414,7 @@ export function BattleScreen({
     };
 
     const handleEnemyKo = () => {
-      addLog(`${eName} est K.O. !`, '#f87171');
+      addLog(`${eName} est mis K.O. !`, '#f87171');
       playDeath();
       // Use original IDs — fighter may have been transformed
       const realEId = eFighter.transformOriginalId ?? eFighter.pokemonId;
@@ -1436,7 +1440,7 @@ export function BattleScreen({
     };
 
     const handlePlayerKo = () => {
-      addLog(`${pName} est K.O. !`, '#f87171');
+      addLog(`${pName} est mis K.O. !`, '#f87171');
       playDeath();
       enemyDmgRef.current[eFighter.pokemonId] = (enemyDmgRef.current[eFighter.pokemonId] ?? 0) + eResult.damage;
       if (pIdx === 0 && boostActiveRef.current) { boostActiveRef.current = false; setBoostActive(false); }
@@ -1538,8 +1542,11 @@ export function BattleScreen({
     // ── End-of-turn: BRN/PSN/TOX ──
     const pEot = calcEndOfTurnDamage(pf[pIdx].maxHp, pf[pIdx].statusState);
     if (pEot.damage > 0) {
+      const pEotCond = pf[pIdx].statusState.condition;
       pf[pIdx] = { ...pf[pIdx], currentHp: Math.max(0, pf[pIdx].currentHp - pEot.damage), statusState: pEot.nextStatus };
       addDmg(pEot.damage, 'player', 1);
+      if (pEotCond === 'psn' || pEotCond === 'tox') addLog(`${pName} est blessé(e) par le poison !`, '#a855f7');
+      else if (pEotCond === 'brn') addLog(`${pName} souffre de sa brûlure !`, '#f97316');
       const c = pf[pIdx].statusState.condition;
       if (c === 'psn' || c === 'tox') {
         const uid = dmgCounter++;
@@ -1553,8 +1560,11 @@ export function BattleScreen({
     }
     const eEot = calcEndOfTurnDamage(ef[eIdx].maxHp, ef[eIdx].statusState);
     if (eEot.damage > 0) {
+      const eEotCond = ef[eIdx].statusState.condition;
       ef[eIdx] = { ...ef[eIdx], currentHp: Math.max(0, ef[eIdx].currentHp - eEot.damage), statusState: eEot.nextStatus };
       addDmg(eEot.damage, 'enemy', 1);
+      if (eEotCond === 'psn' || eEotCond === 'tox') addLog(`${eName} est blessé(e) par le poison !`, '#a855f7');
+      else if (eEotCond === 'brn') addLog(`${eName} souffre de sa brûlure !`, '#f97316');
       const c = ef[eIdx].statusState.condition;
       if (c === 'psn' || c === 'tox') {
         const uid = dmgCounter++;
@@ -1573,8 +1583,8 @@ export function BattleScreen({
       pf[pIdx] = { ...pf[pIdx], currentHp: Math.max(0, pf[pIdx].currentHp - sd) };
       ef[eIdx] = { ...ef[eIdx], currentHp: Math.min(ef[eIdx].maxHp, ef[eIdx].currentHp + sd) };
       addDmg(sd, 'player', 1);
-      addLog(`${pName} perd des PV à cause de la Vampigraine !`, '#4ade80');
-      addLog(`${eName} récupère des PV grâce à la Vampigraine !`, '#4ade80');
+      addLog(`${pName} est drainé(e) par la Vampigraine !`, '#86efac');
+      addLog(`${eName} récupère des PV grâce à la Vampigraine !`, '#86efac');
       flush();
     }
     if (ef[eIdx].isSeeded) {
@@ -1582,8 +1592,8 @@ export function BattleScreen({
       ef[eIdx] = { ...ef[eIdx], currentHp: Math.max(0, ef[eIdx].currentHp - sd) };
       pf[pIdx] = { ...pf[pIdx], currentHp: Math.min(pf[pIdx].maxHp, pf[pIdx].currentHp + sd) };
       addDmg(sd, 'enemy', 1);
-      addLog(`${eName} perd des PV à cause de la Vampigraine !`, '#4ade80');
-      addLog(`${pName} récupère des PV grâce à la Vampigraine !`, '#4ade80');
+      addLog(`${eName} est drainé(e) par la Vampigraine !`, '#86efac');
+      addLog(`${pName} récupère des PV grâce à la Vampigraine !`, '#86efac');
       flush();
     }
 
