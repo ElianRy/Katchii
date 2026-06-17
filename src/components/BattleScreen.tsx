@@ -2028,15 +2028,18 @@ export function BattleScreen({
         )}
       </div>
 
+      {/* ── Transition bar between arena and UI ── */}
+      <div style={{ height: 6, background: 'linear-gradient(180deg, #1a1a2e 0%, #3a3050 40%, #706890 100%)', boxShadow: '0 -2px 0 #0a0a18' }} />
+
       {/* ── Battle log + Move buttons ── */}
-      <div className="shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: '#c8c0b0' }}>
+      <div className="shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: '#c8c0b0', boxShadow: 'inset 0 2px 0 #fffef8' }}>
         {/* HeartGold-style dialog box */}
         <div style={{
           margin: '6px 8px 4px',
           background: '#f0ece0',
-          border: '3px solid #706890',
+          border: '3px solid #111',
           borderRadius: 6,
-          boxShadow: 'inset 2px 2px 0 #fffef8, inset -2px -2px 0 #a09880',
+          boxShadow: '3px 3px 0 #111, inset 2px 2px 0 #fffef8, inset -2px -2px 0 #a09880',
           padding: '6px 12px 6px',
           minHeight: 70,
           position: 'relative',
@@ -2127,7 +2130,7 @@ export function BattleScreen({
                         background: disabled && !isThisChargingMove ? '#d8d0c0' : '#f0ece0',
                         border: isThisChargingMove ? `3px dashed #e8a000` : `3px solid ${typeColor}`,
                         borderRadius: 6,
-                        boxShadow: 'inset 2px 2px 0 #fffef8, inset -2px -2px 0 #c0b8a8',
+                        boxShadow: `2px 2px 0 #111, inset 2px 2px 0 #fffef8, inset -2px -2px 0 #c0b8a8`,
                         padding: '6px 10px 5px',
                         opacity: disabled && !isThisChargingMove ? 0.55 : 1,
                         WebkitTapHighlightColor: 'transparent',
@@ -2157,7 +2160,7 @@ export function BattleScreen({
                   else executeTurn(0);
                 }}
                 className="w-full text-center"
-                style={{ background: '#f0ece0', border: '3px solid #706890', borderRadius: 6, boxShadow: 'inset 2px 2px 0 #fffef8, inset -2px -2px 0 #c0b8a8', padding: '10px', opacity: phase === 'resolving' ? 0.5 : 1 }}>
+                style={{ background: '#f0ece0', border: '3px solid #706890', borderRadius: 6, boxShadow: '2px 2px 0 #111, inset 2px 2px 0 #fffef8, inset -2px -2px 0 #c0b8a8', padding: '10px', opacity: phase === 'resolving' ? 0.5 : 1 }}>
                 <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.55rem', color: '#111' }}>Lutte</span>
               </button>
             ) : null}
@@ -2177,7 +2180,7 @@ export function BattleScreen({
                     className="flex-1 flex items-center justify-center"
                     style={{
                       background: '#3060c8', border: '3px solid #1a3880', borderRadius: 6,
-                      boxShadow: 'inset 2px 2px 0 #6090e8, inset -2px -2px 0 #182860',
+                      boxShadow: '2px 2px 0 #111, inset 2px 2px 0 #6090e8, inset -2px -2px 0 #182860',
                       padding: '7px 4px',
                       fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: 'white',
                       WebkitTapHighlightColor: 'transparent',
@@ -2191,7 +2194,7 @@ export function BattleScreen({
                     className="flex-1 flex items-center justify-center"
                     style={{
                       background: '#3060c8', border: '3px solid #1a3880', borderRadius: 6,
-                      boxShadow: 'inset 2px 2px 0 #6090e8, inset -2px -2px 0 #182860',
+                      boxShadow: '2px 2px 0 #111, inset 2px 2px 0 #6090e8, inset -2px -2px 0 #182860',
                       padding: '7px 4px',
                       fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: 'white',
                       WebkitTapHighlightColor: 'transparent',
