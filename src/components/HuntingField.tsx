@@ -77,7 +77,6 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const prevBossUnlockedRef = useRef(false);
   const [zoneTransition, setZoneTransition] = useState<'left' | 'right' | null>(null);
   const [transitionOut, setTransitionOut] = useState(false);
-  const [incomingZoneName, setIncomingZoneName] = useState<string | null>(null);
   const processingRef = useRef<Set<string>>(new Set());
   const capturingRef = useRef(false);
   const [showTutorial, setShowTutorial] = useState(() =>
@@ -165,6 +164,16 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const currentZoneIdx = ZONE_ORDER.indexOf(currentZoneId);
   const prevZoneId = currentZoneIdx > 0 ? ZONE_ORDER[currentZoneIdx - 1] : null;
   const nextZoneId = currentZoneIdx >= 0 && currentZoneIdx < ZONE_ORDER.length - 1 ? ZONE_ORDER[currentZoneIdx + 1] : null;
+
+  // Preload adjacent zone wallpapers so the background appears instantly on transition
+  useEffect(() => {
+    const ZONES_WITH_WALLPAPER = new Set(['zone1','zone2','zone3','zone4','zone5','zone6','zone7','zone8']);
+    [prevZoneId, nextZoneId].forEach(zid => {
+      if (!zid || !ZONES_WITH_WALLPAPER.has(zid)) return;
+      const mobile = new Image(); mobile.src = `/wlppzones/${zid}.jpg`;
+      const pc = new Image(); pc.src = `/wlppzones/${zid}pc.jpg`;
+    });
+  }, [currentZoneId, prevZoneId, nextZoneId]);
   const unlockedZones = gameState.state.zoneProgress?.unlockedZones ?? ['zone1'];
   const canGoNext = nextZoneId !== null && unlockedZones.includes(nextZoneId);
   const canGoPrev = prevZoneId !== null;
@@ -376,22 +385,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
 
       {/* Zone transition overlay — two-phase: fade to black, switch, reveal with zone name */}
       {(zoneTransition || transitionOut) && (
-        <div className="absolute inset-0 z-50 pointer-events-none bg-black flex items-center justify-center"
-          style={{ animation: transitionOut ? 'zone-fade-to-black 0.2s ease-in forwards' : 'zone-fade-from-black 0.45s ease-out forwards' }}>
-          {!transitionOut && incomingZoneName && (
-            <div style={{
-              animation: 'zone-name-appear 0.45s ease-out forwards',
-              color: '#fff',
-              fontSize: '1.3rem',
-              fontWeight: 900,
-              letterSpacing: '0.05em',
-              textShadow: '0 0 20px rgba(255,255,255,0.4)',
-              opacity: 0,
-            }}>
-              {incomingZoneName}
-            </div>
-          )}
-        </div>
+        <div className="absolute inset-0 z-50 pointer-events-none bg-black"
+          style={{ animation: transitionOut ? 'zone-fade-to-black 0.2s ease-in forwards' : 'zone-fade-from-black 0.45s ease-out forwards' }} />
       )}
       {/* Slide-in on reveal */}
       {zoneTransition && !transitionOut && (
@@ -405,13 +400,13 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           onClick={() => {
             setTransitionOut(true);
             setZoneTransition('left');
-            setIncomingZoneName(ZONE_BY_ID[prevZoneId!]?.name ?? null);
+            
             spawner.clearSpawned();
             stopMusic(0.3);
             setTimeout(() => {
               gameState.setCurrentZone(prevZoneId!);
               setTransitionOut(false);
-              setTimeout(() => { playZoneMusic(prevZoneId!); setZoneTransition(null); setIncomingZoneName(null); }, 500);
+              setTimeout(() => { playZoneMusic(prevZoneId!); setZoneTransition(null); }, 500);
             }, 220);
           }}
           className="absolute left-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl"
@@ -425,13 +420,13 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           onClick={() => {
             setTransitionOut(true);
             setZoneTransition('right');
-            setIncomingZoneName(ZONE_BY_ID[nextZoneId!]?.name ?? null);
+            
             spawner.clearSpawned();
             stopMusic(0.3);
             setTimeout(() => {
               gameState.setCurrentZone(nextZoneId!);
               setTransitionOut(false);
-              setTimeout(() => { playZoneMusic(nextZoneId!); setZoneTransition(null); setIncomingZoneName(null); }, 500);
+              setTimeout(() => { playZoneMusic(nextZoneId!); setZoneTransition(null); }, 500);
             }, 220);
           }}
           className="absolute right-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl"
