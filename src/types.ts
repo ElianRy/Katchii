@@ -167,11 +167,11 @@ export const RARITY_COLORS: Record<Rarity, string> = {
 };
 
 export const RARITY_LABELS: Record<Rarity, string> = {
-  commun: 'Niveau 1 — Commun',
-  peu_commun: 'Niveau 2 — Peu commun',
-  rare: 'Niveau 3 — Rare',
-  elite: 'Niveau 4 — Épique',
-  legendaire: 'Niveau 5 — Légendaire',
+  commun: 'Commun',
+  peu_commun: 'Peu commun',
+  rare: 'Rare',
+  elite: 'Épique',
+  legendaire: 'Légendaire',
 };
 
 export const RARITY_WEIGHTS: Record<Rarity, number> = {
