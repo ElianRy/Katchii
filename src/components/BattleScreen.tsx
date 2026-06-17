@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { playBattleMusic, playShinyBattleSfx, playLeagueBattleMusic, stopMusic, playVictory, playLeagueVictory, playSfxDefeat, playPokemonCry, playHit, playDeath } from '../lib/audio';
+import { playBattleMusic, playShinyBattleSfx, playLeagueBattleMusic, stopMusic, playVictory, playLeagueVictory, playSfxDefeat, playPokemonCry, playHit, playHitSuper, playHitLow, playDeath } from '../lib/audio';
 import { RARITY_COLORS, Rarity } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
@@ -105,12 +105,12 @@ const CONFETTI_BATTLE = Array.from({ length: 22 }, (_, i) => ({
 
 // ── VFX duration map (ms) ───────────────────────────────────────────────────
 const VFX_DURATION: Partial<Record<PokemonType | 'status', number>> = {
-  normal: 420, fire: 680, water: 700, grass: 700,
-  electric: 600, ice: 450, fighting: 480, poison: 620,
-  ground: 680, flying: 550, psychic: 750, bug: 650,
-  rock: 580, ghost: 800, dragon: 750,
+  normal: 650, fire: 1000, water: 1050, grass: 1050,
+  electric: 900, ice: 700, fighting: 720, poison: 920,
+  ground: 1000, flying: 820, psychic: 1100, bug: 950,
+  rock: 870, ghost: 1200, dragon: 1100,
 };
-const VFX_STATUS_DURATION = 650;
+const VFX_STATUS_DURATION = 950;
 
 // ── Precomputed random particle offsets (deterministic, no Math.random in render) ──
 const FIRE_PARTICLES = Array.from({ length: 8 }, (_, i) => ({
@@ -851,25 +851,27 @@ export function BattleScreen({
         addLog(`${eName} utilise ${eResult.moveName} !`, '#fde68a');
         const uid = dmgCounter++;
         setAttackEvt({ attacker: 'enemy', type: eResult.moveType, uid });
-        await sleep(VFX_DURATION[eResult.moveType] ?? 550);
+        await sleep(VFX_DURATION[eResult.moveType] ?? 820);
         setAttackEvt(null);
 
         if (!eResult.isMiss && eResult.damage > 0) {
           const newPHp = Math.max(0, pf[idx].currentHp - eResult.damage);
           pf[idx] = { ...pf[idx], currentHp: newPHp };
           flush();
-          playHit();
+          if (eResult.effectiveness >= 2) playHitSuper();
+          else if (eResult.effectiveness > 0 && eResult.effectiveness < 1) playHitLow();
+          else playHit();
           const hUid = dmgCounter++;
           setHitFlash('player');
           setHitEffect({ target: 'player', uid: hUid });
-          setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 280);
+          setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 450);
           addDmg(eResult.damage, 'player', eResult.effectiveness, eResult.isCrit, false);
           addLog(`${eName} → ${eResult.moveName} (${eResult.damage} dégâts)${eResult.isCrit ? ' ⚡ CRIT !' : ''}`, eResult.isCrit ? '#fbbf24' : '#fca5a5');
         } else if (eResult.isMiss) {
           addLog(`${eName} rate !`, '#94a3b8');
         }
 
-        await sleep(400);
+        await sleep(650);
 
         if (pf[idx].currentHp <= 0) {
           addLog(`${newName} est K.O. !`, '#f87171');
@@ -1037,7 +1039,7 @@ export function BattleScreen({
       } else {
         const uid = dmgCounter++;
         setAttackEvt({ attacker: atkSide, type: result.moveType, uid });
-        await sleep(VFX_DURATION[result.moveType] ?? 550);
+        await sleep(VFX_DURATION[result.moveType] ?? 820);
         setAttackEvt(null);
       }
 
@@ -1063,13 +1065,15 @@ export function BattleScreen({
         flush();
 
         // Step D: hit sound
-        playHit();
+        if (result.effectiveness >= 2) playHitSuper();
+        else if (result.effectiveness > 0 && result.effectiveness < 1) playHitLow();
+        else playHit();
 
         // Hit flash + effect on target
         setHitFlash(defSide);
         const hUid = dmgCounter++;
         setHitEffect({ target: defSide, uid: hUid });
-        setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 280);
+        setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 450);
 
         // floating damage
         const hitsLabel = result.hits > 1 ? ` (×${result.hits})` : '';
@@ -1142,7 +1146,7 @@ export function BattleScreen({
       }
 
       // Step E: pause
-      await sleep(400);
+      await sleep(650);
 
       // Check if target fainted
       const defArr = isPlayer ? ef : pf;
@@ -1469,7 +1473,7 @@ export function BattleScreen({
               fontSize: d.isCrit ? '1.8rem' : d.effectiveness >= 2 ? '1.6rem' : '1.2rem',
               fontWeight: 900, color,
               textShadow: d.isCrit ? `0 0 18px #fbbf24, 0 0 32px #f59e0b` : `0 0 12px ${color}`,
-              animation: 'dmg-float 1.1s ease-out forwards', transform: 'translateX(-50%)',
+              animation: 'dmg-float 1.6s ease-out forwards', transform: 'translateX(-50%)',
             }}>
               {d.isMiss ? 'RATÉ!' : `−${d.value}`}
               {d.isCrit && <div style={{ fontSize: '0.6rem', textAlign: 'center', color: '#fde047', letterSpacing: '0.1em' }}>CRITIQUE !</div>}
@@ -1499,7 +1503,7 @@ export function BattleScreen({
               </div>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-2.5">
-              <div className="h-2.5 rounded-full transition-all duration-300"
+              <div className="h-2.5 rounded-full transition-all duration-700"
                 style={{ width: `${activeEF ? (activeEF.currentHp / activeEF.maxHp) * 100 : 0}%`, background: hpColor(activeEF ? activeEF.currentHp / activeEF.maxHp : 0) }} />
             </div>
             <div className="flex items-center justify-between mt-0.5">
@@ -1557,7 +1561,7 @@ export function BattleScreen({
               <span className="text-slate-400 text-xs shrink-0 ml-1">Nv.{activePF?.level}</span>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-2.5">
-              <div className="h-2.5 rounded-full transition-all duration-300"
+              <div className="h-2.5 rounded-full transition-all duration-700"
                 style={{ width: `${activePF ? (activePF.currentHp / activePF.maxHp) * 100 : 0}%`, background: hpColor(activePF ? activePF.currentHp / activePF.maxHp : 0) }} />
             </div>
             <div className="flex items-center justify-between mt-0.5">

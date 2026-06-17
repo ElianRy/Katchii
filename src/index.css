@@ -710,13 +710,13 @@ input, textarea, select {
 }
 /* screen flash on hit */
 @keyframes hit-flash { 0%,100%{opacity:0} 50%{opacity:0.35} }
-.battle-hit-flash { animation: hit-flash 0.25s ease-out forwards; }
+.battle-hit-flash { animation: hit-flash 0.4s ease-out forwards; }
 
 /* attacker lunge */
 @keyframes lunge-right { 0%,100%{transform:translateX(0)} 40%{transform:translateX(18px)} }
 @keyframes lunge-left  { 0%,100%{transform:translateX(0)} 40%{transform:translateX(-18px)} }
-.battle-lunge-right { animation: lunge-right 0.45s ease-in-out; }
-.battle-lunge-left  { animation: lunge-left  0.45s ease-in-out; }
+.battle-lunge-right { animation: lunge-right 0.7s ease-in-out; }
+.battle-lunge-left  { animation: lunge-left  0.7s ease-in-out; }
 
 /* ── Per-type custom attack trajectories ── */
 /* ltr: player (bottom-left) → enemy (top-right)   endpoint ≈ translate(190px,-200px) */
