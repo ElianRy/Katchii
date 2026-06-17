@@ -657,6 +657,56 @@ function MorphBlinkOverlay({ uid: _uid }: { uid: number }) {
   );
 }
 
+function ParalysisAppliedVfx({ uid: _uid }: { uid: number }) {
+  const sparks = [0, 1, 2, 3, 4];
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 25 }}>
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(ellipse at 50% 60%, #facc1555 0%, transparent 70%)',
+        animation: 'par-flash 0.5s ease-out forwards',
+      }} />
+      {sparks.map(i => (
+        <span key={i} style={{
+          position: 'absolute',
+          left: `${15 + i * 16}%`,
+          top: `${30 + (i % 3) * 20}%`,
+          fontSize: `${0.9 + (i % 2) * 0.4}rem`,
+          animation: `vfx-fire-particle-up ${0.45 + i * 0.07}s ${i * 0.06}s ease-out forwards`,
+          filter: 'drop-shadow(0 0 6px #fde047)',
+        }}>⚡</span>
+      ))}
+    </div>
+  );
+}
+
+function PoisonAppliedVfx({ uid: _uid }: { uid: number }) {
+  const bubbles = [
+    { left: '20%', top: '60%', size: 1.4, delay: '0s',    dur: '0.9s' },
+    { left: '45%', top: '55%', size: 1.1, delay: '0.12s', dur: '1.0s' },
+    { left: '65%', top: '65%', size: 1.6, delay: '0.06s', dur: '0.85s' },
+    { left: '35%', top: '50%', size: 1.0, delay: '0.2s',  dur: '0.95s' },
+  ];
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 25 }}>
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(ellipse at 50% 60%, #a855f733 0%, transparent 70%)',
+        animation: 'morph-blink-overlay 0.5s ease-out forwards',
+      }} />
+      {bubbles.map((b, i) => (
+        <span key={i} style={{
+          position: 'absolute',
+          left: b.left, top: b.top,
+          fontSize: `${b.size}rem`,
+          animation: `psn-bubble-${i} ${b.dur} ${b.delay} ease-out forwards`,
+          filter: 'drop-shadow(0 0 5px #c084fc)',
+        }}>☠️</span>
+      ))}
+    </div>
+  );
+}
+
 function SleepAppliedZzz({ uid: _uid }: { uid: number }) {
   return (
     <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 25 }}>
@@ -754,6 +804,8 @@ export function BattleScreen({
   const [poisonBubbles, setPoisonBubbles] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const [morphVfxState, setMorphVfxState] = useState<{ target: 'player' | 'enemy'; phase: 'blink' | 'squish'; uid: number } | null>(null);
   const [sleepApplied, setSleepApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
+  const [paralysisApplied, setParalysisApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
+  const [poisonApplied, setPoisonApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
     setLog(prev => [...prev.slice(-100), { text, color }]);
   }, []);
@@ -1403,11 +1455,18 @@ export function BattleScreen({
     // infligé par le premier attaquant bloque le second dans le même tour (règle Gen 4).
     const applyAttackerStatus = (attacker: 'player' | 'enemy', result: typeof pResult) => {
       if (!result.appliedStatus) return;
-      const triggerSleep = (target: 'player' | 'enemy') => {
-        if (result.appliedStatus === 'slp') {
-          const uid = dmgCounter++;
+      const triggerStatusVfx = (target: 'player' | 'enemy') => {
+        const st = result.appliedStatus;
+        const uid = dmgCounter++;
+        if (st === 'slp') {
           setSleepApplied({ target, uid });
           setTimeout(() => setSleepApplied(s => s?.uid === uid ? null : s), 2000);
+        } else if (st === 'par') {
+          setParalysisApplied({ target, uid });
+          setTimeout(() => setParalysisApplied(s => s?.uid === uid ? null : s), 1200);
+        } else if (st === 'psn' || st === 'tox') {
+          setPoisonApplied({ target, uid });
+          setTimeout(() => setPoisonApplied(s => s?.uid === uid ? null : s), 1200);
         }
       };
       if (attacker === 'player') {
@@ -1416,7 +1475,7 @@ export function BattleScreen({
           addLog(`${eName} est ${STATUS_FR[result.appliedStatus] ?? result.appliedStatus} !`, statusLabel(result.appliedStatus)?.color ?? '#fde68a');
           ef[eIdx] = { ...ef[eIdx], statusState: ns };
           flush();
-          triggerSleep('enemy');
+          triggerStatusVfx('enemy');
         }
       } else {
         const ns = applyMajorStatus(pf[pIdx].statusState, result.appliedStatus);
@@ -1424,7 +1483,7 @@ export function BattleScreen({
           addLog(`${pName} est ${STATUS_FR[result.appliedStatus] ?? result.appliedStatus} !`, statusLabel(result.appliedStatus)?.color ?? '#fde68a');
           pf[pIdx] = { ...pf[pIdx], statusState: ns };
           flush();
-          triggerSleep('player');
+          triggerStatusVfx('player');
         }
       }
     };
@@ -1486,6 +1545,9 @@ export function BattleScreen({
         const uid = dmgCounter++;
         setPoisonBubbles({ target: 'player', uid });
         setTimeout(() => setPoisonBubbles(b => b?.uid === uid ? null : b), 1100);
+        const uid2 = dmgCounter++;
+        setPoisonApplied({ target: 'player', uid: uid2 });
+        setTimeout(() => setPoisonApplied(s => s?.uid === uid2 ? null : s), 1100);
       }
       flush();
     }
@@ -1498,6 +1560,9 @@ export function BattleScreen({
         const uid = dmgCounter++;
         setPoisonBubbles({ target: 'enemy', uid });
         setTimeout(() => setPoisonBubbles(b => b?.uid === uid ? null : b), 1100);
+        const uid2 = dmgCounter++;
+        setPoisonApplied({ target: 'enemy', uid: uid2 });
+        setTimeout(() => setPoisonApplied(s => s?.uid === uid2 ? null : s), 1100);
       }
       flush();
     }
@@ -1798,6 +1863,10 @@ export function BattleScreen({
             {morphVfxState?.target === 'enemy' && morphVfxState.phase === 'blink' && <MorphBlinkOverlay uid={morphVfxState.uid} />}
             {/* Sleep applied Zzz on enemy */}
             {sleepApplied?.target === 'enemy' && <SleepAppliedZzz uid={sleepApplied.uid} />}
+            {/* Paralysis applied VFX on enemy */}
+            {paralysisApplied?.target === 'enemy' && <ParalysisAppliedVfx uid={paralysisApplied.uid} />}
+            {/* Poison applied VFX on enemy */}
+            {poisonApplied?.target === 'enemy' && <PoisonAppliedVfx uid={poisonApplied.uid} />}
           </div>
           <div className="flex gap-1.5 justify-end mt-1">
             {enemyFighters.map((f, i) => (
@@ -1824,6 +1893,10 @@ export function BattleScreen({
             {morphVfxState?.target === 'player' && morphVfxState.phase === 'blink' && <MorphBlinkOverlay uid={morphVfxState.uid} />}
             {/* Sleep applied Zzz on player */}
             {sleepApplied?.target === 'player' && <SleepAppliedZzz uid={sleepApplied.uid} />}
+            {/* Paralysis applied VFX on player */}
+            {paralysisApplied?.target === 'player' && <ParalysisAppliedVfx uid={paralysisApplied.uid} />}
+            {/* Poison applied VFX on player */}
+            {poisonApplied?.target === 'player' && <PoisonAppliedVfx uid={poisonApplied.uid} />}
           </div>
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
             <div className="flex justify-between items-center mb-1">
