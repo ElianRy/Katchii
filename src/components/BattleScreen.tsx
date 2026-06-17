@@ -1312,7 +1312,8 @@ export function BattleScreen({
         setStatusAnim({ target: animTarget, positive, uid: dmgCounter++ });
         await sleep(VFX_STATUS_DURATION);
         setStatusAnim(null);
-      } else {
+      } else if ((result.hits || 1) <= 1) {
+        // Single-hit: full VFX before damage
         const uid = dmgCounter++;
         setAttackEvt({ attacker: atkSide, type: result.moveType, uid });
         await sleep(VFX_DURATION[result.moveType] ?? 820);
@@ -1336,11 +1337,21 @@ export function BattleScreen({
       if (result.damage > 0) {
         const hitCount = Math.max(1, result.hits || 1);
         const perHitDmg = hitCount > 1 ? Math.max(1, Math.floor(result.damage / hitCount)) : result.damage;
+        const hitVfxDuration = Math.round((VFX_DURATION[result.moveType] ?? 820) * 0.55);
         let totalApplied = 0;
 
         for (let h = 0; h < hitCount; h++) {
           const defArr2 = isPlayer ? ef : pf;
           if (defArr2[defIdx].currentHp <= 0) break;
+
+          // VFX per hit for multi-hit moves
+          if (hitCount > 1) {
+            const uid = dmgCounter++;
+            setAttackEvt({ attacker: atkSide, type: result.moveType, uid });
+            await sleep(hitVfxDuration);
+            setAttackEvt(null);
+          }
+
           const dmgThisHit = h === hitCount - 1 ? result.damage - totalApplied : perHitDmg;
           const newHp = Math.max(0, defArr2[defIdx].currentHp - dmgThisHit);
           if (isPlayer) ef[defIdx] = { ...ef[defIdx], currentHp: newHp };
@@ -1348,22 +1359,20 @@ export function BattleScreen({
           totalApplied += dmgThisHit;
           flush();
 
-          // Step D: hit sound — silent on immunity
+          // hit sound — silent on immunity
           if      (result.effectiveness === 0) { /* aucun son : immunité */ }
           else if (result.effectiveness >= 2)   playHitSuper();
           else if (result.effectiveness < 1)    playHitLow();
           else                                  playHit();
 
-          // Hit flash + effect on target
+          // hit flash + floating damage
           setHitFlash(defSide);
           const hUid = dmgCounter++;
           setHitEffect({ target: defSide, uid: hUid });
           setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 350);
-
-          // floating damage per hit
           addDmg(dmgThisHit, defSide, result.effectiveness, result.isCrit && h === 0, false);
 
-          if (h < hitCount - 1) await sleep(350);
+          if (h < hitCount - 1) await sleep(300);
         }
 
         if (result.isCrit) addLog('Coup critique !', '#fbbf24');

@@ -96,12 +96,12 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
   const [autoCombat, setAutoCombat] = useState(false);
   type TrainingPreset = 'facile' | 'moyen' | 'difficile' | 'tres_difficile' | 'impossible';
-  const TRAINING_PRESETS: { key: TrainingPreset; label: string; emoji: string; mult: number; color: string }[] = [
-    { key: 'facile',         label: 'Facile',         emoji: '🟢', mult: 0.55, color: '#22c55e' },
-    { key: 'moyen',          label: 'Moyen',          emoji: '🔵', mult: 0.80, color: '#3b82f6' },
-    { key: 'difficile',      label: 'Difficile',      emoji: '🟠', mult: 1.00, color: '#f97316' },
-    { key: 'tres_difficile', label: 'Très difficile', emoji: '🔴', mult: 1.25, color: '#ef4444' },
-    { key: 'impossible',     label: 'Impossible',     emoji: '💀', mult: 1.55, color: '#7c3aed' },
+  const TRAINING_PRESETS: { key: TrainingPreset; label: string; emoji: string; level: number; range: string; color: string }[] = [
+    { key: 'facile',         label: 'Facile',         emoji: '🟢', level: 15,  range: 'Niv. 1–25',   color: '#22c55e' },
+    { key: 'moyen',          label: 'Moyen',          emoji: '🔵', level: 35,  range: 'Niv. 25–45',  color: '#3b82f6' },
+    { key: 'difficile',      label: 'Difficile',      emoji: '🟠', level: 55,  range: 'Niv. 45–65',  color: '#f97316' },
+    { key: 'tres_difficile', label: 'Très difficile', emoji: '🔴', level: 75,  range: 'Niv. 65–85',  color: '#ef4444' },
+    { key: 'impossible',     label: 'Impossible',     emoji: '💀', level: 92,  range: 'Niv. 85–100', color: '#7c3aed' },
   ];
   const [trainingPreset, setTrainingPreset_] = useState<TrainingPreset>(() => {
     try { return (localStorage.getItem('katchii_training_preset') as TrainingPreset) ?? 'difficile'; } catch { return 'difficile'; }
@@ -120,12 +120,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const owned = GEN1_POKEMON.filter(p =>
     (state.normalCollection[p.id] ?? 0) > 0 || (state.shinyCollection[p.id] ?? 0) > 0
   );
-  const maxPokemonLevel = selected.length > 0
-    ? Math.max(...selected.map(id => state.pokemonLevels?.[id]?.level ?? 1))
-    : owned.length > 0
-      ? Math.max(...owned.map(p => state.pokemonLevels?.[p.id]?.level ?? 1))
-      : 30;
-  const trainingLevel = Math.min(100, Math.max(1, Math.round(maxPokemonLevel * (TRAINING_PRESETS.find(p => p.key === trainingPreset)?.mult ?? 1))));
+  const trainingLevel = TRAINING_PRESETS.find(p => p.key === trainingPreset)?.level ?? 55;
 
   const sorted = [...owned].sort((a, b) => {
     if (sort === 'level') {
@@ -219,7 +214,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
           style={{ background: '#0f172a', border: `2px solid ${selectedPreset.color}`, boxShadow: `0 0 32px ${selectedPreset.color}44` }}>
           <div className="text-3xl mb-2">⚔️</div>
           <div className="text-white font-black text-lg mb-1">Difficulté</div>
-          <div className="text-slate-400 text-sm mb-4">Niveau adversaire : <span className="text-white font-bold">{trainingLevel}</span></div>
+          <div className="text-slate-400 text-sm mb-4">Niveau de base adversaire : <span style={{ color: selectedPreset.color }} className="font-bold">{trainingLevel}</span></div>
           <div className="flex flex-col gap-2 mb-6">
             {TRAINING_PRESETS.map(p => (
               <button
@@ -234,7 +229,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
                 }}>
                 <span className="text-xl">{p.emoji}</span>
                 <span>{p.label}</span>
-                <span className="ml-auto text-xs opacity-75">Niv. {Math.min(100, Math.max(1, Math.round(maxPokemonLevel * p.mult)))}</span>
+                <span className="ml-auto text-xs opacity-75">{p.range}</span>
               </button>
             ))}
           </div>
