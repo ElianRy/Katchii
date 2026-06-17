@@ -810,8 +810,8 @@ export function BattleScreen({
     setLog(prev => [...prev.slice(-100), { text, color }]);
   }, []);
 
-  // HeartGold-style dialog box state
-  const [hgDialog, setHgDialog] = useState({ topLine: '', curLine: '', curFull: '', nextIdx: 0, showArrow: false });
+  // HeartGold-style dialog box state (3 visible lines: 2 prev + current typing)
+  const [hgDialog, setHgDialog] = useState({ prevLines: [] as string[], curLine: '', curFull: '', nextIdx: 0, showArrow: false });
   useEffect(() => {
     const d = hgDialog;
     if (d.curLine.length < d.curFull.length) {
@@ -823,7 +823,7 @@ export function BattleScreen({
       const t = setTimeout(() => setHgDialog(p => {
         const next = log[p.nextIdx];
         if (!next) return p;
-        return { topLine: p.curFull, curLine: '', curFull: next.text, nextIdx: p.nextIdx + 1, showArrow: false };
+        return { prevLines: [...p.prevLines, p.curFull].slice(-3), curLine: '', curFull: next.text, nextIdx: p.nextIdx + 1, showArrow: false };
       }), pause);
       return () => clearTimeout(t);
     }
@@ -2029,32 +2029,34 @@ export function BattleScreen({
       </div>
 
       {/* ── Battle log + Move buttons ── */}
-      <div className="shrink-0 border-t border-slate-700/40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: 'linear-gradient(180deg, rgba(10,12,28,0.97) 0%, rgba(5,8,20,0.99) 100%)' }}>
+      <div className="shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: '#c8c0b0' }}>
         {/* HeartGold-style dialog box */}
         <div style={{
           margin: '6px 8px 4px',
-          background: 'white',
-          border: '4px solid #1a1a2e',
-          borderRadius: 8,
-          boxShadow: 'inset 0 0 0 3px #1a1a2e',
-          padding: '7px 14px 7px',
-          minHeight: 58,
+          background: '#f0ece0',
+          border: '3px solid #706890',
+          borderRadius: 6,
+          boxShadow: 'inset 2px 2px 0 #fffef8, inset -2px -2px 0 #a09880',
+          padding: '6px 12px 6px',
+          minHeight: 70,
           position: 'relative',
         }}>
-          {/* Previous line */}
-          <div style={{ fontSize: '0.55rem', color: '#666', lineHeight: 1.8, fontWeight: 400, minHeight: '1rem', fontFamily: "'Press Start 2P', monospace" }}>
-            {hgDialog.topLine || ' '}
-          </div>
+          {/* Previous lines (history) */}
+          {hgDialog.prevLines.map((line, i) => (
+            <div key={i} style={{ fontSize: '0.52rem', color: '#888', lineHeight: 1.75, fontFamily: "'Press Start 2P', monospace", opacity: 0.4 + i * 0.25 }}>
+              {line || ' '}
+            </div>
+          ))}
           {/* Current line (typing) */}
-          <div style={{ fontSize: '0.55rem', color: '#111', lineHeight: 1.8, fontWeight: 400, minHeight: '1rem', fontFamily: "'Press Start 2P', monospace" }}>
+          <div style={{ fontSize: '0.52rem', color: '#111', lineHeight: 1.75, fontFamily: "'Press Start 2P', monospace", minHeight: '0.9rem' }}>
             {hgDialog.curLine}
             {!hgDialog.showArrow && hgDialog.curLine.length < hgDialog.curFull.length && (
-              <span style={{ display: 'inline-block', width: 7, height: 11, background: '#111', verticalAlign: 'middle', marginLeft: 1, animation: 'hg-blink-cursor 0.55s step-end infinite' }} />
+              <span style={{ display: 'inline-block', width: 6, height: 10, background: '#333', verticalAlign: 'middle', marginLeft: 1, animation: 'hg-blink-cursor 0.55s step-end infinite' }} />
             )}
           </div>
           {/* Blinking ▼ arrow when done */}
           {hgDialog.showArrow && (
-            <span style={{ position: 'absolute', bottom: 4, right: 10, fontSize: '0.7rem', color: '#1a1a2e', animation: 'hg-blink-arrow 0.7s step-end infinite' }}>▼</span>
+            <span style={{ position: 'absolute', bottom: 4, right: 10, fontSize: '0.6rem', color: '#706890', animation: 'hg-blink-arrow 0.7s step-end infinite' }}>▼</span>
           )}
         </div>
 
@@ -2122,10 +2124,10 @@ export function BattleScreen({
                       onClick={e => e.preventDefault()}
                       className="relative text-left select-none"
                       style={{
-                        background: disabled && !isThisChargingMove ? '#b0b890' : '#c8d848',
-                        border: isThisChargingMove ? '3px dashed #e8a000' : `3px solid #706890`,
+                        background: disabled && !isThisChargingMove ? '#d8d0c0' : '#f0ece0',
+                        border: isThisChargingMove ? `3px dashed #e8a000` : `3px solid ${typeColor}`,
                         borderRadius: 6,
-                        boxShadow: 'inset 2px 2px 0 #e8f098, inset -2px -2px 0 #8a9830',
+                        boxShadow: 'inset 2px 2px 0 #fffef8, inset -2px -2px 0 #c0b8a8',
                         padding: '6px 10px 5px',
                         opacity: disabled && !isThisChargingMove ? 0.55 : 1,
                         WebkitTapHighlightColor: 'transparent',
@@ -2155,7 +2157,7 @@ export function BattleScreen({
                   else executeTurn(0);
                 }}
                 className="w-full text-center"
-                style={{ background: '#c8d848', border: '3px solid #706890', borderRadius: 6, boxShadow: 'inset 2px 2px 0 #e8f098, inset -2px -2px 0 #8a9830', padding: '10px', opacity: phase === 'resolving' ? 0.5 : 1 }}>
+                style={{ background: '#f0ece0', border: '3px solid #706890', borderRadius: 6, boxShadow: 'inset 2px 2px 0 #fffef8, inset -2px -2px 0 #c0b8a8', padding: '10px', opacity: phase === 'resolving' ? 0.5 : 1 }}>
                 <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.55rem', color: '#111' }}>Lutte</span>
               </button>
             ) : null}
