@@ -95,15 +95,20 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
   const [autoCombat, setAutoCombat] = useState(false);
-  const [trainingLevel, setTrainingLevel_] = useState<number | null>(() => {
-    try { const v = localStorage.getItem('katchii_training_level'); return v ? Number(v) : null; } catch { return null; }
+  type TrainingPreset = 'facile' | 'moyen' | 'difficile' | 'tres_difficile' | 'impossible';
+  const TRAINING_PRESETS: { key: TrainingPreset; label: string; emoji: string; mult: number; color: string }[] = [
+    { key: 'facile',         label: 'Facile',         emoji: '🟢', mult: 0.55, color: '#22c55e' },
+    { key: 'moyen',          label: 'Moyen',          emoji: '🔵', mult: 0.80, color: '#3b82f6' },
+    { key: 'difficile',      label: 'Difficile',      emoji: '🟠', mult: 1.00, color: '#f97316' },
+    { key: 'tres_difficile', label: 'Très difficile', emoji: '🔴', mult: 1.25, color: '#ef4444' },
+    { key: 'impossible',     label: 'Impossible',     emoji: '💀', mult: 1.55, color: '#7c3aed' },
+  ];
+  const [trainingPreset, setTrainingPreset_] = useState<TrainingPreset>(() => {
+    try { return (localStorage.getItem('katchii_training_preset') as TrainingPreset) ?? 'difficile'; } catch { return 'difficile'; }
   });
-  const setTrainingLevel = (updater: number | null | ((p: number | null) => number | null)) => {
-    setTrainingLevel_(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : updater;
-      try { if (next !== null) localStorage.setItem('katchii_training_level', String(next)); } catch {}
-      return next;
-    });
+  const setTrainingPreset = (p: TrainingPreset) => {
+    setTrainingPreset_(p);
+    try { localStorage.setItem('katchii_training_preset', p); } catch {}
   };
   const [battleSpeed, setBattleSpeed] = useState(0);
   const [levelUps, setLevelUps] = useState<LevelUpNotif[]>([]);
@@ -120,6 +125,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     : owned.length > 0
       ? Math.max(...owned.map(p => state.pokemonLevels?.[p.id]?.level ?? 1))
       : 30;
+  const trainingLevel = Math.min(100, Math.max(1, Math.round(maxPokemonLevel * (TRAINING_PRESETS.find(p => p.key === trainingPreset)?.mult ?? 1))));
 
   const sorted = [...owned].sort((a, b) => {
     if (sort === 'level') {
@@ -159,7 +165,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     const mult = ZONE_XP_MULT[zoneId] ?? 1;
     const pseudoDiff: Difficulty = { id: zoneId, label: zoneId, emoji: '⚔️', enemyLevel: 0, color: '#f59e0b', xpMultiplier: mult, description: '' };
     setChosenDifficulty(pseudoDiff);
-    setEnemyTeam(buildEnemyTeam(zoneId, trainingLevel ?? undefined));
+    setEnemyTeam(buildEnemyTeam(zoneId, trainingLevel));
     setMode('battle');
   };
 
@@ -206,35 +212,32 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   }, [levelUps]);
 
   if (mode === 'level_select') {
-    const defaultLv = trainingLevel ?? maxPokemonLevel;
+    const selectedPreset = TRAINING_PRESETS.find(p => p.key === trainingPreset)!;
     return (
       <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 px-6">
         <div className="w-full max-w-xs rounded-2xl p-6 text-center"
-          style={{ background: '#0f172a', border: '2px solid #f59e0b', boxShadow: '0 0 32px #f59e0b44' }}>
+          style={{ background: '#0f172a', border: `2px solid ${selectedPreset.color}`, boxShadow: `0 0 32px ${selectedPreset.color}44` }}>
           <div className="text-3xl mb-2">⚔️</div>
-          <div className="text-white font-black text-lg mb-1">Niveau de l'adversaire</div>
-          <div className="text-slate-400 text-sm mb-6">Choisissez la difficulté</div>
-          <div className="flex items-center justify-center gap-4 mb-2">
-            <button
-              onClick={() => setTrainingLevel(l => Math.max(1, (l ?? defaultLv) - 10))}
-              className="w-12 h-12 rounded-2xl bg-slate-700 text-white font-black text-xl active:scale-95 transition-transform"
-            >−</button>
-            <div className="flex flex-col items-center">
-              <span className="text-white font-black text-4xl w-20 text-center">
-                {trainingLevel ?? defaultLv}
-              </span>
-              <span className="text-slate-500 text-xs">/ 100</span>
-            </div>
-            <button
-              onClick={() => setTrainingLevel(l => Math.min(100, (l ?? defaultLv) + 10))}
-              className="w-12 h-12 rounded-2xl bg-slate-700 text-white font-black text-xl active:scale-95 transition-transform"
-            >+</button>
+          <div className="text-white font-black text-lg mb-1">Difficulté</div>
+          <div className="text-slate-400 text-sm mb-4">Niveau adversaire : <span className="text-white font-bold">{trainingLevel}</span></div>
+          <div className="flex flex-col gap-2 mb-6">
+            {TRAINING_PRESETS.map(p => (
+              <button
+                key={p.key}
+                onClick={() => setTrainingPreset(p.key)}
+                className="w-full py-3 rounded-xl font-black text-sm flex items-center gap-3 px-4 transition-all active:scale-95"
+                style={{
+                  background: trainingPreset === p.key ? p.color : '#1e293b',
+                  border: `2px solid ${trainingPreset === p.key ? p.color : '#334155'}`,
+                  color: trainingPreset === p.key ? 'white' : '#94a3b8',
+                  boxShadow: trainingPreset === p.key ? `0 0 12px ${p.color}66` : 'none',
+                }}>
+                <span className="text-xl">{p.emoji}</span>
+                <span>{p.label}</span>
+                <span className="ml-auto text-xs opacity-75">Niv. {Math.min(100, Math.max(1, Math.round(maxPokemonLevel * p.mult)))}</span>
+              </button>
+            ))}
           </div>
-          <input
-            type="range" min={1} max={100} value={trainingLevel ?? defaultLv}
-            onChange={e => setTrainingLevel(Number(e.target.value))}
-            className="w-full mb-6 accent-yellow-400"
-          />
           <div className="flex gap-3">
             <button
               onClick={() => setMode('team')}

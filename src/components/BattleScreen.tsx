@@ -2156,6 +2156,11 @@ export function BattleScreen({
                           fontFamily: "'Press Start 2P', monospace", fontSize: '0.38rem', fontWeight: 700,
                           background: typeColor, color: 'white', padding: '1px 4px', borderRadius: 3,
                         }}>{move.type.slice(0,6).toUpperCase()}</span>
+                        <span style={{
+                          fontFamily: "'Press Start 2P', monospace", fontSize: '0.34rem',
+                          background: move.category === 'physical' ? '#c84020' : move.category === 'special' ? '#4060c8' : '#508030',
+                          color: 'white', padding: '1px 3px', borderRadius: 3,
+                        }}>{move.category === 'physical' ? 'PHY' : move.category === 'special' ? 'SPÉ' : 'STA'}</span>
                         <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: ppLow ? '#c00' : '#333' }}>
                           PP {pp}/{move.pp ?? 15}
                         </span>
