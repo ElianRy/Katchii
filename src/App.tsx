@@ -67,6 +67,7 @@ export function App() {
   const [pvpOpponentTeam, setPvpOpponentTeam] = useState<TeamMember[]>([]);
   const [pvpOpponentName, setPvpOpponentName] = useState('');
   const pvpCleanupRef = useRef<(() => void) | null>(null);
+  const [pvpWaiting, setPvpWaiting] = useState<{ name: string; cancel: () => void } | null>(null);
 
   // Persist & restore last view
   const persistView = useCallback((v: View) => {
@@ -282,6 +283,7 @@ export function App() {
     setPvpMyTeam([]);
     setPvpOpponentTeam([]);
     setPvpOpponentName('');
+    setPvpWaiting(null);
   }, []);
 
   // Called when user clicks "Défier en 3v3 PvP" on another player's profile
@@ -300,7 +302,7 @@ export function App() {
     const statusChan = subscribeToChallengeStatus(challenge.id, async updated => {
       if (updated.status === 'accepted') {
         supabase.removeChannel(statusChan);
-        // Fetch the newly-created session
+        setPvpWaiting(null);
         const { data } = await supabase
           .from('pvp_sessions')
           .select()
@@ -311,13 +313,19 @@ export function App() {
         setPvpPhase('team_select');
       } else if (updated.status === 'declined' || updated.status === 'cancelled') {
         supabase.removeChannel(statusChan);
+        setPvpWaiting(null);
         cleanupPvp();
       }
     });
-    pvpCleanupRef.current = () => {
+
+    const doCancel = () => {
       supabase.removeChannel(statusChan);
       cancelChallenge(challenge.id);
+      setPvpWaiting(null);
+      cleanupPvp();
     };
+    setPvpWaiting({ name: challengedName, cancel: doCancel });
+    pvpCleanupRef.current = doCancel;
   }, [userId, username, cleanupPvp]);
 
   // Host submitted team — wait for guest + session to go active
@@ -607,6 +615,26 @@ export function App() {
       )}
 
       {/* ── PvP overlays ── */}
+      {pvpWaiting && (
+        <div className="fixed inset-0 z-[750] flex items-center justify-center bg-black/80 px-6">
+          <div className="w-full max-w-xs rounded-2xl p-6 text-center"
+            style={{ background: '#1e1b4b', border: '2px solid #7c3aed', boxShadow: '0 0 32px #7c3aed55' }}>
+            <div className="text-4xl mb-3" style={{ animation: 'pvp-blink 1.2s ease-in-out infinite' }}>⚔️</div>
+            <div className="text-white font-black text-base mb-1">Défi envoyé !</div>
+            <div className="text-purple-300 text-sm mb-4">
+              En attente de réponse de <span className="text-yellow-300 font-bold">{pvpWaiting.name}</span>…
+            </div>
+            <button
+              onClick={() => pvpWaiting.cancel()}
+              className="w-full py-2.5 rounded-xl text-sm font-bold text-slate-300"
+              style={{ background: '#374151', border: '1px solid #4b5563' }}
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+
       <PvpChallengePopup
         challenge={pvpIncoming}
         onAccept={handlePvpAccept}

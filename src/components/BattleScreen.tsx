@@ -75,6 +75,7 @@ interface FighterState extends TeamMember {
   stages: Stages;
   statusState: StatusState;
   isSeeded?: boolean;
+  chargingMove?: { moveId: string; moveIndex: number } | null;
   // Morphing (Transform) — ephemeral, only lives during combat
   transformOriginalId?: number;
   transformMoveOverride?: RawMove[];
@@ -768,6 +769,18 @@ export function BattleScreen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pvpControls?.pendingPayload]);
 
+  // Auto-trigger turn 2 of a charging move (e.g. Lance-Soleil)
+  useEffect(() => {
+    if (phase !== 'player_turn' || pvpControls) return;
+    const charging = playerFightersRef.current[playerIdxRef.current]?.chargingMove;
+    if (!charging) return;
+    const t = setTimeout(() => {
+      if (phaseRef.current === 'player_turn') executeTurnRef.current?.(charging.moveIndex);
+    }, 700);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
   useEffect(() => {
     if (phase !== 'player_turn' || !autoCombat || pvpControls) return;
     const delay = 800 + Math.random() * 200;
@@ -987,8 +1000,10 @@ export function BattleScreen({
       eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
       pFighter.statusState, eFighter.statusState
     );
-    // PvP: override with opponent's actual move; otherwise use AI choice
-    const eMoveIndex = pvpPayload ? pvpPayload.enemyMoveIndex : eMoveIndexAI;
+    // 2-turn move or PvP: override eMoveIndex
+    const eMoveIndex = ef[eIdx]?.chargingMove
+      ? ef[eIdx].chargingMove!.moveIndex
+      : pvpPayload ? pvpPayload.enemyMoveIndex : eMoveIndexAI;
     turnNumberRef.current++;
 
     // Turn order
@@ -1161,6 +1176,30 @@ export function BattleScreen({
         addLog(`${atkName} utilise Morphing !`, '#fde68a');
         await executeTransformEffect(isPlayer, atkIdx, defIdx, atkName, defName);
         return false;
+      }
+
+      // Lance-Soleil: 2-turn charge mechanic
+      if (rawMove?.id === 'solar-beam') {
+        const atkArr = isPlayer ? pf : ef;
+        if (!atkArr[atkIdx].chargingMove) {
+          // Turn 1 — charge
+          addLog(`${atkName} utilise ${result.moveName} !`, '#fde68a');
+          const uid2 = dmgCounter++;
+          setAttackEvt({ attacker: atkSide, type: 'grass', uid: uid2 });
+          await sleep(700);
+          setAttackEvt(null);
+          addLog(`${atkName} se gorge de lumière !`, '#adff2f');
+          const storedIdx = isPlayer ? playerMoveIndex : eMoveIndex;
+          if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: { moveId: 'solar-beam', moveIndex: storedIdx } };
+          else ef[atkIdx] = { ...ef[atkIdx], chargingMove: { moveId: 'solar-beam', moveIndex: storedIdx } };
+          flush();
+          return false;
+        } else {
+          // Turn 2 — clear flag and proceed with normal damage
+          if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: null };
+          else ef[atkIdx] = { ...ef[atkIdx], chargingMove: null };
+          flush();
+        }
       }
 
       const isStatusOnly = result.damage === 0 && !!result.statBoost && !result.isMiss;
@@ -1916,7 +1955,9 @@ export function BattleScreen({
               <div className="grid grid-cols-2 gap-2">
                 {playerMoves.map((move, i) => {
                   const pp = activePF?.currentPP[i] ?? 0;
-                  const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat || !!(pvpControls?.isWaiting);
+                  const isCharging = !!(activePF?.chargingMove);
+                  const isThisChargingMove = activePF?.chargingMove?.moveIndex === i;
+                  const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat || !!(pvpControls?.isWaiting) || isCharging;
                   const typeColor = TYPE_COLORS[move.type as PokemonType] ?? '#475569';
                   return (
                     <button key={i}
@@ -1929,13 +1970,16 @@ export function BattleScreen({
                       onClick={e => e.preventDefault()}
                       className="relative rounded-xl px-3 py-2 text-left select-none"
                       style={{
-                        background: disabled ? '#1e293b' : `linear-gradient(135deg, ${typeColor}cc, ${typeColor}66)`,
-                        border: `2px solid ${disabled ? '#334155' : typeColor}`,
-                        opacity: disabled ? 0.5 : 1,
+                        background: isThisChargingMove ? 'linear-gradient(135deg, #adff2f88, #4ade8066)' : disabled ? '#1e293b' : `linear-gradient(135deg, ${typeColor}cc, ${typeColor}66)`,
+                        border: `2px solid ${isThisChargingMove ? '#adff2f' : disabled ? '#334155' : typeColor}`,
+                        opacity: disabled && !isThisChargingMove ? 0.4 : 1,
                         WebkitTapHighlightColor: 'transparent',
                       }}>
                       <div className="flex justify-between items-start">
-                        <span className="text-white font-bold text-xs leading-tight">{move.name}</span>
+                        {isThisChargingMove
+                          ? <span className="text-yellow-300 font-black text-xs animate-pulse">☀️ Prêt !</span>
+                          : <span className="text-white font-bold text-xs leading-tight">{move.name}</span>
+                        }
                         <span className="text-white/60 text-xs">{pp}/{move.pp ?? 15}</span>
                       </div>
                       <div className="flex items-center gap-1 mt-0.5 flex-wrap">

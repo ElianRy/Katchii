@@ -36,7 +36,7 @@ const ZONE_LEVEL_RANGE: Record<string, [number, number]> = {
   zone7: [70, 95], zone8: [80, 100], ligue: [85, 100], zone_libre: [85, 100],
 };
 
-function buildEnemyTeam(zoneId: string): TeamMember[] {
+function buildEnemyTeam(zoneId: string, customLevel?: number): TeamMember[] {
   const [minLv, maxLv] = ZONE_LEVEL_RANGE[zoneId] ?? [10, 30];
   const rarities: string[] = maxLv <= 25 ? ['commun', 'commun', 'peu_commun']
     : maxLv <= 40 ? ['commun', 'peu_commun', 'peu_commun']
@@ -53,7 +53,7 @@ function buildEnemyTeam(zoneId: string): TeamMember[] {
     if (!picked.includes(p.id)) picked.push(p.id);
   }
   return picked.map(id => {
-    const level = minLv + Math.floor(Math.random() * (maxLv - minLv + 1));
+    const level = customLevel ?? (minLv + Math.floor(Math.random() * (maxLv - minLv + 1)));
     const maxHp = calcMaxHp(id, level);
     return { pokemonId: id, level, xp: 0, currentHp: maxHp, maxHp };
   });
@@ -93,6 +93,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
   const [autoCombat, setAutoCombat] = useState(false);
+  const [trainingLevel, setTrainingLevel] = useState<number | null>(null);
   const [battleSpeed, setBattleSpeed] = useState(0);
   const [levelUps, setLevelUps] = useState<LevelUpNotif[]>([]);
   const [showNameInput, setShowNameInput] = useState(false);
@@ -142,7 +143,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     const mult = ZONE_XP_MULT[zoneId] ?? 1;
     const pseudoDiff: Difficulty = { id: zoneId, label: zoneId, emoji: '⚔️', enemyLevel: 0, color: '#f59e0b', xpMultiplier: mult, description: '' };
     setChosenDifficulty(pseudoDiff);
-    setEnemyTeam(buildEnemyTeam(zoneId));
+    setEnemyTeam(buildEnemyTeam(zoneId, trainingLevel ?? undefined));
     setMode('battle');
   };
 
@@ -643,6 +644,29 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
             >
               🥊
             </button>
+          )}
+
+          {/* Training level selector */}
+          {!onConfirm && (
+            <div className="flex items-center justify-between bg-slate-800/60 rounded-xl px-3 py-2 border border-slate-700/40">
+              <span className="text-slate-400 text-xs font-bold">Niveau adverse</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setTrainingLevel(l => Math.max(1, (l ?? 50) - 5))}
+                  className="w-7 h-7 rounded-lg bg-slate-700 text-white font-black text-sm flex items-center justify-center"
+                >−</button>
+                <span className="text-white font-black text-sm w-12 text-center">
+                  {trainingLevel !== null ? `Nv.${trainingLevel}` : 'Auto'}
+                </span>
+                <button
+                  onClick={() => setTrainingLevel(l => Math.min(100, (l ?? 45) + 5))}
+                  className="w-7 h-7 rounded-lg bg-slate-700 text-white font-black text-sm flex items-center justify-center"
+                >+</button>
+                {trainingLevel !== null && (
+                  <button onClick={() => setTrainingLevel(null)} className="text-slate-500 text-xs underline ml-1">Auto</button>
+                )}
+              </div>
+            </div>
           )}
 
           {/* Trainer battle */}

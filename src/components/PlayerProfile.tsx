@@ -37,7 +37,7 @@ function formatPlayTime(ms: number): string {
 
 const RARITY_ORDER: Record<string, number> = { commun: 0, peu_commun: 1, rare: 2, elite: 3, legendaire: 4 };
 
-export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, onBattle3v3, onPvpChallenge }: Props) {
+export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, onBattle3v3: _onBattle3v3, onPvpChallenge }: Props) {
   const [state, setState] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
   const [fallbackLastSeen, setFallbackLastSeen] = useState<string | undefined>(undefined);
@@ -153,27 +153,16 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
             })}
           </div>
 
-          {/* ── Challenge buttons ── */}
-          <div className="flex gap-2">
-            {onBattle3v3 && teamToShow.length >= 1 && (
-              <button
-                onClick={() => onBattle3v3(teamToShow.map(m => ({ pokemonId: m.pokemonId, level: m.level, isShiny: m.isShiny })), username)}
-                className="flex-1 py-2 rounded-xl font-black text-sm"
-                style={{ background: 'linear-gradient(135deg, #374151, #4b5563)', color: 'white' }}
-              >
-                🤖 Simuler
-              </button>
-            )}
-            {onPvpChallenge && teamToShow.length >= 1 && (
-              <button
-                onClick={() => onPvpChallenge(userId, username, teamToShow as TeamMember[])}
-                className="flex-1 py-2 rounded-xl font-black text-sm"
-                style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)', color: 'white', boxShadow: '0 0 12px #a855f733' }}
-              >
-                ⚔️ Défier en PvP
-              </button>
-            )}
-          </div>
+          {/* ── PvP challenge button ── */}
+          {onPvpChallenge && teamToShow.length >= 1 && (
+            <button
+              onClick={() => onPvpChallenge(userId, username, teamToShow as TeamMember[])}
+              className="w-full py-2 rounded-xl font-black text-sm"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)', color: 'white', boxShadow: '0 0 12px #a855f733' }}
+            >
+              ⚔️ Défier en PvP
+            </button>
+          )}
 
           {/* ── Collection (collapsible) ── */}
           <div>
