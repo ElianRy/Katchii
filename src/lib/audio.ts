@@ -259,6 +259,7 @@ function playSfxFile(name: string, volMult = 1) {
 }
 
 export function playHit()              { playSfxFile('hit'); }
+export function playDeath()            { playSfxFile('mort'); }
 export function playSfxConfirm()       { playSfxFile('sfx_confirm'); }
 export function playSfxCapture()       { playSfxFile('sfx_capture'); }
 export function playSfxPokeball()      { playSfxFile('catch_poke'); }

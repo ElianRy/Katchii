@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { playBattleMusic, playShinyBattleSfx, playLeagueBattleMusic, stopMusic, playVictory, playLeagueVictory, playSfxDefeat, playPokemonCry, playHit } from '../lib/audio';
+import { playBattleMusic, playShinyBattleSfx, playLeagueBattleMusic, stopMusic, playVictory, playLeagueVictory, playSfxDefeat, playPokemonCry, playHit, playDeath } from '../lib/audio';
 import { RARITY_COLORS, Rarity } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
@@ -873,6 +873,7 @@ export function BattleScreen({
 
         if (pf[idx].currentHp <= 0) {
           addLog(`${newName} est K.O. !`, '#f87171');
+          playDeath();
           flush();
           enemyDmgRef.current[eFighter.pokemonId] = (enemyDmgRef.current[eFighter.pokemonId] ?? 0) + eResult.damage;
           const nextP = pf.findIndex((f, i) => i !== idx && f.currentHp > 0);
@@ -1150,6 +1151,7 @@ export function BattleScreen({
 
     const handleEnemyKo = () => {
       addLog(`${eName} est K.O. !`, '#f87171');
+      playDeath();
       const xpEarned = calcXpGain(eFighter.pokemonId, eFighter.level, !!_bossName);
       setXpGains(prev => {
         const next = { ...prev, [pFighter.pokemonId]: (prev[pFighter.pokemonId] ?? 0) + xpEarned };
@@ -1172,6 +1174,7 @@ export function BattleScreen({
 
     const handlePlayerKo = () => {
       addLog(`${pName} est K.O. !`, '#f87171');
+      playDeath();
       enemyDmgRef.current[eFighter.pokemonId] = (enemyDmgRef.current[eFighter.pokemonId] ?? 0) + eResult.damage;
       if (pIdx === 0 && boostActiveRef.current) { boostActiveRef.current = false; setBoostActive(false); }
       flush();
