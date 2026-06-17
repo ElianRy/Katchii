@@ -810,6 +810,27 @@ export function BattleScreen({
     setLog(prev => [...prev.slice(-100), { text, color }]);
   }, []);
 
+  // HeartGold-style dialog box state
+  const [hgDialog, setHgDialog] = useState({ topLine: '', curLine: '', curFull: '', nextIdx: 0, showArrow: false });
+  useEffect(() => {
+    const d = hgDialog;
+    if (d.curLine.length < d.curFull.length) {
+      const t = setTimeout(() => setHgDialog(p => ({ ...p, curLine: p.curFull.slice(0, p.curLine.length + 1), showArrow: false })), 18);
+      return () => clearTimeout(t);
+    }
+    if (d.nextIdx < log.length) {
+      const pause = d.curFull.length > 0 ? 350 : 0;
+      const t = setTimeout(() => setHgDialog(p => {
+        const next = log[p.nextIdx];
+        if (!next) return p;
+        return { topLine: p.curFull, curLine: '', curFull: next.text, nextIdx: p.nextIdx + 1, showArrow: false };
+      }), pause);
+      return () => clearTimeout(t);
+    }
+    if (d.curFull.length > 0 && !d.showArrow) setHgDialog(p => ({ ...p, showArrow: true }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hgDialog, log]);
+
   // Intro → battle
   useEffect(() => {
     if (phase !== 'intro') return;
@@ -2012,17 +2033,32 @@ export function BattleScreen({
 
       {/* ── Battle log + Move buttons ── */}
       <div className="shrink-0 border-t border-slate-700/40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: 'linear-gradient(180deg, rgba(10,12,28,0.97) 0%, rgba(5,8,20,0.99) 100%)' }}>
-        {/* Log */}
-        <div
-          ref={(el) => { if (el) el.scrollTop = el.scrollHeight; }}
-          className="px-4 pt-2 pb-1 flex flex-col gap-0.5 overflow-y-auto"
-          style={{ minHeight: 76, maxHeight: 100 }}
-        >
-          {log.map((entry, i, arr) => (
-            <div key={i} className="text-xs font-medium leading-tight" style={{ color: entry.color, opacity: 0.35 + (i / (arr.length - 1 || 1)) * 0.65 }}>
-              {entry.text}
-            </div>
-          ))}
+        {/* HeartGold-style dialog box */}
+        <div style={{
+          margin: '6px 8px 4px',
+          background: 'white',
+          border: '4px solid #1a1a2e',
+          borderRadius: 8,
+          boxShadow: 'inset 0 0 0 3px #1a1a2e',
+          padding: '7px 14px 7px',
+          minHeight: 58,
+          position: 'relative',
+        }}>
+          {/* Previous line */}
+          <div style={{ fontSize: '0.82rem', color: '#555', lineHeight: 1.45, fontWeight: 500, minHeight: '1.2rem', fontFamily: 'system-ui, sans-serif' }}>
+            {hgDialog.topLine || ' '}
+          </div>
+          {/* Current line (typing) */}
+          <div style={{ fontSize: '0.82rem', color: '#111', lineHeight: 1.45, fontWeight: 600, minHeight: '1.2rem', fontFamily: 'system-ui, sans-serif' }}>
+            {hgDialog.curLine}
+            {!hgDialog.showArrow && hgDialog.curLine.length < hgDialog.curFull.length && (
+              <span style={{ display: 'inline-block', width: 7, height: 11, background: '#111', verticalAlign: 'middle', marginLeft: 1, animation: 'hg-blink-cursor 0.55s step-end infinite' }} />
+            )}
+          </div>
+          {/* Blinking ▼ arrow when done */}
+          {hgDialog.showArrow && (
+            <span style={{ position: 'absolute', bottom: 4, right: 10, fontSize: '0.7rem', color: '#1a1a2e', animation: 'hg-blink-arrow 0.7s step-end infinite' }}>▼</span>
+          )}
         </div>
 
         {/* Long press tooltip */}
