@@ -136,7 +136,7 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
   const toggle = (id: number) => {
     setSelected(prev => {
       if (prev.includes(id)) return prev.filter(x => x !== id);
-      if (prev.length >= 9) return prev;
+      if (prev.length >= 5) return prev;
       return [...prev, id];
     });
   };
@@ -148,7 +148,7 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
         <div>
           <h2 className="text-white font-black text-lg">🏆 Défi de la Ligue</h2>
           <p className="text-slate-400 text-xs">
-            {retrying ? '❌ Défaite — choisis à nouveau ton équipe' : 'Max 9 Pokémon · même équipe pour les 3 combats · HP non restaurés'}
+            {retrying ? '❌ Défaite — choisis à nouveau ton équipe' : 'Max 5 Pokémon · même équipe pour les 3 combats · HP non restaurés'}
           </p>
         </div>
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-2">✕</button>
@@ -195,7 +195,7 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
 
       {/* Selection count */}
       <div className="px-3 pb-1 shrink-0">
-        <div className="text-slate-500 text-xs">{selected.length}/9 sélectionnés</div>
+        <div className="text-slate-500 text-xs">{selected.length}/5 sélectionnés</div>
       </div>
 
       {/* Pokemon list */}

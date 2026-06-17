@@ -782,6 +782,8 @@ export function BattleScreen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
+  const [switchMenuOpen, setSwitchMenuOpen] = useState(false);
+
   const handleSwitch = useCallback((idx: number) => {
     playerIdxRef.current = idx;
     setPlayerIdx(idx);
@@ -795,6 +797,101 @@ export function BattleScreen({
       setPhase('player_turn');
     }, 700);
   }, [playerFighters, addLog]);
+
+  // Switch volontaire en cours de combat — coûte un tour (l'ennemi attaque)
+  const handleVoluntarySwitch = useCallback(async (idx: number) => {
+    if (battleDone.current || phaseRef.current !== 'player_turn') return;
+    setSwitchMenuOpen(false);
+    phaseRef.current = 'resolving';
+    setPhase('resolving');
+
+    const eIdx = enemyIdxRef.current;
+    let pf = [...playerFightersRef.current];
+    let ef = [...enemyFightersRef.current];
+    const eFighter = ef[eIdx];
+    const flush = () => { playerFightersRef.current = pf; enemyFightersRef.current = ef; setPlayerFighters([...pf]); setEnemyFighters([...ef]); };
+
+    // Effectuer le changement
+    playerIdxRef.current = idx;
+    const newName = POKEMON_BY_ID[pf[idx]?.pokemonId]?.name ?? '???';
+    addLog(`Go, ${newName} !`, '#4ade80');
+    setShakePokemon('player');
+    if (pf[idx]) playPokemonCry(pf[idx].pokemonId);
+    await sleep(700);
+    setShakePokemon(null);
+    setPlayerIdx(idx);
+
+    // L'ennemi attaque pendant le changement
+    if (!battleDone.current && eFighter) {
+      const eInst = pokemonData?.[eFighter.pokemonId];
+      const pFighterNew = pf[idx];
+      const pInst = pokemonData?.[pFighterNew?.pokemonId];
+      const eName = POKEMON_BY_ID[eFighter.pokemonId]?.name ?? '???';
+      const eCanActResult = checkCanAct(eFighter.statusState);
+      ef[eIdx] = { ...ef[eIdx], statusState: eCanActResult.nextStatus };
+
+      if (!eCanActResult.canAct) {
+        const cond = ef[eIdx].statusState.condition;
+        addLog(cond === 'slp' ? `${eName} dort profondément…` : `${eName} est totalement paralysé(e) !`, '#94a3b8');
+      } else {
+        const ePlayerTypes = (POKEMON_TYPE[pFighterNew?.pokemonId ?? 0] ?? ['normal']) as PokemonType[];
+        const eMoveIndex = chooseEnemyMoveIndex(
+          eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
+          { condition: null }, eFighter.statusState,
+        );
+        turnNumberRef.current++;
+        const eResult = eMoveIndex < 0
+          ? calcStruggle(eFighter.pokemonId, eFighter.level, pFighterNew.pokemonId, pFighterNew.level, eInst, pInst)
+          : calcDamage(eFighter.pokemonId, eFighter.level, pFighterNew.pokemonId, pFighterNew.level, eMoveIndex, eInst, pInst, eFighter.stages, emptyStages(), undefined, eFighter.statusState, { condition: null });
+
+        const ePP = [...ef[eIdx].currentPP];
+        if (eMoveIndex >= 0 && ePP[eMoveIndex] > 0) ePP[eMoveIndex]--;
+        ef[eIdx] = { ...ef[eIdx], currentPP: ePP };
+
+        addLog(`${eName} utilise ${eResult.moveName} !`, '#fde68a');
+        const uid = dmgCounter++;
+        setAttackEvt({ attacker: 'enemy', type: eResult.moveType, uid });
+        await sleep(VFX_DURATION[eResult.moveType] ?? 550);
+        setAttackEvt(null);
+
+        if (!eResult.isMiss && eResult.damage > 0) {
+          const newPHp = Math.max(0, pf[idx].currentHp - eResult.damage);
+          pf[idx] = { ...pf[idx], currentHp: newPHp };
+          flush();
+          playHit();
+          const hUid = dmgCounter++;
+          setHitFlash('player');
+          setHitEffect({ target: 'player', uid: hUid });
+          setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 280);
+          addDmg(eResult.damage, 'player', eResult.effectiveness, eResult.isCrit, false);
+          addLog(`${eName} → ${eResult.moveName} (${eResult.damage} dégâts)${eResult.isCrit ? ' ⚡ CRIT !' : ''}`, eResult.isCrit ? '#fbbf24' : '#fca5a5');
+        } else if (eResult.isMiss) {
+          addLog(`${eName} rate !`, '#94a3b8');
+        }
+
+        await sleep(400);
+
+        if (pf[idx].currentHp <= 0) {
+          addLog(`${newName} est K.O. !`, '#f87171');
+          flush();
+          enemyDmgRef.current[eFighter.pokemonId] = (enemyDmgRef.current[eFighter.pokemonId] ?? 0) + eResult.damage;
+          const nextP = pf.findIndex((f, i) => i !== idx && f.currentHp > 0);
+          if (nextP < 0 && pf.every(f => f.currentHp <= 0)) {
+            battleDone.current = true; won.current = false;
+            phaseRef.current = 'end'; setPhase('end');
+          } else {
+            phaseRef.current = 'switch'; setPhase('switch');
+          }
+          return;
+        }
+      }
+    }
+
+    flush();
+    phaseRef.current = 'player_turn';
+    setPhase('player_turn');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerFighters, enemyFighters, addLog, addDmg, pokemonData]);
 
   // ── Core turn execution (async — strict sequential VFX → damage → sound) ──
   const executeTurn = useCallback(async (playerMoveIndex: number) => {
@@ -1658,11 +1755,54 @@ export function BattleScreen({
               </button>
             ) : null}
 
+            {/* Voluntary switch button */}
+            {phase === 'player_turn' && playerFighters.filter((f, i) => i !== playerIdx && f.currentHp > 0).length > 0 && (
+              <button
+                onClick={() => setSwitchMenuOpen(true)}
+                className="mt-2 w-full text-xs text-slate-400 hover:text-yellow-300 transition-colors py-1 flex items-center justify-center gap-1">
+                🔄 Changer de Pokémon <span className="text-slate-600">(coûte un tour)</span>
+              </button>
+            )}
+
             {onQuit && phase === 'player_turn' && (
-              <button onClick={onQuit} className="mt-2 w-full text-xs text-slate-500 hover:text-slate-300 transition-colors py-1">
+              <button onClick={onQuit} className="mt-1 w-full text-xs text-slate-500 hover:text-slate-300 transition-colors py-1">
                 ✕ Fuir le combat
               </button>
             )}
+          </div>
+        )}
+
+        {/* Voluntary switch menu */}
+        {switchMenuOpen && (
+          <div className="absolute inset-0 z-50 bg-black/85 flex flex-col items-center justify-center gap-3 px-5">
+            <div className="text-white font-black text-base text-center">Changer de Pokémon</div>
+            <div className="text-slate-400 text-xs text-center mb-1">L'ennemi attaquera pendant le changement</div>
+            <div className="flex flex-col gap-2 w-full max-w-xs">
+              {playerFighters.map((f, i) => {
+                if (i === playerIdx || f.currentHp <= 0) return null;
+                const p = POKEMON_BY_ID[f.pokemonId];
+                const hpPct = f.currentHp / f.maxHp;
+                const hpCol = hpPct > 0.5 ? '#22c55e' : hpPct > 0.25 ? '#f59e0b' : '#ef4444';
+                return (
+                  <button key={i} onClick={() => handleVoluntarySwitch(i)}
+                    className="flex items-center gap-3 bg-slate-800/90 border-2 border-slate-600 hover:border-yellow-400 rounded-xl px-3 py-2 transition-all text-left">
+                    <ShinySprite pokemonId={f.pokemonId} isShiny={f.isShiny ?? false} width={48} height={48} compact
+                      style={{ filter: spriteFilter(f.pokemonId, f.isShiny ?? false, 6), flexShrink: 0 }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white font-bold text-sm">{p?.name}</div>
+                      <div className="text-slate-400 text-xs">Nv.{f.level}</div>
+                      <div className="w-full bg-slate-700 rounded-full h-1.5 mt-1">
+                        <div className="h-1.5 rounded-full" style={{ width: `${hpPct * 100}%`, background: hpCol }} />
+                      </div>
+                      <div className="text-xs mt-0.5" style={{ color: hpCol }}>{f.currentHp}/{f.maxHp} PV</div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={() => setSwitchMenuOpen(false)} className="mt-1 text-slate-500 hover:text-slate-300 text-xs py-1">
+              Annuler
+            </button>
           </div>
         )}
       </div>
