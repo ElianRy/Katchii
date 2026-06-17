@@ -215,7 +215,7 @@ const ZONE_MUSIC: Record<string, string> = {
   zone2: 'bords_de_mer',
   zone3: 'centrale_electrique',
   zone4: 'bois_aux_fleurs',
-  zone5: 'tour_fantome',
+  zone5: 'tour_fantome2',
   zone6: 'sylphe_sarl',
   zone7: 'ile_cramoisie',
   zone8: 'route_victoire',
