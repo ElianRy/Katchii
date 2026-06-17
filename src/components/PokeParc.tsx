@@ -128,12 +128,16 @@ function ParkAttackVfx({ pokemonId, facingRight }: { pokemonId: number; facingRi
   const type = (POKEMON_TYPE[pokemonId] ?? ['normal'])[0];
   const emojis = TYPE_EMOJI[type] ?? ['⭐', '💫'];
   useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let active = true;
     const interval = setInterval(() => {
+      if (!active) return;
       const id = Date.now();
       setShots(prev => [...prev.slice(-3), id]);
-      setTimeout(() => setShots(prev => prev.filter(s => s !== id)), 800);
+      const t = setTimeout(() => { if (active) setShots(prev => prev.filter(s => s !== id)); }, 800);
+      timers.push(t);
     }, 2200);
-    return () => clearInterval(interval);
+    return () => { active = false; clearInterval(interval); timers.forEach(clearTimeout); };
   }, []);
 
   return (
@@ -687,6 +691,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [mutedBlockPopup, setMutedBlockPopup] = useState<{ expiry: number | null } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const wanderRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mountedRef = useRef(true);
+  useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
 
   const myFav = state.favoritePokemon;
 
@@ -804,6 +810,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     const speed = MOOD_SPEED[mood] ?? 4;
     const interval = mood === 'dance' ? 1500 : mood === 'proud' ? 4000 : 2500;
     wanderRef.current = setInterval(() => {
+      if (!mountedRef.current) return;
       setMyPos(prev => {
         const dx = (Math.random() - 0.5) * speed;
         const dy = (Math.random() - 0.5) * speed;
@@ -856,16 +863,19 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   // Live park XP tick every 2 min
   useEffect(() => {
     if (!myFav) return;
+    let popTimer: ReturnType<typeof setTimeout> | null = null;
     const id = setInterval(() => {
+      if (!mountedRef.current) return;
       const level = state.pokemonLevels?.[myFav.pokemonId]?.level ?? 1;
       const xp = Math.max(1, Math.floor(xpToNextLevel(level) * 0.008 * (myFav.isShiny ? 1.5 : 1)));
       onAddPlayerXp(xp);
       onAddPokemonXp(myFav.pokemonId, xp);
       onSetLastParkXpAt?.(Date.now());
       setXpPop({ xp, key: Date.now() });
-      setTimeout(() => setXpPop(null), 2000);
+      if (popTimer) clearTimeout(popTimer);
+      popTimer = setTimeout(() => { if (mountedRef.current) setXpPop(null); }, 2000);
     }, 2 * 60 * 1000);
-    return () => clearInterval(id);
+    return () => { clearInterval(id); if (popTimer) clearTimeout(popTimer); };
   }, [myFav, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt]);
 
   // Upsert my presence

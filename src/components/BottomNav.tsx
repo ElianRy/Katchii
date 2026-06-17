@@ -60,6 +60,16 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
   const lastTapRef = useRef<number>(0);
   const heartCounterRef = useRef(0);
   const attackCounterRef = useRef(0);
+  const mountedRef = useRef(true);
+  const heartTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      heartTimersRef.current.forEach(clearTimeout);
+      heartTimersRef.current = [];
+    };
+  }, []);
 
   const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${isShiny ? 'shiny/' : ''}${pokemonId}.png`;
 
@@ -92,27 +102,32 @@ function FavoritePokemon({ pokemonId, isShiny }: { pokemonId: number; isShiny?: 
   // Attack emojis when in attack mood
   useEffect(() => {
     if (mood !== 'attack') return;
+    const timers: ReturnType<typeof setTimeout>[] = [];
     const id = setInterval(() => {
+      if (!mountedRef.current) return;
       const types = POKEMON_TYPE[pokemonId] ?? ['normal'];
       const type = types[Math.floor(Math.random() * types.length)];
       const emoji = TYPE_ATTACK_EMOJI[type] ?? '⭐';
       const newId = attackCounterRef.current++;
       setAttacks(prev => [...prev, { id: newId, emoji }]);
-      setTimeout(() => setAttacks(prev => prev.filter(a => a.id !== newId)), 1000);
+      const t = setTimeout(() => { if (mountedRef.current) setAttacks(prev => prev.filter(a => a.id !== newId)); }, 1000);
+      timers.push(t);
     }, 2000);
-    return () => clearInterval(id);
+    return () => { clearInterval(id); timers.forEach(clearTimeout); };
   }, [mood, pokemonId]);
 
   const handleClick = useCallback(() => {
+    if (!mountedRef.current) return;
     lastTapRef.current = Date.now();
     const newHearts: FloatingHeart[] = Array.from({ length: 4 }, (_, i) => ({
       id: heartCounterRef.current++,
       x: (i % 2 === 0 ? -1 : 1) * (10 + Math.random() * 20),
     }));
     setHearts(prev => [...prev, ...newHearts]);
-    setTimeout(() => {
-      setHearts(prev => prev.filter(h => !newHearts.some(nh => nh.id === h.id)));
+    const t = setTimeout(() => {
+      if (mountedRef.current) setHearts(prev => prev.filter(h => !newHearts.some(nh => nh.id === h.id)));
     }, 1400);
+    heartTimersRef.current.push(t);
     playPokemonCry(pokemonId);
   }, [pokemonId]);
 

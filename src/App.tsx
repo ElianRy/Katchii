@@ -73,7 +73,7 @@ export function App() {
   const lastNavRef = useRef(0);
   const persistView = useCallback((v: View) => {
     const now = Date.now();
-    if (now - lastNavRef.current < 400) return; // throttle rapid taps
+    if (now - lastNavRef.current < 600) return; // throttle rapid taps
     lastNavRef.current = now;
     setView(prev => {
       if (v === 'profile') setPreviousView(prev);
