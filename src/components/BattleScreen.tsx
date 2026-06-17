@@ -1132,12 +1132,12 @@ export function BattleScreen({
     const TRANSFORM_PLACEHOLDER: MoveResult = { damage: 0, effectiveness: 1, moveName: 'Morphing', isCrit: false, isMiss: false, moveType: 'normal' as PokemonType, recoil: 0, hits: 0 };
     const boostMult = boostActiveRef.current && pIdx === 0 ? playerDamageMult : 1;
     const pStages = { ...pf[pIdx].stages, attack: pf[pIdx].stages.attack + (boostMult > 1 ? 1 : 0) };
-    let pResult: MoveResult = pRawMoveSelected?.id === 'transform'
+    let pResult: MoveResult = (pRawMoveSelected?.id === 'transform' || pRawMoveSelected?.name === 'Métamorph')
       ? TRANSFORM_PLACEHOLDER
       : playerUsesStruggle
         ? calcStruggle(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, pInst, eInst)
         : calcDamage(pFighter.pokemonId, pFighter.level, eFighter.pokemonId, eFighter.level, playerMoveIndex, pInst, eInst, pStages, eFighter.stages, pEffectiveMoves, pFighter.statusState, eFighter.statusState);
-    let eResult: MoveResult = eRawMoveSelected?.id === 'transform'
+    let eResult: MoveResult = (eRawMoveSelected?.id === 'transform' || eRawMoveSelected?.name === 'Métamorph')
       ? TRANSFORM_PLACEHOLDER
       : eMoveIndex < 0
         ? calcStruggle(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eInst, pInst)
@@ -1270,7 +1270,7 @@ export function BattleScreen({
       }
 
       // Morphing: delegate entirely to transform handler, no damage
-      if (rawMove?.id === 'transform') {
+      if (rawMove?.id === 'transform' || rawMove?.name === 'Métamorph') {
         addLog(`${atkName} utilise Morphing !`, '#fde68a');
         await executeTransformEffect(isPlayer, atkIdx, defIdx, atkName, defName);
         return false;
@@ -1332,29 +1332,42 @@ export function BattleScreen({
         return false;
       }
 
-      // Step C: apply damage
+      // Step C: apply damage (with multi-hit support)
       if (result.damage > 0) {
-        const defArr = isPlayer ? ef : pf;
-        const newHp  = Math.max(0, defArr[defIdx].currentHp - result.damage);
-        if (isPlayer) ef[defIdx] = { ...ef[defIdx], currentHp: newHp };
-        else          pf[defIdx] = { ...pf[defIdx], currentHp: newHp };
-        flush();
+        const hitCount = Math.max(1, result.hits || 1);
+        const perHitDmg = hitCount > 1 ? Math.max(1, Math.floor(result.damage / hitCount)) : result.damage;
+        let totalApplied = 0;
 
-        // Step D: hit sound — silent on immunity
-        if      (result.effectiveness === 0) { /* aucun son : immunité */ }
-        else if (result.effectiveness >= 2)   playHitSuper();
-        else if (result.effectiveness < 1)    playHitLow();
-        else                                  playHit();
+        for (let h = 0; h < hitCount; h++) {
+          const defArr2 = isPlayer ? ef : pf;
+          if (defArr2[defIdx].currentHp <= 0) break;
+          const dmgThisHit = h === hitCount - 1 ? result.damage - totalApplied : perHitDmg;
+          const newHp = Math.max(0, defArr2[defIdx].currentHp - dmgThisHit);
+          if (isPlayer) ef[defIdx] = { ...ef[defIdx], currentHp: newHp };
+          else          pf[defIdx] = { ...pf[defIdx], currentHp: newHp };
+          totalApplied += dmgThisHit;
+          flush();
 
-        // Hit flash + effect on target
-        setHitFlash(defSide);
-        const hUid = dmgCounter++;
-        setHitEffect({ target: defSide, uid: hUid });
-        setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 450);
+          // Step D: hit sound — silent on immunity
+          if      (result.effectiveness === 0) { /* aucun son : immunité */ }
+          else if (result.effectiveness >= 2)   playHitSuper();
+          else if (result.effectiveness < 1)    playHitLow();
+          else                                  playHit();
 
-        // floating damage
-        addDmg(result.damage, defSide, result.effectiveness, result.isCrit, false);
+          // Hit flash + effect on target
+          setHitFlash(defSide);
+          const hUid = dmgCounter++;
+          setHitEffect({ target: defSide, uid: hUid });
+          setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 350);
+
+          // floating damage per hit
+          addDmg(dmgThisHit, defSide, result.effectiveness, result.isCrit && h === 0, false);
+
+          if (h < hitCount - 1) await sleep(350);
+        }
+
         if (result.isCrit) addLog('Coup critique !', '#fbbf24');
+        if (hitCount > 1) addLog(`${hitCount} fois de suite !`, '#fbbf24');
         if (result.effectiveness >= 2) addLog('C\'est super efficace !', isPlayer ? '#4ade80' : '#f87171');
         else if (result.effectiveness < 1 && result.effectiveness > 0) addLog('Ça ne semble pas très efficace...', '#94a3b8');
       } else if (result.effectiveness === 0) {
@@ -2172,8 +2185,8 @@ export function BattleScreen({
               </div>
             )}
 
-            {phase === 'player_turn' && !pvpControls && (
-              <div className="mt-1.5 flex gap-1.5">
+            {(phase === 'player_turn' || phase === 'resolving') && !pvpControls && (
+              <div className="mt-1.5 flex gap-1.5" style={{ opacity: phase === 'resolving' ? 0.45 : 1, pointerEvents: phase === 'resolving' ? 'none' : 'auto' }}>
                 {playerFighters.filter((f, i) => i !== playerIdx && f.currentHp > 0).length > 0 && (
                   <button
                     onClick={() => setSwitchMenuOpen(true)}
