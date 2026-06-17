@@ -76,6 +76,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
   const [bossReadyAnim, setBossReadyAnim] = useState(false);
   const prevBossUnlockedRef = useRef(false);
   const [zoneTransition, setZoneTransition] = useState<'left' | 'right' | null>(null);
+  const [transitionOut, setTransitionOut] = useState(false);
+  const [incomingZoneName, setIncomingZoneName] = useState<string | null>(null);
   const processingRef = useRef<Set<string>>(new Set());
   const capturingRef = useRef(false);
   const [showTutorial, setShowTutorial] = useState(() =>
@@ -372,27 +374,45 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       {/* Zone info panel */}
       {showZoneInfo && <ZoneInfoPanel state={gameState.state} onClose={() => setShowZoneInfo(false)} />}
 
-      {/* Zone transition overlay with directional slide */}
-      {zoneTransition && (
-        <>
-          {/* Dark fade overlay */}
-          <div className="absolute inset-0 z-50 pointer-events-none bg-black"
-            style={{ animation: 'zone-fade-overlay 0.45s ease-out forwards' }} />
-          {/* Slide hint — subtle nudge in travel direction */}
-          <div className="absolute inset-0 z-49 pointer-events-none"
-            style={{ animation: `zone-slide-in-${zoneTransition === 'right' ? 'right' : 'left'} 0.45s ease-out forwards` }} />
-        </>
+      {/* Zone transition overlay — two-phase: fade to black, switch, reveal with zone name */}
+      {(zoneTransition || transitionOut) && (
+        <div className="absolute inset-0 z-50 pointer-events-none bg-black flex items-center justify-center"
+          style={{ animation: transitionOut ? 'zone-fade-to-black 0.2s ease-in forwards' : 'zone-fade-from-black 0.45s ease-out forwards' }}>
+          {!transitionOut && incomingZoneName && (
+            <div style={{
+              animation: 'zone-name-appear 0.45s ease-out forwards',
+              color: '#fff',
+              fontSize: '1.3rem',
+              fontWeight: 900,
+              letterSpacing: '0.05em',
+              textShadow: '0 0 20px rgba(255,255,255,0.4)',
+              opacity: 0,
+            }}>
+              {incomingZoneName}
+            </div>
+          )}
+        </div>
+      )}
+      {/* Slide-in on reveal */}
+      {zoneTransition && !transitionOut && (
+        <div className="absolute inset-0 z-49 pointer-events-none"
+          style={{ animation: `zone-slide-in-${zoneTransition === 'right' ? 'right' : 'left'} 0.45s ease-out forwards` }} />
       )}
 
       {/* Zone nav arrows */}
       {canGoPrev && (
         <button
           onClick={() => {
+            setTransitionOut(true);
             setZoneTransition('left');
+            setIncomingZoneName(ZONE_BY_ID[prevZoneId!]?.name ?? null);
             spawner.clearSpawned();
             stopMusic(0.3);
-            gameState.setCurrentZone(prevZoneId!);
-            setTimeout(() => { playZoneMusic(prevZoneId!); setZoneTransition(null); }, 400);
+            setTimeout(() => {
+              gameState.setCurrentZone(prevZoneId!);
+              setTransitionOut(false);
+              setTimeout(() => { playZoneMusic(prevZoneId!); setZoneTransition(null); setIncomingZoneName(null); }, 500);
+            }, 220);
           }}
           className="absolute left-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl"
           title={ZONE_BY_ID[prevZoneId!]?.name}
@@ -403,11 +423,16 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       {canGoNext && (
         <button
           onClick={() => {
+            setTransitionOut(true);
             setZoneTransition('right');
+            setIncomingZoneName(ZONE_BY_ID[nextZoneId!]?.name ?? null);
             spawner.clearSpawned();
             stopMusic(0.3);
-            gameState.setCurrentZone(nextZoneId!);
-            setTimeout(() => { playZoneMusic(nextZoneId!); setZoneTransition(null); }, 400);
+            setTimeout(() => {
+              gameState.setCurrentZone(nextZoneId!);
+              setTransitionOut(false);
+              setTimeout(() => { playZoneMusic(nextZoneId!); setZoneTransition(null); setIncomingZoneName(null); }, 500);
+            }, 220);
           }}
           className="absolute right-2 top-1/2 z-20 -translate-y-1/2 bg-black/60 hover:bg-black/80 border border-slate-600 rounded-xl px-2 py-3 text-white font-black text-xl"
           title={ZONE_BY_ID[nextZoneId!]?.name}

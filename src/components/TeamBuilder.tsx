@@ -7,6 +7,7 @@ import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
 import { calcMaxHp, calcAttack, xpToNextLevel } from '../data/combatEngine';
 import { BattleScreen } from './BattleScreen';
 import { ShinySprite } from './ShinySprite';
+import { playLevelUp } from '../lib/audio';
 
 export interface TeamMember {
   pokemonId: number;
@@ -164,6 +165,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
       if (onAddXp) onAddXp(id, Math.floor(xp * (chosenDifficulty?.xpMultiplier ?? 1)));
     });
     setLevelUps(ups);
+    if (ups.length > 0) playLevelUp();
     if (won) onBattleWin?.(selected);
     onTrainingBattle?.();
     if (autoCombat) {
