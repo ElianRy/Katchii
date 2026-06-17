@@ -45,6 +45,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
     try { localStorage.setItem('katchii_pokedex_filter', f); } catch {}
   };
   const [filterOpen, setFilterOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState<PokemonType | null>(null);
   const [selectedId, setSelectedId_] = useState<number | null>(null);
   const [editingMoves, setEditingMoves] = useState(false);
   const [pendingMoves, setPendingMoves] = useState<string[]>([]);
@@ -66,10 +67,20 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
 
   const filteredPokemon = GEN1_POKEMON.filter((p) => {
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
-    if (filter === 'tous') return true;
-    if (filter === 'captures') return (state.normalCollection[p.id] ?? 0) > 0;
-    if (filter === 'shinies') return (state.shinyCollection[p.id] ?? 0) > 0;
-    return p.rarity === filter;
+    if (filter === 'tous') {
+      // only type filter applies to status
+    } else if (filter === 'captures') {
+      if (!((state.normalCollection[p.id] ?? 0) > 0)) return false;
+    } else if (filter === 'shinies') {
+      if (!((state.shinyCollection[p.id] ?? 0) > 0)) return false;
+    } else {
+      if (p.rarity !== filter) return false;
+    }
+    if (typeFilter) {
+      const types = POKEMON_TYPE[p.id] ?? [];
+      if (!types.includes(typeFilter)) return false;
+    }
+    return true;
   }).sort((a, b) => {
     if (sortMode === 'rarity_desc') {
       const ra = rarityOrder.indexOf(a.rarity);
@@ -92,7 +103,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/95 flex flex-col">
+    <div className="fixed inset-0 z-[510] bg-slate-950/95 flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pb-3 border-b border-slate-700" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
@@ -193,14 +204,29 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
             </div>
           )}
 
+          {/* Type filter row */}
+          <div className="flex gap-1.5 px-4 py-2 border-b border-slate-700 overflow-x-auto shrink-0 scrollbar-none">
+            {([null, 'normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon'] as (PokemonType | null)[]).map((t) => (
+              <button
+                key={t ?? 'all'}
+                onClick={() => setTypeFilter(t === typeFilter ? null : t)}
+                className="px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap shrink-0 transition-all"
+                style={t === null
+                  ? { background: typeFilter === null ? '#6366f1' : 'rgba(255,255,255,0.06)', color: typeFilter === null ? 'white' : '#94a3b8', border: typeFilter === null ? '1px solid #818cf8' : '1px solid rgba(255,255,255,0.08)' }
+                  : { background: typeFilter === t ? (TYPE_COLORS[t] ?? '#888') : `${TYPE_COLORS[t] ?? '#888'}22`, color: typeFilter === t ? 'white' : TYPE_COLORS[t] ?? '#888', border: `1px solid ${TYPE_COLORS[t] ?? '#888'}${typeFilter === t ? '' : '55'}` }
+                }
+              >
+                {t === null ? 'Tous types' : t.charAt(0).toUpperCase() + t.slice(1)}
+              </button>
+            ))}
+          </div>
+
           {/* Grid */}
           <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
               {filteredPokemon.map((pokemon) => {
                 const caught = (state.normalCollection[pokemon.id] ?? 0) > 0;
                 const shinyCaught = (state.shinyCollection[pokemon.id] ?? 0) > 0;
-                const normalCount = state.normalCollection[pokemon.id] ?? 0;
-                const shinyCount = state.shinyCollection[pokemon.id] ?? 0;
                 const rarityColor = RARITY_COLORS[pokemon.rarity];
 
                 return (
@@ -237,14 +263,6 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                     >
                       {caught ? pokemon.name : '???'}
                     </div>
-                    {caught && (
-                      <div className="flex gap-1" style={{ fontSize: '0.55rem' }}>
-                        <span className="text-slate-400">×{normalCount}</span>
-                        {shinyCount > 0 && (
-                          <span className="text-yellow-400">✨×{shinyCount}</span>
-                        )}
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -323,7 +341,6 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
         const types = POKEMON_TYPE[selectedId] ?? ['normal'];
         const rarityColor = RARITY_COLORS[p.rarity];
         const normalCount = state.normalCollection[selectedId] ?? 0;
-        const shinyCount = state.shinyCollection[selectedId] ?? 0;
 
         // Level-gated pool: unlock moves based on level
         const pool = GEN1_MOVEPOOL[selectedId] ?? [];
@@ -332,7 +349,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
         const activeSlugs = editingMoves ? pendingMoves : currentSlugs;
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setSelectedId(null)}>
+          <div className="fixed inset-0 z-[520] flex items-center justify-center bg-black/70" onClick={() => setSelectedId(null)}>
             <div
               className="relative bg-slate-900 rounded-3xl p-5 w-80 flex flex-col items-center gap-3 border-2 max-h-[90vh] overflow-y-auto"
               style={{ borderColor: rarityColor }}
@@ -530,14 +547,13 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                       <span className="text-white font-bold">{stats.moves[0].name}</span>
                       <span className="text-slate-500">({stats.moves[0].power} pts · {stats.moves[0].category === 'physical' ? 'Physique' : 'Spéciale'})</span>
                     </div>
+                    <div className="mt-1.5 pt-1.5 border-t border-slate-700 text-xs text-slate-400">
+                      Capturé <span className="text-white font-bold">{normalCount}</span> fois
+                    </div>
                   </div>
                 );
               })()}
 
-              <div className="flex flex-col items-center gap-0.5 text-xs text-slate-500">
-                <span>Capturé {normalCount} fois</span>
-                {shinyCount > 0 && <span className="text-yellow-400">✨ Shiny capturé {shinyCount} fois</span>}
-              </div>
             </div>
           </div>
         );

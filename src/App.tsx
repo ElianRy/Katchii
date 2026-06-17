@@ -292,7 +292,10 @@ export function App() {
   ) => {
     if (!userId) return;
     const challenge = await sendChallenge(userId, username, challengedId);
-    if (!challenge) return;
+    if (!challenge) {
+      alert('Impossible d\'envoyer le défi — les tables PvP ne sont peut-être pas encore créées dans Supabase (pvp_challenges / pvp_sessions).');
+      return;
+    }
     setPvpOpponentName(challengedName);
     setPvpOpponentTeam(opponentTeam);
     setPvpIsHost(true);

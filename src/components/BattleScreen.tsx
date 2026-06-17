@@ -123,12 +123,12 @@ const CONFETTI_BATTLE = Array.from({ length: 22 }, (_, i) => ({
 
 // ── VFX duration map (ms) ───────────────────────────────────────────────────
 const VFX_DURATION: Partial<Record<PokemonType | 'status', number>> = {
-  normal: 650, fire: 1000, water: 1050, grass: 1050,
-  electric: 900, ice: 700, fighting: 720, poison: 920,
-  ground: 1000, flying: 820, psychic: 1100, bug: 950,
-  rock: 870, ghost: 1200, dragon: 1100,
+  normal: 1100, fire: 1700, water: 1800, grass: 1800,
+  electric: 1500, ice: 1200, fighting: 1200, poison: 1600,
+  ground: 1700, flying: 1400, psychic: 1900, bug: 1600,
+  rock: 1500, ghost: 2000, dragon: 1900,
 };
-const VFX_STATUS_DURATION = 950;
+const VFX_STATUS_DURATION = 1600;
 
 // ── Precomputed random particle offsets (deterministic, no Math.random in render) ──
 const FIRE_PARTICLES = Array.from({ length: 8 }, (_, i) => ({
@@ -948,7 +948,7 @@ export function BattleScreen({
     addLog(`Go, ${newName} !`, '#4ade80');
     setShakePokemon('player');
     if (pf[idx]) playPokemonCry(pf[idx].pokemonId);
-    await sleep(700);
+    await sleep(1250);
     setShakePokemon(null);
     setPlayerIdx(idx);
 
@@ -1003,7 +1003,7 @@ export function BattleScreen({
           addLog(`${eName} rate !`, '#94a3b8');
         }
 
-        await sleep(650);
+        await sleep(1150);
 
         if (pf[idx].currentHp <= 0) {
           addLog(`${newName} est K.O. !`, '#f87171');
@@ -1171,11 +1171,11 @@ export function BattleScreen({
 
       // Phase 1 — purple blink overlay 350ms
       setMorphVfxState({ target: atkSide, phase: 'blink', uid: morphUid });
-      await sleep(350);
+      await sleep(600);
 
       // Phase 2 — squish (scaleX 1→0→1); apply state change at peak (invisible at 250ms)
       setMorphVfxState({ target: atkSide, phase: 'squish', uid: morphUid });
-      await sleep(250);
+      await sleep(450);
 
       // ── Apply transform at peak of squish (sprite is invisible) ──
       const target = defArr[defIdx];
@@ -1212,10 +1212,10 @@ export function BattleScreen({
       playPokemonCry(target.pokemonId);
 
       // Let the sprite re-expand (remaining 250ms of squish)
-      await sleep(270);
+      await sleep(500);
       setMorphVfxState(null);
       addLog(`${atkName} se transforme en ${defName} !`, '#c084fc');
-      await sleep(400);
+      await sleep(700);
     };
 
     // ── Execute one attacker's turn ──
@@ -1240,7 +1240,7 @@ export function BattleScreen({
         else addLog(`${atkName} est totalement paralysé(e) !`, '#94a3b8');
         const uid = dmgCounter++;
         setStatusBlockOverlay({ target: atkSide, condition: cond, uid });
-        await sleep(900);
+        await sleep(1600);
         setStatusBlockOverlay(s => s?.uid === uid ? null : s);
         return false;
       }
@@ -1260,7 +1260,7 @@ export function BattleScreen({
           addLog(`${atkName} utilise ${result.moveName} !`, '#fde68a');
           const uid2 = dmgCounter++;
           setAttackEvt({ attacker: atkSide, type: 'grass', uid: uid2 });
-          await sleep(700);
+          await sleep(1250);
           setAttackEvt(null);
           addLog(`${atkName} se gorge de lumière !`, '#adff2f');
           const storedIdx = isPlayer ? playerMoveIndex : eMoveIndex;
@@ -1332,13 +1332,13 @@ export function BattleScreen({
         const hitsLabel = result.hits > 1 ? ` (×${result.hits})` : '';
         addDmg(result.damage, defSide, result.effectiveness, result.isCrit, false);
         addLog(
-          `${atkName} → ${result.moveName}${hitsLabel} (${result.damage} dégâts)${result.isCrit ? ' ⚡ CRIT !' : ''}${result.effectiveness >= 2 ? ' 💥 Efficace !' : result.effectiveness === 0 ? ' (sans effet)' : result.effectiveness < 1 ? ' (peu eff.)' : ''}`,
+          `→ ${result.damage} dégâts${hitsLabel}${result.isCrit ? ' ⚡ CRIT !' : ''}${result.effectiveness >= 2 ? ' 💥 Efficace !' : result.effectiveness === 0 ? ' (sans effet)' : result.effectiveness < 1 ? ' (peu eff.)' : ''}`,
           result.isCrit ? '#fbbf24' : result.effectiveness >= 2 ? (isPlayer ? '#4ade80' : '#f87171') : '#fde68a',
         );
       } else if (result.effectiveness === 0) {
         addDmg(0, defSide, 0, false, false);
         addLog(`${defName} n'est pas affecté !`, '#94a3b8');
-      } else if (!isStatusOnly) {
+      } else if (!isStatusOnly && !result.appliedStatus) {
         addLog(`${defName} n'est pas affecté !`, '#94a3b8');
       }
 
@@ -1402,7 +1402,7 @@ export function BattleScreen({
       }
 
       // Step E: pause
-      await sleep(650);
+      await sleep(1150);
 
       // Check if target fainted
       const defArr = isPlayer ? ef : pf;
