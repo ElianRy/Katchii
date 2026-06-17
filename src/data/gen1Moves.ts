@@ -55,7 +55,7 @@ export const MOVES: Record<string, Move> = {
   'razor-wind': {id:'razor-wind', name:'Rasoir-Vent', type:'normal', category:'special', power:80, accuracy:100, pp:10, priority:0, description:'Taux de critiques élevé.', highCrit:true},
   'hyper-beam': {id:'hyper-beam', name:'Rayon Hyper', type:'normal', category:'special', power:150, accuracy:90, pp:5, priority:0, description:'Nécessite de se reposer au tour suivant.'},
   'explosion': {id:'explosion', name:'Explosion', type:'normal', category:'physical', power:250, accuracy:100, pp:5, priority:0, description:'Le lanceur est mis K.O.'},
-  'recover': {id:'recover', name:'Soin', type:'normal', category:'status', power:0, accuracy:100, pp:10, priority:0, description:'Restaure 50% des PV max.'},
+  'recover': {id:'recover', name:'Soin', type:'normal', category:'status', power:0, accuracy:100, pp:5, priority:0, description:'Restaure 50% des PV max.'},
   'sharpen': {id:'sharpen', name:'Acuité', type:'normal', category:'status', power:0, accuracy:100, pp:30, priority:0, description:'Augmente l\'Attaque.', statBoost:{stat:'attack', target:'self', stages:1}},
   'swords-dance': {id:'swords-dance', name:'Danse-Lames', type:'normal', category:'status', power:0, accuracy:100, pp:20, priority:0, description:'Augmente fortement l\'Attaque.', statBoost:{stat:'attack', target:'self', stages:2}},
   'minimize': {id:'minimize', name:'Esquive', type:'normal', category:'status', power:0, accuracy:100, pp:20, priority:0, description:'Augmente l\'esquive.', statBoost:{stat:'defense', target:'self', stages:2}},

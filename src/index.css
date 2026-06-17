@@ -1152,3 +1152,65 @@ button:active{transform:scale(.93);transition:transform .08s ease}
   0%, 100% { transform: translateX(0) scaleX(1); opacity: 0.25; }
   50% { transform: translateX(30px) scaleX(1.1); opacity: 0.4; }
 }
+
+/* ── Battle VFX — new particle system ────────────────────────────────────── */
+
+/* Target hit: invert blink × 2 */
+@keyframes vfx-hit-invert {
+  0%   { filter: invert(1) brightness(2); }
+  25%  { filter: invert(0); }
+  50%  { filter: invert(1) brightness(1.5); }
+  75%  { filter: invert(0); }
+  100% { filter: invert(0); }
+}
+/* Target recoil: small knockback */
+@keyframes vfx-target-recoil-left  { 0%{transform:translateX(0)} 35%{transform:translateX(-12px)} 100%{transform:translateX(0)} }
+@keyframes vfx-target-recoil-right { 0%{transform:translateX(0)} 35%{transform:translateX(12px)}  100%{transform:translateX(0)} }
+.vfx-hit-target-left  { animation: vfx-hit-invert 0.22s steps(1) forwards, vfx-target-recoil-left  0.2s ease-out forwards; }
+.vfx-hit-target-right { animation: vfx-hit-invert 0.22s steps(1) forwards, vfx-target-recoil-right 0.2s ease-out forwards; }
+
+/* Fire particles: move from origin to target */
+@keyframes vfx-fire-particle-ltr { 0%{opacity:1;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--vfx-tx,220px),var(--vfx-ty,-150px)) scale(0.15)} }
+@keyframes vfx-fire-particle-rtl { 0%{opacity:1;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--vfx-tx,-220px),var(--vfx-ty,140px)) scale(0.15)} }
+/* Fire impact flash on target */
+@keyframes vfx-fire-flash { 0%{opacity:0} 15%{opacity:0.7} 100%{opacity:0} }
+
+/* Water bubbles */
+@keyframes vfx-water-bubble-ltr { 0%{opacity:.9;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--vfx-tx,200px),var(--vfx-ty,-130px)) scale(0.2)} }
+@keyframes vfx-water-bubble-rtl { 0%{opacity:.9;transform:translate(0,0) scale(1)} 100%{opacity:0;transform:translate(var(--vfx-tx,-200px),var(--vfx-ty,130px)) scale(0.2)} }
+/* Surf wave */
+@keyframes vfx-surf-wave { 0%{transform:translateY(100%) scaleX(0.6);opacity:0.8} 40%{opacity:1} 100%{transform:translateY(-120%) scaleX(1.2);opacity:0} }
+
+/* Grass vine whip */
+@keyframes vfx-vine-ltr { 0%{transform:scaleX(0) rotate(-35deg);opacity:1} 60%{transform:scaleX(1) rotate(-35deg);opacity:1} 100%{transform:scaleX(1) rotate(-35deg);opacity:0} }
+@keyframes vfx-vine-rtl { 0%{transform:scaleX(0) rotate(35deg);opacity:1}  60%{transform:scaleX(1) rotate(35deg);opacity:1}  100%{transform:scaleX(1) rotate(35deg);opacity:0} }
+/* Leaf spin */
+@keyframes vfx-leaf-spin-ltr { 0%{opacity:1;transform:translate(0,0) rotate(0deg) scale(1)} 100%{opacity:0;transform:translate(var(--vfx-tx,200px),var(--vfx-ty,-120px)) rotate(720deg) scale(0.3)} }
+@keyframes vfx-leaf-spin-rtl { 0%{opacity:1;transform:translate(0,0) rotate(0deg) scale(1)} 100%{opacity:0;transform:translate(var(--vfx-tx,-200px),var(--vfx-ty,120px)) rotate(-720deg) scale(0.3)} }
+
+/* Electric: screen flash */
+@keyframes vfx-screen-flash { 0%{opacity:0} 10%{opacity:0.75} 30%{opacity:0} 50%{opacity:0.4} 100%{opacity:0} }
+/* Electric zigzag SVG draw */
+@keyframes vfx-bolt-draw  { 0%{stroke-dashoffset:300} 100%{stroke-dashoffset:0} }
+@keyframes vfx-bolt-fade  { 0%{opacity:1} 100%{opacity:0} }
+/* Electric target vibrate */
+@keyframes vfx-electric-vibrate {
+  0%,100%{transform:translateX(0)}
+  10%{transform:translateX(-5px)}
+  20%{transform:translateX(5px)}
+  30%{transform:translateX(-5px) brightness(2)}
+  40%{transform:translateX(4px)}
+  50%{transform:translateX(-4px) brightness(0.5)}
+  60%{transform:translateX(4px)}
+  70%{transform:translateX(-3px)}
+  80%{transform:translateX(3px)}
+  90%{transform:translateX(-2px)}
+}
+.vfx-electric-vibrate { animation: vfx-electric-vibrate 0.45s ease-in-out forwards; }
+
+/* Status buff: green stars rising */
+@keyframes vfx-stat-star-rise { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-60px) scale(0.5)} }
+/* Status debuff: purple arrows falling */
+@keyframes vfx-stat-arrow-fall { 0%{opacity:0;transform:translateY(-30px)} 20%{opacity:1} 100%{opacity:0;transform:translateY(40px)} }
+/* Recover glow */
+@keyframes vfx-recover-halo { 0%{opacity:0;transform:scale(0.6)} 30%{opacity:1;transform:scale(1.1)} 70%{opacity:0.7} 100%{opacity:0;transform:scale(1.3)} }
