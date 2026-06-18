@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { logoutUser } from '../lib/auth';
 import { PlayersPanel } from './PlayersPanel';
+import type { TeamMember } from './TeamBuilder';
 
 interface Props {
   username: string;
@@ -9,6 +10,7 @@ interface Props {
   onLogout: () => void;
   onWrapped: () => void;
   onSettings: () => void;
+  onPvpChallenge?: (userId: string, username: string, opponentTeam: TeamMember[]) => void;
 }
 
 const WANDER_POKEMON = [1, 4, 7, 12, 16, 25, 35, 39, 52, 54, 58, 79, 81, 92, 113, 131, 133, 137, 143, 147];
@@ -63,7 +65,7 @@ function useWanderers(count = 8) {
   return list;
 }
 
-export function HomeScreen({ username, onPlay, onProfile, onLogout, onWrapped, onSettings }: Props) {
+export function HomeScreen({ username, onPlay, onProfile, onLogout, onWrapped, onSettings, onPvpChallenge }: Props) {
   const [showPlayers, setShowPlayers] = useState(false);
   const wanderers = useWanderers(10);
 
@@ -284,7 +286,7 @@ export function HomeScreen({ username, onPlay, onProfile, onLogout, onWrapped, o
         </div>
       </div>
 
-      {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} />}
+      {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} onPvpChallenge={onPvpChallenge} />}
     </div>
   );
 }

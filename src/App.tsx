@@ -396,6 +396,7 @@ export function App() {
           onLogout={handleLogout}
           onWrapped={() => persistView('wrapped')}
           onSettings={() => { setPreviousView('home'); setView('settings'); }}
+          onPvpChallenge={handlePvpChallenge}
         />
       )}
 
@@ -670,6 +671,10 @@ export function App() {
             opponentName={pvpOpponentName}
             onConfirm={handlePvpTeamConfirm}
             onCancel={cleanupPvp}
+            pokemonCustomMoves={gameState.state.pokemonCustomMoves ?? {}}
+            onSaveCustomMoves={(id, slugs) => gameState.update(s => ({ ...s, pokemonCustomMoves: { ...(s.pokemonCustomMoves ?? {}), [id]: slugs } }))}
+            sessionId={pvpSession.id}
+            isHost={pvpIsHost}
           />
         </div>
       )}
