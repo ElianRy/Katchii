@@ -1029,6 +1029,7 @@ export function BattleScreen({
         ef[eIdx] = { ...ef[eIdx], currentPP: ePP };
 
         addLog(`${eName} utilise ${eResult.moveName} !`, '#fde68a');
+        await sleep(150);
         const uid = dmgCounter++;
         setAttackEvt({ attacker: 'enemy', type: eResult.moveType, uid });
         await sleep(VFX_DURATION[eResult.moveType] ?? 820);
