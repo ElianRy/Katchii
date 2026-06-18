@@ -98,6 +98,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
   const [autoCombat, setAutoCombat] = useState(false);
+  const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
   type TrainingPreset = 'debutant' | 'facile' | 'moyen' | 'difficile' | 'tres_difficile' | 'impossible';
   const TRAINING_PRESETS: { key: TrainingPreset; label: string; emoji: string; level: number; range: string; color: string }[] = [
     { key: 'debutant',       label: 'Débutant',       emoji: '🌱', level: 3,   range: 'Niv. 1–5',    color: '#86efac' },
@@ -198,10 +199,6 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     if (autoCombat) {
       setBattleResult({ won, xpGains });
       setMode('result');
-      setTimeout(() => {
-        setBattleResult(null);
-        startBattle();
-      }, 2000);
     } else {
       setBattleResult({ won, xpGains });
       setMode('result');
@@ -214,6 +211,29 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     const t = setTimeout(() => setLevelUps([]), 4000);
     return () => clearTimeout(t);
   }, [levelUps]);
+
+  useEffect(() => {
+    if (mode !== 'result' || !autoCombat) { setAutoCountdown(null); return; }
+    setAutoCountdown(5);
+    const interval = setInterval(() => {
+      setAutoCountdown(prev => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [mode, autoCombat]);
+
+  useEffect(() => {
+    if (autoCountdown === null && mode === 'result' && autoCombat) {
+      setBattleResult(null);
+      startBattle();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoCountdown]);
 
   if (mode === 'level_select') {
     const selectedPreset = TRAINING_PRESETS.find(p => p.key === trainingPreset)!;
@@ -504,9 +524,25 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
               })}
             </div>
             {autoCombat ? (
-              <div className="flex items-center justify-center gap-2 bg-indigo-900/40 rounded-xl px-3 py-2 border border-indigo-500/50 animate-pulse">
-                <span className="text-indigo-300 text-sm">⚡</span>
-                <span className="text-indigo-300 text-xs font-bold">Combat auto en cours…</span>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-center gap-2 bg-indigo-900/40 rounded-xl px-3 py-2 border border-indigo-500/50">
+                  <span className="text-indigo-300 text-sm">⚡</span>
+                  <span className="text-indigo-300 text-xs font-bold">
+                    Prochain combat dans {autoCountdown ?? '…'}s
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    setAutoCombat(false);
+                    setAutoCountdown(null);
+                    setMode('team');
+                    setBattleResult(null);
+                  }}
+                  className="w-full py-3 rounded-2xl font-black text-sm"
+                  style={{ background: '#1e293b', border: '2px solid #334155', color: '#94a3b8' }}
+                >
+                  ✕ Quitter le mode auto
+                </button>
               </div>
             ) : (
               <button
@@ -736,6 +772,24 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
               title="Voir les équipes sauvegardées"
             >
               🥊
+            </button>
+          )}
+
+          {/* Auto-combat toggle — training only */}
+          {onSaveTeam && (
+            <button
+              onClick={() => setAutoCombat(v => !v)}
+              className="px-3 py-3 rounded-2xl font-black text-sm transition-all"
+              style={{
+                background: autoCombat
+                  ? 'linear-gradient(90deg, #6366f1, #a855f7)'
+                  : '#1e293b',
+                border: autoCombat ? '2px solid #a855f7' : '2px solid #334155',
+                color: autoCombat ? '#fff' : '#94a3b8',
+                boxShadow: autoCombat ? '0 0 12px #a855f766' : 'none',
+              }}
+            >
+              ⚡ Auto
             </button>
           )}
 

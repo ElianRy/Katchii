@@ -779,6 +779,12 @@ export function BattleScreen({
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFiredRef = useRef(false);
   const turnNumberRef = useRef(0);
+  const [showFullLog, setShowFullLog] = useState(false);
+  const logScrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (showFullLog && logScrollRef.current) logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight;
+  }, [showFullLog, log]);
 
   useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
   useEffect(() => { enemyFightersRef.current = enemyFighters; }, [enemyFighters]);
@@ -2102,16 +2108,36 @@ export function BattleScreen({
       {/* ── Battle log + Move buttons ── */}
       <div className="shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: '#c8c0b0', boxShadow: 'inset 0 2px 0 #fffef8' }}>
         {/* HeartGold-style dialog box */}
-        <div style={{
-          margin: '6px 8px 4px',
-          background: '#f0ece0',
-          border: '3px solid #111',
-          borderRadius: 6,
-          boxShadow: '3px 3px 0 #111, inset 2px 2px 0 #fffef8, inset -2px -2px 0 #a09880',
-          padding: '6px 12px 6px',
-          minHeight: 70,
-          position: 'relative',
-        }}>
+        <div
+          style={{
+            margin: '6px 8px 4px',
+            background: '#f0ece0',
+            border: '3px solid #111',
+            borderRadius: 6,
+            boxShadow: '3px 3px 0 #111, inset 2px 2px 0 #fffef8, inset -2px -2px 0 #a09880',
+            padding: '6px 12px 6px',
+            minHeight: 70,
+            position: 'relative',
+            cursor: log.length > 0 ? 'pointer' : 'default',
+          }}
+          onClick={() => { if (log.length > 0) setShowFullLog(v => !v); }}
+        >
+          {/* Full log overlay */}
+          {showFullLog && (
+            <div
+              style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, zIndex: 50, background: 'rgba(2,6,23,0.95)', borderRadius: '6px 6px 0 0', border: '3px solid #111', borderBottom: 'none', maxHeight: '50vh', overflowY: 'auto', padding: '6px 10px' }}
+              ref={logScrollRef}
+              onClick={e => { e.stopPropagation(); setShowFullLog(false); }}
+            >
+              {log.map((entry, i) => (
+                <div key={i} style={{ color: entry.color, fontSize: '0.55rem', fontFamily: "'Press Start 2P', monospace", lineHeight: 1.8 }}>{entry.text}</div>
+              ))}
+            </div>
+          )}
+          {/* History icon */}
+          {log.length > 0 && (
+            <span style={{ position: 'absolute', top: 3, right: 8, fontSize: '0.55rem', color: '#706890', opacity: 0.7 }}>📜</span>
+          )}
           {/* Previous lines (history) */}
           {hgDialog.prevLines.map((line, i) => (
             <div key={i} style={{ fontSize: '0.52rem', color: '#888', lineHeight: 1.75, fontFamily: "'Press Start 2P', monospace", opacity: 0.4 + i * 0.25 }}>
