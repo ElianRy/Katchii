@@ -647,28 +647,12 @@ export function App() {
       {pvpPhase === 'team_select' && pvpSession && (
         <div className="fixed inset-0 z-[700]">
           <PvpTeamSelect
-            ownedPokemon={Object.entries(gameState.state.normalCollection)
-              .filter(([, c]) => (c as number) > 0)
-              .map(([id]) => {
-                const numId = Number(id);
-                const lvl = gameState.state.pokemonLevels?.[numId]?.level ?? 1;
-                return {
-                  pokemonId: numId,
-                  isShiny: (gameState.state.shinyCollection[numId] ?? 0) > 0,
-                  level: lvl,
-                  xp: gameState.state.pokemonLevels?.[numId]?.xp ?? 0,
-                  instance: gameState.state.pokemonData?.[numId],
-                };
-              })}
-            savedTeams={gameState.state.savedTeams ?? []}
-            favoriteTeamId={gameState.state.favoriteTeamId}
             opponentName={pvpOpponentName}
             onConfirm={handlePvpTeamConfirm}
             onCancel={cleanupPvp}
             pokemonCustomMoves={gameState.state.pokemonCustomMoves ?? {}}
             onSaveCustomMoves={(id, slugs) => gameState.update(s => ({ ...s, pokemonCustomMoves: { ...(s.pokemonCustomMoves ?? {}), [id]: slugs } }))}
             sessionId={pvpSession.id}
-            isHost={pvpIsHost}
           />
         </div>
       )}
