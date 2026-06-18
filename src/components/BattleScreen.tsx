@@ -2172,9 +2172,9 @@ export function BattleScreen({
               </div>
               <span className="text-slate-400 text-xs" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>{activeEF?.currentHp}/{activeEF?.maxHp}</span>
             </div>
-            <div className="flex gap-1 mt-1">
+            <div className="flex gap-1 mt-0.5">
               {(POKEMON_TYPE[activeEF?.pokemonId ?? 0] ?? []).map(t => (
-                <span key={t} className="text-white font-bold rounded px-1" style={{ background: TYPE_COLORS[t as PokemonType] ?? '#888', fontSize: '0.42rem' }}>
+                <span key={t} className="text-white font-bold rounded px-1" style={{ background: TYPE_COLORS[t as PokemonType] ?? '#888', fontSize: '0.42rem', fontFamily: "'Press Start 2P', monospace" }}>
                   {t.toUpperCase()}
                 </span>
               ))}
@@ -2282,7 +2282,7 @@ export function BattleScreen({
               );
             })()}
           </div>
-          <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
+          <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
             <div className="flex justify-between items-center mb-1">
               <div className="flex items-center gap-1 min-w-0">
                 <span className="text-white truncate" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: '0.85rem', fontWeight: 'bold' }}>{POKEMON_BY_ID[activePF?.pokemonId ?? 0]?.name ?? '???'}</span>
@@ -2308,9 +2308,9 @@ export function BattleScreen({
               </div>
               <span className="text-slate-400 text-xs" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>{activePF?.currentHp}/{activePF?.maxHp}</span>
             </div>
-            <div className="flex gap-1 mt-1">
+            <div className="flex gap-1 mt-0.5">
               {(POKEMON_TYPE[activePF?.pokemonId ?? 0] ?? []).map(t => (
-                <span key={t} className="text-white font-bold rounded px-1" style={{ background: TYPE_COLORS[t as PokemonType] ?? '#888', fontSize: '0.42rem' }}>
+                <span key={t} className="text-white font-bold rounded px-1" style={{ background: TYPE_COLORS[t as PokemonType] ?? '#888', fontSize: '0.42rem', fontFamily: "'Press Start 2P', monospace" }}>
                   {t.toUpperCase()}
                 </span>
               ))}
@@ -2523,7 +2523,7 @@ export function BattleScreen({
               onPointerUp={() => setTooltipMoveIdx(null)}
               onTouchEnd={() => setTooltipMoveIdx(null)}>
               <div className="mx-4 rounded-2xl p-4 max-w-xs w-full"
-                style={{ background: '#0f172a', border: `2px solid ${typeColor}`, boxShadow: `0 0 24px ${typeColor}66` }}>
+                style={{ background: '#0f172a', border: `2px solid ${typeColor}`, boxShadow: `0 0 24px ${typeColor}66`, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="font-black text-white text-base">{m.name}</span>
                   <span className="px-2 py-0.5 rounded text-white font-bold text-xs" style={{ background: typeColor }}>{m.type.toUpperCase()}</span>
