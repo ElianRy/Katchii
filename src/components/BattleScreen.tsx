@@ -1702,6 +1702,16 @@ export function BattleScreen({
     if (longPressFiredRef.current) return;
     if (tooltipMoveIdx !== null) { setTooltipMoveIdx(null); return; }
     if (phase !== 'player_turn') return;
+
+    // Feedback immédiat si le pokémon est endormi ou paralysé
+    const pFighter = playerFightersRef.current[playerIdxRef.current];
+    const cond = pFighter?.statusState?.condition;
+    if (cond === 'slp' || cond === 'par') {
+      const uid = dmgCounter++;
+      setStatusBlockOverlay({ target: 'player', condition: cond, uid });
+      setTimeout(() => setStatusBlockOverlay(s => s?.uid === uid ? null : s), 1600);
+    }
+
     if (pvpControls) {
       pvpControls.onMoveSelect(idx);
       phaseRef.current = 'resolving'; setPhase('resolving');
