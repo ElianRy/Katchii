@@ -1308,6 +1308,7 @@ export function BattleScreen({
         if (!atkArr[atkIdx].chargingMove) {
           // Turn 1 — charge
           addLog(`${atkName} utilise ${result.moveName} !`, '#fde68a');
+          await sleep(150);
           const uid2 = dmgCounter++;
           setAttackEvt({ attacker: atkSide, type: 'grass', uid: uid2 });
           await sleep(1250);
@@ -1330,6 +1331,7 @@ export function BattleScreen({
 
       // Step A: log "[Name] utilise [Move]!"
       addLog(`${atkName} utilise ${result.moveName} !`, '#fde68a');
+      await sleep(150);
 
       // Step B: VFX — await completion before applying damage
       if (isStatusOnly) {
