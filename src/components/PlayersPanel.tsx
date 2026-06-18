@@ -134,8 +134,12 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3, onPvpChall
         const badgeCount = Array.isArray(s.badges) ? (s.badges as string[]).length : 0;
 
         const presence = presenceMap.get(row.user_id);
-        // Use presence last_seen if available, otherwise fall back to game_saves updated_at
-        const lastSeen = presence?.lastSeen ?? (row as Record<string, unknown>).updated_at as string | undefined;
+        // Use the most recent of presence.lastSeen and game_saves.updated_at
+        const saveUpdatedAt = (row as Record<string, unknown>).updated_at as string | undefined;
+        const presenceLastSeen = presence?.lastSeen;
+        const lastSeen = presenceLastSeen && saveUpdatedAt
+          ? (new Date(presenceLastSeen) > new Date(saveUpdatedAt) ? presenceLastSeen : saveUpdatedAt)
+          : presenceLastSeen ?? saveUpdatedAt;
         const isOnline = lastSeen ? nowMs - new Date(lastSeen).getTime() < 3 * 60 * 1000 : false;
         return {
           user_id: row.user_id,
