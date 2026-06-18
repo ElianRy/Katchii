@@ -14,7 +14,7 @@ import {
   calcDamage, calcStruggle, chooseEnemyMoveIndex,
   emptyStages, getMoveListRaw, emptyStatus, checkCanAct, applyMajorStatus,
   calcEndOfTurnDamage, statusLabel, playerGoesFirst as calcTurnOrder,
-  registerMoves,
+  registerMoves, evaluateMatchup, chooseBestBenchIndex,
 } from '../data/combatEngine';
 import type { Stages, StatusState, RawMove, MoveResult } from '../data/combatEngine';
 import { MOVES } from '../data/gen1Moves';
@@ -890,7 +890,7 @@ export function BattleScreen({
 
   useEffect(() => {
     if (phase !== 'player_turn' || !autoCombat || pvpControls) return;
-    const delay = 800 + Math.random() * 200;
+    const delay = 700 + Math.random() * 200;
     const t = setTimeout(() => {
       if (phaseRef.current !== 'player_turn') return;
       const pIdx = playerIdxRef.current;
@@ -900,13 +900,38 @@ export function BattleScreen({
       const pFighter = pf[pIdx];
       const eFighter = ef[eIdx];
       if (!pFighter || !eFighter) return;
+
       const eTypes = (POKEMON_TYPE[eFighter.pokemonId] ?? ['normal']) as PokemonType[];
+      const pTypes = (POKEMON_TYPE[pFighter.pokemonId] ?? ['normal']) as PokemonType[];
+
+      // ── Proactive switch: bail if current matchup is terrible ──────────
+      const currentScore = evaluateMatchup(pTypes, eTypes);
+      const bestBenchIdx = chooseBestBenchIndex(pf, pIdx, eTypes);
+      if (bestBenchIdx >= 0) {
+        const benchTypes = (POKEMON_TYPE[pf[bestBenchIdx].pokemonId] ?? ['normal']) as PokemonType[];
+        const benchScore = evaluateMatchup(benchTypes, eTypes);
+        // Switch if bench is significantly better (2× threshold) AND current is weak
+        if (benchScore > currentScore * 2 && currentScore < 1) {
+          handleVoluntarySwitch(bestBenchIdx);
+          return;
+        }
+      }
+
+      // ── Choose best move ───────────────────────────────────────────────
       const pCustomSlugs = pokemonCustomMoves?.[pFighter.pokemonId];
       const pMoves = getMoveListRaw(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId], pCustomSlugs);
       const autoIdx = chooseEnemyMoveIndex(
         pFighter.pokemonId, eTypes, pFighter.currentPP,
         pFighter.stages, turnNumberRef.current,
         eFighter.statusState, pFighter.statusState, pMoves,
+        {
+          attackerTypes: pTypes,
+          defenderStages: eFighter.stages,
+          defenderCurrentHp: eFighter.currentHp,
+          attackerLevel: pFighter.level,
+          defenderLevel: eFighter.level,
+          defenderPokemonId: eFighter.pokemonId,
+        },
       );
       executeTurn(autoIdx < 0 ? 0 : autoIdx);
     }, delay);
@@ -994,11 +1019,15 @@ export function BattleScreen({
     }, 700);
   }, [playerFighters, addLog]);
 
-  // Auto combat: auto-select first available pokemon on forced switch
+  // Auto combat: smart bench selection on forced switch
   useEffect(() => {
     if (phase !== 'switch' || !autoCombat) return;
-    const firstAvail = playerFighters.findIndex((f, i) => f.currentHp > 0 && i !== playerIdxRef.current);
-    if (firstAvail >= 0) setTimeout(() => handleSwitch(firstAvail), 400);
+    const ef = enemyFightersRef.current;
+    const eTypes = (POKEMON_TYPE[ef[enemyIdxRef.current]?.pokemonId ?? 0] ?? ['normal']) as PokemonType[];
+    const bestIdx = chooseBestBenchIndex(playerFighters, playerIdxRef.current, eTypes);
+    const fallback = playerFighters.findIndex((f, i) => f.currentHp > 0 && i !== playerIdxRef.current);
+    const target = bestIdx >= 0 ? bestIdx : fallback;
+    if (target >= 0) setTimeout(() => handleSwitch(target), 400);
   }, [phase, autoCombat, playerFighters, handleSwitch]);
 
   // Auto combat: skip optional pre-enemy-switch (no free switch in auto mode)
@@ -1060,7 +1089,15 @@ export function BattleScreen({
         const ePlayerTypes = (POKEMON_TYPE[pFighterNew?.pokemonId ?? 0] ?? ['normal']) as PokemonType[];
         const eMoveIndex = chooseEnemyMoveIndex(
           eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
-          { condition: null }, eFighter.statusState,
+          { condition: null }, eFighter.statusState, undefined,
+          {
+            attackerTypes: (POKEMON_TYPE[eFighter.pokemonId] ?? ['normal']) as PokemonType[],
+            defenderStages: pFighterNew.stages,
+            defenderCurrentHp: pFighterNew.currentHp,
+            attackerLevel: eFighter.level,
+            defenderLevel: pFighterNew.level,
+            defenderPokemonId: pFighterNew.pokemonId,
+          },
         );
         turnNumberRef.current++;
         const eResult = eMoveIndex < 0
@@ -1166,11 +1203,20 @@ export function BattleScreen({
 
     // Enemy AI
     const ePlayerTypes = (POKEMON_TYPE[pFighter.pokemonId] ?? ['normal']) as PokemonType[];
+    const eTypes = (POKEMON_TYPE[eFighter.pokemonId] ?? ['normal']) as PokemonType[];
     const pCustomSlugs = pokemonCustomMoves?.[pFighter.pokemonId];
     const pRawMoves = getMoveListRaw(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId], pCustomSlugs);
     const eMoveIndexAI = chooseEnemyMoveIndex(
       eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
-      pFighter.statusState, eFighter.statusState
+      pFighter.statusState, eFighter.statusState, undefined,
+      {
+        attackerTypes: eTypes,
+        defenderStages: pFighter.stages,
+        defenderCurrentHp: pFighter.currentHp,
+        attackerLevel: eFighter.level,
+        defenderLevel: pFighter.level,
+        defenderPokemonId: pFighter.pokemonId,
+      },
     );
     // 2-turn move or PvP: override eMoveIndex
     const eMoveIndex = ef[eIdx]?.chargingMove

@@ -566,7 +566,68 @@ export function getMovesBySlugList(slugs: string[]): RawMove[] {
   return slugs.map(s => map[s]).filter(Boolean) as RawMove[];
 }
 
-// ── Smart enemy AI (Gen 4 style) ─────────────────────────────────────────────
+// ── Type matchup utilities ────────────────────────────────────────────────────
+
+/** Best offensive effectiveness my types can achieve against enemy types */
+export function bestOffenseMult(myTypes: PokemonType[], enemyTypes: PokemonType[]): number {
+  let best = 0;
+  for (const t of myTypes) {
+    const eff = getTypeEffectiveness(t, enemyTypes);
+    if (eff > best) best = eff;
+  }
+  return best === 0 ? 0.25 : best; // immunity treated as very bad
+}
+
+/** Worst damage multiplier I take from enemy types */
+export function worstDefenseMult(enemyTypes: PokemonType[], myTypes: PokemonType[]): number {
+  let worst = 0;
+  for (const t of enemyTypes) {
+    const eff = getTypeEffectiveness(t, myTypes);
+    if (eff > worst) worst = eff;
+  }
+  return worst === 0 ? 0.25 : worst;
+}
+
+/**
+ * Overall matchup score for myTypes vs enemyTypes.
+ * Higher = better (I hit hard and take little damage).
+ */
+export function evaluateMatchup(myTypes: PokemonType[], enemyTypes: PokemonType[]): number {
+  const offense = bestOffenseMult(myTypes, enemyTypes); // 0.25 … 4
+  const defense = worstDefenseMult(enemyTypes, myTypes); // 0.25 … 4 (I take this much)
+  return (offense * offense) / defense; // squares offense to strongly reward SE matchup
+}
+
+/**
+ * Pick the best bench pokemon to send against enemyTypes.
+ * Returns index in `bench`, or -1 if nothing available.
+ */
+export function chooseBestBenchIndex(
+  bench: Array<{ pokemonId: number; currentHp: number }>,
+  currentIdx: number,
+  enemyTypes: PokemonType[],
+): number {
+  let bestIdx = -1;
+  let bestScore = -1;
+  for (let i = 0; i < bench.length; i++) {
+    if (i === currentIdx || bench[i].currentHp <= 0) continue;
+    const myTypes = (POKEMON_TYPE[bench[i].pokemonId] ?? ['normal']) as PokemonType[];
+    const score = evaluateMatchup(myTypes, enemyTypes);
+    if (score > bestScore) { bestScore = score; bestIdx = i; }
+  }
+  return bestIdx;
+}
+
+// ── Smart AI — move selection ─────────────────────────────────────────────────
+
+export interface ChooseMoveOpts {
+  attackerTypes?: PokemonType[];         // for STAB (defaults to POKEMON_TYPE[attackerId])
+  defenderStages?: Stages;               // for debuff-cap check
+  defenderCurrentHp?: number;            // for KO finisher check
+  attackerLevel?: number;                // for KO damage estimate
+  defenderLevel?: number;
+  defenderPokemonId?: number;
+}
 
 export function chooseEnemyMoveIndex(
   attackerId: number,
@@ -577,8 +638,10 @@ export function chooseEnemyMoveIndex(
   defenderStatus?: StatusState,
   _attackerStatus?: StatusState,
   enemyMoves?: RawMove[],
+  opts?: ChooseMoveOpts,
 ): number {
   const moves = enemyMoves ?? (GEN1_STATS[attackerId]?.moves ?? []) as RawMove[];
+  const attackerTypes = opts?.attackerTypes ?? ((POKEMON_TYPE[attackerId] ?? ['normal']) as PokemonType[]);
 
   const available = currentPP
     .map((pp, i) => pp > 0 ? i : -1)
@@ -586,52 +649,77 @@ export function chooseEnemyMoveIndex(
 
   if (available.length === 0) return -1; // Struggle
 
+  // ── Phase 1: KO finisher ─────────────────────────────────────────────────
+  const { attackerLevel: aLvl, defenderLevel: dLvl, defenderPokemonId: dId, defenderCurrentHp: dHp } = opts ?? {};
+  if (aLvl && dLvl && dId && dHp !== undefined) {
+    for (const i of available) {
+      const move = moves[i];
+      if (!move || move.category === 'status') continue;
+      const moveType = move.type as PokemonType;
+      const effectiveness = getTypeEffectiveness(moveType, defenderTypes);
+      if (effectiveness === 0) continue;
+      const stab = attackerTypes.includes(moveType) ? 1.5 : 1;
+      const atkStage = move.category === 'physical' ? attackerStages.attack : attackerStages.spAttack;
+      const defStage = move.category === 'physical'
+        ? (opts?.defenderStages?.defense ?? 0)
+        : (opts?.defenderStages?.spDefense ?? 0);
+      const atkStat = applyStage(
+        move.category === 'physical' ? calcAttack(attackerId, aLvl) : calcSpAttack(attackerId, aLvl),
+        atkStage,
+      );
+      const defStat = applyStage(
+        move.category === 'physical' ? calcDefense(dId, dLvl) : calcSpDefense(dId, dLvl),
+        defStage,
+      );
+      const estDmg = Math.floor(
+        (Math.floor((2 * aLvl / 5 + 2) * (move.power ?? 50) * atkStat / Math.max(1, defStat) / 50) + 2)
+        * effectiveness * stab,
+      );
+      if (estDmg >= dHp) return i; // guaranteed KO — always take it
+    }
+  }
+
+  // ── Phase 2: Score each available move ───────────────────────────────────
   const scored = available.map(i => {
     const move = moves[i];
     if (!move) return { i, score: 0 };
-    let score = 1;
+    let score = 0;
 
     if (move.category === 'status') {
-      // Status moves: apply if target doesn't already have one
       if (move.effect) {
         const effectStatus = effectTypeToStatus(move.effect.type);
-        if (effectStatus && defenderStatus?.condition !== null) {
-          score = 0; // target already has a status → useless
-        } else if (effectStatus === 'slp' || effectStatus === 'par' || effectStatus === 'psn' || effectStatus === 'tox') {
-          // Prefer to apply status moves early (turn 1-2), especially if foe has no status
-          score = turnNumber <= 2 ? 8 : 3;
+        if (effectStatus) {
+          // Never apply if target already has a major status
+          score = (defenderStatus?.condition !== null)
+            ? 0
+            : (turnNumber <= 2 ? 70 : 25);
         }
       }
       if (move.statBoost) {
-        const { target, stat, stages } = move.statBoost;
+        const { target, stat, stages: boostAmt } = move.statBoost;
         if (target === 'self') {
-          const currentStage = attackerStages[stat as StageKey] ?? 0;
-          if (currentStage >= 4) {
-            score = 0; // maxed — waste of turn
-          } else if (turnNumber <= 2 && currentStage < 2) {
-            score = 6; // strongly prefer early boosts
-          } else {
-            score = 2;
-          }
+          const curStage = attackerStages[stat as StageKey] ?? 0;
+          // Stop buffing at +2 — switch to dealing damage
+          score = curStage >= 2 ? 0 : (turnNumber <= 2 ? 60 : 18);
         } else {
-          // Debuff foe defense
-          score = Math.abs(stages) >= 2 ? 4 : 2;
+          // Debuff opponent — stop at -2, only useful early
+          const foeStage = opts?.defenderStages?.[stat as StageKey] ?? 0;
+          score = foeStage <= -2 ? 0 : (turnNumber === 1 ? 40 * Math.abs(boostAmt) : 8);
         }
       }
+      // Generic status move with no identified effect gets low priority
+      if (!move.effect && !move.statBoost) score = 5;
     } else {
-      // Offensive move
       const moveType = move.type as PokemonType;
       const effectiveness = getTypeEffectiveness(moveType, defenderTypes);
-
       if (effectiveness === 0) {
-        score = 0; // never use immune moves
+        score = 0; // immune — never use
       } else {
-        score = (move.power ?? 50) * effectiveness;
+        const stab = attackerTypes.includes(moveType) ? 1.5 : 1;
+        score = (move.power ?? 50) * effectiveness * stab;
         if (move.highCrit) score *= 1.15;
-        if (move.multiHit) score *= 1.1;
-        // Bonus for super effective
-        if (effectiveness >= 2) score *= 1.5;
-        score = score / 10;
+        if (move.multiHit) score *= 1.3;
+        if (effectiveness >= 2) score *= 1.1; // small bonus on top of the raw calc
       }
     }
 
@@ -642,15 +730,15 @@ export function chooseEnemyMoveIndex(
     return available[Math.floor(Math.random() * available.length)];
   }
 
-  // Weighted random: top moves get more tickets
+  // ── Phase 3: Deterministic pick — tiny noise only on near-ties ───────────
   scored.sort((a, b) => b.score - a.score);
-  const pool: number[] = [];
-  scored.forEach((x, rank) => {
-    const tickets = rank === 0 ? 8 : rank === 1 ? 4 : rank === 2 ? 2 : 1;
-    for (let t = 0; t < tickets; t++) pool.push(x.i);
-  });
-
-  return pool[Math.floor(Math.random() * pool.length)];
+  const best = scored[0];
+  const second = scored[1];
+  // If two moves are within 8% of each other, vary slightly to avoid mechanical play
+  if (second && second.score >= best.score * 0.92) {
+    return Math.random() < 0.72 ? best.i : second.i;
+  }
+  return best.i;
 }
 
 // ── HeartGold XP formula ─────────────────────────────────────────────────────
