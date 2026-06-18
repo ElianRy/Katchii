@@ -271,9 +271,19 @@ export function App() {
     setPvpIncoming(null);
   }, []);
 
-  // ── PvP: listen for incoming challenges ──────────────────────────────────────
+  // ── PvP: listen for incoming challenges + fetch pending on connect ───────────
   useEffect(() => {
     if (!userId) return;
+    // Check for a challenge that was sent before this session started
+    supabase
+      .from('pvp_challenges')
+      .select()
+      .eq('challenged_id', userId)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => { if (data) setPvpIncoming(data as PvpChallenge); });
     const chan = subscribeToIncomingChallenges(userId, c => setPvpIncoming(c));
     return () => { supabase.removeChannel(chan); };
   }, [userId]);
