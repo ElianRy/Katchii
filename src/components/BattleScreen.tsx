@@ -1081,6 +1081,9 @@ export function BattleScreen({
       if (!eCanActResult.canAct) {
         const cond = ef[eIdx].statusState.condition;
         addLog(cond === 'slp' ? `${eName} dort profondément.` : `${eName} est complètement paralysé(e) ! Il ne peut pas bouger !`, '#94a3b8');
+      } else if (eCanActResult.curedPar) {
+        addLog(`${eName} n'est plus paralysé(e) !`, '#86efac');
+        await sleep(logTypeDuration(`${eName} n'est plus paralysé(e) !`));
       } else if (eCanActResult.wokeUp) {
         addLog(`${eName} se réveille !`, '#86efac');
         await sleep(logTypeDuration(`${eName} se réveille !`));
@@ -1194,11 +1197,16 @@ export function BattleScreen({
     ef[eIdx] = { ...ef[eIdx], statusState: eCanActResult.nextStatus };
     flush(); // badges SOM/PAR retirés immédiatement de l'UI (avant toute attaque)
 
-    // ── helpers pour injecter le message de réveil en ordre de jeu ──
+    // ── helpers pour injecter le message de réveil/guérison en ordre de jeu ──
     const logWakeIfNeeded = async (_side: 'player' | 'enemy', canActRes: ReturnType<typeof checkCanAct>, name: string, blocked: boolean) => {
-      if (!canActRes.wokeUp || blocked) return;
-      addLog(`${name} se réveille !`, '#86efac');
-      await sleep(logTypeDuration(`${name} se réveille !`));
+      if (blocked) return;
+      if (canActRes.curedPar) {
+        addLog(`${name} n'est plus paralysé(e) !`, '#86efac');
+        await sleep(logTypeDuration(`${name} n'est plus paralysé(e) !`));
+      } else if (canActRes.wokeUp) {
+        addLog(`${name} se réveille !`, '#86efac');
+        await sleep(logTypeDuration(`${name} se réveille !`));
+      }
     };
 
     // Enemy AI
@@ -1802,6 +1810,10 @@ export function BattleScreen({
         const remaining = f.statusState.sleepTurns - 1;
         pf[i] = { ...pf[i], statusState: remaining <= 0 ? { condition: null } : { condition: 'slp', sleepTurns: remaining } };
         benchChanged = true;
+      } else if (cond === 'par' && f.statusState.parTurns !== undefined) {
+        const remaining = f.statusState.parTurns - 1;
+        pf[i] = { ...pf[i], statusState: remaining <= 0 ? { condition: null } : { condition: 'par', parTurns: remaining } };
+        benchChanged = true;
       }
     });
     ef.forEach((f, i) => {
@@ -1816,6 +1828,10 @@ export function BattleScreen({
       } else if (cond === 'slp' && f.statusState.sleepTurns !== undefined) {
         const remaining = f.statusState.sleepTurns - 1;
         ef[i] = { ...ef[i], statusState: remaining <= 0 ? { condition: null } : { condition: 'slp', sleepTurns: remaining } };
+        benchChanged = true;
+      } else if (cond === 'par' && f.statusState.parTurns !== undefined) {
+        const remaining = f.statusState.parTurns - 1;
+        ef[i] = { ...ef[i], statusState: remaining <= 0 ? { condition: null } : { condition: 'par', parTurns: remaining } };
         benchChanged = true;
       }
     });

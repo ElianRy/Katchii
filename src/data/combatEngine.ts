@@ -147,6 +147,7 @@ export type MajorStatus = 'par' | 'brn' | 'psn' | 'tox' | 'slp' | 'frz' | null;
 export interface StatusState {
   condition: MajorStatus;
   sleepTurns?: number;    // turns remaining asleep (determined at sleep application)
+  parTurns?: number;      // turns remaining paralyzed (2-4 turns)
   toxicCounter?: number;  // N for Toxic (N/16 dmg per turn, resets on switch)
 }
 
@@ -165,6 +166,9 @@ export function applyMajorStatus(
   if (newStatus === 'slp') {
     next.sleepTurns = 1 + Math.floor(Math.random() * 3); // HG/SS: 1-3 turns
   }
+  if (newStatus === 'par') {
+    next.parTurns = 2 + Math.floor(Math.random() * 3); // 2-4 turns
+  }
   if (newStatus === 'tox') {
     next.toxicCounter = 0; // increments at start of each end-of-turn phase
   }
@@ -175,7 +179,7 @@ export function applyMajorStatus(
  * Check if a Pokémon can act this turn. Returns true = can act, false = loses turn.
  * Also returns updated StatusState (sleep counter ticking, etc.)
  */
-export function checkCanAct(status: StatusState): { canAct: boolean; nextStatus: StatusState; wokeUp?: boolean } {
+export function checkCanAct(status: StatusState): { canAct: boolean; nextStatus: StatusState; wokeUp?: boolean; curedPar?: boolean } {
   if (status.condition === null) return { canAct: true, nextStatus: status };
 
   if (status.condition === 'slp') {
@@ -196,8 +200,11 @@ export function checkCanAct(status: StatusState): { canAct: boolean; nextStatus:
   }
 
   if (status.condition === 'par') {
-    // Paralysis always prevents action until it wears off
-    return { canAct: false, nextStatus: status };
+    const remaining = (status.parTurns ?? 1) - 1;
+    if (remaining <= 0) {
+      return { canAct: true, nextStatus: { condition: null }, curedPar: true };
+    }
+    return { canAct: false, nextStatus: { ...status, parTurns: remaining } };
   }
 
   // BRN / PSN / TOX: don't prevent action
