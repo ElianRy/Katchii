@@ -121,20 +121,23 @@ export async function acceptChallenge(
   hostId: string,
   guestId: string,
 ): Promise<PvpSession | null> {
-  // Create session FIRST so host can fetch it as soon as it sees 'accepted'
   const { data, error } = await supabase
     .from('pvp_sessions')
     .insert({ challenge_id: challengeId, host_id: hostId, guest_id: guestId })
     .select()
     .single();
   if (error) { console.error('[pvp] acceptChallenge:', error); return null; }
-  // Then flip challenge status — host's subscription fires after session exists
   await supabase.from('pvp_challenges').update({ status: 'accepted' }).eq('id', challengeId);
+  // Broadcast directly to challenger — more reliable than postgres_changes
+  await supabase.channel(`pvp_signal_${challengeId}`)
+    .send({ type: 'broadcast', event: 'challenge_response', payload: { status: 'accepted', sessionId: data.id } });
   return data as PvpSession;
 }
 
 export async function declineChallenge(challengeId: string): Promise<void> {
   await supabase.from('pvp_challenges').update({ status: 'declined' }).eq('id', challengeId);
+  await supabase.channel(`pvp_signal_${challengeId}`)
+    .send({ type: 'broadcast', event: 'challenge_response', payload: { status: 'declined' } });
 }
 
 // Récupère le défi en attente envoyé par challengerId à challengedId
@@ -192,18 +195,16 @@ export function subscribeToIncomingChallenges(
     .subscribe();
 }
 
-export function subscribeToChallengeStatus(
+// Broadcast-based subscription (replaces postgres_changes for challenge status)
+export function subscribeToChallengeResponse(
   challengeId: string,
-  onUpdate: (c: PvpChallenge) => void,
+  onResponse: (status: 'accepted' | 'declined', sessionId?: string) => void,
 ) {
   return supabase
-    .channel(`pvp_chal_${challengeId}`)
-    .on('postgres_changes', {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'pvp_challenges',
-      filter: `id=eq.${challengeId}`,
-    }, p => onUpdate(p.new as PvpChallenge))
+    .channel(`pvp_signal_${challengeId}`)
+    .on('broadcast', { event: 'challenge_response' }, ({ payload }) => {
+      onResponse(payload.status, payload.sessionId);
+    })
     .subscribe();
 }
 

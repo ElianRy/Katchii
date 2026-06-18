@@ -30,7 +30,7 @@ import { PvpTeamSelect } from './components/PvpTeamSelect';
 import { PvpBattleScreen } from './components/PvpBattleScreen';
 import {
   sendChallenge, acceptChallenge, declineChallenge, cancelChallenge,
-  subscribeToIncomingChallenges, subscribeToChallengeStatus, subscribeToSession, submitTeam,
+  subscribeToIncomingChallenges, subscribeToChallengeResponse, subscribeToSession, submitTeam,
 } from './lib/pvp';
 import type { PvpChallenge, PvpSession } from './lib/pvp';
 import { useGameState } from './hooks/useGameState';
@@ -305,24 +305,16 @@ export function App() {
     setPvpIsHost(true);
     setShowPlayers(false);
 
-    // Subscribe to challenge status changes
-    const statusChan = subscribeToChallengeStatus(challenge.id, async updated => {
-      if (updated.status === 'accepted') {
-        supabase.removeChannel(statusChan);
-        setPvpWaiting(null);
-        // Retry a few times — session is created just before challenge flips to 'accepted'
-        let data = null;
-        for (let attempt = 0; attempt < 5 && !data; attempt++) {
-          if (attempt > 0) await new Promise(r => setTimeout(r, 400));
-          const res = await supabase.from('pvp_sessions').select().eq('challenge_id', challenge.id).maybeSingle();
-          data = res.data;
-        }
+    // Subscribe via broadcast — instant, no postgres_changes dependency
+    const statusChan = subscribeToChallengeResponse(challenge.id, async (status, sessionId) => {
+      supabase.removeChannel(statusChan);
+      setPvpWaiting(null);
+      if (status === 'accepted' && sessionId) {
+        const { data } = await supabase.from('pvp_sessions').select().eq('id', sessionId).maybeSingle();
         if (!data) return;
         setPvpSession(data as PvpSession);
         setPvpPhase('team_select');
-      } else if (updated.status === 'declined' || updated.status === 'cancelled') {
-        supabase.removeChannel(statusChan);
-        setPvpWaiting(null);
+      } else {
         cleanupPvp();
       }
     });
