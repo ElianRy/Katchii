@@ -9,6 +9,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BattleScreen } from './BattleScreen';
+import type { PvpPersistedState } from './BattleScreen';
 import { getPvpBattleChannel, finishSession, subscribeToSession } from '../lib/pvp';
 import type { PvpSession } from '../lib/pvp';
 import type { TeamMember } from './TeamBuilder';
@@ -33,8 +34,16 @@ type PvpPayload = {
   eResult?: Record<string, unknown>;
 };
 
+const pvpStateKey = (sessionId: string) => `pvp_state_${sessionId}`;
+
 export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponentName, userId, pokemonCustomMoves, onBattleEnd }: Props) {
   const [isWaiting, setIsWaiting] = useState(false);
+  const [savedState] = useState<PvpPersistedState | null>(() => {
+    try {
+      const raw = localStorage.getItem(pvpStateKey(session.id));
+      return raw ? (JSON.parse(raw) as PvpPersistedState) : null;
+    } catch { return null; }
+  });
   const [pendingPayload, setPendingPayload] = useState<PvpPayload | null>(null);
   const [forceEnd, setForceEnd] = useState<boolean | null>(null);
   const [opponentSwitchIdx, setOpponentSwitchIdx] = useState<number | null>(null);
@@ -151,11 +160,11 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
   }, []);
 
   const handleBattleEnd = useCallback(async (won: boolean) => {
-    // Always call onBattleEnd; only call finishSession once
+    try { localStorage.removeItem(pvpStateKey(session.id)); } catch {}
     if (!battleEndedRef.current) {
       battleEndedRef.current = true;
       const winnerId = won ? userId : (isHost ? session.guest_id : session.host_id);
-      await finishSession(session.id, winnerId);
+      try { await finishSession(session.id, winnerId); } catch {}
     }
     onBattleEnd(won);
   }, [userId, isHost, session, onBattleEnd]);
@@ -163,9 +172,9 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
   const handleAbandon = useCallback(async () => {
     if (battleEndedRef.current) return;
     battleEndedRef.current = true;
+    try { localStorage.removeItem(pvpStateKey(session.id)); } catch {}
     const winnerId = isHost ? session.guest_id : session.host_id;
-    await finishSession(session.id, winnerId);
-    // Show defeat screen via forceEnd — user clicks FERMER to proceed
+    try { await finishSession(session.id, winnerId); } catch {}
     setForceEnd(false);
   }, [isHost, session]);
 
@@ -196,6 +205,8 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
         },
         opponentSwitchIdx,
         opponentVoluntarySwitchIdx,
+        sessionId: session.id,
+        savedState,
       }}
     />
   );

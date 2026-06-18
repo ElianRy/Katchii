@@ -74,7 +74,22 @@ interface Props {
     onSwitch?: (newIdx: number, voluntary?: boolean) => void;
     opponentSwitchIdx?: number | null;
     opponentVoluntarySwitchIdx?: number | null;
+    sessionId?: string;
+    savedState?: PvpPersistedState | null;
   };
+}
+
+export interface PvpPersistedState {
+  playerFighters: FighterState[];
+  enemyFighters: FighterState[];
+  playerIdx: number;
+  enemyIdx: number;
+  turnNumber: number;
+  pvpKoTaken: number;
+  pvpDmgReceived: number;
+  koEnemyLevels: number[];
+  playerStats: Record<number, { toursSurTerrain: number; degatsInfliges: number }>;
+  battleStartTime: number;
 }
 
 interface FighterState extends TeamMember {
@@ -757,19 +772,21 @@ export function BattleScreen({
       statusState: emptyStatus(),
     }));
 
-  const [playerFighters, setPlayerFighters] = useState<FighterState[]>(() => initFighters(playerTeam, true));
-  const playerFightersRef = useRef<FighterState[]>(initFighters(playerTeam, true));
-  const enemyFightersRef = useRef<FighterState[]>(initFighters(enemyTeam, false));
+  const savedState = pvpControls?.savedState ?? null;
+  const [playerFighters, setPlayerFighters] = useState<FighterState[]>(() => savedState ? savedState.playerFighters : initFighters(playerTeam, true));
+  const playerFightersRef = useRef<FighterState[]>(savedState ? savedState.playerFighters : initFighters(playerTeam, true));
+  const enemyFightersRef = useRef<FighterState[]>(savedState ? savedState.enemyFighters : initFighters(enemyTeam, false));
   const boostActiveRef = useRef(playerDamageMult > 1);
   const [boostActive, setBoostActive] = useState(playerDamageMult > 1);
-  const [enemyFighters, setEnemyFighters] = useState<FighterState[]>(() => initFighters(enemyTeam, false));
-  const [playerIdx, setPlayerIdx] = useState(0);
-  const [enemyIdx, setEnemyIdx] = useState(0);
-  const playerIdxRef = useRef(0);
-  const enemyIdxRef = useRef(0);
+  const [enemyFighters, setEnemyFighters] = useState<FighterState[]>(() => savedState ? savedState.enemyFighters : initFighters(enemyTeam, false));
+  const [playerIdx, setPlayerIdx] = useState(savedState?.playerIdx ?? 0);
+  const [enemyIdx, setEnemyIdx] = useState(savedState?.enemyIdx ?? 0);
+  const playerIdxRef = useRef(savedState?.playerIdx ?? 0);
+  const enemyIdxRef = useRef(savedState?.enemyIdx ?? 0);
   const [log, setLog] = useState<LogEntry[]>([]);
-  const [phase, setPhase] = useState<'intro' | 'player_turn' | 'resolving' | 'switch' | 'pre_enemy_switch' | 'end'>('intro');
-  const phaseRef = useRef<'intro' | 'player_turn' | 'resolving' | 'switch' | 'pre_enemy_switch' | 'end'>('intro');
+  const initialPhase = savedState ? 'player_turn' as const : 'intro' as const;
+  const [phase, setPhase] = useState<'intro' | 'player_turn' | 'resolving' | 'switch' | 'pre_enemy_switch' | 'end'>(initialPhase);
+  const phaseRef = useRef<'intro' | 'player_turn' | 'resolving' | 'switch' | 'pre_enemy_switch' | 'end'>(initialPhase);
   const [pendingEnemyIdx, setPendingEnemyIdx] = useState<number>(-1);
   const [statsPanelPlayer, setStatsPanelPlayer] = useState(false);
   const [statsPanelEnemy, setStatsPanelEnemy] = useState(false);
@@ -782,9 +799,9 @@ export function BattleScreen({
   const battleDone = useRef(false);
   const enemyDmgRef = useRef<Record<number, number>>({});
   const playerStatsRef = useRef<Record<number, { toursSurTerrain: number; degatsInfliges: number }>>(
-    Object.fromEntries(playerTeam.map(m => [m.pokemonId, { toursSurTerrain: 0, degatsInfliges: 0 }]))
+    savedState?.playerStats ?? Object.fromEntries(playerTeam.map(m => [m.pokemonId, { toursSurTerrain: 0, degatsInfliges: 0 }]))
   );
-  const koEnemyLevelsRef = useRef<number[]>([]);
+  const koEnemyLevelsRef = useRef<number[]>(savedState?.koEnemyLevels ?? []);
   const [trainerKoAnim, setTrainerKoAnim] = useState(false);
   const prevEfHp = useRef<number | null>(null);
   const isMasterTrainer = trainerColor === '#a855f7';
@@ -794,15 +811,36 @@ export function BattleScreen({
   const [abandonConfirm, setAbandonConfirm] = useState(false);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFiredRef = useRef(false);
-  const turnNumberRef = useRef(0);
+  const turnNumberRef = useRef(savedState?.turnNumber ?? 0);
+  const battleStartTimeRef = useRef(savedState?.battleStartTime ?? Date.now());
   const [showFullLog, setShowFullLog] = useState(false);
   const logScrollRef = useRef<HTMLDivElement | null>(null);
   const [pvpWaitingEnemySwitch, setPvpWaitingEnemySwitch] = useState(false);
   const pvpControlsRef = useRef(pvpControls);
-  const pvpKoTakenRef = useRef(0);
-  const pvpDmgReceivedRef = useRef(0);
-  const [pvpEndStats, setPvpEndStats] = useState<{ dmgDealt: number; dmgReceived: number; koMade: number; koTaken: number; turns: number } | null>(null);
+  const pvpKoTakenRef = useRef(savedState?.pvpKoTaken ?? 0);
+  const pvpDmgReceivedRef = useRef(savedState?.pvpDmgReceived ?? 0);
+  const [pvpEndStats, setPvpEndStats] = useState<{ dmgDealt: number; dmgReceived: number; koMade: number; koTaken: number; turns: number; durationMs: number } | null>(null);
   useEffect(() => { pvpControlsRef.current = pvpControls; }, [pvpControls]);
+
+  // PvP: persist battle state to localStorage between turns so a page refresh can resume
+  useEffect(() => {
+    const sessionId = pvpControlsRef.current?.sessionId;
+    if (phase !== 'player_turn' || !sessionId) return;
+    const state: PvpPersistedState = {
+      playerFighters: playerFightersRef.current,
+      enemyFighters: enemyFightersRef.current,
+      playerIdx: playerIdxRef.current,
+      enemyIdx: enemyIdxRef.current,
+      turnNumber: turnNumberRef.current,
+      pvpKoTaken: pvpKoTakenRef.current,
+      pvpDmgReceived: pvpDmgReceivedRef.current,
+      koEnemyLevels: koEnemyLevelsRef.current,
+      playerStats: playerStatsRef.current,
+      battleStartTime: battleStartTimeRef.current,
+    };
+    try { localStorage.setItem(`pvp_state_${sessionId}`, JSON.stringify(state)); } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   useEffect(() => {
     if (showFullLog && logScrollRef.current) logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight;
@@ -882,6 +920,13 @@ export function BattleScreen({
   }, [phase]);
 
   useEffect(() => () => { if (!keepMusicOnUnmount) stopMusic(0.5); }, [keepMusicOnUnmount]);
+
+  // When restoring from saved state, skip intro but still start music
+  useEffect(() => {
+    if (!savedState || keepMusic) return;
+    if (isLeague) playLeagueBattleMusic(); else playBattleMusic();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   // PvP: when a pre-computed turn payload arrives, trigger execution
@@ -1060,12 +1105,15 @@ export function BattleScreen({
       });
       if (pvpControlsRef.current) {
         // PvP: show stats + close button, don't auto-call onBattleEnd
+        const sessionId = pvpControlsRef.current.sessionId;
+        if (sessionId) { try { localStorage.removeItem(`pvp_state_${sessionId}`); } catch {} }
         setPvpEndStats({
           dmgDealt: Object.values(playerStatsRef.current).reduce((s, v) => s + v.degatsInfliges, 0),
           dmgReceived: pvpDmgReceivedRef.current,
           koMade: koEnemyLevelsRef.current.length,
           koTaken: pvpKoTakenRef.current,
           turns: turnNumberRef.current,
+          durationMs: Date.now() - battleStartTimeRef.current,
         });
       } else {
         setTimeout(() => onBattleEnd(wonSnap, snap, finalTeam, enemyDmgRef.current), 1800);
@@ -2445,13 +2493,18 @@ export function BattleScreen({
                 <div className="mt-2 rounded-2xl px-5 py-4 flex flex-col gap-2 w-72"
                   style={{ background: 'rgba(15,23,42,0.92)', border: '2px solid #334155', animation: 'victory-title 0.5s 0.6s ease-out both' }}>
                   <div className="text-center mb-1" style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: '#94a3b8', letterSpacing: '0.05em' }}>STATS DU COMBAT</div>
-                  {[
-                    { label: '⚔️ DMG infligés', value: pvpEndStats.dmgDealt },
-                    { label: '🛡️ DMG reçus', value: pvpEndStats.dmgReceived },
-                    { label: '💀 K.O. infligés', value: pvpEndStats.koMade },
-                    { label: '😵 K.O. subis', value: pvpEndStats.koTaken },
-                    { label: '🔄 Tours joués', value: pvpEndStats.turns },
-                  ].map(row => (
+                  {(() => {
+                    const s = Math.floor(pvpEndStats.durationMs / 1000);
+                    const durStr = `${Math.floor(s / 60)}m ${s % 60}s`;
+                    return [
+                      { label: '⚔️ DMG infligés', value: pvpEndStats.dmgDealt },
+                      { label: '🛡️ DMG reçus', value: pvpEndStats.dmgReceived },
+                      { label: '💀 K.O. infligés', value: pvpEndStats.koMade },
+                      { label: '😵 K.O. subis', value: pvpEndStats.koTaken },
+                      { label: '🔄 Tours joués', value: pvpEndStats.turns },
+                      { label: '⏱️ Durée', value: durStr },
+                    ];
+                  })().map(row => (
                     <div key={row.label} className="flex justify-between items-center">
                       <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.38rem', color: '#cbd5e1' }}>{row.label}</span>
                       <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: '#fbbf24' }}>{row.value}</span>
