@@ -768,6 +768,10 @@ export function BattleScreen({
   const won = useRef(false);
   const battleDone = useRef(false);
   const enemyDmgRef = useRef<Record<number, number>>({});
+  const playerStatsRef = useRef<Record<number, { toursSurTerrain: number; degatsInfliges: number }>>(
+    Object.fromEntries(playerTeam.map(m => [m.pokemonId, { toursSurTerrain: 0, degatsInfliges: 0 }]))
+  );
+  const koEnemyLevelsRef = useRef<number[]>([]);
   const [trainerKoAnim, setTrainerKoAnim] = useState(false);
   const prevEfHp = useRef<number | null>(null);
   const isMasterTrainer = trainerColor === '#a855f7';
@@ -916,12 +920,31 @@ export function BattleScreen({
       boostActiveRef.current = false;
       setBoostActive(false);
       if (!wonSnap) { stopMusic(0.3); if (!suppressVictorySound) playSfxDefeat(); }
-      const snap = { ...xpGainsRef.current };
-      const activeEarned = playerFightersRef.current.map(f => snap[f.pokemonId] ?? 0).filter(xp => xp > 0);
-      const avgXp = activeEarned.length > 0
-        ? Math.floor(activeEarned.reduce((a, b) => a + b, 0) / activeEarned.length) : 0;
-      if (avgXp > 0) {
-        playerTeam.forEach(m => { if (!snap[m.pokemonId]) snap[m.pokemonId] = Math.max(1, avgXp); });
+
+      // ── Nouveau système XP ────────────────────────────────────────────────
+      const xpBase = koEnemyLevelsRef.current.reduce((sum, lvl) => sum + lvl * 20, 0);
+      const snap: Record<number, number> = {};
+
+      if (xpBase > 0) {
+        const stats = playerStatsRef.current;
+        const totalDmg = Object.values(stats).reduce((s, st) => s + st.degatsInfliges, 0);
+        const totalTours = Object.values(stats).reduce((s, st) => s + st.toursSurTerrain, 0);
+        const defeatMult = wonSnap ? 1 : 0.4;
+
+        playerTeam.forEach(m => {
+          const id = m.pokemonId;
+          const st = stats[id] ?? { toursSurTerrain: 0, degatsInfliges: 0 };
+          let xpCalc: number;
+          if (st.toursSurTerrain === 0 && st.degatsInfliges === 0) {
+            // Participation passive (banc)
+            xpCalc = xpBase * 0.15;
+          } else {
+            const ratioDmg = totalDmg > 0 ? st.degatsInfliges / totalDmg : 0;
+            const ratioTours = totalTours > 0 ? st.toursSurTerrain / totalTours : 0;
+            xpCalc = xpBase * (ratioDmg * 0.5 + ratioTours * 0.5);
+          }
+          snap[id] = Math.max(1, Math.floor(xpCalc * defeatMult));
+        });
       }
       const finalTeam: TeamMember[] = playerFightersRef.current.map(f => {
         const { transformOriginalId, transformMoveOverride, ...rest } = f as FighterState;
@@ -1099,6 +1122,12 @@ export function BattleScreen({
       ? ef[eIdx].chargingMove!.moveIndex
       : pvpPayload ? pvpPayload.enemyMoveIndex : eMoveIndexAI;
     turnNumberRef.current++;
+    const activePId = pf[pIdx].transformOriginalId ?? pf[pIdx].pokemonId;
+    if (playerStatsRef.current[activePId]) {
+      playerStatsRef.current[activePId].toursSurTerrain++;
+    } else {
+      playerStatsRef.current[activePId] = { toursSurTerrain: 1, degatsInfliges: 0 };
+    }
 
     // Turn order
     const goesFirst = calcTurnOrder(
@@ -1375,6 +1404,14 @@ export function BattleScreen({
           if (h < hitCount - 1) await sleep(300);
         }
 
+        if (isPlayer && totalApplied > 0) {
+          const dmgTrackId = pf[pIdx].transformOriginalId ?? pf[pIdx].pokemonId;
+          if (playerStatsRef.current[dmgTrackId]) {
+            playerStatsRef.current[dmgTrackId].degatsInfliges += totalApplied;
+          } else {
+            playerStatsRef.current[dmgTrackId] = { toursSurTerrain: 0, degatsInfliges: totalApplied };
+          }
+        }
         if (result.isCrit) addLog('Coup critique !', '#fbbf24');
         if (hitCount > 1) addLog(`${hitCount} fois de suite !`, '#fbbf24');
         if (result.effectiveness >= 2) addLog('C\'est super efficace !', isPlayer ? '#4ade80' : '#f87171');
@@ -1456,15 +1493,7 @@ export function BattleScreen({
     const handleEnemyKo = () => {
       addLog(`${eName} est mis K.O. !`, '#f87171');
       playDeath();
-      // Use original IDs — fighter may have been transformed
-      const realEId = eFighter.transformOriginalId ?? eFighter.pokemonId;
-      const realPId = pf[pIdx].transformOriginalId ?? pFighter.pokemonId;
-      const xpEarned = calcXpGain(realEId, eFighter.level, !!_bossName);
-      setXpGains(prev => {
-        const next = { ...prev, [realPId]: (prev[realPId] ?? 0) + xpEarned };
-        xpGainsRef.current = next;
-        return next;
-      });
+      koEnemyLevelsRef.current.push(eFighter.level);
       flush();
       const nextE = ef.findIndex((f, i) => i > eIdx && f.currentHp > 0);
       if (nextE < 0 && ef.every(f => f.currentHp <= 0)) {

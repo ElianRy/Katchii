@@ -169,33 +169,15 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   };
 
   const handleBattleEnd = (won: boolean, xpGains: Record<number, number>) => {
-    // En cas de défaite, le joueur reçoit quand même 40% de l'XP
-    const xpMult = won ? 1 : 0.4;
+    setBattleResult({ won, xpGains });
 
-    // Pour les niveaux 1-15 en cas de victoire : XP fixe basée sur le niveau
-    // MVP (le plus actif) = 75% de l'XP nécessaire, les autres = 50%
-    let finalXpGains = { ...xpGains };
-    if (won) {
-      const mvpId = Object.entries(xpGains).sort((a, b) => b[1] - a[1])[0]?.[0];
-      selected.forEach(member => {
-        const id = member.pokemonId;
-        const current = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
-        if (current.level <= 15 && current.level < 100) {
-          const pct = String(id) === mvpId ? 0.75 : 0.50;
-          finalXpGains[id] = Math.floor(xpToNextLevel(current.level) * pct);
-        }
-      });
-    }
-
-    setBattleResult({ won, xpGains: finalXpGains });
-
-    // Compute level-ups
+    // Compute level-ups — xpGains vient déjà calculé par BattleScreen (victoire/défaite inclus)
     const ups: LevelUpNotif[] = [];
-    Object.entries(finalXpGains).forEach(([idStr, xp]) => {
+    Object.entries(xpGains).forEach(([idStr, xp]) => {
       const id = Number(idStr);
       const current = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
       let level = current.level;
-      const effectiveXp = Math.floor(xp * (chosenDifficulty?.xpMultiplier ?? 1) * xpMult);
+      const effectiveXp = Math.floor(xp * (chosenDifficulty?.xpMultiplier ?? 1));
       let xpAcc = current.xp + effectiveXp;
       const newLevel = (() => {
         let l = level;
