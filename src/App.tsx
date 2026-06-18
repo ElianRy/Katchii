@@ -275,11 +275,14 @@ export function App() {
   useEffect(() => {
     if (!userId) return;
     // Check for a challenge that was sent before this session started
+    // Only show pending challenges created in the last 2 minutes (ignore stale/disconnected)
+    const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
     supabase
       .from('pvp_challenges')
       .select()
       .eq('challenged_id', userId)
       .eq('status', 'pending')
+      .gte('created_at', twoMinAgo)
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -339,23 +342,32 @@ export function App() {
     pvpCleanupRef.current = doCancel;
   }, [userId, username, cleanupPvp]);
 
-  // Host submitted team — wait for guest + session to go active
+  // Both players submitted team — wait for session to have both teams ready
   const handlePvpTeamConfirm = useCallback(async (team: TeamMember[]) => {
     if (!pvpSession) return;
     setPvpMyTeam(team);
     await submitTeam(pvpSession.id, pvpIsHost, team);
-    // Subscribe to session updates to detect when both teams ready
+
+    const startBattle = (updated: { host_ready: boolean; guest_ready: boolean; host_team: unknown; guest_team: unknown }) => {
+      const oppRaw = pvpIsHost ? updated.guest_team : updated.host_team;
+      if (oppRaw) setPvpOpponentTeam(oppRaw as TeamMember[]);
+      setPvpPhase('battle');
+    };
+
+    // Subscribe first, THEN check current state to avoid missing the event
     const sessChan = subscribeToSession(pvpSession.id, updated => {
       if (updated.host_ready && updated.guest_ready) {
         supabase.removeChannel(sessChan);
-        // Resolve opponent's team from session
-        const oppRaw = pvpIsHost ? updated.guest_team : updated.host_team;
-        if (oppRaw) {
-          setPvpOpponentTeam(oppRaw as TeamMember[]);
-        }
-        setPvpPhase('battle');
+        startBattle(updated);
       }
     });
+
+    // Race condition fix: check if opponent already submitted before we subscribed
+    const { data } = await supabase.from('pvp_sessions').select().eq('id', pvpSession.id).maybeSingle();
+    if (data?.host_ready && data?.guest_ready) {
+      supabase.removeChannel(sessChan);
+      startBattle(data as { host_ready: boolean; guest_ready: boolean; host_team: unknown; guest_team: unknown });
+    }
   }, [pvpSession, pvpIsHost]);
 
   // Listen for ban broadcast — log out immediately if current user is banned

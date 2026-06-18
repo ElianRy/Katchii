@@ -146,7 +146,23 @@ function MoveEditorStep({ teamIds, initialMoves, opponentName, isRental, onBack,
   const current = moveMap[activePokemon] ?? [];
   const availablePool = useMemo(() => getAvailableMoves(activePokemon, 100), [activePokemon]);
 
+  const autoSavePending = (currentId: number, pending: string[], originalMoves: string[]) => {
+    if (pending.length === 0) return;
+    let toSave = [...pending];
+    // Fill missing slots from original moves
+    if (toSave.length < 4) {
+      for (const s of originalMoves) {
+        if (!toSave.includes(s) && toSave.length < 4) toSave.push(s);
+      }
+    }
+    setMoveMap(prev => ({ ...prev, [currentId]: toSave }));
+  };
+
   const selectPokemon = (id: number) => {
+    // Auto-save current pokemon if in edit mode
+    if (editMode) {
+      autoSavePending(activePokemon, pendingMoves, initialMoves[activePokemon] ?? []);
+    }
     setActivePokemon(id);
     setPendingMoves([...(moveMap[id] ?? [])]);
     setEditMode(false);
@@ -228,16 +244,16 @@ function MoveEditorStep({ teamIds, initialMoves, opponentName, isRental, onBack,
           </div>
         </div>
 
-        {/* Stats mini */}
-        <div className="flex flex-col gap-1.5">
+        {/* Stats mini — compact grid */}
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1">
           {stats.map(({ label, val }) => (
-            <div key={label} className="flex items-center gap-2">
-              <span className="text-slate-500 w-10 shrink-0" style={{ fontSize: '0.58rem' }}>{label}</span>
-              <div className="flex-1 bg-slate-800 rounded-full overflow-hidden" style={{ height: 5 }}>
+            <div key={label} className="flex items-center gap-1.5">
+              <span className="text-slate-500 w-8 shrink-0" style={{ fontSize: '0.52rem' }}>{label}</span>
+              <div className="flex-1 bg-slate-800 rounded-full overflow-hidden" style={{ height: 4 }}>
                 <div className="h-full rounded-full"
                   style={{ width: `${Math.min(100, (val / maxStat) * 100)}%`, background: `linear-gradient(90deg, ${rarityColor}88, ${rarityColor})` }} />
               </div>
-              <span className="text-white font-bold w-8 text-right" style={{ fontSize: '0.6rem' }}>{val}</span>
+              <span className="text-white font-bold w-7 text-right" style={{ fontSize: '0.55rem' }}>{val}</span>
             </div>
           ))}
         </div>
@@ -280,7 +296,7 @@ function MoveEditorStep({ teamIds, initialMoves, opponentName, isRental, onBack,
               <div className="text-slate-500 mb-1" style={{ fontSize: '0.6rem' }}>
                 {pendingMoves.length}/4 sélectionnées — touche pour ajouter/retirer
               </div>
-              <div className="flex flex-col gap-1 overflow-y-auto" style={{ maxHeight: '36dvh' }}>
+              <div className="flex flex-col gap-1">
                 {availablePool.map(slug => {
                   const m = MOVES[slug];
                   if (!m) return null;
@@ -315,7 +331,20 @@ function MoveEditorStep({ teamIds, initialMoves, opponentName, isRental, onBack,
       {/* Bouton confirmer */}
       <div className="shrink-0 px-4 pb-4 pt-2 border-t border-slate-800">
         <button
-          onClick={() => onConfirm(moveMap)}
+          onClick={() => {
+            // Auto-save current pokemon if still in edit mode
+            let finalMap = { ...moveMap };
+            if (editMode) {
+              let toSave = [...pendingMoves];
+              if (toSave.length < 4) {
+                for (const s of (initialMoves[activePokemon] ?? [])) {
+                  if (!toSave.includes(s) && toSave.length < 4) toSave.push(s);
+                }
+              }
+              finalMap[activePokemon] = toSave;
+            }
+            onConfirm(finalMap);
+          }}
           className="w-full py-3.5 rounded-xl font-black text-white text-base active:scale-[0.98] transition-transform"
           style={{ background: 'linear-gradient(135deg, #6366f1, #a855f7)', boxShadow: '0 0 24px #a855f755' }}>
           ⚔️ Lancer le combat

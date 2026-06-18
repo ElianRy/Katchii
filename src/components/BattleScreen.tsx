@@ -70,6 +70,8 @@ interface Props {
     onTurnComputed?: (payload: Required<PvpTurnOverride>) => void;
     onAbandon?: () => void;
     forceEnd?: boolean | null;
+    onSwitch?: (newIdx: number) => void;
+    opponentSwitchIdx?: number | null;
   };
 }
 
@@ -887,6 +889,17 @@ export function BattleScreen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pvpControls?.pendingPayload]);
 
+  // PvP: apply opponent switch
+  useEffect(() => {
+    const idx = pvpControls?.opponentSwitchIdx;
+    if (idx === null || idx === undefined) return;
+    enemyIdxRef.current = idx;
+    setEnemyIdx(idx);
+    const name = POKEMON_BY_ID[enemyFighters[idx]?.pokemonId]?.name ?? '???';
+    addLog(`L'adversaire envoie ${name} !`, '#f87171');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pvpControls?.opponentSwitchIdx]);
+
   // PvP: force victory or defeat when opponent abandons
   useEffect(() => {
     const fe = pvpControls?.forceEnd;
@@ -1030,19 +1043,24 @@ export function BattleScreen({
 
   const [switchMenuOpen, setSwitchMenuOpen] = useState(false);
 
-  const handleSwitch = useCallback((idx: number) => {
+  const handleSwitch = useCallback((idx: number, fromPvp = false) => {
     playerIdxRef.current = idx;
     setPlayerIdx(idx);
     const name = POKEMON_BY_ID[playerFighters[idx]?.pokemonId]?.name ?? '???';
     addLog(`Allez ${name} !`, '#4ade80');
     setShakePokemon('player');
     if (playerFighters[idx]) playPokemonCry(playerFighters[idx].pokemonId);
-    setTimeout(() => {
-      setShakePokemon(null);
-      phaseRef.current = 'player_turn';
-      setPhase('player_turn');
-    }, 700);
-  }, [playerFighters, addLog]);
+    if (!fromPvp) {
+      setTimeout(() => {
+        setShakePokemon(null);
+        phaseRef.current = 'player_turn';
+        setPhase('player_turn');
+      }, 700);
+    } else {
+      setTimeout(() => setShakePokemon(null), 700);
+    }
+    pvpControls?.onSwitch?.(idx);
+  }, [playerFighters, addLog, pvpControls]);
 
   // Auto combat: smart bench selection on forced switch
   useEffect(() => {
@@ -2640,6 +2658,16 @@ export function BattleScreen({
               </button>
             ) : null}
 
+            {pvpControls && !pvpControls.isWaiting && phase === 'player_turn' && playerFighters.filter((f, i) => i !== playerIdx && f.currentHp > 0).length > 0 && (
+              <div className="mt-1.5 flex gap-1.5">
+                <button onClick={() => setSwitchMenuOpen(true)}
+                  className="flex-1 flex items-center justify-center active:scale-95 transition-transform"
+                  style={{ background: '#3060c8', border: '3px solid #1a3880', borderRadius: 6, boxShadow: '2px 2px 0 #111, inset 2px 2px 0 #6090e8, inset -2px -2px 0 #182860', padding: '7px 4px', fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: 'white', WebkitTapHighlightColor: 'transparent' }}>
+                  CHANGER
+                </button>
+              </div>
+            )}
+
             {pvpControls?.isWaiting && (
               <div className="mt-1.5 rounded-xl py-3 px-4 flex items-center justify-center gap-2"
                 style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', border: '2px solid #6366f1', boxShadow: '0 0 16px #6366f144' }}>
@@ -2720,7 +2748,7 @@ export function BattleScreen({
         {switchMenuOpen && (
           <div className="absolute inset-0 z-50 bg-black/85 flex flex-col items-center justify-center gap-3 px-5">
             <div className="text-white font-black text-base text-center">Changer de Pokémon</div>
-            <div className="text-slate-400 text-xs text-center mb-1">L'ennemi attaquera pendant le changement</div>
+            {!pvpControls && <div className="text-slate-400 text-xs text-center mb-1">L'ennemi attaquera pendant le changement</div>}
             <div className="flex flex-col gap-2 w-full max-w-xs">
               {playerFighters.map((f, i) => {
                 if (i === playerIdx || f.currentHp <= 0) return null;
@@ -2728,7 +2756,11 @@ export function BattleScreen({
                 const hpPct = f.currentHp / f.maxHp;
                 const hpCol = hpPct > 0.5 ? '#22c55e' : hpPct > 0.25 ? '#f59e0b' : '#ef4444';
                 return (
-                  <button key={i} onClick={() => handleVoluntarySwitch(i)}
+                  <button key={i} onClick={() => {
+                    setSwitchMenuOpen(false);
+                    if (pvpControls) handleSwitch(i, true);
+                    else handleVoluntarySwitch(i);
+                  }}
                     className="flex items-center gap-3 bg-slate-800/90 border-2 border-slate-600 hover:border-yellow-400 rounded-xl px-3 py-2 transition-all text-left">
                     <ShinySprite pokemonId={f.pokemonId} isShiny={f.isShiny ?? false} width={48} height={48} compact
                       style={{ filter: spriteFilter(f.pokemonId, f.isShiny ?? false, 6), flexShrink: 0 }} />

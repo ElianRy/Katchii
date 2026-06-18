@@ -34,6 +34,7 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
   const [isWaiting, setIsWaiting] = useState(false);
   const [pendingPayload, setPendingPayload] = useState<PvpPayload | null>(null);
   const [forceEnd, setForceEnd] = useState<boolean | null>(null);
+  const [opponentSwitchIdx, setOpponentSwitchIdx] = useState<number | null>(null);
   const myMoveRef = useRef<number | null>(null);
   const opponentMoveRef = useRef<number | null>(null);
   const channelRef = useRef<ReturnType<typeof getPvpBattleChannel> | null>(null);
@@ -63,6 +64,13 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
       const { moveIndex } = payload as { moveIndex: number };
       opponentMoveRef.current = moveIndex;
       tryStartTurn();
+    });
+
+    channel.on('broadcast', { event: 'pvp_switch' }, ({ payload }) => {
+      const { switchIdx } = payload as { switchIdx: number };
+      // Reset to null first so useEffect re-fires if same index selected again
+      setOpponentSwitchIdx(null);
+      setTimeout(() => setOpponentSwitchIdx(switchIdx), 0);
     });
 
     channel.on('broadcast', { event: 'turn_payload' }, ({ payload }) => {
@@ -152,6 +160,10 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
         onTurnComputed: isHost ? handleTurnComputed : undefined,
         onAbandon: handleAbandon,
         forceEnd,
+        onSwitch: (newIdx: number) => {
+          channelRef.current?.send({ type: 'broadcast', event: 'pvp_switch', payload: { switchIdx: newIdx } });
+        },
+        opponentSwitchIdx,
       }}
     />
   );
