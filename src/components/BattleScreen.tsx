@@ -1984,7 +1984,7 @@ export function BattleScreen({
                 </div>
               )}
               <div className="flex flex-1 justify-between items-center min-w-0">
-                <span className="text-white font-black text-sm truncate">{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-white font-black text-xs truncate">{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
                 <div className="flex items-center gap-1 shrink-0 ml-1">
                   <span className="text-slate-400 text-xs">Nv.{activeEF?.level}</span>
                   <button onClick={() => setStatsPanelEnemy(v => !v)}
@@ -2089,7 +2089,7 @@ export function BattleScreen({
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
             <div className="flex justify-between items-center mb-1">
               <div className="flex items-center gap-1 min-w-0">
-                <span className="text-white font-black text-sm truncate">{POKEMON_BY_ID[activePF?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-white font-black text-xs truncate">{POKEMON_BY_ID[activePF?.pokemonId ?? 0]?.name ?? '???'}</span>
                 {boostActive && playerIdx === 0 && (
                   <span className="font-black shrink-0" style={{ fontSize: '0.48rem', color: '#f87171' }}>⚔️+25%</span>
                 )}
