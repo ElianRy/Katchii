@@ -11,7 +11,7 @@ function spriteFilter(pokemonId: number, _isShiny: boolean, _size = 4): string {
 }
 import { POKEMON_TYPE, TYPE_COLORS, PokemonType } from '../data/pokemonTypes';
 import {
-  calcDamage, calcStruggle, calcXpGain, chooseEnemyMoveIndex,
+  calcDamage, calcStruggle, chooseEnemyMoveIndex,
   emptyStages, getMoveListRaw, emptyStatus, checkCanAct, applyMajorStatus,
   calcEndOfTurnDamage, statusLabel, playerGoesFirst as calcTurnOrder,
   registerMoves,
@@ -762,8 +762,6 @@ export function BattleScreen({
   const phaseRef = useRef<'intro' | 'player_turn' | 'resolving' | 'switch' | 'end'>('intro');
   const [attackEvt, setAttackEvt] = useState<AttackEvent | null>(null);
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
-  const [xpGains, setXpGains] = useState<Record<number, number>>({});
-  const xpGainsRef = useRef<Record<number, number>>({});
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
   const won = useRef(false);
   const battleDone = useRef(false);
@@ -787,7 +785,6 @@ export function BattleScreen({
   useEffect(() => { playerIdxRef.current = playerIdx; }, [playerIdx]);
   useEffect(() => { enemyIdxRef.current = enemyIdx; }, [enemyIdx]);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
-  useEffect(() => { xpGainsRef.current = xpGains; }, [xpGains]);
 
   // Trainer KO reaction
   useEffect(() => {
