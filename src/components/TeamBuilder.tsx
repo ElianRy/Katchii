@@ -98,8 +98,9 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
   const [autoCombat, setAutoCombat] = useState(false);
-  type TrainingPreset = 'facile' | 'moyen' | 'difficile' | 'tres_difficile' | 'impossible';
+  type TrainingPreset = 'debutant' | 'facile' | 'moyen' | 'difficile' | 'tres_difficile' | 'impossible';
   const TRAINING_PRESETS: { key: TrainingPreset; label: string; emoji: string; level: number; range: string; color: string }[] = [
+    { key: 'debutant',       label: 'Débutant',       emoji: '🌱', level: 3,   range: 'Niv. 1–5',    color: '#86efac' },
     { key: 'facile',         label: 'Facile',         emoji: '🟢', level: 8,   range: 'Niv. 6–11',   color: '#22c55e' },
     { key: 'moyen',          label: 'Moyen',          emoji: '🔵', level: 25,  range: 'Niv. 20–30',  color: '#3b82f6' },
     { key: 'difficile',      label: 'Difficile',      emoji: '🟠', level: 45,  range: 'Niv. 40–50',  color: '#f97316' },
@@ -107,7 +108,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     { key: 'impossible',     label: 'Impossible',     emoji: '💀', level: 100, range: 'Niv. 100',    color: '#7c3aed' },
   ];
   const [trainingPreset, setTrainingPreset_] = useState<TrainingPreset>(() => {
-    try { return (localStorage.getItem('katchii_training_preset') as TrainingPreset) ?? 'difficile'; } catch { return 'difficile'; }
+    try { return (localStorage.getItem('katchii_training_preset') as TrainingPreset) ?? 'debutant'; } catch { return 'debutant'; }
   });
   const setTrainingPreset = (p: TrainingPreset) => {
     setTrainingPreset_(p);
@@ -168,6 +169,8 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   };
 
   const handleBattleEnd = (won: boolean, xpGains: Record<number, number>) => {
+    // En cas de défaite, le joueur reçoit quand même 40% de l'XP
+    const xpMult = won ? 1 : 0.4;
     setBattleResult({ won, xpGains });
 
     // Compute level-ups
@@ -176,7 +179,8 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
       const id = Number(idStr);
       const current = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
       let level = current.level;
-      let xpAcc = current.xp + Math.floor(xp * (chosenDifficulty?.xpMultiplier ?? 1));
+      const effectiveXp = Math.floor(xp * (chosenDifficulty?.xpMultiplier ?? 1) * xpMult);
+      let xpAcc = current.xp + effectiveXp;
       const newLevel = (() => {
         let l = level;
         while (l < 100 && xpAcc >= xpToNextLevel(l)) { xpAcc -= xpToNextLevel(l); l++; }
@@ -187,7 +191,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         const newMoves = getAvailableMoves(id, newLevel).filter(m => !oldMoves.has(m));
         ups.push({ pokemonId: id, newLevel, newMoves });
       }
-      if (onAddXp) onAddXp(id, Math.floor(xp * (chosenDifficulty?.xpMultiplier ?? 1)));
+      if (onAddXp) onAddXp(id, effectiveXp);
     });
     setLevelUps(ups);
     if (ups.length > 0) playLevelUp();
@@ -463,6 +467,9 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
               <h3 className={`font-black text-2xl ${battleResult.won ? 'text-green-400' : 'text-red-400'}`}>
                 {battleResult.won ? 'Victoire !' : 'Défaite…'}
               </h3>
+              {!battleResult.won && (
+                <div className="text-slate-400 text-xs mt-1">XP réduite à 40% pour la défaite</div>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               {Object.entries(battleResult.xpGains).map(([idStr, rawXp]) => {

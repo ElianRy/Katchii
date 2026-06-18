@@ -1819,14 +1819,15 @@ export function BattleScreen({
             ? { position: 'absolute', top: 'calc(5% + env(safe-area-inset-top,0px) + 60px)', right: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 }
             : { position: 'absolute', bottom: 'calc(14% + 60px)', left: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 };
           const color = statusAnim.positive ? '#4ade80' : '#f87171';
-          const icons = statusAnim.positive ? ['⬆️','✨','💫'] : ['⬇️','💢','‼️'];
+          const icons = statusAnim.positive ? ['⬆️','✨','💫'] : ['⬇️','💢','😵'];
+          const animPrefix = statusAnim.positive ? 'status-burst' : 'status-burst-down';
           return (
             <div key={statusAnim.uid} style={style}>
               {icons.map((icon, i) => (
                 <span key={i} style={{
                   position: 'absolute', fontSize: '1.6rem',
                   left: `${(i - 1) * 28}px`, top: 0,
-                  animation: `status-burst-${i % 2 === 0 ? 'a' : 'b'} 0.9s ease-out forwards`,
+                  animation: `${animPrefix}-${i % 2 === 0 ? 'a' : 'b'} 0.9s ease-out forwards`,
                   filter: `drop-shadow(0 0 6px ${color})`,
                 }}>{icon}</span>
               ))}
