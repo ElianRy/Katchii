@@ -786,6 +786,7 @@ export function BattleScreen({
   const [shinyIntro, setShinyIntro] = useState(false);
   const [shakePokemon, setShakePokemon] = useState<'player' | 'enemy' | null>(null);
   const [tooltipMoveIdx, setTooltipMoveIdx] = useState<number | null>(null);
+  const [abandonConfirm, setAbandonConfirm] = useState(false);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFiredRef = useRef(false);
   const turnNumberRef = useRef(0);
@@ -2634,7 +2635,7 @@ export function BattleScreen({
                   </span>
                 </div>
                 {pvpControls?.onAbandon && (
-                  <button onClick={pvpControls.onAbandon}
+                  <button onClick={() => setAbandonConfirm(true)}
                     className="rounded-lg px-3 py-1.5 font-black shrink-0 active:scale-95 transition-transform"
                     style={{ background: 'rgba(239,68,68,0.25)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.5)', fontSize: '0.7rem', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
                     🏳️ Abandonner
@@ -2644,11 +2645,33 @@ export function BattleScreen({
             )}
             {pvpControls && !pvpControls.isWaiting && (phase === 'player_turn') && pvpControls.onAbandon && (
               <div className="mt-1.5 flex justify-end">
-                <button onClick={pvpControls.onAbandon}
+                <button onClick={() => setAbandonConfirm(true)}
                   className="rounded-lg px-3 py-1.5 font-black active:scale-95 transition-transform"
                   style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.35)', fontSize: '0.7rem', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
                   🏳️ Abandonner
                 </button>
+              </div>
+            )}
+            {abandonConfirm && pvpControls?.onAbandon && (
+              <div className="fixed inset-0 z-[800] flex items-center justify-center bg-black/70 px-5">
+                <div className="w-full max-w-xs rounded-2xl p-6 text-center"
+                  style={{ background: '#0f172a', border: '2px solid #ef4444', boxShadow: '0 0 32px #ef444444', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
+                  <div className="text-4xl mb-3">🏳️</div>
+                  <div className="text-white font-black text-base mb-1">Abandonner le combat ?</div>
+                  <div className="text-slate-400 text-sm mb-5">Tu seras déclaré(e) perdant(e). Cette action est irréversible.</div>
+                  <div className="flex gap-3">
+                    <button onClick={() => setAbandonConfirm(false)}
+                      className="flex-1 py-3 rounded-xl font-black text-sm active:scale-95 transition-transform"
+                      style={{ background: '#1e293b', color: '#94a3b8', border: '1px solid #334155' }}>
+                      Continuer
+                    </button>
+                    <button onClick={() => { setAbandonConfirm(false); pvpControls.onAbandon!(); }}
+                      className="flex-1 py-3 rounded-xl font-black text-sm active:scale-95 transition-transform"
+                      style={{ background: 'linear-gradient(135deg,#dc2626,#ef4444)', color: 'white', boxShadow: '0 0 16px #ef444466' }}>
+                      Abandonner
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
