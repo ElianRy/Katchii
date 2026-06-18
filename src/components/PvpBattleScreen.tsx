@@ -6,7 +6,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BattleScreen } from './BattleScreen';
-import { getPvpBattleChannel, finishSession } from '../lib/pvp';
+import { getPvpBattleChannel, finishSession, subscribeToSession } from '../lib/pvp';
 import type { PvpSession } from '../lib/pvp';
 import type { TeamMember } from './TeamBuilder';
 import { supabase } from '../lib/supabase';
@@ -18,6 +18,7 @@ interface Props {
   opponentTeam: TeamMember[];
   opponentName: string;
   userId: string;
+  pokemonCustomMoves?: Record<number, string[]>;
   onBattleEnd: (won: boolean) => void;
   onQuit: () => void;
 }
@@ -29,12 +30,29 @@ type PvpPayload = {
   eResult?: Record<string, unknown>;
 };
 
-export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponentName, userId, onBattleEnd }: Props) {
+export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponentName, userId, pokemonCustomMoves, onBattleEnd }: Props) {
   const [isWaiting, setIsWaiting] = useState(false);
   const [pendingPayload, setPendingPayload] = useState<PvpPayload | null>(null);
+  const [forceEnd, setForceEnd] = useState<boolean | null>(null);
   const myMoveRef = useRef<number | null>(null);
   const opponentMoveRef = useRef<number | null>(null);
   const channelRef = useRef<ReturnType<typeof getPvpBattleChannel> | null>(null);
+  const battleEndedRef = useRef(false);
+
+  // Subscribe to session updates so we know when the opponent abandons (session becomes 'finished')
+  useEffect(() => {
+    const chan = subscribeToSession(session.id, updated => {
+      if (updated.status !== 'finished') return;
+      if (battleEndedRef.current) return;
+      battleEndedRef.current = true;
+      const won = updated.winner_id === userId;
+      // Trigger victory/defeat screen via BattleScreen forceEnd
+      setForceEnd(won);
+      // Give BattleScreen time to show end screen, then cleanup
+      setTimeout(() => onBattleEnd(won), 3000);
+    });
+    return () => { supabase.removeChannel(chan); };
+  }, [session.id, userId, onBattleEnd]);
 
   useEffect(() => {
     const channel = getPvpBattleChannel(session.id);
@@ -101,21 +119,17 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
     setPendingPayload(null);
   }, []);
 
-  // After each turn resolves (payload consumed), reset pending
-  useEffect(() => {
-    if (!pendingPayload) return;
-    // Consumed by BattleScreen via useEffect on pendingPayload ref — reset after a tick
-    // so BattleScreen gets to see it change from null → value
-  }, [pendingPayload]);
-
   const handleBattleEnd = useCallback(async (won: boolean) => {
+    if (battleEndedRef.current) return;
+    battleEndedRef.current = true;
     const winnerId = won ? userId : (isHost ? session.guest_id : session.host_id);
     await finishSession(session.id, winnerId);
     onBattleEnd(won);
   }, [userId, isHost, session, onBattleEnd]);
 
   const handleAbandon = useCallback(async () => {
-    // L'adversaire gagne
+    if (battleEndedRef.current) return;
+    battleEndedRef.current = true;
     const winnerId = isHost ? session.guest_id : session.host_id;
     await finishSession(session.id, winnerId);
     onBattleEnd(false);
@@ -130,12 +144,14 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
       onQuit={handleAbandon}
       suppressVictorySound={false}
       keepMusic={false}
+      pokemonCustomMoves={pokemonCustomMoves}
       pvpControls={{
         isWaiting,
         onMoveSelect: handleMoveSelect,
         pendingPayload: pendingPayload as Parameters<typeof BattleScreen>[0]['pvpControls'] extends { pendingPayload: infer T } ? T : never,
         onTurnComputed: isHost ? handleTurnComputed : undefined,
         onAbandon: handleAbandon,
+        forceEnd,
       }}
     />
   );

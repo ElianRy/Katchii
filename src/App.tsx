@@ -676,6 +676,7 @@ export function App() {
             opponentTeam={pvpOpponentTeam}
             opponentName={pvpOpponentName}
             userId={userId}
+            pokemonCustomMoves={gameState.state.pokemonCustomMoves ?? {}}
             onBattleEnd={_won => { cleanupPvp(); }}
             onQuit={cleanupPvp}
           />

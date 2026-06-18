@@ -142,7 +142,7 @@ export const MOVES: Record<string, Move> = {
 
   // Flying
   'peck': {id:'peck', name:'Bec Vrille', type:'flying', category:'physical', power:35, accuracy:100, pp:35, priority:0, description:'Frappe avec le bec.'},
-  'wing-attack': {id:'wing-attack', name:'Aile d\'Acier', type:'flying', category:'physical', power:60, accuracy:100, pp:35, priority:0, description:'Frappe avec les ailes.'},
+  'wing-attack': {id:'wing-attack', name:'Coup d\'Aile', type:'flying', category:'physical', power:60, accuracy:100, pp:35, priority:0, description:'Frappe avec les ailes.'},
   'aerial-ace': {id:'aerial-ace', name:'Tranche-Air', type:'flying', category:'physical', power:60, accuracy:100, pp:20, priority:0, description:'Ne rate jamais.', alwaysHit:true},
   'fly': {id:'fly', name:'Vol', type:'flying', category:'physical', power:90, accuracy:95, pp:15, priority:0, description:'S\'envole au tour 1, attaque au tour 2.'},
 
@@ -178,7 +178,7 @@ export const MOVES: Record<string, Move> = {
 
   'splash': {id:'splash', name:'Éclaboussure', type:'normal', category:'status', power:0, accuracy:100, pp:40, priority:0, description:'N\'a aucun effet.'},
   'ancient-power': {id:'ancient-power', name:'Antique Pouvoir', type:'rock', category:'special', power:60, accuracy:100, pp:5, priority:0, description:'Peut augmenter toutes les stats.', allStatBoost:{stages:1, chance:10}},
-  'discharge': {id:'discharge', name:'Déflagration', type:'electric', category:'special', power:80, accuracy:100, pp:15, priority:0, description:'Peut paralyser.', effect:{type:'paralysis', chance:30}},
+  'discharge': {id:'discharge', name:'Décharge', type:'electric', category:'special', power:80, accuracy:100, pp:15, priority:0, description:'Peut paralyser.', effect:{type:'paralysis', chance:30}},
   'drill-peck': {id:'drill-peck', name:'Picpic', type:'flying', category:'physical', power:80, accuracy:100, pp:20, priority:0, description:'Attaque en tournoyant comme une perceuse.'},
 };
 

@@ -69,6 +69,7 @@ interface Props {
     pendingPayload: PvpTurnOverride | null;
     onTurnComputed?: (payload: Required<PvpTurnOverride>) => void;
     onAbandon?: () => void;
+    forceEnd?: boolean | null;
   };
 }
 
@@ -885,6 +886,20 @@ export function BattleScreen({
     executeTurnRef.current?.(payload.playerMoveIndex, payload);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pvpControls?.pendingPayload]);
+
+  // PvP: force victory or defeat when opponent abandons
+  useEffect(() => {
+    const fe = pvpControls?.forceEnd;
+    if (fe === null || fe === undefined) return;
+    if (battleDone.current) return;
+    battleDone.current = true;
+    won.current = fe;
+    stopMusic(0);
+    if (fe && !suppressVictorySound) { isLeague ? playLeagueVictory() : playVictory(); }
+    if (!fe) playSfxDefeat();
+    phaseRef.current = 'end'; setPhase('end');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pvpControls?.forceEnd]);
 
   // Auto-trigger turn 2 of a charging move (e.g. Lance-Soleil)
   useEffect(() => {
@@ -2626,49 +2641,40 @@ export function BattleScreen({
             ) : null}
 
             {pvpControls?.isWaiting && (
-              <div className="mt-1.5 rounded-xl py-3 px-4 flex items-center justify-between gap-3"
+              <div className="mt-1.5 rounded-xl py-3 px-4 flex items-center justify-center gap-2"
                 style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', border: '2px solid #6366f1', boxShadow: '0 0 16px #6366f144' }}>
-                <div className="flex items-center gap-2">
-                  <span className="text-xl" style={{ animation: 'pvp-blink 1s ease-in-out infinite' }}>⏳</span>
-                  <span className="text-indigo-200 font-black" style={{ fontFamily: 'system-ui,-apple-system,sans-serif', fontSize: '0.78rem' }}>
-                    En attente de l'adversaire…
-                  </span>
-                </div>
-                {pvpControls?.onAbandon && (
-                  <button onClick={() => setAbandonConfirm(true)}
-                    className="rounded-lg px-3 py-1.5 font-black shrink-0 active:scale-95 transition-transform"
-                    style={{ background: 'rgba(239,68,68,0.25)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.5)', fontSize: '0.7rem', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
-                    🏳️ Abandonner
-                  </button>
-                )}
+                <span className="text-base" style={{ animation: 'pvp-blink 1s ease-in-out infinite' }}>⏳</span>
+                <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.45rem', color: '#c7d2fe', lineHeight: 1.6 }}>
+                  EN ATTENTE…
+                </span>
               </div>
             )}
-            {pvpControls && !pvpControls.isWaiting && (phase === 'player_turn') && pvpControls.onAbandon && (
-              <div className="mt-1.5 flex justify-end">
+            {pvpControls?.onAbandon && (phase === 'player_turn' || pvpControls.isWaiting) && (
+              <div className="mt-1.5 flex justify-center">
                 <button onClick={() => setAbandonConfirm(true)}
-                  className="rounded-lg px-3 py-1.5 font-black active:scale-95 transition-transform"
-                  style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.35)', fontSize: '0.7rem', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
-                  🏳️ Abandonner
+                  className="rounded-xl px-5 py-2.5 active:scale-95 transition-transform"
+                  style={{ background: 'linear-gradient(135deg,#7f1d1d,#991b1b)', color: '#fca5a5', border: '2px solid #ef4444', boxShadow: '0 0 8px #ef444433', fontFamily: "'Press Start 2P', monospace", fontSize: '0.45rem' }}>
+                  ABANDONNER
                 </button>
               </div>
             )}
             {abandonConfirm && pvpControls?.onAbandon && (
               <div className="fixed inset-0 z-[800] flex items-center justify-center bg-black/70 px-5">
                 <div className="w-full max-w-xs rounded-2xl p-6 text-center"
-                  style={{ background: '#0f172a', border: '2px solid #ef4444', boxShadow: '0 0 32px #ef444444', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
-                  <div className="text-4xl mb-3">🏳️</div>
-                  <div className="text-white font-black text-base mb-1">Abandonner le combat ?</div>
-                  <div className="text-slate-400 text-sm mb-5">Tu seras déclaré(e) perdant(e). Cette action est irréversible.</div>
+                  style={{ background: '#0f172a', border: '2px solid #ef4444', boxShadow: '0 0 32px #ef444444' }}>
+                  <div className="text-4xl mb-4">🏳️</div>
+                  <div className="mb-2" style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.55rem', color: 'white', lineHeight: 1.8 }}>ABANDONNER ?</div>
+                  <div className="mb-5" style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.38rem', color: '#94a3b8', lineHeight: 1.8 }}>TU SERAS DÉCLARÉ PERDANT.</div>
                   <div className="flex gap-3">
                     <button onClick={() => setAbandonConfirm(false)}
-                      className="flex-1 py-3 rounded-xl font-black text-sm active:scale-95 transition-transform"
-                      style={{ background: '#1e293b', color: '#94a3b8', border: '1px solid #334155' }}>
-                      Continuer
+                      className="flex-1 py-3 rounded-xl active:scale-95 transition-transform"
+                      style={{ background: '#1e293b', color: '#94a3b8', border: '1px solid #334155', fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem' }}>
+                      RETOUR
                     </button>
                     <button onClick={() => { setAbandonConfirm(false); pvpControls.onAbandon!(); }}
-                      className="flex-1 py-3 rounded-xl font-black text-sm active:scale-95 transition-transform"
-                      style={{ background: 'linear-gradient(135deg,#dc2626,#ef4444)', color: 'white', boxShadow: '0 0 16px #ef444466' }}>
-                      Abandonner
+                      className="flex-1 py-3 rounded-xl active:scale-95 transition-transform"
+                      style={{ background: 'linear-gradient(135deg,#dc2626,#ef4444)', color: 'white', boxShadow: '0 0 16px #ef444466', fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem' }}>
+                      OUI
                     </button>
                   </div>
                 </div>
