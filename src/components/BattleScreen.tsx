@@ -925,7 +925,8 @@ export function BattleScreen({
       if (!wonSnap) { stopMusic(0.3); if (!suppressVictorySound) playSfxDefeat(); }
 
       // ── Nouveau système XP ────────────────────────────────────────────────
-      const xpBase = koEnemyLevelsRef.current.reduce((sum, lvl) => sum + lvl * 20, 0);
+      const xpTypeMult = isLeague ? 2.0 : _bossName ? 1.5 : 1.0;
+      const xpBase = koEnemyLevelsRef.current.reduce((sum, lvl) => sum + lvl * 300, 0) * xpTypeMult;
       const snap: Record<number, number> = {};
 
       if (xpBase > 0) {
@@ -1007,6 +1008,7 @@ export function BattleScreen({
       const eName = POKEMON_BY_ID[eFighter.pokemonId]?.name ?? '???';
       const eCanActResult = checkCanAct(eFighter.statusState);
       ef[eIdx] = { ...ef[eIdx], statusState: eCanActResult.nextStatus };
+      flush(); // badge SOM/PAR retiré instantanément si réveil/guérison
 
       if (!eCanActResult.canAct) {
         const cond = ef[eIdx].statusState.condition;
@@ -1108,6 +1110,7 @@ export function BattleScreen({
     const eCanActResult = checkCanAct(eFighter.statusState);
     pf[pIdx] = { ...pf[pIdx], statusState: pCanActResult.nextStatus };
     ef[eIdx] = { ...ef[eIdx], statusState: eCanActResult.nextStatus };
+    flush(); // retire immédiatement les badges PAR/SOM dès le réveil ou la guérison
 
     if (pCanActResult.wokeUp) addLog(`${pName} se réveille !`, '#86efac');
     if (eCanActResult.wokeUp) addLog(`${eName} se réveille !`, '#86efac');
