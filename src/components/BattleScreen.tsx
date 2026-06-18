@@ -1939,8 +1939,8 @@ export function BattleScreen({
                     }} />
                 )}
                 <div className="flex flex-1 justify-between items-center">
-                  <span className="text-white" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: '0.85rem' }}>{POKEMON_BY_ID[enemyFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
-                  <span className="text-slate-400 text-xs">Nv.{enemyFighters[0]?.level}</span>
+                  <span className="text-white" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: '0.85rem', fontWeight: 'bold' }}>{POKEMON_BY_ID[enemyFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
+                  <span className="text-slate-400 text-xs" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>Nv.{enemyFighters[0]?.level}</span>
                 </div>
               </div>
               <div className="w-full bg-slate-700 rounded-full h-2.5">
@@ -1983,8 +1983,8 @@ export function BattleScreen({
             )}
             <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
               <div className="flex justify-between items-center mb-1">
-                <span className="text-white font-black text-sm">{POKEMON_BY_ID[playerFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
-                <span className="text-slate-400 text-xs">Nv.{playerFighters[0]?.level}</span>
+                <span className="text-white" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: '0.85rem', fontWeight: 'bold' }}>{POKEMON_BY_ID[playerFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-slate-400 text-xs" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>Nv.{playerFighters[0]?.level}</span>
               </div>
               <div className="w-full bg-slate-700 rounded-full h-2.5">
                 <div className="h-2.5 rounded-full" style={{ width:'100%', background:'#22c55e' }} />
@@ -2152,9 +2152,9 @@ export function BattleScreen({
                 </div>
               )}
               <div className="flex flex-1 justify-between items-center min-w-0">
-                <span className="text-white truncate" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: '0.85rem' }}>{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-white truncate" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: '0.85rem', fontWeight: 'bold' }}>{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
                 <div className="flex items-center gap-1 shrink-0 ml-1">
-                  <span className="text-slate-400 text-xs">Nv.{activeEF?.level}</span>
+                  <span className="text-slate-400 text-xs" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>Nv.{activeEF?.level}</span>
                   <button onClick={() => setStatsPanelEnemy(v => !v)}
                     style={{ fontSize: '0.6rem', background: statsPanelEnemy ? 'rgba(250,204,21,0.25)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 4px', color: statsPanelEnemy ? '#facc15' : '#94a3b8', lineHeight: 1.4 }}>
                     📊
@@ -2170,7 +2170,7 @@ export function BattleScreen({
               <div className="flex gap-1">
                 {(() => { const sl = statusLabel(activeEF?.statusState?.condition ?? null); return sl ? <span className="font-black rounded px-1" style={{ background: sl.color + '33', color: sl.color, fontSize: '0.45rem', border: `1px solid ${sl.color}` }}>{sl.text}</span> : null; })()}
               </div>
-              <span className="text-slate-400 text-xs">{activeEF?.currentHp}/{activeEF?.maxHp}</span>
+              <span className="text-slate-400 text-xs" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>{activeEF?.currentHp}/{activeEF?.maxHp}</span>
             </div>
             <div className="flex gap-1 mt-1">
               {(POKEMON_TYPE[activeEF?.pokemonId ?? 0] ?? []).map(t => (
@@ -2285,13 +2285,13 @@ export function BattleScreen({
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
             <div className="flex justify-between items-center mb-1">
               <div className="flex items-center gap-1 min-w-0">
-                <span className="text-white truncate" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: '0.85rem' }}>{POKEMON_BY_ID[activePF?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-white truncate" style={{ fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: '0.85rem', fontWeight: 'bold' }}>{POKEMON_BY_ID[activePF?.pokemonId ?? 0]?.name ?? '???'}</span>
                 {boostActive && playerIdx === 0 && (
                   <span className="font-black shrink-0" style={{ fontSize: '0.48rem', color: '#f87171' }}>⚔️+25%</span>
                 )}
               </div>
               <div className="flex items-center gap-1 shrink-0 ml-1">
-                <span className="text-slate-400 text-xs">Nv.{activePF?.level}</span>
+                <span className="text-slate-400 text-xs" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>Nv.{activePF?.level}</span>
                 <button onClick={() => setStatsPanelPlayer(v => !v)}
                   style={{ fontSize: '0.6rem', background: statsPanelPlayer ? 'rgba(250,204,21,0.25)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 4px', color: statsPanelPlayer ? '#facc15' : '#94a3b8', lineHeight: 1.4 }}>
                   📊
@@ -2306,7 +2306,7 @@ export function BattleScreen({
               <div className="flex gap-1">
                 {(() => { const sl = statusLabel(activePF?.statusState?.condition ?? null); return sl ? <span className="font-black rounded px-1" style={{ background: sl.color + '33', color: sl.color, fontSize: '0.45rem', border: `1px solid ${sl.color}` }}>{sl.text}</span> : null; })()}
               </div>
-              <span className="text-slate-400 text-xs">{activePF?.currentHp}/{activePF?.maxHp}</span>
+              <span className="text-slate-400 text-xs" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>{activePF?.currentHp}/{activePF?.maxHp}</span>
             </div>
             <div className="flex gap-1 mt-1">
               {(POKEMON_TYPE[activePF?.pokemonId ?? 0] ?? []).map(t => (
