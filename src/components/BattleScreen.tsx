@@ -1784,6 +1784,43 @@ export function BattleScreen({
       flush();
     }
 
+    // ── Bench status tick (psn/tox/brn damage, slp counter) ──
+    let benchChanged = false;
+    pf.forEach((f, i) => {
+      if (i === pIdx || f.currentHp <= 0 || f.statusState.condition === null) return;
+      const cond = f.statusState.condition;
+      if (cond === 'psn' || cond === 'tox' || cond === 'brn') {
+        const eot = calcEndOfTurnDamage(f.maxHp, f.statusState);
+        if (eot.damage > 0) {
+          pf[i] = { ...pf[i], currentHp: Math.max(0, f.currentHp - eot.damage), statusState: eot.nextStatus };
+          const bName = POKEMON_BY_ID[f.pokemonId]?.name ?? '???';
+          if (cond === 'psn' || cond === 'tox') addLog(`${bName} (banc) souffre du poison !`, '#a855f7');
+          else addLog(`${bName} (banc) souffre de sa brûlure !`, '#f97316');
+          benchChanged = true;
+        }
+      } else if (cond === 'slp' && f.statusState.sleepTurns !== undefined) {
+        const remaining = f.statusState.sleepTurns - 1;
+        pf[i] = { ...pf[i], statusState: remaining <= 0 ? { condition: null } : { condition: 'slp', sleepTurns: remaining } };
+        benchChanged = true;
+      }
+    });
+    ef.forEach((f, i) => {
+      if (i === eIdx || f.currentHp <= 0 || f.statusState.condition === null) return;
+      const cond = f.statusState.condition;
+      if (cond === 'psn' || cond === 'tox' || cond === 'brn') {
+        const eot = calcEndOfTurnDamage(f.maxHp, f.statusState);
+        if (eot.damage > 0) {
+          ef[i] = { ...ef[i], currentHp: Math.max(0, f.currentHp - eot.damage), statusState: eot.nextStatus };
+          benchChanged = true;
+        }
+      } else if (cond === 'slp' && f.statusState.sleepTurns !== undefined) {
+        const remaining = f.statusState.sleepTurns - 1;
+        ef[i] = { ...ef[i], statusState: remaining <= 0 ? { condition: null } : { condition: 'slp', sleepTurns: remaining } };
+        benchChanged = true;
+      }
+    });
+    if (benchChanged) flush();
+
     // ── Leech Seed drain ──
     if (pf[pIdx].isSeeded) {
       const sd = Math.floor(pf[pIdx].maxHp / 8);
@@ -1881,7 +1918,7 @@ export function BattleScreen({
                     }} />
                 )}
                 <div className="flex flex-1 justify-between items-center">
-                  <span className="text-white font-black text-sm">{POKEMON_BY_ID[enemyFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
+                  <span className="text-white font-black text-sm" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>{POKEMON_BY_ID[enemyFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
                   <span className="text-slate-400 text-xs">Nv.{enemyFighters[0]?.level}</span>
                 </div>
               </div>
@@ -2080,7 +2117,7 @@ export function BattleScreen({
                 </div>
               )}
               <div className="flex flex-1 justify-between items-center min-w-0">
-                <span className="text-white font-black text-sm truncate">{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-white font-black text-sm truncate" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
                 <div className="flex items-center gap-1 shrink-0 ml-1">
                   <span className="text-slate-400 text-xs">Nv.{activeEF?.level}</span>
                   <button onClick={() => setStatsPanelEnemy(v => !v)}
@@ -2213,7 +2250,7 @@ export function BattleScreen({
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
             <div className="flex justify-between items-center mb-1">
               <div className="flex items-center gap-1 min-w-0">
-                <span className="text-white font-black text-sm truncate">{POKEMON_BY_ID[activePF?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-white font-black text-sm truncate" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>{POKEMON_BY_ID[activePF?.pokemonId ?? 0]?.name ?? '???'}</span>
                 {boostActive && playerIdx === 0 && (
                   <span className="font-black shrink-0" style={{ fontSize: '0.48rem', color: '#f87171' }}>⚔️+25%</span>
                 )}
