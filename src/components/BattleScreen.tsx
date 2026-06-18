@@ -1030,7 +1030,11 @@ export function BattleScreen({
       if (!eCanActResult.canAct) {
         const cond = ef[eIdx].statusState.condition;
         addLog(cond === 'slp' ? `${eName} dort profondément.` : `${eName} est complètement paralysé(e) ! Il ne peut pas bouger !`, '#94a3b8');
-      } else {
+      } else if (eCanActResult.wokeUp) {
+        addLog(`${eName} se réveille !`, '#86efac');
+        await sleep(logTypeDuration(`${eName} se réveille !`));
+      }
+      if (eCanActResult.canAct) {
         const ePlayerTypes = (POKEMON_TYPE[pFighterNew?.pokemonId ?? 0] ?? ['normal']) as PokemonType[];
         const eMoveIndex = chooseEnemyMoveIndex(
           eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
@@ -1124,15 +1128,19 @@ export function BattleScreen({
       setEnemyFighters([...ef]);
     };
 
-    // Status: check who can act
+    // Status: tick counters + clear badges INSTANTLY, but log wake messages in turn order below
     const pCanActResult = checkCanAct(pFighter.statusState);
     const eCanActResult = checkCanAct(eFighter.statusState);
     pf[pIdx] = { ...pf[pIdx], statusState: pCanActResult.nextStatus };
     ef[eIdx] = { ...ef[eIdx], statusState: eCanActResult.nextStatus };
-    flush(); // retire immédiatement les badges PAR/SOM dès le réveil ou la guérison
+    flush(); // badges SOM/PAR retirés immédiatement de l'UI (avant toute attaque)
 
-    if (pCanActResult.wokeUp) addLog(`${pName} se réveille !`, '#86efac');
-    if (eCanActResult.wokeUp) addLog(`${eName} se réveille !`, '#86efac');
+    // ── helpers pour injecter le message de réveil en ordre de jeu ──
+    const logWakeIfNeeded = async (_side: 'player' | 'enemy', canActRes: ReturnType<typeof checkCanAct>, name: string, blocked: boolean) => {
+      if (!canActRes.wokeUp || blocked) return;
+      addLog(`${name} se réveille !`, '#86efac');
+      await sleep(logTypeDuration(`${name} se réveille !`));
+    };
 
     // Enemy AI
     const ePlayerTypes = (POKEMON_TYPE[pFighter.pokemonId] ?? ['normal']) as PokemonType[];
@@ -1625,6 +1633,8 @@ export function BattleScreen({
     // ── Execute in turn order ──
     if (goesFirst) {
       // ── Premier : le joueur ──
+      // Réveil juste avant l'attaque (badge déjà retiré via flush ci-dessus)
+      await logWakeIfNeeded('player', pCanActResult, pName, false);
       const eKo = await executeOneAttack(pResult, 'player', pCanActResult, pRawMoveSelected);
       if (battleDone.current) return;
       if (eKo) { handleEnemyKo(); return; }
@@ -1637,7 +1647,8 @@ export function BattleScreen({
       const eFreshlyBlocked = isFreshBlock(ef[eIdx].statusState.condition ?? null);
       const eCanActFinal = eFreshlyBlocked ? { ...eCanActResult, canAct: false } : eCanActResult;
 
-      // ── Second : l'adversaire ──
+      // ── Second : l'adversaire ── réveil uniquement s'il n'est pas bloqué par un statut frais
+      await logWakeIfNeeded('enemy', eCanActResult, eName, eFreshlyBlocked);
       await executeOneAttack(eResult, 'enemy', eCanActFinal, eRawMoveSelected);
       if (battleDone.current) return;
 
@@ -1645,6 +1656,7 @@ export function BattleScreen({
       if (!eFreshlyBlocked && eCanActResult.canAct) applyAttackerStatus('enemy', eResult);
     } else {
       // ── Premier : l'adversaire ──
+      await logWakeIfNeeded('enemy', eCanActResult, eName, false);
       const pKo = await executeOneAttack(eResult, 'enemy', eCanActResult, eRawMoveSelected);
       if (battleDone.current) return;
       if (pKo) { handlePlayerKo(); return; }
@@ -1657,7 +1669,8 @@ export function BattleScreen({
       const pFreshlyBlocked = isFreshBlock(pf[pIdx].statusState.condition ?? null);
       const pCanActFinal = pFreshlyBlocked ? { ...pCanActResult, canAct: false } : pCanActResult;
 
-      // ── Second : le joueur ──
+      // ── Second : le joueur ── réveil uniquement s'il n'est pas bloqué par un statut frais
+      await logWakeIfNeeded('player', pCanActResult, pName, pFreshlyBlocked);
       await executeOneAttack(pResult, 'player', pCanActFinal, pRawMoveSelected);
       if (battleDone.current) return;
 
