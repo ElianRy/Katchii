@@ -92,7 +92,7 @@ export async function sendChallenge(
   challengerId: string,
   challengerName: string,
   challengedId: string,
-): Promise<PvpChallenge | null> {
+): Promise<{ challenge: PvpChallenge | null; errorMsg?: string }> {
   // Annuler les défis en attente de ce challenger
   await supabase
     .from('pvp_challenges')
@@ -105,8 +105,11 @@ export async function sendChallenge(
     .insert({ challenger_id: challengerId, challenger_name: challengerName, challenged_id: challengedId })
     .select()
     .single();
-  if (error) { console.error('[pvp] sendChallenge:', error); return null; }
-  return data as PvpChallenge;
+  if (error) {
+    console.error('[pvp] sendChallenge:', error);
+    return { challenge: null, errorMsg: `${error.code ?? ''} ${error.message ?? ''}`.trim() };
+  }
+  return { challenge: data as PvpChallenge };
 }
 
 export async function cancelChallenge(challengeId: string): Promise<void> {

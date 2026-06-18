@@ -295,9 +295,9 @@ export function App() {
     challengedId: string, challengedName: string, opponentTeam: TeamMember[],
   ) => {
     if (!userId) return;
-    const challenge = await sendChallenge(userId, username, challengedId);
+    const { challenge, errorMsg } = await sendChallenge(userId, username, challengedId);
     if (!challenge) {
-      alert('Impossible d\'envoyer le défi — les tables PvP ne sont peut-être pas encore créées dans Supabase (pvp_challenges / pvp_sessions).');
+      alert(`Impossible d'envoyer le défi.\n\nErreur Supabase : ${errorMsg ?? 'inconnue'}\n\nVérifie que les tables pvp_challenges et pvp_sessions existent et que les permissions sont configurées.`);
       return;
     }
     setPvpOpponentName(challengedName);

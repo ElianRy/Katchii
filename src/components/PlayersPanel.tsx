@@ -302,6 +302,17 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3, onPvpChall
                 </div>
               </div>
 
+              {/* PvP button */}
+              {!isMe && !isAdmin && onPvpChallenge && (
+                <button
+                  className="shrink-0 px-2.5 py-1.5 rounded-lg font-black text-xs transition-all active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, #7c3aed, #a855f7)', color: 'white', boxShadow: '0 0 8px #a855f733' }}
+                  onClick={e => { e.stopPropagation(); onPvpChallenge(p.user_id, p.username, []); }}
+                >
+                  ⚔️
+                </button>
+              )}
+
               {/* Sort score */}
               {sort !== 'alpha' && (
                 <div className="shrink-0 text-right">
