@@ -3,6 +3,9 @@
  *
  * Host (challenger): calculates damage via calcDamage, broadcasts full PvpTurnPayload.
  * Guest (challenged): receives PvpTurnPayload, applies results without recalculating.
+ *
+ * Both players share their pokemonCustomMoves at battle start so the host can
+ * correctly compute move names/types for the guest's pokemon.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BattleScreen } from './BattleScreen';
@@ -36,6 +39,7 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
   const [forceEnd, setForceEnd] = useState<boolean | null>(null);
   const [opponentSwitchIdx, setOpponentSwitchIdx] = useState<number | null>(null);
   const [opponentVoluntarySwitchIdx, setOpponentVoluntarySwitchIdx] = useState<number | null>(null);
+  const [opponentCustomMoves, setOpponentCustomMoves] = useState<Record<number, string[]>>({});
   const myMoveRef = useRef<number | null>(null);
   const opponentMoveRef = useRef<number | null>(null);
   const channelRef = useRef<ReturnType<typeof getPvpBattleChannel> | null>(null);
@@ -94,7 +98,20 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
       setTimeout(() => { setPendingPayload(guestPayload); setIsWaiting(false); }, 0);
     });
 
+    // Opponent shares their pokemon custom moves so damage/names compute correctly
+    channel.on('broadcast', { event: 'custom_moves_share' }, ({ payload }) => {
+      const { customMoves } = payload as { customMoves: Record<number, string[]> };
+      if (customMoves) setOpponentCustomMoves(customMoves);
+    });
+
     channel.subscribe();
+
+    // Broadcast own custom moves after subscribe; retry once in case opponent subscribed late
+    const sendMoves = () => {
+      channel.send({ type: 'broadcast', event: 'custom_moves_share', payload: { customMoves: pokemonCustomMoves ?? {} } });
+    };
+    setTimeout(sendMoves, 400);
+    setTimeout(sendMoves, 2500);
 
     return () => {
       supabase.removeChannel(channel);
@@ -162,6 +179,7 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
       suppressVictorySound={false}
       keepMusic={false}
       pokemonCustomMoves={pokemonCustomMoves}
+      enemyPokemonCustomMoves={opponentCustomMoves}
       pvpControls={{
         isWaiting,
         onMoveSelect: handleMoveSelect,

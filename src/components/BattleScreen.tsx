@@ -63,6 +63,7 @@ interface Props {
   pokemonData?: Record<number, PokemonInstanceData>;
   pokemonMoves?: Record<number, number[]>;
   pokemonCustomMoves?: Record<number, string[]>;
+  enemyPokemonCustomMoves?: Record<number, string[]>;
   pvpControls?: {
     isWaiting: boolean;
     onMoveSelect: (moveIndex: number) => void;
@@ -744,7 +745,7 @@ export function BattleScreen({
   suppressVictorySound = false, keepMusic = false, keepMusicOnUnmount = false,
   autoCombat, onAutoCombatChange,
   onQuit, initialMuted, onMuteChange, trainerImage, trainerColor, sideOverlay, pokemonData, pokemonMoves,
-  pokemonCustomMoves, pvpControls,
+  pokemonCustomMoves, enemyPokemonCustomMoves, pvpControls,
 }: Props) {
 
   const initFighters = (team: TeamMember[], useCurrentHp: boolean): FighterState[] =>
@@ -1289,6 +1290,8 @@ export function BattleScreen({
     const eTypes = (POKEMON_TYPE[eFighter.pokemonId] ?? ['normal']) as PokemonType[];
     const pCustomSlugs = pokemonCustomMoves?.[pFighter.pokemonId];
     const pRawMoves = getMoveListRaw(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId], pCustomSlugs);
+    const eCustomSlugs = enemyPokemonCustomMoves?.[eFighter.pokemonId] ?? pokemonCustomMoves?.[eFighter.pokemonId];
+    const eRawMovesBase = getMoveListRaw(ef[eIdx].pokemonId, pokemonMoves?.[ef[eIdx].pokemonId], eCustomSlugs);
     const eMoveIndexAI = chooseEnemyMoveIndex(
       eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
       pFighter.statusState, eFighter.statusState, undefined,
@@ -1320,7 +1323,7 @@ export function BattleScreen({
       pFighter.level, eFighter.level,
       pFighter.stages, eFighter.stages,
       pFighter.statusState, eFighter.statusState,
-      pInst, eInst, pRawMoves,
+      pInst, eInst, pRawMoves, eRawMovesBase,
     );
 
     // PP deduction
@@ -1336,8 +1339,7 @@ export function BattleScreen({
     // Raw move references for transform detection
     const pEffectiveMoves = pf[pIdx].transformMoveOverride ?? pRawMoves;
     const pRawMoveSelected: RawMove | undefined = !playerUsesStruggle && pHasMoves ? pEffectiveMoves[playerMoveIndex] : undefined;
-    const eEffectiveMoves = ef[eIdx].transformMoveOverride
-      ?? getMoveListRaw(ef[eIdx].pokemonId, pokemonMoves?.[ef[eIdx].pokemonId], pokemonCustomMoves?.[ef[eIdx].pokemonId]);
+    const eEffectiveMoves = ef[eIdx].transformMoveOverride ?? eRawMovesBase;
     const eRawMoveSelected: RawMove | undefined = eMoveIndex >= 0 ? eEffectiveMoves[eMoveIndex] : undefined;
 
     // Calculate results upfront (Gen 1 style — pre-calculated)

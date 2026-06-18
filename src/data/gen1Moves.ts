@@ -169,8 +169,8 @@ export const MOVES: Record<string, Move> = {
   'lick': {id:'lick', name:'Léchage', type:'ghost', category:'physical', power:20, accuracy:100, pp:30, priority:0, description:'Peut paralyser.', effect:{type:'paralysis', chance:30}},
 
   // Rock
-  'rock-throw': {id:'rock-throw', name:'Éclate-Roc', type:'rock', category:'physical', power:50, accuracy:90, pp:15, priority:0, description:'Lance des rochers.'},
-  'rock-slide': {id:'rock-slide', name:'Lancer de Roc', type:'rock', category:'physical', power:75, accuracy:90, pp:10, priority:0, description:'Peut faire sursauter.', effect:{type:'paralysis', chance:30}},
+  'rock-throw': {id:'rock-throw', name:'Jet-Roc', type:'rock', category:'physical', power:50, accuracy:90, pp:15, priority:0, description:'Lance des rochers.'},
+  'rock-slide': {id:'rock-slide', name:'Éboulement', type:'rock', category:'physical', power:75, accuracy:90, pp:10, priority:0, description:'Peut faire sursauter.', effect:{type:'paralysis', chance:30}},
 
   // Dragon
   'dragon-rage': {id:'dragon-rage', name:'Colère', type:'dragon', category:'special', power:80, accuracy:100, pp:10, priority:0, description:'Inflige des dégâts fixes.'},
