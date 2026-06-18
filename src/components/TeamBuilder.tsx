@@ -8,6 +8,7 @@ import { calcMaxHp, calcAttack, xpToNextLevel } from '../data/combatEngine';
 import { getAvailableMoves } from '../data/gen1Movepools';
 import { MOVES } from '../data/gen1Moves';
 import { BattleScreen } from './BattleScreen';
+import { setBattleMute } from '../lib/audio';
 import { ShinySprite } from './ShinySprite';
 import { playLevelUp } from '../lib/audio';
 
@@ -101,6 +102,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
   const [autoSessionGains, setAutoSessionGains] = useState<LevelUpNotif[]>([]);
   const [showAutoSummary, setShowAutoSummary] = useState(false);
+  const [sessionMuted, setSessionMuted] = useState(false);
   type TrainingPreset = 'debutant' | 'facile' | 'moyen' | 'difficile' | 'tres_difficile' | 'impossible';
   const TRAINING_PRESETS: { key: TrainingPreset; label: string; emoji: string; level: number; range: string; color: string }[] = [
     { key: 'debutant',       label: 'Débutant',       emoji: '🌱', level: 3,   range: 'Niv. 1–5',    color: '#86efac' },
@@ -319,7 +321,9 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         }}
         speedLevel={battleSpeed}
         onSpeedLevelChange={setBattleSpeed}
-        onQuit={() => { setMode('team'); setBattleResult(null); }}
+        onQuit={() => { setMode('team'); setBattleResult(null); setBattleMute(false); setSessionMuted(false); }}
+        initialMuted={sessionMuted}
+        onMuteChange={(v) => { setSessionMuted(v); setBattleMute(v); }}
         pokemonData={state.pokemonData}
         pokemonCustomMoves={state.pokemonCustomMoves}
       />
@@ -576,6 +580,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
                     setAutoCountdown(null);
                     setMode('team');
                     setBattleResult(null);
+                    setBattleMute(false); setSessionMuted(false);
                   }}
                   className="w-full py-3 rounded-2xl font-black text-sm"
                   style={{ background: '#1e293b', border: '2px solid #334155', color: '#94a3b8' }}
@@ -585,7 +590,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
               </div>
             ) : (
               <button
-                onClick={() => { setMode('team'); setBattleResult(null); }}
+                onClick={() => { setMode('team'); setBattleResult(null); setBattleMute(false); setSessionMuted(false); }}
                 className="w-full py-3 rounded-2xl font-black text-black"
                 style={{ background: 'linear-gradient(90deg, #22c55e, #16a34a)' }}
               >

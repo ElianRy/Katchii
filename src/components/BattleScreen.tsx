@@ -55,6 +55,8 @@ interface Props {
   speedLevel?: number;
   onSpeedLevelChange?: (v: number) => void;
   onQuit?: () => void;
+  initialMuted?: boolean;
+  onMuteChange?: (muted: boolean) => void;
   trainerImage?: string;
   trainerColor?: string;
   sideOverlay?: React.ReactNode;
@@ -736,7 +738,7 @@ export function BattleScreen({
   playerDamageMult = 1, isLeague = false,
   suppressVictorySound = false, keepMusic = false, keepMusicOnUnmount = false,
   autoCombat, onAutoCombatChange,
-  onQuit, trainerImage, trainerColor, sideOverlay, pokemonData, pokemonMoves,
+  onQuit, initialMuted, onMuteChange, trainerImage, trainerColor, sideOverlay, pokemonData, pokemonMoves,
   pokemonCustomMoves, pvpControls,
 }: Props) {
 
@@ -765,7 +767,8 @@ export function BattleScreen({
   const [pendingEnemyIdx, setPendingEnemyIdx] = useState<number>(-1);
   const [statsPanelPlayer, setStatsPanelPlayer] = useState(false);
   const [statsPanelEnemy, setStatsPanelEnemy] = useState(false);
-  const [battleMuted, setBattleMuted] = useState(false);
+  const [battleMuted, setBattleMutedLocal] = useState(initialMuted ?? false);
+  const setBattleMuted = (v: boolean) => { setBattleMutedLocal(v); onMuteChange?.(v); };
   const [attackEvt, setAttackEvt] = useState<AttackEvent | null>(null);
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
@@ -867,8 +870,6 @@ export function BattleScreen({
 
   useEffect(() => () => { if (!keepMusicOnUnmount) stopMusic(0.5); }, [keepMusicOnUnmount]);
 
-  // Restore audio on unmount if battle-muted
-  useEffect(() => () => { setBattleMute(false); }, []);
 
   // PvP: when a pre-computed turn payload arrives, trigger execution
   const executeTurnRef = useRef<((idx: number, pvp?: PvpTurnOverride) => Promise<void>) | null>(null);
