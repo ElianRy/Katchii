@@ -2530,16 +2530,28 @@ export function BattleScreen({
           {/* Full log overlay */}
           {showFullLog && (
             <div
-              style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, zIndex: 50, background: '#1a1625', borderRadius: '6px 6px 0 0', border: '3px solid #111', borderBottom: 'none', maxHeight: '50vh', overflowY: 'auto', padding: '6px 10px' }}
+              style={{ position: 'absolute', bottom: '100%', left: -3, right: -3, zIndex: 50, background: '#f0ece0', borderRadius: '6px 6px 0 0', border: '3px solid #111', borderBottom: 'none', boxShadow: '3px 0 0 #111, -3px 0 0 #111, inset 2px 2px 0 #fffef8', maxHeight: '50vh', overflowY: 'auto', padding: '6px 12px' }}
               ref={logScrollRef}
               onClick={e => { e.stopPropagation(); setShowFullLog(false); }}
             >
-              <div style={{ borderBottom: '1px solid #334155', marginBottom: 4, paddingBottom: 4, fontSize: '0.5rem', color: '#6366f1', fontFamily: "'Press Start 2P', monospace", letterSpacing: '0.05em' }}>
-                HISTORIQUE
+              <div style={{ borderBottom: '2px solid #a09880', marginBottom: 4, paddingBottom: 3, fontSize: '0.45rem', color: '#706890', fontFamily: "'Press Start 2P', monospace", letterSpacing: '0.05em' }}>
+                HISTORIQUE ▼
               </div>
-              {log.map((entry, i) => (
-                <div key={i} style={{ color: entry.color, fontSize: '0.68rem', fontFamily: "system-ui, -apple-system, sans-serif", lineHeight: 1.8 }}>{entry.text}</div>
-              ))}
+              {log.map((entry, i) => {
+                // Darken light colors for readability on cream background
+                const darkened = entry.color === '#fde68a' ? '#a37c00'
+                  : entry.color === '#f87171' ? '#c0392b'
+                  : entry.color === '#4ade80' ? '#15803d'
+                  : entry.color === '#fde047' ? '#92400e'
+                  : entry.color === '#c084fc' ? '#7e22ce'
+                  : entry.color === '#86efac' ? '#15803d'
+                  : entry.color === '#94a3b8' ? '#64748b'
+                  : entry.color === '#e2e8f0' ? '#334155'
+                  : entry.color;
+                return (
+                  <div key={i} style={{ color: darkened, fontSize: '0.52rem', fontFamily: "'Press Start 2P', monospace", lineHeight: 1.8 }}>{entry.text}</div>
+                );
+              })}
             </div>
           )}
           {/* History icon */}
@@ -2548,12 +2560,12 @@ export function BattleScreen({
           )}
           {/* Previous lines (history) */}
           {hgDialog.prevLines.map((line, i) => (
-            <div key={i} style={{ fontSize: '0.65rem', color: '#888', lineHeight: 1.75, fontFamily: "system-ui, -apple-system, sans-serif", opacity: 0.4 + i * 0.25 }}>
+            <div key={i} style={{ fontSize: '0.52rem', color: '#888', lineHeight: 1.75, fontFamily: "'Press Start 2P', monospace", opacity: 0.4 + i * 0.25 }}>
               {line || ' '}
             </div>
           ))}
           {/* Current line (typing) */}
-          <div style={{ fontSize: '0.7rem', color: '#111', lineHeight: 1.75, fontFamily: "system-ui, -apple-system, sans-serif", minHeight: '0.9rem' }}>
+          <div style={{ fontSize: '0.52rem', color: '#111', lineHeight: 1.75, fontFamily: "'Press Start 2P', monospace", minHeight: '0.9rem' }}>
             {hgDialog.curLine}
             {!hgDialog.showArrow && hgDialog.curLine.length < hgDialog.curFull.length && (
               <span style={{ display: 'inline-block', width: 6, height: 10, background: '#333', verticalAlign: 'middle', marginLeft: 1, animation: 'hg-blink-cursor 0.55s step-end infinite' }} />
