@@ -733,7 +733,7 @@ export function BattleScreen({
   playerTeam, enemyTeam, bossName: _bossName, onBattleEnd,
   playerDamageMult = 1, isLeague = false,
   suppressVictorySound = false, keepMusic = false, keepMusicOnUnmount = false,
-  autoCombat,
+  autoCombat, onAutoCombatChange,
   onQuit, trainerImage, trainerColor, sideOverlay, pokemonData, pokemonMoves,
   pokemonCustomMoves, pvpControls,
 }: Props) {
@@ -926,7 +926,7 @@ export function BattleScreen({
 
       // ── Nouveau système XP ────────────────────────────────────────────────
       const xpTypeMult = isLeague ? 2.0 : _bossName ? 1.5 : 1.0;
-      const xpBase = koEnemyLevelsRef.current.reduce((sum, lvl) => sum + lvl * 300, 0) * xpTypeMult;
+      const xpBase = koEnemyLevelsRef.current.reduce((sum, lvl) => sum + lvl * 50, 0) * xpTypeMult;
       const snap: Record<number, number> = {};
 
       if (xpBase > 0) {
@@ -1312,6 +1312,26 @@ export function BattleScreen({
         return false;
       }
 
+      // Vol (fly): 2-turn charge — tour 1 envol, tour 2 frappe
+      if (rawMove?.id === 'fly') {
+        const atkArrFly = isPlayer ? pf : ef;
+        if (!atkArrFly[atkIdx].chargingMove) {
+          addLog(`${atkName} prend son envol !`, '#a78bfa');
+          await sleep(150);
+          const storedFlyIdx = isPlayer ? playerMoveIndex : eMoveIndex;
+          if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: { moveId: 'fly', moveIndex: storedFlyIdx } };
+          else ef[atkIdx] = { ...ef[atkIdx], chargingMove: { moveId: 'fly', moveIndex: storedFlyIdx } };
+          flush();
+          return false;
+        } else {
+          if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: null };
+          else ef[atkIdx] = { ...ef[atkIdx], chargingMove: null };
+          flush();
+          addLog(`${atkName} redescend et attaque !`, '#a78bfa');
+          await sleep(150);
+        }
+      }
+
       // Lance-Soleil: 2-turn charge mechanic
       if (rawMove?.id === 'solar-beam') {
         const atkArr = isPlayer ? pf : ef;
@@ -1361,6 +1381,13 @@ export function BattleScreen({
       // failedSpecial
       if (result.failedSpecial === 'not-sleeping') {
         addLog('Mais ça n\'a aucun effet !', '#94a3b8');
+        return false;
+      }
+
+      // Semi-invulnérable (Vol) — la cible est dans les airs, l'attaque rate
+      const defFighters = isPlayer ? ef : pf;
+      if (defFighters[defIdx]?.chargingMove?.moveId === 'fly') {
+        addLog(`L'attaque a raté ! ${defName} est dans les airs !`, '#94a3b8');
         return false;
       }
 
@@ -1824,6 +1851,21 @@ export function BattleScreen({
     <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617' }}>
       {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
 
+      {/* Bouton Auto — haut droite */}
+      {onAutoCombatChange && (
+        <button
+          onClick={() => onAutoCombatChange(!autoCombat)}
+          style={{
+            position: 'absolute', top: 10, right: 10, zIndex: 40,
+            padding: '4px 10px', borderRadius: 12, fontSize: '0.6rem', fontWeight: 900,
+            background: autoCombat ? 'linear-gradient(90deg, #6366f1, #a855f7)' : 'rgba(15,23,42,0.85)',
+            border: autoCombat ? '1.5px solid #a855f7' : '1.5px solid #334155',
+            color: autoCombat ? '#fff' : '#94a3b8',
+            boxShadow: autoCombat ? '0 0 10px #a855f766' : 'none',
+          }}
+        >⚡ Auto</button>
+      )}
+
       {/* ── Arena ── */}
       <div className="relative overflow-hidden" style={{ flex: '1 1 0', minHeight: 0 }}>
         <div className="absolute inset-0" style={{
@@ -1930,7 +1972,7 @@ export function BattleScreen({
               ))}
             </div>
           </div>
-          <div className={`flex justify-end relative ${attackEvt?.attacker === 'enemy' ? 'battle-lunge-left' : ''} ${activeEF?.currentHp === 0 ? 'opacity-30' : ''} ${spriteBounce?.target === 'enemy' ? (spriteBounce.type === 'buff' ? 'pokemon-buff' : 'pokemon-debuff') : ''} ${hitEffect?.target === 'enemy' ? 'vfx-hit-target-left' : ''} ${attackEvt?.type === 'electric' && attackEvt.attacker === 'player' ? 'vfx-electric-vibrate' : ''} ${morphVfxState?.target === 'enemy' && morphVfxState.phase === 'squish' ? 'morph-squish' : ''}`}>
+          <div className={`flex justify-end relative ${attackEvt?.attacker === 'enemy' ? 'battle-lunge-left' : ''} ${activeEF?.currentHp === 0 ? 'opacity-30' : ''} ${activeEF?.chargingMove?.moveId === 'fly' ? 'opacity-0' : ''} ${spriteBounce?.target === 'enemy' ? (spriteBounce.type === 'buff' ? 'pokemon-buff' : 'pokemon-debuff') : ''} ${hitEffect?.target === 'enemy' ? 'vfx-hit-target-left' : ''} ${attackEvt?.type === 'electric' && attackEvt.attacker === 'player' ? 'vfx-electric-vibrate' : ''} ${morphVfxState?.target === 'enemy' && morphVfxState.phase === 'squish' ? 'morph-squish' : ''}`}>
             {activeEF && <ShinySprite pokemonId={activeEF.pokemonId} isShiny={activeEF.isShiny ?? false} width={88} height={88} flip
               style={{ filter: spriteFilter(activeEF.pokemonId, activeEF.isShiny ?? false) }} />}
             {/* Status block overlay on enemy */}
@@ -1974,7 +2016,7 @@ export function BattleScreen({
               <div key={i} className={`w-3 h-3 rounded-full ${i === playerIdx ? 'ring-2 ring-white' : ''} ${f.currentHp > 0 ? 'bg-green-400' : 'bg-slate-600'}`} />
             ))}
           </div>
-          <div className={`relative ${attackEvt?.attacker === 'player' ? 'battle-lunge-right' : ''} ${activePF?.currentHp === 0 ? 'opacity-30' : ''} ${spriteBounce?.target === 'player' ? (spriteBounce.type === 'buff' ? 'pokemon-buff' : 'pokemon-debuff') : ''} ${hitEffect?.target === 'player' ? 'vfx-hit-target-right' : ''} ${attackEvt?.type === 'electric' && attackEvt.attacker === 'enemy' ? 'vfx-electric-vibrate' : ''} ${morphVfxState?.target === 'player' && morphVfxState.phase === 'squish' ? 'morph-squish' : ''}`}>
+          <div className={`relative ${attackEvt?.attacker === 'player' ? 'battle-lunge-right' : ''} ${activePF?.currentHp === 0 ? 'opacity-30' : ''} ${activePF?.chargingMove?.moveId === 'fly' ? 'opacity-0' : ''} ${spriteBounce?.target === 'player' ? (spriteBounce.type === 'buff' ? 'pokemon-buff' : 'pokemon-debuff') : ''} ${hitEffect?.target === 'player' ? 'vfx-hit-target-right' : ''} ${attackEvt?.type === 'electric' && attackEvt.attacker === 'enemy' ? 'vfx-electric-vibrate' : ''} ${morphVfxState?.target === 'player' && morphVfxState.phase === 'squish' ? 'morph-squish' : ''}`}>
             {activePF && <ShinySprite pokemonId={activePF.pokemonId} isShiny={activePF.isShiny ?? false} width={96} height={96}
               style={{ filter: spriteFilter(activePF.pokemonId, activePF.isShiny ?? false, 12) }} />}
             {/* Status block overlay on player */}

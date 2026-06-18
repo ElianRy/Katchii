@@ -96,7 +96,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [mode, setMode] = useState<'team' | 'level_select' | 'battle' | 'result' | 'savedTeams'>('team');
   const [chosenDifficulty, setChosenDifficulty] = useState<Difficulty | null>(null);
   const [enemyTeam, setEnemyTeam] = useState<TeamMember[]>([]);
-  const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
+  const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number>; xpAfter: Record<number, { level: number; xp: number }> } | null>(null);
   const [autoCombat, setAutoCombat] = useState(false);
   const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
   type TrainingPreset = 'debutant' | 'facile' | 'moyen' | 'difficile' | 'tres_difficile' | 'impossible';
@@ -170,9 +170,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   };
 
   const handleBattleEnd = (won: boolean, xpGains: Record<number, number>) => {
-    setBattleResult({ won, xpGains });
-
-    // Compute level-ups — xpGains vient déjà calculé par BattleScreen (victoire/défaite inclus)
+    const xpAfter: Record<number, { level: number; xp: number }> = {};
     const ups: LevelUpNotif[] = [];
     Object.entries(xpGains).forEach(([idStr, xp]) => {
       const id = Number(idStr);
@@ -180,15 +178,12 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
       let level = current.level;
       const effectiveXp = Math.floor(xp * (chosenDifficulty?.xpMultiplier ?? 1));
       let xpAcc = current.xp + effectiveXp;
-      const newLevel = (() => {
-        let l = level;
-        while (l < 100 && xpAcc >= xpToNextLevel(l)) { xpAcc -= xpToNextLevel(l); l++; }
-        return l;
-      })();
-      if (newLevel > level) {
-        const oldMoves = new Set(getAvailableMoves(id, level));
-        const newMoves = getAvailableMoves(id, newLevel).filter(m => !oldMoves.has(m));
-        ups.push({ pokemonId: id, newLevel, newMoves });
+      while (level < 100 && xpAcc >= xpToNextLevel(level)) { xpAcc -= xpToNextLevel(level); level++; }
+      xpAfter[id] = { level, xp: xpAcc };
+      if (level > (state.pokemonLevels?.[id]?.level ?? 1)) {
+        const oldMoves = new Set(getAvailableMoves(id, state.pokemonLevels?.[id]?.level ?? 1));
+        const newMoves = getAvailableMoves(id, level).filter(m => !oldMoves.has(m));
+        ups.push({ pokemonId: id, newLevel: level, newMoves });
       }
       if (onAddXp) onAddXp(id, effectiveXp);
     });
@@ -196,13 +191,8 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     if (ups.length > 0) playLevelUp();
     if (won) onBattleWin?.(selected);
     onTrainingBattle?.();
-    if (autoCombat) {
-      setBattleResult({ won, xpGains });
-      setMode('result');
-    } else {
-      setBattleResult({ won, xpGains });
-      setMode('result');
-    }
+    setBattleResult({ won, xpGains, xpAfter });
+    setMode('result');
   };
 
   // Dismiss level-up notifs after a few seconds
@@ -519,6 +509,23 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
                         })}
                       </div>
                     )}
+                    {(() => {
+                      const after = battleResult.xpAfter?.[id];
+                      if (!after || after.level >= 100) return null;
+                      const needed = xpToNextLevel(after.level);
+                      const pct = Math.min(100, Math.floor(after.xp / needed * 100));
+                      return (
+                        <div className="mt-1">
+                          <div className="flex justify-between mb-0.5" style={{ fontSize: '0.52rem', color: '#64748b' }}>
+                            <span>Niv. {after.level}</span>
+                            <span>{after.xp} / {needed} XP</span>
+                          </div>
+                          <div className="w-full bg-slate-700/60 rounded-full overflow-hidden" style={{ height: 4 }}>
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: 'linear-gradient(90deg, #60a5fa, #a78bfa)' }} />
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
@@ -775,23 +782,6 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
             </button>
           )}
 
-          {/* Auto-combat toggle — training only */}
-          {onSaveTeam && (
-            <button
-              onClick={() => setAutoCombat(v => !v)}
-              className="px-3 py-3 rounded-2xl font-black text-sm transition-all"
-              style={{
-                background: autoCombat
-                  ? 'linear-gradient(90deg, #6366f1, #a855f7)'
-                  : '#1e293b',
-                border: autoCombat ? '2px solid #a855f7' : '2px solid #334155',
-                color: autoCombat ? '#fff' : '#94a3b8',
-                boxShadow: autoCombat ? '0 0 12px #a855f766' : 'none',
-              }}
-            >
-              ⚡ Auto
-            </button>
-          )}
 
           {/* Trainer battle */}
           <button
