@@ -763,7 +763,8 @@ export function BattleScreen({
   const [phase, setPhase] = useState<'intro' | 'player_turn' | 'resolving' | 'switch' | 'pre_enemy_switch' | 'end'>('intro');
   const phaseRef = useRef<'intro' | 'player_turn' | 'resolving' | 'switch' | 'pre_enemy_switch' | 'end'>('intro');
   const [pendingEnemyIdx, setPendingEnemyIdx] = useState<number>(-1);
-  const [statsPanel, setStatsPanel] = useState<'player' | 'enemy' | null>(null);
+  const [statsPanelPlayer, setStatsPanelPlayer] = useState(false);
+  const [statsPanelEnemy, setStatsPanelEnemy] = useState(false);
   const [attackEvt, setAttackEvt] = useState<AttackEvent | null>(null);
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
@@ -1973,8 +1974,8 @@ export function BattleScreen({
                 <span className="text-white font-black text-sm truncate">{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
                 <div className="flex items-center gap-1 shrink-0 ml-1">
                   <span className="text-slate-400 text-xs">Nv.{activeEF?.level}</span>
-                  <button onClick={() => setStatsPanel(p => p === 'enemy' ? null : 'enemy')}
-                    style={{ fontSize: '0.6rem', background: statsPanel === 'enemy' ? 'rgba(250,204,21,0.25)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 4px', color: statsPanel === 'enemy' ? '#facc15' : '#94a3b8', lineHeight: 1.4 }}>
+                  <button onClick={() => setStatsPanelEnemy(v => !v)}
+                    style={{ fontSize: '0.6rem', background: statsPanelEnemy ? 'rgba(250,204,21,0.25)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 4px', color: statsPanelEnemy ? '#facc15' : '#94a3b8', lineHeight: 1.4 }}>
                     📊
                   </button>
                 </div>
@@ -2082,8 +2083,8 @@ export function BattleScreen({
               </div>
               <div className="flex items-center gap-1 shrink-0 ml-1">
                 <span className="text-slate-400 text-xs">Nv.{activePF?.level}</span>
-                <button onClick={() => setStatsPanel(p => p === 'player' ? null : 'player')}
-                  style={{ fontSize: '0.6rem', background: statsPanel === 'player' ? 'rgba(250,204,21,0.25)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 4px', color: statsPanel === 'player' ? '#facc15' : '#94a3b8', lineHeight: 1.4 }}>
+                <button onClick={() => setStatsPanelPlayer(v => !v)}
+                  style={{ fontSize: '0.6rem', background: statsPanelPlayer ? 'rgba(250,204,21,0.25)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 4px', color: statsPanelPlayer ? '#facc15' : '#94a3b8', lineHeight: 1.4 }}>
                   📊
                 </button>
               </div>
@@ -2246,57 +2247,53 @@ export function BattleScreen({
         })()}
       </div>
 
-      {/* ── Stats panel overlay ── */}
-      {statsPanel && (() => {
-        const fighter = statsPanel === 'player' ? activePF : activeEF;
+      {/* ── Stats panels — enemy: top-left, player: bottom-right (both empty corners) ── */}
+      {(['enemy', 'player'] as const).map(side => {
+        if (side === 'enemy' && !statsPanelEnemy) return null;
+        if (side === 'player' && !statsPanelPlayer) return null;
+        const fighter = side === 'player' ? activePF : activeEF;
         if (!fighter) return null;
         const baseStats = GEN1_STATS[fighter.transformOriginalId ?? fighter.pokemonId];
         const stages = fighter.stages;
         const STAT_ROWS: { key: keyof typeof stages; label: string; base: number | undefined }[] = [
-          { key: 'attack',    label: 'Attaque',    base: baseStats?.attack },
-          { key: 'defense',   label: 'Défense',    base: baseStats?.defense },
-          { key: 'spAttack',  label: 'Atq. Spé.',  base: baseStats?.spAttack },
-          { key: 'spDefense', label: 'Déf. Spé.',  base: baseStats?.spDefense },
-          { key: 'speed',     label: 'Vitesse',    base: baseStats?.speed },
+          { key: 'attack',    label: 'ATK', base: baseStats?.attack },
+          { key: 'defense',   label: 'DEF', base: baseStats?.defense },
+          { key: 'spAttack',  label: 'SpA', base: baseStats?.spAttack },
+          { key: 'spDefense', label: 'SpD', base: baseStats?.spDefense },
+          { key: 'speed',     label: 'VIT', base: baseStats?.speed },
         ];
-        const stageColor = (s: number) => s > 0 ? '#4ade80' : s < 0 ? '#f87171' : '#64748b';
-        const stageText = (s: number) => s === 0 ? '±0' : s > 0 ? `+${s}` : `${s}`;
-        const stageMult = (s: number) => {
-          if (s >= 0) return `×${(2 + s) / 2}`;
-          return `×${2 / (2 - s)}`.replace(/(\.\d{2})\d+/, '$1');
-        };
+        const stageColor = (s: number) => s > 0 ? '#4ade80' : s < 0 ? '#f87171' : '#475569';
+        const stageText = (s: number) => s === 0 ? '—' : s > 0 ? `+${s}` : `${s}`;
+        const posStyle: React.CSSProperties = side === 'enemy'
+          ? { position: 'absolute', zIndex: 50, top: 'calc(5% + env(safe-area-inset-top, 0px) + 4px)', left: 'max(7%, calc(50% - 220px))' }
+          : { position: 'absolute', zIndex: 50, bottom: '13%', right: 'max(7%, calc(50% - 220px))' };
         return (
-          <div
-            style={{ position: 'absolute', zIndex: 50, top: statsPanel === 'enemy' ? 'calc(5% + env(safe-area-inset-top, 0px) + 4px)' : undefined, bottom: statsPanel === 'player' ? 4 : undefined, right: statsPanel === 'enemy' ? 'max(7%, calc(50% - 220px))' : undefined, left: statsPanel === 'player' ? 'max(7%, calc(50% - 220px))' : undefined, minWidth: 200 }}
-            onClick={() => setStatsPanel(null)}
-          >
-            <div style={{ background: 'rgba(2,6,23,0.97)', border: '1px solid rgba(100,116,139,0.4)', borderRadius: 10, padding: '8px 10px', boxShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>
-              <div style={{ color: '#94a3b8', fontSize: '0.5rem', fontFamily: "'Press Start 2P', monospace", marginBottom: 6, textTransform: 'uppercase' }}>
-                {statsPanel === 'player' ? '— Vos stats —' : '— Stats adversaire —'}
+          <div key={side} style={posStyle}>
+            <div style={{ background: 'rgba(2,6,23,0.88)', border: '1px solid rgba(100,116,139,0.35)', borderRadius: 8, padding: '6px 8px', boxShadow: '0 2px 12px rgba(0,0,0,0.7)', minWidth: 110 }}>
+              <div style={{ color: '#64748b', fontSize: '0.4rem', fontFamily: "'Press Start 2P', monospace", marginBottom: 5, textTransform: 'uppercase', letterSpacing: 1 }}>
+                {side === 'player' ? 'Vous' : 'Ennemi'}
               </div>
               {STAT_ROWS.map(({ key, label, base }) => {
                 const s = stages[key] ?? 0;
                 return (
-                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                    <span style={{ color: '#cbd5e1', fontSize: '0.48rem', fontFamily: "'Press Start 2P', monospace", width: 68, flexShrink: 0 }}>{label}</span>
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                    <span style={{ color: '#94a3b8', fontSize: '0.42rem', fontFamily: "'Press Start 2P', monospace", width: 26, flexShrink: 0 }}>{label}</span>
                     {base !== undefined && (
-                      <span style={{ color: '#475569', fontSize: '0.45rem', fontFamily: "'Press Start 2P', monospace", width: 24, textAlign: 'right', flexShrink: 0 }}>{base}</span>
+                      <span style={{ color: '#334155', fontSize: '0.4rem', fontFamily: "'Press Start 2P', monospace", width: 22, textAlign: 'right', flexShrink: 0 }}>{base}</span>
                     )}
-                    <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.07)', borderRadius: 3, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: base ? `${Math.min(100, (base / 150) * 100)}%` : '0%', background: '#334155', borderRadius: 3 }} />
-                    </div>
-                    <span style={{ color: stageColor(s), fontSize: '0.5rem', fontFamily: "'Press Start 2P', monospace", width: 24, textAlign: 'center', flexShrink: 0 }}>{stageText(s)}</span>
+                    <span style={{ color: stageColor(s), fontSize: '0.48rem', fontFamily: "'Press Start 2P', monospace", width: 22, textAlign: 'center', flexShrink: 0, fontWeight: s !== 0 ? 'bold' : 'normal' }}>{stageText(s)}</span>
                     {s !== 0 && (
-                      <span style={{ color: stageColor(s), fontSize: '0.42rem', fontFamily: "'Press Start 2P', monospace", width: 32, textAlign: 'right', flexShrink: 0, opacity: 0.85 }}>{stageMult(s)}</span>
+                      <span style={{ color: stageColor(s), fontSize: '0.38rem', fontFamily: "'Press Start 2P', monospace", opacity: 0.8, flexShrink: 0 }}>
+                        ×{s >= 0 ? (2 + s) / 2 : (2 / (2 - s)).toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}
+                      </span>
                     )}
                   </div>
                 );
               })}
-              <div style={{ color: '#475569', fontSize: '0.4rem', fontFamily: "'Press Start 2P', monospace", marginTop: 5, textAlign: 'center' }}>Tap pour fermer</div>
             </div>
           </div>
         );
-      })()}
+      })}
 
       {/* ── Transition bar between arena and UI ── */}
       <div style={{ height: 6, background: 'linear-gradient(180deg, #1a1a2e 0%, #3a3050 40%, #706890 100%)', boxShadow: '0 -2px 0 #0a0a18' }} />
