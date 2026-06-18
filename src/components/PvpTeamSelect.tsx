@@ -142,6 +142,7 @@ function MoveEditorStep({ teamIds, initialMoves, opponentName, isRental, onBack,
   const [activePokemon, setActivePokemon] = useState<number>(teamIds[0]);
   const [editMode, setEditMode] = useState(false);
   const [pendingMoves, setPendingMoves] = useState<string[]>([...(initialMoves[teamIds[0]] ?? [])]);
+  const [infoSlug, setInfoSlug] = useState<string | null>(null);
 
   const current = moveMap[activePokemon] ?? [];
   const availablePool = useMemo(() => getAvailableMoves(activePokemon, 100), [activePokemon]);
@@ -289,7 +290,30 @@ function MoveEditorStep({ teamIds, initialMoves, opponentName, isRental, onBack,
 
           {!editMode ? (
             <div className="flex flex-col gap-1.5">
-              {current.map(slug => <MoveRow key={slug} slug={slug} />)}
+              {current.map(slug => (
+                <div key={slug} className="relative">
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex-1"><MoveRow slug={slug} /></div>
+                    <button onClick={() => setInfoSlug(s => s === slug ? null : slug)}
+                      className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-slate-400 hover:text-white"
+                      style={{ background: '#334155', fontSize: '0.55rem', border: '1px solid #475569' }}>
+                      i
+                    </button>
+                  </div>
+                  {infoSlug === slug && (() => {
+                    const m = MOVES[slug];
+                    if (!m) return null;
+                    return (
+                      <div className="mt-1 rounded-lg px-2 py-1.5 text-xs" style={{ background: '#1e293b', border: '1px solid #334155' }}>
+                        {(m as {power?:number}).power! > 0 && <div className="text-slate-300">Puissance : <span className="text-white font-bold">{(m as {power?:number}).power}</span></div>}
+                        <div className="text-slate-300">Précision : <span className="text-white font-bold">{m.accuracy}%</span></div>
+                        <div className="text-slate-300">PP : <span className="text-white font-bold">{m.pp}</span></div>
+                        {m.description && <div className="text-slate-400 mt-0.5 italic">{m.description}</div>}
+                      </div>
+                    );
+                  })()}
+                </div>
+              ))}
             </div>
           ) : (
             <div className="flex flex-col gap-1">
@@ -297,29 +321,52 @@ function MoveEditorStep({ teamIds, initialMoves, opponentName, isRental, onBack,
                 {pendingMoves.length}/4 sélectionnées — touche pour ajouter/retirer
               </div>
               <div className="flex flex-col gap-1">
-                {availablePool.map(slug => {
+                {(() => {
+                  const displayPool = [...pendingMoves.filter(s => !availablePool.includes(s)), ...availablePool];
+                  return displayPool;
+                })().map(slug => {
                   const m = MOVES[slug];
                   if (!m) return null;
                   const isSelected = pendingMoves.includes(slug);
                   const tc = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
                   return (
-                    <button key={slug}
-                      className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left"
-                      style={{ background: isSelected ? '#3b82f622' : '#ffffff06', border: `1px solid ${isSelected ? '#3b82f6' : '#ffffff11'}` }}
-                      onClick={() => {
-                        if (isSelected) setPendingMoves(p => p.filter(s => s !== slug));
-                        else if (pendingMoves.length < 4) setPendingMoves(p => [...p, slug]);
-                      }}>
-                      <span className="text-white rounded px-1 font-bold shrink-0"
-                        style={{ background: tc, fontSize: '0.38rem', padding: '1px 4px' }}>
-                        {m.type.toUpperCase()}
-                      </span>
-                      <span className="text-white text-xs font-bold flex-1">{m.name}</span>
-                      {(m as { power?: number }).power! > 0 && (
-                        <span className="text-slate-400 text-xs shrink-0">{(m as { power?: number }).power}</span>
-                      )}
-                      {isSelected && <span className="text-blue-400 text-xs shrink-0">✓</span>}
-                    </button>
+                    <div key={slug} className="relative">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          className="flex-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-left"
+                          style={{ background: isSelected ? '#3b82f622' : '#ffffff06', border: `1px solid ${isSelected ? '#3b82f6' : '#ffffff11'}` }}
+                          onClick={() => {
+                            if (isSelected) setPendingMoves(p => p.filter(s => s !== slug));
+                            else if (pendingMoves.length < 4) setPendingMoves(p => [...p, slug]);
+                          }}>
+                          <span className="text-white rounded px-1 font-bold shrink-0"
+                            style={{ background: tc, fontSize: '0.38rem', padding: '1px 4px' }}>
+                            {m.type.toUpperCase()}
+                          </span>
+                          <span className="text-white text-xs font-bold flex-1">{m.name}</span>
+                          {(m as { power?: number }).power! > 0 && (
+                            <span className="text-slate-400 text-xs shrink-0">{(m as { power?: number }).power}</span>
+                          )}
+                          {isSelected && <span className="text-blue-400 text-xs shrink-0">✓</span>}
+                        </button>
+                        <button onClick={() => setInfoSlug(s => s === slug ? null : slug)}
+                          className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-slate-400 hover:text-white"
+                          style={{ background: '#334155', fontSize: '0.55rem', border: '1px solid #475569' }}>
+                          i
+                        </button>
+                      </div>
+                      {infoSlug === slug && (() => {
+                        if (!m) return null;
+                        return (
+                          <div className="mt-1 rounded-lg px-2 py-1.5 text-xs" style={{ background: '#1e293b', border: '1px solid #334155' }}>
+                            {(m as {power?:number}).power! > 0 && <div className="text-slate-300">Puissance : <span className="text-white font-bold">{(m as {power?:number}).power}</span></div>}
+                            <div className="text-slate-300">Précision : <span className="text-white font-bold">{m.accuracy}%</span></div>
+                            <div className="text-slate-300">PP : <span className="text-white font-bold">{m.pp}</span></div>
+                            {m.description && <div className="text-slate-400 mt-0.5 italic">{m.description}</div>}
+                          </div>
+                        );
+                      })()}
+                    </div>
                   );
                 })}
               </div>

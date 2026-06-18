@@ -795,6 +795,9 @@ export function BattleScreen({
   const turnNumberRef = useRef(0);
   const [showFullLog, setShowFullLog] = useState(false);
   const logScrollRef = useRef<HTMLDivElement | null>(null);
+  const [pvpWaitingEnemySwitch, setPvpWaitingEnemySwitch] = useState(false);
+  const pvpControlsRef = useRef(pvpControls);
+  useEffect(() => { pvpControlsRef.current = pvpControls; }, [pvpControls]);
 
   useEffect(() => {
     if (showFullLog && logScrollRef.current) logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight;
@@ -897,6 +900,8 @@ export function BattleScreen({
     setEnemyIdx(idx);
     const name = POKEMON_BY_ID[enemyFighters[idx]?.pokemonId]?.name ?? '???';
     addLog(`L'adversaire envoie ${name} !`, '#f87171');
+    setPvpWaitingEnemySwitch(false);
+    if (enemyFighters[idx]) playPokemonCry(enemyFighters[idx].pokemonId);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pvpControls?.opponentSwitchIdx]);
 
@@ -1687,8 +1692,14 @@ export function BattleScreen({
         if (!suppressVictorySound) { isLeague ? playLeagueVictory() : playVictory(); }
         phaseRef.current = 'end'; setPhase('end');
       } else if (nextE >= 0) {
-        setPendingEnemyIdx(nextE);
-        phaseRef.current = 'pre_enemy_switch'; setPhase('pre_enemy_switch');
+        if (pvpControlsRef.current) {
+          // PvP: don't auto-pick — wait for opponent's broadcast switch
+          setPvpWaitingEnemySwitch(true);
+          phaseRef.current = 'player_turn'; setPhase('player_turn');
+        } else {
+          setPendingEnemyIdx(nextE);
+          phaseRef.current = 'pre_enemy_switch'; setPhase('pre_enemy_switch');
+        }
       }
     };
 
@@ -2519,12 +2530,15 @@ export function BattleScreen({
           {/* Full log overlay */}
           {showFullLog && (
             <div
-              style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, zIndex: 50, background: 'rgba(2,6,23,0.95)', borderRadius: '6px 6px 0 0', border: '3px solid #111', borderBottom: 'none', maxHeight: '50vh', overflowY: 'auto', padding: '6px 10px' }}
+              style={{ position: 'absolute', bottom: '100%', left: 0, right: 0, zIndex: 50, background: '#1a1625', borderRadius: '6px 6px 0 0', border: '3px solid #111', borderBottom: 'none', maxHeight: '50vh', overflowY: 'auto', padding: '6px 10px' }}
               ref={logScrollRef}
               onClick={e => { e.stopPropagation(); setShowFullLog(false); }}
             >
+              <div style={{ borderBottom: '1px solid #334155', marginBottom: 4, paddingBottom: 4, fontSize: '0.5rem', color: '#6366f1', fontFamily: "'Press Start 2P', monospace", letterSpacing: '0.05em' }}>
+                HISTORIQUE
+              </div>
               {log.map((entry, i) => (
-                <div key={i} style={{ color: entry.color, fontSize: '0.55rem', fontFamily: "'Press Start 2P', monospace", lineHeight: 1.8 }}>{entry.text}</div>
+                <div key={i} style={{ color: entry.color, fontSize: '0.68rem', fontFamily: "system-ui, -apple-system, sans-serif", lineHeight: 1.8 }}>{entry.text}</div>
               ))}
             </div>
           )}
@@ -2534,12 +2548,12 @@ export function BattleScreen({
           )}
           {/* Previous lines (history) */}
           {hgDialog.prevLines.map((line, i) => (
-            <div key={i} style={{ fontSize: '0.52rem', color: '#888', lineHeight: 1.75, fontFamily: "'Press Start 2P', monospace", opacity: 0.4 + i * 0.25 }}>
+            <div key={i} style={{ fontSize: '0.65rem', color: '#888', lineHeight: 1.75, fontFamily: "system-ui, -apple-system, sans-serif", opacity: 0.4 + i * 0.25 }}>
               {line || ' '}
             </div>
           ))}
           {/* Current line (typing) */}
-          <div style={{ fontSize: '0.52rem', color: '#111', lineHeight: 1.75, fontFamily: "'Press Start 2P', monospace", minHeight: '0.9rem' }}>
+          <div style={{ fontSize: '0.7rem', color: '#111', lineHeight: 1.75, fontFamily: "system-ui, -apple-system, sans-serif", minHeight: '0.9rem' }}>
             {hgDialog.curLine}
             {!hgDialog.showArrow && hgDialog.curLine.length < hgDialog.curFull.length && (
               <span style={{ display: 'inline-block', width: 6, height: 10, background: '#333', verticalAlign: 'middle', marginLeft: 1, animation: 'hg-blink-cursor 0.55s step-end infinite' }} />
@@ -2658,13 +2672,22 @@ export function BattleScreen({
               </button>
             ) : null}
 
-            {pvpControls && !pvpControls.isWaiting && phase === 'player_turn' && playerFighters.filter((f, i) => i !== playerIdx && f.currentHp > 0).length > 0 && (
+            {pvpControls && (phase === 'player_turn' || pvpControls.isWaiting) && (
               <div className="mt-1.5 flex gap-1.5">
-                <button onClick={() => setSwitchMenuOpen(true)}
-                  className="flex-1 flex items-center justify-center active:scale-95 transition-transform"
-                  style={{ background: '#3060c8', border: '3px solid #1a3880', borderRadius: 6, boxShadow: '2px 2px 0 #111, inset 2px 2px 0 #6090e8, inset -2px -2px 0 #182860', padding: '7px 4px', fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: 'white', WebkitTapHighlightColor: 'transparent' }}>
-                  CHANGER
-                </button>
+                {!pvpControls.isWaiting && playerFighters.filter((f, i) => i !== playerIdx && f.currentHp > 0).length > 0 && (
+                  <button onClick={() => setSwitchMenuOpen(true)}
+                    className="flex-1 flex items-center justify-center active:scale-95 transition-transform"
+                    style={{ background: '#3060c8', border: '3px solid #1a3880', borderRadius: 6, boxShadow: '2px 2px 0 #111, inset 2px 2px 0 #6090e8, inset -2px -2px 0 #182860', padding: '7px 4px', fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: 'white', WebkitTapHighlightColor: 'transparent' }}>
+                    CHANGER
+                  </button>
+                )}
+                {pvpControls.onAbandon && (
+                  <button onClick={() => setAbandonConfirm(true)}
+                    className="flex-1 rounded-xl active:scale-95 transition-transform flex items-center justify-center"
+                    style={{ background: 'linear-gradient(135deg,#7f1d1d,#991b1b)', color: '#fca5a5', border: '2px solid #ef4444', padding: '7px 4px', fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem' }}>
+                    ABANDONNER
+                  </button>
+                )}
               </div>
             )}
 
@@ -2677,13 +2700,14 @@ export function BattleScreen({
                 </span>
               </div>
             )}
-            {pvpControls?.onAbandon && (phase === 'player_turn' || pvpControls.isWaiting) && (
-              <div className="mt-1.5 flex justify-center">
-                <button onClick={() => setAbandonConfirm(true)}
-                  className="rounded-xl px-5 py-2.5 active:scale-95 transition-transform"
-                  style={{ background: 'linear-gradient(135deg,#7f1d1d,#991b1b)', color: '#fca5a5', border: '2px solid #ef4444', boxShadow: '0 0 8px #ef444433', fontFamily: "'Press Start 2P', monospace", fontSize: '0.45rem' }}>
-                  ABANDONNER
-                </button>
+
+            {pvpWaitingEnemySwitch && (
+              <div className="mt-1.5 rounded-xl py-3 px-4 flex items-center justify-center gap-2"
+                style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', border: '2px solid #6366f1', boxShadow: '0 0 16px #6366f144' }}>
+                <span className="text-base" style={{ animation: 'pvp-blink 1s ease-in-out infinite' }}>⏳</span>
+                <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.45rem', color: '#c7d2fe', lineHeight: 1.6 }}>
+                  CHOIX ADV…
+                </span>
               </div>
             )}
             {abandonConfirm && pvpControls?.onAbandon && (
