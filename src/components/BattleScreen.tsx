@@ -931,24 +931,36 @@ export function BattleScreen({
 
       if (xpBase > 0) {
         const stats = playerStatsRef.current;
-        const totalDmg = Object.values(stats).reduce((s, st) => s + st.degatsInfliges, 0);
-        const totalTours = Object.values(stats).reduce((s, st) => s + st.toursSurTerrain, 0);
         const defeatMult = wonSnap ? 1 : 0.4;
 
-        playerTeam.forEach(m => {
-          const id = m.pokemonId;
-          const st = stats[id] ?? { toursSurTerrain: 0, degatsInfliges: 0 };
-          let xpCalc: number;
-          if (st.toursSurTerrain === 0 && st.degatsInfliges === 0) {
-            // Participation passive (banc)
-            xpCalc = xpBase * 0.15;
-          } else {
-            const ratioDmg = totalDmg > 0 ? st.degatsInfliges / totalDmg : 0;
-            const ratioTours = totalTours > 0 ? st.toursSurTerrain / totalTours : 0;
-            xpCalc = xpBase * (ratioDmg * 0.5 + ratioTours * 0.5);
-          }
-          snap[id] = Math.max(1, Math.floor(xpCalc * defeatMult));
+        // Séparer les Pokémon actifs des Pokémon sur le banc
+        const bench = playerTeam.filter(m => {
+          const st = stats[m.pokemonId];
+          return !st || (st.toursSurTerrain === 0 && st.degatsInfliges === 0);
         });
+        const active = playerTeam.filter(m => {
+          const st = stats[m.pokemonId];
+          return st && (st.toursSurTerrain > 0 || st.degatsInfliges > 0);
+        });
+
+        // 15% de l'XP_Base pour chaque Pokémon sur le banc
+        bench.forEach(m => {
+          snap[m.pokemonId] = Math.max(1, Math.floor(xpBase * 0.15 * defeatMult));
+        });
+
+        // 85% restants répartis entre les Pokémon actifs selon leurs ratios
+        if (active.length > 0) {
+          const xpRestante = xpBase * 0.85;
+          const totalDmg = active.reduce((s, m) => s + (stats[m.pokemonId]?.degatsInfliges ?? 0), 0);
+          const totalTours = active.reduce((s, m) => s + (stats[m.pokemonId]?.toursSurTerrain ?? 0), 0);
+          active.forEach(m => {
+            const st = stats[m.pokemonId]!;
+            const ratioDmg = totalDmg > 0 ? st.degatsInfliges / totalDmg : 1 / active.length;
+            const ratioTours = totalTours > 0 ? st.toursSurTerrain / totalTours : 1 / active.length;
+            const xpCalc = xpRestante * (ratioDmg * 0.5 + ratioTours * 0.5);
+            snap[m.pokemonId] = Math.max(1, Math.floor(xpCalc * defeatMult));
+          });
+        }
       }
       const finalTeam: TeamMember[] = playerFightersRef.current.map(f => {
         const { transformOriginalId, transformMoveOverride, ...rest } = f as FighterState;
