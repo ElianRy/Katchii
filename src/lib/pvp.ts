@@ -121,13 +121,15 @@ export async function acceptChallenge(
   hostId: string,
   guestId: string,
 ): Promise<PvpSession | null> {
-  await supabase.from('pvp_challenges').update({ status: 'accepted' }).eq('id', challengeId);
+  // Create session FIRST so host can fetch it as soon as it sees 'accepted'
   const { data, error } = await supabase
     .from('pvp_sessions')
     .insert({ challenge_id: challengeId, host_id: hostId, guest_id: guestId })
     .select()
     .single();
   if (error) { console.error('[pvp] acceptChallenge:', error); return null; }
+  // Then flip challenge status — host's subscription fires after session exists
+  await supabase.from('pvp_challenges').update({ status: 'accepted' }).eq('id', challengeId);
   return data as PvpSession;
 }
 

@@ -310,11 +310,13 @@ export function App() {
       if (updated.status === 'accepted') {
         supabase.removeChannel(statusChan);
         setPvpWaiting(null);
-        const { data } = await supabase
-          .from('pvp_sessions')
-          .select()
-          .eq('challenge_id', challenge.id)
-          .maybeSingle();
+        // Retry a few times — session is created just before challenge flips to 'accepted'
+        let data = null;
+        for (let attempt = 0; attempt < 5 && !data; attempt++) {
+          if (attempt > 0) await new Promise(r => setTimeout(r, 400));
+          const res = await supabase.from('pvp_sessions').select().eq('challenge_id', challenge.id).maybeSingle();
+          data = res.data;
+        }
         if (!data) return;
         setPvpSession(data as PvpSession);
         setPvpPhase('team_select');
