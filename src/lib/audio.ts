@@ -222,6 +222,23 @@ const ZONE_MUSIC: Record<string, string> = {
   zone_libre: 'zone_libre',
 };
 
+// ── Battle-scope mute (does not touch localStorage settings) ─────────────────
+export function setBattleMute(muted: boolean) {
+  getCtx();
+  if (_masterGain) {
+    if (muted) {
+      _masterGain.gain.value = 0;
+    } else {
+      const s = loadAudioSettings();
+      _masterGain.gain.value = s.globalVolume;
+    }
+  }
+  // Fallback: mute currentMusic element directly
+  if (currentMusic && !_masterGain) {
+    currentMusic.volume = muted ? 0 : loadAudioSettings().musicVolume * loadAudioSettings().globalVolume;
+  }
+}
+
 export function playZoneMusic(zoneId: string) {
   const track = ZONE_MUSIC[zoneId];
   if (track) playMusic(track);

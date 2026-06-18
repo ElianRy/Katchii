@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { playBattleMusic, playShinyBattleSfx, playLeagueBattleMusic, stopMusic, playVictory, playLeagueVictory, playSfxDefeat, playPokemonCry, playHit, playHitSuper, playHitLow, playDeath } from '../lib/audio';
+import { playBattleMusic, playShinyBattleSfx, playLeagueBattleMusic, stopMusic, playVictory, playLeagueVictory, playSfxDefeat, playPokemonCry, playHit, playHitSuper, playHitLow, playDeath, setBattleMute } from '../lib/audio';
 import { RARITY_COLORS, Rarity } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
@@ -765,6 +765,7 @@ export function BattleScreen({
   const [pendingEnemyIdx, setPendingEnemyIdx] = useState<number>(-1);
   const [statsPanelPlayer, setStatsPanelPlayer] = useState(false);
   const [statsPanelEnemy, setStatsPanelEnemy] = useState(false);
+  const [battleMuted, setBattleMuted] = useState(false);
   const [attackEvt, setAttackEvt] = useState<AttackEvent | null>(null);
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
@@ -865,6 +866,9 @@ export function BattleScreen({
   }, [phase]);
 
   useEffect(() => () => { if (!keepMusicOnUnmount) stopMusic(0.5); }, [keepMusicOnUnmount]);
+
+  // Restore audio on unmount if battle-muted
+  useEffect(() => () => { setBattleMute(false); }, []);
 
   // PvP: when a pre-computed turn payload arrives, trigger execution
   const executeTurnRef = useRef<((idx: number, pvp?: PvpTurnOverride) => Promise<void>) | null>(null);
@@ -2006,20 +2010,34 @@ export function BattleScreen({
     <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617', fontFamily: "'Press Start 2P', monospace" }}>
       {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
 
-      {/* Bouton Auto — haut droite */}
-      {onAutoCombatChange && (
+      {/* Boutons Auto + Mute — haut droite */}
+      <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 40, display: 'flex', gap: 6 }}>
         <button
-          onClick={() => onAutoCombatChange(!autoCombat)}
-          style={{
-            position: 'absolute', top: 10, right: 10, zIndex: 40,
-            padding: '4px 10px', borderRadius: 12, fontSize: '0.6rem', fontWeight: 900,
-            background: autoCombat ? 'linear-gradient(90deg, #6366f1, #a855f7)' : 'rgba(15,23,42,0.85)',
-            border: autoCombat ? '1.5px solid #a855f7' : '1.5px solid #334155',
-            color: autoCombat ? '#fff' : '#94a3b8',
-            boxShadow: autoCombat ? '0 0 10px #a855f766' : 'none',
+          onClick={() => {
+            const next = !battleMuted;
+            setBattleMuted(next);
+            setBattleMute(next);
           }}
-        >⚡ Auto</button>
-      )}
+          style={{
+            padding: '4px 10px', borderRadius: 12, fontSize: '0.6rem', fontWeight: 900,
+            background: battleMuted ? 'rgba(239,68,68,0.2)' : 'rgba(15,23,42,0.85)',
+            border: battleMuted ? '1.5px solid #ef4444' : '1.5px solid #334155',
+            color: battleMuted ? '#ef4444' : '#94a3b8',
+          }}
+        >{battleMuted ? '🔇' : '🔊'}</button>
+        {onAutoCombatChange && (
+          <button
+            onClick={() => onAutoCombatChange(!autoCombat)}
+            style={{
+              padding: '4px 10px', borderRadius: 12, fontSize: '0.6rem', fontWeight: 900,
+              background: autoCombat ? 'linear-gradient(90deg, #6366f1, #a855f7)' : 'rgba(15,23,42,0.85)',
+              border: autoCombat ? '1.5px solid #a855f7' : '1.5px solid #334155',
+              color: autoCombat ? '#fff' : '#94a3b8',
+              boxShadow: autoCombat ? '0 0 10px #a855f766' : 'none',
+            }}
+          >⚡ Auto</button>
+        )}
+      </div>
 
       {/* ── Arena ── */}
       <div className="relative overflow-hidden" style={{ flex: '1 1 0', minHeight: 0 }}>
