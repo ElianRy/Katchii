@@ -1929,7 +1929,7 @@ export function BattleScreen({
 
           {/* Enemy pokemon */}
           <div className="absolute" style={{ top:'calc(5% + env(safe-area-inset-top, 0px))', right:'max(7%, calc(50% - 220px))', animation:'battle-enter-enemy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>
-            <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]">
+            <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
               <div className="flex items-center gap-1.5 mb-1">
                 {trainerImage && (
                   <img src={trainerImage} alt="" draggable={false}
@@ -1981,7 +1981,7 @@ export function BattleScreen({
                 ))}
               </div>
             )}
-            <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
+            <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
               <div className="flex justify-between items-center mb-1">
                 <span className="text-white font-black text-sm">{POKEMON_BY_ID[playerFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
                 <span className="text-slate-400 text-xs">Nv.{playerFighters[0]?.level}</span>
@@ -2139,7 +2139,7 @@ export function BattleScreen({
             );
           })()}
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]"
-            style={{ borderColor: isMasterTrainer ? `${trainerColor}55` : undefined, boxShadow: isMasterTrainer ? `0 0 12px ${trainerColor}33` : undefined }}>
+            style={{ fontFamily: 'system-ui, -apple-system, sans-serif', borderColor: isMasterTrainer ? `${trainerColor}55` : undefined, boxShadow: isMasterTrainer ? `0 0 12px ${trainerColor}33` : undefined }}>
             <div className="flex items-center gap-1.5 mb-1">
               {trainerImage && (
                 <div style={{ flexShrink: 0, position: 'relative' }}>
