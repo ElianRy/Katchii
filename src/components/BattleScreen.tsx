@@ -1835,7 +1835,7 @@ export function BattleScreen({
                     }} />
                 )}
                 <div className="flex flex-1 justify-between items-center">
-                  <span className="text-white font-black text-sm">{POKEMON_BY_ID[enemyFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
+                  <span className="text-white font-black" style={{ fontSize: '0.5rem' }}>{POKEMON_BY_ID[enemyFighters[0]?.pokemonId ?? 0]?.name ?? '???'}</span>
                   <span className="text-slate-400 text-xs">Nv.{enemyFighters[0]?.level}</span>
                 </div>
               </div>
@@ -1991,7 +1991,7 @@ export function BattleScreen({
         })}
 
         {/* Enemy info + sprite */}
-        <div className="absolute" style={{ top: 'calc(5% + env(safe-area-inset-top, 0px))', right: 'max(7%, calc(50% - 220px))', position: 'relative' }}>
+        <div className="absolute" style={{ top: 'calc(5% + env(safe-area-inset-top, 0px))', right: 'max(7%, calc(50% - 220px))' }}>
           {/* Enemy stats panel — to the LEFT of this card */}
           {statsPanelEnemy && activeEF && (() => {
             const baseStats = GEN1_STATS[activeEF.transformOriginalId ?? activeEF.pokemonId];
@@ -2034,7 +2034,7 @@ export function BattleScreen({
                 </div>
               )}
               <div className="flex flex-1 justify-between items-center min-w-0">
-                <span className="text-white font-black text-xs truncate">{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-white font-black truncate" style={{ fontSize: '0.5rem' }}>{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
                 <div className="flex items-center gap-1 shrink-0 ml-1">
                   <span className="text-slate-400 text-xs">Nv.{activeEF?.level}</span>
                   <button onClick={() => setStatsPanelEnemy(v => !v)}
@@ -2100,7 +2100,7 @@ export function BattleScreen({
         </div>
 
         {/* Player info + sprite */}
-        <div className="absolute" style={{ bottom: '13%', left: 'max(7%, calc(50% - 220px))', position: 'relative' }}>
+        <div className="absolute" style={{ bottom: '13%', left: 'max(7%, calc(50% - 220px))' }}>
           {/* Player stats panel — to the RIGHT of this card */}
           {statsPanelPlayer && activePF && (() => {
             const baseStats = GEN1_STATS[activePF.transformOriginalId ?? activePF.pokemonId];
@@ -2167,7 +2167,7 @@ export function BattleScreen({
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
             <div className="flex justify-between items-center mb-1">
               <div className="flex items-center gap-1 min-w-0">
-                <span className="text-white font-black text-xs truncate">{POKEMON_BY_ID[activePF?.pokemonId ?? 0]?.name ?? '???'}</span>
+                <span className="text-white font-black truncate" style={{ fontSize: '0.5rem' }}>{POKEMON_BY_ID[activePF?.pokemonId ?? 0]?.name ?? '???'}</span>
                 {boostActive && playerIdx === 0 && (
                   <span className="font-black shrink-0" style={{ fontSize: '0.48rem', color: '#f87171' }}>⚔️+25%</span>
                 )}
