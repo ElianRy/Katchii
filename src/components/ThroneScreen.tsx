@@ -518,6 +518,7 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
           steps={THRONE_TUTORIAL}
           tutorialKey="throne"
           onDone={() => setShowTutorial(false)}
+          bottomOffset={80}
         />
       )}
     </div>

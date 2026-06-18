@@ -110,6 +110,8 @@ const STARS = Array.from({ length: 40 }, (_, i) => ({
 
 let dmgCounter = 0;
 const sleep = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
+// Time for a log message to finish typing in the HG dialog box (18ms/char + 350ms queue pause + buffer)
+const logTypeDuration = (text: string) => 350 + text.length * 18 + 80;
 
 const CONFETTI_BATTLE = Array.from({ length: 22 }, (_, i) => ({
   color: ['#fbbf24','#f472b6','#60a5fa','#4ade80','#fb923c','#c084fc'][i % 6],
@@ -758,8 +760,9 @@ export function BattleScreen({
   const playerIdxRef = useRef(0);
   const enemyIdxRef = useRef(0);
   const [log, setLog] = useState<LogEntry[]>([]);
-  const [phase, setPhase] = useState<'intro' | 'player_turn' | 'resolving' | 'switch' | 'end'>('intro');
-  const phaseRef = useRef<'intro' | 'player_turn' | 'resolving' | 'switch' | 'end'>('intro');
+  const [phase, setPhase] = useState<'intro' | 'player_turn' | 'resolving' | 'switch' | 'pre_enemy_switch' | 'end'>('intro');
+  const phaseRef = useRef<'intro' | 'player_turn' | 'resolving' | 'switch' | 'pre_enemy_switch' | 'end'>('intro');
+  const [pendingEnemyIdx, setPendingEnemyIdx] = useState<number>(-1);
   const [attackEvt, setAttackEvt] = useState<AttackEvent | null>(null);
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
@@ -1040,8 +1043,9 @@ export function BattleScreen({
         if (eMoveIndex >= 0 && ePP[eMoveIndex] > 0) ePP[eMoveIndex]--;
         ef[eIdx] = { ...ef[eIdx], currentPP: ePP };
 
-        addLog(`${eName} utilise ${eResult.moveName} !`, '#fde68a');
-        await sleep(150);
+        const _eAttackMsg = `${eName} utilise ${eResult.moveName} !`;
+        addLog(_eAttackMsg, '#fde68a');
+        await sleep(logTypeDuration(_eAttackMsg));
         const uid = dmgCounter++;
         setAttackEvt({ attacker: 'enemy', type: eResult.moveType, uid });
         await sleep(VFX_DURATION[eResult.moveType] ?? 820);
@@ -1328,8 +1332,9 @@ export function BattleScreen({
       if (rawMove?.id === 'fly') {
         const atkArrFly = isPlayer ? pf : ef;
         if (!atkArrFly[atkIdx].chargingMove) {
-          addLog(`${atkName} prend son envol !`, '#a78bfa');
-          await sleep(150);
+          const _flyMsg = `${atkName} prend son envol !`;
+          addLog(_flyMsg, '#a78bfa');
+          await sleep(logTypeDuration(_flyMsg));
           const storedFlyIdx = isPlayer ? playerMoveIndex : eMoveIndex;
           if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: { moveId: 'fly', moveIndex: storedFlyIdx } };
           else ef[atkIdx] = { ...ef[atkIdx], chargingMove: { moveId: 'fly', moveIndex: storedFlyIdx } };
@@ -1339,8 +1344,9 @@ export function BattleScreen({
           if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: null };
           else ef[atkIdx] = { ...ef[atkIdx], chargingMove: null };
           flush();
-          addLog(`${atkName} redescend et attaque !`, '#a78bfa');
-          await sleep(150);
+          const _flyDownMsg = `${atkName} redescend et attaque !`;
+          addLog(_flyDownMsg, '#a78bfa');
+          await sleep(logTypeDuration(_flyDownMsg));
         }
       }
 
@@ -1349,8 +1355,9 @@ export function BattleScreen({
         const atkArr = isPlayer ? pf : ef;
         if (!atkArr[atkIdx].chargingMove) {
           // Turn 1 — charge
-          addLog(`${atkName} utilise ${result.moveName} !`, '#fde68a');
-          await sleep(150);
+          const _solarMsg = `${atkName} utilise ${result.moveName} !`;
+          addLog(_solarMsg, '#fde68a');
+          await sleep(logTypeDuration(_solarMsg));
           const uid2 = dmgCounter++;
           setAttackEvt({ attacker: atkSide, type: 'grass', uid: uid2 });
           await sleep(1250);
@@ -1371,9 +1378,10 @@ export function BattleScreen({
 
       const isStatusOnly = result.damage === 0 && !!result.statBoost && !result.isMiss;
 
-      // Step A: log "[Name] utilise [Move]!"
-      addLog(`${atkName} utilise ${result.moveName} !`, '#fde68a');
-      await sleep(150);
+      // Step A: log "[Name] utilise [Move]!" — wait for typing to finish before VFX
+      const _atkMsg = `${atkName} utilise ${result.moveName} !`;
+      addLog(_atkMsg, '#fde68a');
+      await sleep(logTypeDuration(_atkMsg));
 
       // Step B: VFX — await completion before applying damage
       if (isStatusOnly) {
@@ -1550,9 +1558,8 @@ export function BattleScreen({
         if (!suppressVictorySound) { isLeague ? playLeagueVictory() : playVictory(); }
         phaseRef.current = 'end'; setPhase('end');
       } else if (nextE >= 0) {
-        enemyIdxRef.current = nextE;
-        setEnemyIdx(nextE);
-        phaseRef.current = 'player_turn'; setPhase('player_turn');
+        setPendingEnemyIdx(nextE);
+        phaseRef.current = 'pre_enemy_switch'; setPhase('pre_enemy_switch');
       }
     };
 
@@ -2158,6 +2165,72 @@ export function BattleScreen({
             </div>
           </div>
         )}
+
+        {/* ── Pre-enemy-switch overlay: free switch before next enemy enters ── */}
+        {phase === 'pre_enemy_switch' && pendingEnemyIdx >= 0 && (() => {
+          const nextEnemy = enemyFighters[pendingEnemyIdx];
+          const nextEnemyName = POKEMON_BY_ID[nextEnemy?.pokemonId ?? 0]?.name ?? '???';
+          const confirmAndProceed = (newPlayerIdx?: number) => {
+            const targetPlayerIdx = newPlayerIdx ?? playerIdx;
+            if (newPlayerIdx !== undefined && newPlayerIdx !== playerIdx) {
+              playerIdxRef.current = newPlayerIdx;
+              setPlayerIdx(newPlayerIdx);
+              const switchName = POKEMON_BY_ID[playerFighters[newPlayerIdx]?.pokemonId]?.name ?? '???';
+              addLog(`Allez ${switchName} !`, '#4ade80');
+              if (playerFighters[newPlayerIdx]) playPokemonCry(playerFighters[newPlayerIdx].pokemonId);
+            }
+            enemyIdxRef.current = pendingEnemyIdx;
+            setEnemyIdx(pendingEnemyIdx);
+            if (nextEnemy) playPokemonCry(nextEnemy.pokemonId);
+            addLog(`L'adversaire envoie ${nextEnemyName} !`, '#fde68a');
+            phaseRef.current = 'player_turn'; setPhase('player_turn');
+            void targetPlayerIdx;
+          };
+          return (
+            <div className="absolute inset-0 z-30 bg-black/85 flex flex-col items-center justify-center gap-4 px-6">
+              <div className="text-center mb-2">
+                <div className="text-slate-400 text-sm mb-1">L'adversaire va envoyer</div>
+                <div className="text-white font-black text-xl">{nextEnemyName}</div>
+                {nextEnemy && <div className="text-slate-400 text-sm">Nv.{nextEnemy.level}</div>}
+                {nextEnemy && (
+                  <ShinySprite pokemonId={nextEnemy.pokemonId} isShiny={nextEnemy.isShiny ?? false} width={72} height={72} flip
+                    style={{ filter: spriteFilter(nextEnemy.pokemonId, nextEnemy.isShiny ?? false), margin: '8px auto 0' }} />
+                )}
+              </div>
+              <div className="text-slate-300 text-sm font-bold">Changer de Pokémon ?</div>
+              <div className="flex gap-3 flex-wrap justify-center">
+                {playerFighters.map((f, i) => {
+                  if (f.currentHp <= 0) return null;
+                  const p = POKEMON_BY_ID[f.pokemonId];
+                  const hpPct = f.currentHp / f.maxHp;
+                  const isCurrent = i === playerIdx;
+                  return (
+                    <button key={i} onClick={() => confirmAndProceed(isCurrent ? undefined : i)}
+                      className="flex flex-col items-center rounded-2xl px-3 py-2 transition-all hover:scale-105"
+                      style={{
+                        background: isCurrent ? 'rgba(250,204,21,0.15)' : 'rgba(30,41,59,0.9)',
+                        border: `2px solid ${isCurrent ? '#facc15' : 'rgba(100,116,139,0.6)'}`,
+                      }}>
+                      <ShinySprite pokemonId={f.pokemonId} isShiny={f.isShiny ?? false} width={56} height={56} compact
+                        style={{ filter: spriteFilter(f.pokemonId, f.isShiny ?? false, 6) }} />
+                      <span className="text-white font-bold text-xs mt-1">{p?.name}</span>
+                      <span className="text-slate-400 text-xs">Nv.{f.level}</span>
+                      <div className="w-14 bg-slate-700 rounded-full h-1.5 mt-1">
+                        <div className="h-1.5 rounded-full" style={{ width: `${hpPct * 100}%`, background: hpColor(hpPct) }} />
+                      </div>
+                      {isCurrent && <span className="text-yellow-400 text-xs font-bold mt-0.5">Actuel</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <button onClick={() => confirmAndProceed()}
+                className="mt-2 px-8 py-3 rounded-2xl font-black text-slate-900 text-base"
+                style={{ background: 'linear-gradient(90deg, #facc15, #f59e0b)', boxShadow: '0 4px 20px rgba(250,204,21,0.35)' }}>
+                Go ! →
+              </button>
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── Transition bar between arena and UI ── */}
