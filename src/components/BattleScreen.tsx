@@ -19,7 +19,7 @@ import {
 import type { Stages, StatusState, RawMove, MoveResult } from '../data/combatEngine';
 import { MOVES } from '../data/gen1Moves';
 registerMoves(MOVES as Parameters<typeof registerMoves>[0]);
-import type { } from '../data/gen1Stats';
+import { GEN1_STATS } from '../data/gen1Stats';
 import { TeamMember } from './TeamBuilder';
 import type { PokemonInstanceData } from '../types';
 import type { PvpMoveResult } from '../lib/pvp';
@@ -763,6 +763,7 @@ export function BattleScreen({
   const [phase, setPhase] = useState<'intro' | 'player_turn' | 'resolving' | 'switch' | 'pre_enemy_switch' | 'end'>('intro');
   const phaseRef = useRef<'intro' | 'player_turn' | 'resolving' | 'switch' | 'pre_enemy_switch' | 'end'>('intro');
   const [pendingEnemyIdx, setPendingEnemyIdx] = useState<number>(-1);
+  const [statsPanel, setStatsPanel] = useState<'player' | 'enemy' | null>(null);
   const [attackEvt, setAttackEvt] = useState<AttackEvent | null>(null);
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
@@ -1970,7 +1971,13 @@ export function BattleScreen({
               )}
               <div className="flex flex-1 justify-between items-center min-w-0">
                 <span className="text-white font-black text-sm truncate">{POKEMON_BY_ID[activeEF?.pokemonId ?? 0]?.name ?? '???'}</span>
-                <span className="text-slate-400 text-xs ml-1 shrink-0">Nv.{activeEF?.level}</span>
+                <div className="flex items-center gap-1 shrink-0 ml-1">
+                  <span className="text-slate-400 text-xs">Nv.{activeEF?.level}</span>
+                  <button onClick={() => setStatsPanel(p => p === 'enemy' ? null : 'enemy')}
+                    style={{ fontSize: '0.6rem', background: statsPanel === 'enemy' ? 'rgba(250,204,21,0.25)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 4px', color: statsPanel === 'enemy' ? '#facc15' : '#94a3b8', lineHeight: 1.4 }}>
+                    📊
+                  </button>
+                </div>
               </div>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-2.5">
@@ -2073,7 +2080,13 @@ export function BattleScreen({
                   <span className="font-black shrink-0" style={{ fontSize: '0.48rem', color: '#f87171' }}>⚔️+25%</span>
                 )}
               </div>
-              <span className="text-slate-400 text-xs shrink-0 ml-1">Nv.{activePF?.level}</span>
+              <div className="flex items-center gap-1 shrink-0 ml-1">
+                <span className="text-slate-400 text-xs">Nv.{activePF?.level}</span>
+                <button onClick={() => setStatsPanel(p => p === 'player' ? null : 'player')}
+                  style={{ fontSize: '0.6rem', background: statsPanel === 'player' ? 'rgba(250,204,21,0.25)' : 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 4, padding: '1px 4px', color: statsPanel === 'player' ? '#facc15' : '#94a3b8', lineHeight: 1.4 }}>
+                  📊
+                </button>
+              </div>
             </div>
             <div className="w-full bg-slate-700 rounded-full h-2.5">
               <div className="h-2.5 rounded-full transition-all duration-700"
@@ -2232,6 +2245,58 @@ export function BattleScreen({
           );
         })()}
       </div>
+
+      {/* ── Stats panel overlay ── */}
+      {statsPanel && (() => {
+        const fighter = statsPanel === 'player' ? activePF : activeEF;
+        if (!fighter) return null;
+        const baseStats = GEN1_STATS[fighter.transformOriginalId ?? fighter.pokemonId];
+        const stages = fighter.stages;
+        const STAT_ROWS: { key: keyof typeof stages; label: string; base: number | undefined }[] = [
+          { key: 'attack',    label: 'Attaque',    base: baseStats?.attack },
+          { key: 'defense',   label: 'Défense',    base: baseStats?.defense },
+          { key: 'spAttack',  label: 'Atq. Spé.',  base: baseStats?.spAttack },
+          { key: 'spDefense', label: 'Déf. Spé.',  base: baseStats?.spDefense },
+          { key: 'speed',     label: 'Vitesse',    base: baseStats?.speed },
+        ];
+        const stageColor = (s: number) => s > 0 ? '#4ade80' : s < 0 ? '#f87171' : '#64748b';
+        const stageText = (s: number) => s === 0 ? '±0' : s > 0 ? `+${s}` : `${s}`;
+        const stageMult = (s: number) => {
+          if (s >= 0) return `×${(2 + s) / 2}`;
+          return `×${2 / (2 - s)}`.replace(/(\.\d{2})\d+/, '$1');
+        };
+        return (
+          <div
+            style={{ position: 'absolute', zIndex: 50, top: statsPanel === 'enemy' ? 'calc(5% + env(safe-area-inset-top, 0px) + 4px)' : undefined, bottom: statsPanel === 'player' ? 4 : undefined, right: statsPanel === 'enemy' ? 'max(7%, calc(50% - 220px))' : undefined, left: statsPanel === 'player' ? 'max(7%, calc(50% - 220px))' : undefined, minWidth: 200 }}
+            onClick={() => setStatsPanel(null)}
+          >
+            <div style={{ background: 'rgba(2,6,23,0.97)', border: '1px solid rgba(100,116,139,0.4)', borderRadius: 10, padding: '8px 10px', boxShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>
+              <div style={{ color: '#94a3b8', fontSize: '0.5rem', fontFamily: "'Press Start 2P', monospace", marginBottom: 6, textTransform: 'uppercase' }}>
+                {statsPanel === 'player' ? '— Vos stats —' : '— Stats adversaire —'}
+              </div>
+              {STAT_ROWS.map(({ key, label, base }) => {
+                const s = stages[key] ?? 0;
+                return (
+                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                    <span style={{ color: '#cbd5e1', fontSize: '0.48rem', fontFamily: "'Press Start 2P', monospace", width: 68, flexShrink: 0 }}>{label}</span>
+                    {base !== undefined && (
+                      <span style={{ color: '#475569', fontSize: '0.45rem', fontFamily: "'Press Start 2P', monospace", width: 24, textAlign: 'right', flexShrink: 0 }}>{base}</span>
+                    )}
+                    <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.07)', borderRadius: 3, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: base ? `${Math.min(100, (base / 150) * 100)}%` : '0%', background: '#334155', borderRadius: 3 }} />
+                    </div>
+                    <span style={{ color: stageColor(s), fontSize: '0.5rem', fontFamily: "'Press Start 2P', monospace", width: 24, textAlign: 'center', flexShrink: 0 }}>{stageText(s)}</span>
+                    {s !== 0 && (
+                      <span style={{ color: stageColor(s), fontSize: '0.42rem', fontFamily: "'Press Start 2P', monospace", width: 32, textAlign: 'right', flexShrink: 0, opacity: 0.85 }}>{stageMult(s)}</span>
+                    )}
+                  </div>
+                );
+              })}
+              <div style={{ color: '#475569', fontSize: '0.4rem', fontFamily: "'Press Start 2P', monospace", marginTop: 5, textAlign: 'center' }}>Tap pour fermer</div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Transition bar between arena and UI ── */}
       <div style={{ height: 6, background: 'linear-gradient(180deg, #1a1a2e 0%, #3a3050 40%, #706890 100%)', boxShadow: '0 -2px 0 #0a0a18' }} />
