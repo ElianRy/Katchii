@@ -196,11 +196,8 @@ export function checkCanAct(status: StatusState): { canAct: boolean; nextStatus:
   }
 
   if (status.condition === 'par') {
-    // 25% chance of full paralysis (loses turn)
-    if (Math.random() < 0.25) {
-      return { canAct: false, nextStatus: status };
-    }
-    return { canAct: true, nextStatus: status };
+    // Paralysis always prevents action until it wears off
+    return { canAct: false, nextStatus: status };
   }
 
   // BRN / PSN / TOX: don't prevent action
