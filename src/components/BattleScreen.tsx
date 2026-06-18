@@ -68,6 +68,7 @@ interface Props {
     onMoveSelect: (moveIndex: number) => void;
     pendingPayload: PvpTurnOverride | null;
     onTurnComputed?: (payload: Required<PvpTurnOverride>) => void;
+    onAbandon?: () => void;
   };
 }
 
@@ -876,7 +877,10 @@ export function BattleScreen({
   useEffect(() => {
     const payload = pvpControls?.pendingPayload;
     if (!payload) return;
-    if (phaseRef.current !== 'player_turn') return;
+    // In PvP the phase is 'resolving' while waiting for opponent's move — allow both
+    if (phaseRef.current !== 'player_turn' && phaseRef.current !== 'resolving') return;
+    // Force back to player_turn so executeTurn's guard passes
+    phaseRef.current = 'player_turn';
     executeTurnRef.current?.(payload.playerMoveIndex, payload);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pvpControls?.pendingPayload]);
@@ -2621,9 +2625,30 @@ export function BattleScreen({
             ) : null}
 
             {pvpControls?.isWaiting && (
-              <div className="mt-1.5 py-2.5 rounded text-center text-slate-400 text-xs animate-pulse"
-                style={{ background: '#1e293b', border: '1px solid #334155', fontFamily: "'Press Start 2P', monospace", fontSize: '0.45rem' }}>
-                ⏳ En attente de l'adversaire…
+              <div className="mt-1.5 rounded-xl py-3 px-4 flex items-center justify-between gap-3"
+                style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', border: '2px solid #6366f1', boxShadow: '0 0 16px #6366f144' }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xl" style={{ animation: 'pvp-blink 1s ease-in-out infinite' }}>⏳</span>
+                  <span className="text-indigo-200 font-black" style={{ fontFamily: 'system-ui,-apple-system,sans-serif', fontSize: '0.78rem' }}>
+                    En attente de l'adversaire…
+                  </span>
+                </div>
+                {pvpControls?.onAbandon && (
+                  <button onClick={pvpControls.onAbandon}
+                    className="rounded-lg px-3 py-1.5 font-black shrink-0 active:scale-95 transition-transform"
+                    style={{ background: 'rgba(239,68,68,0.25)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.5)', fontSize: '0.7rem', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
+                    🏳️ Abandonner
+                  </button>
+                )}
+              </div>
+            )}
+            {pvpControls && !pvpControls.isWaiting && (phase === 'player_turn') && pvpControls.onAbandon && (
+              <div className="mt-1.5 flex justify-end">
+                <button onClick={pvpControls.onAbandon}
+                  className="rounded-lg px-3 py-1.5 font-black active:scale-95 transition-transform"
+                  style={{ background: 'rgba(239,68,68,0.15)', color: '#fca5a5', border: '1px solid rgba(239,68,68,0.35)', fontSize: '0.7rem', fontFamily: 'system-ui,-apple-system,sans-serif' }}>
+                  🏳️ Abandonner
+                </button>
               </div>
             )}
 

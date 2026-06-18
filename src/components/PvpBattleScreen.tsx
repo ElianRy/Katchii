@@ -25,11 +25,11 @@ interface Props {
 type PvpPayload = {
   playerMoveIndex: number;
   enemyMoveIndex: number;
-  pResult: Record<string, unknown>;
-  eResult: Record<string, unknown>;
+  pResult?: Record<string, unknown>;
+  eResult?: Record<string, unknown>;
 };
 
-export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponentName, userId, onBattleEnd, onQuit }: Props) {
+export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponentName, userId, onBattleEnd }: Props) {
   const [isWaiting, setIsWaiting] = useState(false);
   const [pendingPayload, setPendingPayload] = useState<PvpPayload | null>(null);
   const myMoveRef = useRef<number | null>(null);
@@ -57,8 +57,9 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
         pResult: full.eResult,
         eResult: full.pResult,
       };
-      setPendingPayload(guestPayload);
-      setIsWaiting(false);
+      // Reset first so BattleScreen's useEffect always sees a fresh change
+      setPendingPayload(null);
+      setTimeout(() => { setPendingPayload(guestPayload); setIsWaiting(false); }, 0);
     });
 
     channel.subscribe();
@@ -74,8 +75,8 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
     const myMove = myMoveRef.current;
     const opMove = opponentMoveRef.current;
     if (myMove === null || opMove === null) return;
-    // Signal BattleScreen to run executeTurn — results computed inside and broadcast via onTurnComputed
-    setPendingPayload({ playerMoveIndex: myMove, enemyMoveIndex: opMove, pResult: {}, eResult: {} });
+    // No pResult/eResult — BattleScreen (host) will compute them then call onTurnComputed
+    setPendingPayload({ playerMoveIndex: myMove, enemyMoveIndex: opMove });
     setIsWaiting(false);
   }, [isHost]);
 
@@ -113,13 +114,20 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
     onBattleEnd(won);
   }, [userId, isHost, session, onBattleEnd]);
 
+  const handleAbandon = useCallback(async () => {
+    // L'adversaire gagne
+    const winnerId = isHost ? session.guest_id : session.host_id;
+    await finishSession(session.id, winnerId);
+    onBattleEnd(false);
+  }, [isHost, session, onBattleEnd]);
+
   return (
     <BattleScreen
       playerTeam={myTeam}
       enemyTeam={opponentTeam}
       bossName={opponentName}
       onBattleEnd={handleBattleEnd}
-      onQuit={onQuit}
+      onQuit={handleAbandon}
       suppressVictorySound={false}
       keepMusic={false}
       pvpControls={{
@@ -127,6 +135,7 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
         onMoveSelect: handleMoveSelect,
         pendingPayload: pendingPayload as Parameters<typeof BattleScreen>[0]['pvpControls'] extends { pendingPayload: infer T } ? T : never,
         onTurnComputed: isHost ? handleTurnComputed : undefined,
+        onAbandon: handleAbandon,
       }}
     />
   );
