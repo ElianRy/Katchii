@@ -70,8 +70,9 @@ interface Props {
     onTurnComputed?: (payload: Required<PvpTurnOverride>) => void;
     onAbandon?: () => void;
     forceEnd?: boolean | null;
-    onSwitch?: (newIdx: number) => void;
+    onSwitch?: (newIdx: number, voluntary?: boolean) => void;
     opponentSwitchIdx?: number | null;
+    opponentVoluntarySwitchIdx?: number | null;
   };
 }
 
@@ -797,6 +798,9 @@ export function BattleScreen({
   const logScrollRef = useRef<HTMLDivElement | null>(null);
   const [pvpWaitingEnemySwitch, setPvpWaitingEnemySwitch] = useState(false);
   const pvpControlsRef = useRef(pvpControls);
+  const pvpKoTakenRef = useRef(0);
+  const pvpDmgReceivedRef = useRef(0);
+  const [pvpEndStats, setPvpEndStats] = useState<{ dmgDealt: number; dmgReceived: number; koMade: number; koTaken: number; turns: number } | null>(null);
   useEffect(() => { pvpControlsRef.current = pvpControls; }, [pvpControls]);
 
   useEffect(() => {
@@ -892,7 +896,7 @@ export function BattleScreen({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pvpControls?.pendingPayload]);
 
-  // PvP: apply opponent switch
+  // PvP: apply opponent switch after KO
   useEffect(() => {
     const idx = pvpControls?.opponentSwitchIdx;
     if (idx === null || idx === undefined) return;
@@ -904,6 +908,18 @@ export function BattleScreen({
     if (enemyFighters[idx]) playPokemonCry(enemyFighters[idx].pokemonId);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pvpControls?.opponentSwitchIdx]);
+
+  // PvP: apply opponent voluntary switch (free action, no KO)
+  useEffect(() => {
+    const idx = pvpControls?.opponentVoluntarySwitchIdx;
+    if (idx === null || idx === undefined) return;
+    enemyIdxRef.current = idx;
+    setEnemyIdx(idx);
+    const name = POKEMON_BY_ID[enemyFighters[idx]?.pokemonId]?.name ?? '???';
+    addLog(`L'adversaire change pour ${name} !`, '#fde68a');
+    if (enemyFighters[idx]) playPokemonCry(enemyFighters[idx].pokemonId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pvpControls?.opponentVoluntarySwitchIdx]);
 
   // PvP: force victory or defeat when opponent abandons
   useEffect(() => {
@@ -1041,7 +1057,18 @@ export function BattleScreen({
           ? { ...rest, pokemonId: transformOriginalId }
           : { ...rest };
       });
-      setTimeout(() => onBattleEnd(wonSnap, snap, finalTeam, enemyDmgRef.current), 1800);
+      if (pvpControlsRef.current) {
+        // PvP: show stats + close button, don't auto-call onBattleEnd
+        setPvpEndStats({
+          dmgDealt: Object.values(playerStatsRef.current).reduce((s, v) => s + v.degatsInfliges, 0),
+          dmgReceived: pvpDmgReceivedRef.current,
+          koMade: koEnemyLevelsRef.current.length,
+          koTaken: pvpKoTakenRef.current,
+          turns: turnNumberRef.current,
+        });
+      } else {
+        setTimeout(() => onBattleEnd(wonSnap, snap, finalTeam, enemyDmgRef.current), 1800);
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
@@ -1064,7 +1091,7 @@ export function BattleScreen({
     } else {
       setTimeout(() => setShakePokemon(null), 700);
     }
-    pvpControls?.onSwitch?.(idx);
+    pvpControls?.onSwitch?.(idx, fromPvp);
   }, [playerFighters, addLog, pvpControls]);
 
   // Auto combat: smart bench selection on forced switch
@@ -1602,6 +1629,9 @@ export function BattleScreen({
             playerStatsRef.current[dmgTrackId] = { toursSurTerrain: 0, degatsInfliges: totalApplied };
           }
         }
+        if (!isPlayer && totalApplied > 0) {
+          pvpDmgReceivedRef.current += totalApplied;
+        }
         if (result.isCrit) addLog('Coup critique !', '#fbbf24');
         if (hitCount > 1) addLog(`${hitCount} fois de suite !`, '#fbbf24');
         if (result.effectiveness >= 2) addLog('C\'est super efficace !', isPlayer ? '#4ade80' : '#f87171');
@@ -1685,13 +1715,13 @@ export function BattleScreen({
       playDeath();
       koEnemyLevelsRef.current.push(eFighter.level);
       flush();
-      const nextE = ef.findIndex((f, i) => i > eIdx && f.currentHp > 0);
-      if (nextE < 0 && ef.every(f => f.currentHp <= 0)) {
+      const nextE = ef.findIndex((f, i) => i !== eIdx && f.currentHp > 0);
+      if (nextE < 0) {
         battleDone.current = true; won.current = true;
         stopMusic(0);
         if (!suppressVictorySound) { isLeague ? playLeagueVictory() : playVictory(); }
         phaseRef.current = 'end'; setPhase('end');
-      } else if (nextE >= 0) {
+      } else {
         if (pvpControlsRef.current) {
           // PvP: don't auto-pick — wait for opponent's broadcast switch
           setPvpWaitingEnemySwitch(true);
@@ -1707,6 +1737,7 @@ export function BattleScreen({
       addLog(`${pName} est mis K.O. !`, '#f87171');
       playDeath();
       enemyDmgRef.current[eFighter.pokemonId] = (enemyDmgRef.current[eFighter.pokemonId] ?? 0) + eResult.damage;
+      pvpKoTakenRef.current++;
       if (pIdx === 0 && boostActiveRef.current) { boostActiveRef.current = false; setBoostActive(false); }
       flush();
       const nextP = pf.findIndex((f, i) => i > pIdx && f.currentHp > 0);
@@ -2385,8 +2416,8 @@ export function BattleScreen({
                 pointerEvents: 'none', zIndex: 24,
               } as React.CSSProperties} />
             ))}
-            <div className="absolute inset-x-0 top-1/2 flex flex-col items-center gap-2 pointer-events-none"
-              style={{ transform: 'translateY(-50%)', zIndex: 25 }}>
+            <div className="absolute inset-x-0 top-1/2 flex flex-col items-center gap-2"
+              style={{ transform: 'translateY(-50%)', zIndex: 25, pointerEvents: pvpEndStats ? 'auto' : 'none' }}>
               {won.current ? (
                 <>
                   <div style={{ fontSize: '4rem', animation: 'victory-trophy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>🏆</div>
@@ -2407,6 +2438,30 @@ export function BattleScreen({
                     DÉFAITE…
                   </div>
                 </>
+              )}
+              {pvpControls && pvpEndStats && (
+                <div className="mt-2 rounded-2xl px-5 py-4 flex flex-col gap-2 w-72"
+                  style={{ background: 'rgba(15,23,42,0.92)', border: '2px solid #334155', animation: 'victory-title 0.5s 0.6s ease-out both' }}>
+                  <div className="text-center mb-1" style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: '#94a3b8', letterSpacing: '0.05em' }}>STATS DU COMBAT</div>
+                  {[
+                    { label: '⚔️ DMG infligés', value: pvpEndStats.dmgDealt },
+                    { label: '🛡️ DMG reçus', value: pvpEndStats.dmgReceived },
+                    { label: '💀 K.O. infligés', value: pvpEndStats.koMade },
+                    { label: '😵 K.O. subis', value: pvpEndStats.koTaken },
+                    { label: '🔄 Tours joués', value: pvpEndStats.turns },
+                  ].map(row => (
+                    <div key={row.label} className="flex justify-between items-center">
+                      <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.38rem', color: '#cbd5e1' }}>{row.label}</span>
+                      <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.42rem', color: '#fbbf24' }}>{row.value}</span>
+                    </div>
+                  ))}
+                  <button
+                    className="mt-2 w-full py-2 rounded-xl active:scale-95 transition-transform"
+                    style={{ background: 'linear-gradient(135deg,#1d4ed8,#2563eb)', color: 'white', border: '2px solid #3b82f6', fontFamily: "'Press Start 2P', monospace", fontSize: '0.45rem', boxShadow: '0 0 12px #3b82f644' }}
+                    onClick={() => onBattleEnd(won.current, {})}>
+                    FERMER
+                  </button>
+                </div>
               )}
             </div>
           </>
@@ -2627,7 +2682,7 @@ export function BattleScreen({
                   const pp = activePF?.currentPP[i] ?? 0;
                   const isCharging = !!(activePF?.chargingMove);
                   const isThisChargingMove = activePF?.chargingMove?.moveIndex === i;
-                  const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat || !!(pvpControls?.isWaiting) || isCharging;
+                  const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat || !!(pvpControls?.isWaiting) || isCharging || pvpWaitingEnemySwitch;
                   const typeColor = TYPE_COLORS[move.type as PokemonType] ?? '#888';
                   const ppLow = pp <= Math.floor((move.pp ?? 15) / 4);
                   return (

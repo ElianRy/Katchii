@@ -35,6 +35,7 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
   const [pendingPayload, setPendingPayload] = useState<PvpPayload | null>(null);
   const [forceEnd, setForceEnd] = useState<boolean | null>(null);
   const [opponentSwitchIdx, setOpponentSwitchIdx] = useState<number | null>(null);
+  const [opponentVoluntarySwitchIdx, setOpponentVoluntarySwitchIdx] = useState<number | null>(null);
   const myMoveRef = useRef<number | null>(null);
   const opponentMoveRef = useRef<number | null>(null);
   const channelRef = useRef<ReturnType<typeof getPvpBattleChannel> | null>(null);
@@ -47,13 +48,11 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
       if (battleEndedRef.current) return;
       battleEndedRef.current = true;
       const won = updated.winner_id === userId;
-      // Trigger victory/defeat screen via BattleScreen forceEnd
+      // Trigger victory/defeat screen via BattleScreen forceEnd — user clicks FERMER to proceed
       setForceEnd(won);
-      // Give BattleScreen time to show end screen, then cleanup
-      setTimeout(() => onBattleEnd(won), 3000);
     });
     return () => { supabase.removeChannel(chan); };
-  }, [session.id, userId, onBattleEnd]);
+  }, [session.id, userId]);
 
   useEffect(() => {
     const channel = getPvpBattleChannel(session.id);
@@ -66,11 +65,18 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
       tryStartTurn();
     });
 
+    // KO-forced switch (opponent selected new pokemon after their pokemon fainted)
     channel.on('broadcast', { event: 'pvp_switch' }, ({ payload }) => {
       const { switchIdx } = payload as { switchIdx: number };
-      // Reset to null first so useEffect re-fires if same index selected again
       setOpponentSwitchIdx(null);
       setTimeout(() => setOpponentSwitchIdx(switchIdx), 0);
+    });
+
+    // Voluntary switch (free action, no KO involved)
+    channel.on('broadcast', { event: 'pvp_voluntary_switch' }, ({ payload }) => {
+      const { switchIdx } = payload as { switchIdx: number };
+      setOpponentVoluntarySwitchIdx(null);
+      setTimeout(() => setOpponentVoluntarySwitchIdx(switchIdx), 0);
     });
 
     channel.on('broadcast', { event: 'turn_payload' }, ({ payload }) => {
@@ -128,10 +134,12 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
   }, []);
 
   const handleBattleEnd = useCallback(async (won: boolean) => {
-    if (battleEndedRef.current) return;
-    battleEndedRef.current = true;
-    const winnerId = won ? userId : (isHost ? session.guest_id : session.host_id);
-    await finishSession(session.id, winnerId);
+    // Always call onBattleEnd; only call finishSession once
+    if (!battleEndedRef.current) {
+      battleEndedRef.current = true;
+      const winnerId = won ? userId : (isHost ? session.guest_id : session.host_id);
+      await finishSession(session.id, winnerId);
+    }
     onBattleEnd(won);
   }, [userId, isHost, session, onBattleEnd]);
 
@@ -140,8 +148,9 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
     battleEndedRef.current = true;
     const winnerId = isHost ? session.guest_id : session.host_id;
     await finishSession(session.id, winnerId);
-    onBattleEnd(false);
-  }, [isHost, session, onBattleEnd]);
+    // Show defeat screen via forceEnd — user clicks FERMER to proceed
+    setForceEnd(false);
+  }, [isHost, session]);
 
   return (
     <BattleScreen
@@ -160,10 +169,15 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
         onTurnComputed: isHost ? handleTurnComputed : undefined,
         onAbandon: handleAbandon,
         forceEnd,
-        onSwitch: (newIdx: number) => {
-          channelRef.current?.send({ type: 'broadcast', event: 'pvp_switch', payload: { switchIdx: newIdx } });
+        onSwitch: (newIdx: number, voluntary?: boolean) => {
+          if (voluntary) {
+            channelRef.current?.send({ type: 'broadcast', event: 'pvp_voluntary_switch', payload: { switchIdx: newIdx } });
+          } else {
+            channelRef.current?.send({ type: 'broadcast', event: 'pvp_switch', payload: { switchIdx: newIdx } });
+          }
         },
         opponentSwitchIdx,
+        opponentVoluntarySwitchIdx,
       }}
     />
   );
