@@ -1794,7 +1794,7 @@ export function BattleScreen({
   // ── INTRO PHASE ─────────────────────────────────────────────────────────────
   if (phase === 'intro') {
     return (
-      <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617' }}>
+      <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617', fontFamily: "'Press Start 2P', monospace" }}>
         {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
         <div className="relative flex-1 overflow-hidden">
           <div className="absolute inset-0" style={{
@@ -1882,7 +1882,7 @@ export function BattleScreen({
   }
 
   return (
-    <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617' }}>
+    <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#020617', fontFamily: "'Press Start 2P', monospace" }}>
       {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
 
       {/* Bouton Auto — haut droite */}

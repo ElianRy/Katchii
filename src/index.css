@@ -5,7 +5,6 @@
 /* Fill safe areas (notch / home bar) with app's dark background */
 html, body {
   background-color: #020617;
-  font-family: 'Press Start 2P', monospace;
 }
 
 /* Prevent iOS Safari zoom on input focus (triggered when font-size < 16px) */
