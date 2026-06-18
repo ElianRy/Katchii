@@ -99,6 +99,8 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number>; xpAfter: Record<number, { level: number; xp: number }> } | null>(null);
   const [autoCombat, setAutoCombat] = useState(false);
   const [autoCountdown, setAutoCountdown] = useState<number | null>(null);
+  const [autoSessionGains, setAutoSessionGains] = useState<LevelUpNotif[]>([]);
+  const [showAutoSummary, setShowAutoSummary] = useState(false);
   type TrainingPreset = 'debutant' | 'facile' | 'moyen' | 'difficile' | 'tres_difficile' | 'impossible';
   const TRAINING_PRESETS: { key: TrainingPreset; label: string; emoji: string; level: number; range: string; color: string }[] = [
     { key: 'debutant',       label: 'Débutant',       emoji: '🌱', level: 3,   range: 'Niv. 1–5',    color: '#86efac' },
@@ -188,7 +190,28 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
       if (onAddXp) onAddXp(id, effectiveXp);
     });
     setLevelUps(ups);
-    if (ups.length > 0) playLevelUp();
+    if (ups.length > 0) {
+      playLevelUp();
+      if (autoCombat) {
+        setAutoSessionGains(prev => {
+          // merge: keep highest newLevel per pokemonId, union newMoves
+          const merged = [...prev];
+          ups.forEach(u => {
+            const existing = merged.findIndex(m => m.pokemonId === u.pokemonId);
+            if (existing >= 0) {
+              merged[existing] = {
+                pokemonId: u.pokemonId,
+                newLevel: Math.max(merged[existing].newLevel, u.newLevel),
+                newMoves: [...new Set([...merged[existing].newMoves, ...u.newMoves])],
+              };
+            } else {
+              merged.push(u);
+            }
+          });
+          return merged;
+        });
+      }
+    }
     if (won) onBattleWin?.(selected);
     onTrainingBattle?.();
     setBattleResult({ won, xpGains, xpAfter });
@@ -284,7 +307,16 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         onBattleEnd={handleBattleEnd}
         autoCombat={autoCombat}
         suppressVictorySound={autoCombat}
-        onAutoCombatChange={setAutoCombat}
+        onAutoCombatChange={(v) => {
+          if (!v && autoCombat && autoSessionGains.length > 0) {
+            setShowAutoSummary(true);
+          }
+          if (v) {
+            // nouvelle session auto : reset les gains
+            setAutoSessionGains([]);
+          }
+          setAutoCombat(v);
+        }}
         speedLevel={battleSpeed}
         onSpeedLevelChange={setBattleSpeed}
         onQuit={() => { setMode('team'); setBattleResult(null); }}
@@ -800,6 +832,54 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
       </div>
       {showTutorial && (
         <TutorialOverlay tutorialKey="team" steps={TEAM_TUTORIAL} onDone={() => { setShowTutorial(false); onMarkTutorialDone?.(); }} bottomOffset={72} />
+      )}
+
+      {/* ── Auto Combat Session Summary ── */}
+      {showAutoSummary && autoSessionGains.length > 0 && (
+        <div className="fixed inset-0 z-[700] flex items-center justify-center px-4 bg-black/70">
+          <div className="w-full max-w-sm rounded-3xl overflow-hidden" style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1e1b4b 100%)', border: '1px solid rgba(250,204,21,0.3)', boxShadow: '0 0 40px rgba(250,204,21,0.15)' }}>
+            <div className="px-5 pt-5 pb-3 border-b border-slate-700/50">
+              <div className="text-yellow-400 font-black text-lg" style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.9rem' }}>⚡ Session Auto</div>
+              <div className="text-slate-400 text-xs mt-1">Gains depuis l'activation du mode auto</div>
+            </div>
+            <div className="px-5 py-4 flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+              {autoSessionGains.map(g => {
+                const p = POKEMON_BY_ID[g.pokemonId];
+                const currentLevel = state.pokemonLevels?.[g.pokemonId]?.level ?? g.newLevel;
+                return (
+                  <div key={g.pokemonId} className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-bold text-sm">{p?.name ?? `#${g.pokemonId}`}</span>
+                      <span className="text-slate-400 text-xs">Nv.{currentLevel}</span>
+                      <span className="text-yellow-400 font-black text-xs ml-auto">▲ Nv.{g.newLevel}</span>
+                    </div>
+                    {g.newMoves.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-0.5">
+                        {g.newMoves.map(slug => {
+                          const mv = MOVES[slug];
+                          return (
+                            <span key={slug} className="text-xs rounded-full px-2 py-0.5 font-bold" style={{ background: 'rgba(250,204,21,0.15)', color: '#fde68a', border: '1px solid rgba(250,204,21,0.3)' }}>
+                              ✦ {mv?.name ?? slug}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="px-5 pb-5 pt-3">
+              <button
+                onClick={() => { setShowAutoSummary(false); setAutoSessionGains([]); }}
+                className="w-full h-12 rounded-2xl font-black text-slate-900"
+                style={{ background: 'linear-gradient(90deg, #facc15, #f59e0b)', boxShadow: '0 4px 20px rgba(250,204,21,0.35)' }}
+              >
+                Super ! 👍
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
