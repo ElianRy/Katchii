@@ -1307,7 +1307,7 @@ export function BattleScreen({
 
       // Step B: VFX — await completion before applying damage
       if (isStatusOnly) {
-        const positive = result.statBoost!.target === 'self' ? result.statBoost!.stages > 0 : result.statBoost!.stages < 0;
+        const positive = result.statBoost!.stages > 0;
         const animTarget = result.statBoost!.target === 'self' ? atkSide : defSide;
         setStatusAnim({ target: animTarget, positive, uid: dmgCounter++ });
         await sleep(VFX_STATUS_DURATION);
@@ -1812,29 +1812,7 @@ export function BattleScreen({
 
         {attackEvt && <TypeVfx key={attackEvt.uid} type={attackEvt.type} direction={attackEvt.attacker === 'player' ? 'ltr' : 'rtl'} uid={attackEvt.uid} moveName={attackEvt.attacker === 'player' ? playerMoves[playerIdx]?.name : undefined} />}
         {hitFlash && <div className="absolute inset-0 pointer-events-none battle-hit-flash" style={{ background: hitFlash === 'player' ? 'rgba(239,68,68,0.2)' : 'rgba(250,204,21,0.13)' }} />}
-        {/* Status move animation */}
-        {statusAnim && (() => {
-          const isEnemy = statusAnim.target === 'enemy';
-          const pos: React.CSSProperties = isEnemy
-            ? { position: 'absolute', top: 'calc(5% + env(safe-area-inset-top,0px) + 50px)', right: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 }
-            : { position: 'absolute', bottom: 'calc(14% + 50px)', left: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 };
-          const up = statusAnim.positive;
-          const arrowColor = up ? '#ff8c00' : '#4488ff';
-          const arrowChar = up ? '▲' : '▼';
-          const animName = up ? 'stat-arrow-up' : 'stat-arrow-down';
-          return (
-            <div key={statusAnim.uid} style={{ ...pos, display: 'flex', gap: 4 }}>
-              {[0, 1, 2].map(i => (
-                <span key={i} style={{
-                  fontSize: '1.5rem', fontWeight: 900, color: arrowColor,
-                  textShadow: `0 0 8px ${arrowColor}, 0 0 16px ${arrowColor}`,
-                  animation: `${animName} 1.1s ${i * 0.12}s ease-out forwards`,
-                  opacity: 0,
-                }}>{arrowChar}</span>
-              ))}
-            </div>
-          );
-        })()}
+        {/* Status move animation — rendered inside sprites below */}
 
         {/* Floating damage */}
         {floatingDmg.map(d => {
@@ -1919,6 +1897,20 @@ export function BattleScreen({
             {paralysisApplied?.target === 'enemy' && <ParalysisAppliedVfx uid={paralysisApplied.uid} />}
             {/* Poison applied VFX on enemy */}
             {poisonApplied?.target === 'enemy' && <PoisonAppliedVfx uid={poisonApplied.uid} />}
+            {/* Stat arrow animation on enemy */}
+            {statusAnim?.target === 'enemy' && (() => {
+              const up = statusAnim.positive;
+              const arrowColor = up ? '#ff8c00' : '#4488ff';
+              const arrowChar = up ? '▲' : '▼';
+              const animName = up ? 'stat-arrow-up' : 'stat-arrow-down';
+              return (
+                <div key={statusAnim.uid} style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, pointerEvents: 'none', zIndex: 30 }}>
+                  {[0, 1, 2].map(i => (
+                    <span key={i} style={{ fontSize: '1.5rem', fontWeight: 900, color: arrowColor, textShadow: `0 0 8px ${arrowColor}, 0 0 16px ${arrowColor}`, animation: `${animName} 1.1s ${i * 0.12}s ease-out forwards`, opacity: 0 }}>{arrowChar}</span>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
           <div className="flex gap-1.5 justify-end mt-1">
             {enemyFighters.map((f, i) => (
@@ -1949,6 +1941,20 @@ export function BattleScreen({
             {paralysisApplied?.target === 'player' && <ParalysisAppliedVfx uid={paralysisApplied.uid} />}
             {/* Poison applied VFX on player */}
             {poisonApplied?.target === 'player' && <PoisonAppliedVfx uid={poisonApplied.uid} />}
+            {/* Stat arrow animation on player */}
+            {statusAnim?.target === 'player' && (() => {
+              const up = statusAnim.positive;
+              const arrowColor = up ? '#ff8c00' : '#4488ff';
+              const arrowChar = up ? '▲' : '▼';
+              const animName = up ? 'stat-arrow-up' : 'stat-arrow-down';
+              return (
+                <div key={statusAnim.uid} style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, pointerEvents: 'none', zIndex: 30 }}>
+                  {[0, 1, 2].map(i => (
+                    <span key={i} style={{ fontSize: '1.5rem', fontWeight: 900, color: arrowColor, textShadow: `0 0 8px ${arrowColor}, 0 0 16px ${arrowColor}`, animation: `${animName} 1.1s ${i * 0.12}s ease-out forwards`, opacity: 0 }}>{arrowChar}</span>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mt-2 min-w-[140px]">
             <div className="flex justify-between items-center mb-1">
