@@ -994,6 +994,28 @@ export function BattleScreen({
     }, 700);
   }, [playerFighters, addLog]);
 
+  // Auto combat: auto-select first available pokemon on forced switch
+  useEffect(() => {
+    if (phase !== 'switch' || !autoCombat) return;
+    const firstAvail = playerFighters.findIndex((f, i) => f.currentHp > 0 && i !== playerIdxRef.current);
+    if (firstAvail >= 0) setTimeout(() => handleSwitch(firstAvail), 400);
+  }, [phase, autoCombat, playerFighters, handleSwitch]);
+
+  // Auto combat: skip optional pre-enemy-switch (no free switch in auto mode)
+  useEffect(() => {
+    if (phase !== 'pre_enemy_switch' || !autoCombat || pendingEnemyIdx < 0) return;
+    const nextEnemy = enemyFighters[pendingEnemyIdx];
+    const nextEnemyName = POKEMON_BY_ID[nextEnemy?.pokemonId ?? 0]?.name ?? '???';
+    setTimeout(() => {
+      enemyIdxRef.current = pendingEnemyIdx;
+      setEnemyIdx(pendingEnemyIdx);
+      if (nextEnemy) playPokemonCry(nextEnemy.pokemonId);
+      addLog(`L'adversaire envoie ${nextEnemyName} !`, '#fde68a');
+      phaseRef.current = 'player_turn'; setPhase('player_turn');
+    }, 400);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, autoCombat, pendingEnemyIdx]);
+
   // Switch volontaire en cours de combat — coûte un tour (l'ennemi attaque)
   const handleVoluntarySwitch = useCallback(async (idx: number) => {
     if (battleDone.current || phaseRef.current !== 'player_turn') return;
@@ -1969,7 +1991,35 @@ export function BattleScreen({
         })}
 
         {/* Enemy info + sprite */}
-        <div className="absolute" style={{ top: 'calc(5% + env(safe-area-inset-top, 0px))', right: 'max(7%, calc(50% - 220px))' }}>
+        <div className="absolute" style={{ top: 'calc(5% + env(safe-area-inset-top, 0px))', right: 'max(7%, calc(50% - 220px))', position: 'relative' }}>
+          {/* Enemy stats panel — to the LEFT of this card */}
+          {statsPanelEnemy && activeEF && (() => {
+            const baseStats = GEN1_STATS[activeEF.transformOriginalId ?? activeEF.pokemonId];
+            const stages = activeEF.stages;
+            const rows: { key: keyof typeof stages; label: string; base: number | undefined }[] = [
+              { key: 'attack', label: 'ATK', base: baseStats?.attack },
+              { key: 'defense', label: 'DEF', base: baseStats?.defense },
+              { key: 'spAttack', label: 'SpA', base: baseStats?.spAttack },
+              { key: 'spDefense', label: 'SpD', base: baseStats?.spDefense },
+              { key: 'speed', label: 'VIT', base: baseStats?.speed },
+            ];
+            const sc = (s: number) => s > 0 ? '#4ade80' : s < 0 ? '#f87171' : '#475569';
+            const st = (s: number) => s === 0 ? '—' : s > 0 ? `+${s}` : `${s}`;
+            return (
+              <div style={{ position: 'absolute', right: 'calc(100% + 6px)', top: 0, zIndex: 50, background: 'rgba(2,6,23,0.88)', border: '1px solid rgba(100,116,139,0.35)', borderRadius: 8, padding: '6px 8px', boxShadow: '0 2px 12px rgba(0,0,0,0.7)', minWidth: 100 }}>
+                {rows.map(({ key, label, base }) => {
+                  const s = stages[key] ?? 0;
+                  return (
+                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                      <span style={{ color: '#94a3b8', fontSize: '0.42rem', fontFamily: "'Press Start 2P', monospace", width: 26, flexShrink: 0 }}>{label}</span>
+                      {base !== undefined && <span style={{ color: '#334155', fontSize: '0.4rem', fontFamily: "'Press Start 2P', monospace", width: 22, textAlign: 'right', flexShrink: 0 }}>{base}</span>}
+                      <span style={{ color: sc(s), fontSize: '0.48rem', fontFamily: "'Press Start 2P', monospace", width: 22, textAlign: 'center', flexShrink: 0, fontWeight: s !== 0 ? 'bold' : 'normal' }}>{st(s)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
           <div className="bg-black/75 rounded-xl px-3 py-2 border border-slate-600/50 mb-2 min-w-[140px]"
             style={{ borderColor: isMasterTrainer ? `${trainerColor}55` : undefined, boxShadow: isMasterTrainer ? `0 0 12px ${trainerColor}33` : undefined }}>
             <div className="flex items-center gap-1.5 mb-1">
@@ -2050,7 +2100,35 @@ export function BattleScreen({
         </div>
 
         {/* Player info + sprite */}
-        <div className="absolute" style={{ bottom: '13%', left: 'max(7%, calc(50% - 220px))' }}>
+        <div className="absolute" style={{ bottom: '13%', left: 'max(7%, calc(50% - 220px))', position: 'relative' }}>
+          {/* Player stats panel — to the RIGHT of this card */}
+          {statsPanelPlayer && activePF && (() => {
+            const baseStats = GEN1_STATS[activePF.transformOriginalId ?? activePF.pokemonId];
+            const stages = activePF.stages;
+            const rows: { key: keyof typeof stages; label: string; base: number | undefined }[] = [
+              { key: 'attack', label: 'ATK', base: baseStats?.attack },
+              { key: 'defense', label: 'DEF', base: baseStats?.defense },
+              { key: 'spAttack', label: 'SpA', base: baseStats?.spAttack },
+              { key: 'spDefense', label: 'SpD', base: baseStats?.spDefense },
+              { key: 'speed', label: 'VIT', base: baseStats?.speed },
+            ];
+            const sc = (s: number) => s > 0 ? '#4ade80' : s < 0 ? '#f87171' : '#475569';
+            const st = (s: number) => s === 0 ? '—' : s > 0 ? `+${s}` : `${s}`;
+            return (
+              <div style={{ position: 'absolute', left: 'calc(100% + 6px)', bottom: 0, zIndex: 50, background: 'rgba(2,6,23,0.88)', border: '1px solid rgba(100,116,139,0.35)', borderRadius: 8, padding: '6px 8px', boxShadow: '0 2px 12px rgba(0,0,0,0.7)', minWidth: 100 }}>
+                {rows.map(({ key, label, base }) => {
+                  const s = stages[key] ?? 0;
+                  return (
+                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
+                      <span style={{ color: '#94a3b8', fontSize: '0.42rem', fontFamily: "'Press Start 2P', monospace", width: 26, flexShrink: 0 }}>{label}</span>
+                      {base !== undefined && <span style={{ color: '#334155', fontSize: '0.4rem', fontFamily: "'Press Start 2P', monospace", width: 22, textAlign: 'right', flexShrink: 0 }}>{base}</span>}
+                      <span style={{ color: sc(s), fontSize: '0.48rem', fontFamily: "'Press Start 2P', monospace", width: 22, textAlign: 'center', flexShrink: 0, fontWeight: s !== 0 ? 'bold' : 'normal' }}>{st(s)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
           <div className="flex gap-1.5 mb-1">
             {playerFighters.map((f, i) => (
               <div key={i} className={`w-3 h-3 rounded-full ${i === playerIdx ? 'ring-2 ring-white' : ''} ${f.currentHp > 0 ? 'bg-green-400' : 'bg-slate-600'}`} />
@@ -2146,7 +2224,8 @@ export function BattleScreen({
                 <>
                   <div style={{ fontSize: '4rem', animation: 'victory-trophy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>🏆</div>
                   <div className="font-black" style={{
-                    fontSize: '2.8rem',
+                    fontSize: '1.9rem',
+                    whiteSpace: 'nowrap',
                     background: 'linear-gradient(90deg, #fbbf24, #4ade80, #60a5fa)',
                     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                     filter: 'drop-shadow(0 0 16px #fbbf24)',
@@ -2260,53 +2339,6 @@ export function BattleScreen({
         })()}
       </div>
 
-      {/* ── Stats panels — enemy: top-left, player: bottom-right (both empty corners) ── */}
-      {(['enemy', 'player'] as const).map(side => {
-        if (side === 'enemy' && !statsPanelEnemy) return null;
-        if (side === 'player' && !statsPanelPlayer) return null;
-        const fighter = side === 'player' ? activePF : activeEF;
-        if (!fighter) return null;
-        const baseStats = GEN1_STATS[fighter.transformOriginalId ?? fighter.pokemonId];
-        const stages = fighter.stages;
-        const STAT_ROWS: { key: keyof typeof stages; label: string; base: number | undefined }[] = [
-          { key: 'attack',    label: 'ATK', base: baseStats?.attack },
-          { key: 'defense',   label: 'DEF', base: baseStats?.defense },
-          { key: 'spAttack',  label: 'SpA', base: baseStats?.spAttack },
-          { key: 'spDefense', label: 'SpD', base: baseStats?.spDefense },
-          { key: 'speed',     label: 'VIT', base: baseStats?.speed },
-        ];
-        const stageColor = (s: number) => s > 0 ? '#4ade80' : s < 0 ? '#f87171' : '#475569';
-        const stageText = (s: number) => s === 0 ? '—' : s > 0 ? `+${s}` : `${s}`;
-        const posStyle: React.CSSProperties = side === 'enemy'
-          ? { position: 'absolute', zIndex: 50, top: 'calc(5% + env(safe-area-inset-top, 0px) + 4px)', left: 'max(7%, calc(50% - 220px))' }
-          : { position: 'absolute', zIndex: 50, bottom: '13%', right: 'max(7%, calc(50% - 220px))' };
-        return (
-          <div key={side} style={posStyle}>
-            <div style={{ background: 'rgba(2,6,23,0.88)', border: '1px solid rgba(100,116,139,0.35)', borderRadius: 8, padding: '6px 8px', boxShadow: '0 2px 12px rgba(0,0,0,0.7)', minWidth: 110 }}>
-              <div style={{ color: '#64748b', fontSize: '0.4rem', fontFamily: "'Press Start 2P', monospace", marginBottom: 5, textTransform: 'uppercase', letterSpacing: 1 }}>
-                {side === 'player' ? 'Vous' : 'Ennemi'}
-              </div>
-              {STAT_ROWS.map(({ key, label, base }) => {
-                const s = stages[key] ?? 0;
-                return (
-                  <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 2 }}>
-                    <span style={{ color: '#94a3b8', fontSize: '0.42rem', fontFamily: "'Press Start 2P', monospace", width: 26, flexShrink: 0 }}>{label}</span>
-                    {base !== undefined && (
-                      <span style={{ color: '#334155', fontSize: '0.4rem', fontFamily: "'Press Start 2P', monospace", width: 22, textAlign: 'right', flexShrink: 0 }}>{base}</span>
-                    )}
-                    <span style={{ color: stageColor(s), fontSize: '0.48rem', fontFamily: "'Press Start 2P', monospace", width: 22, textAlign: 'center', flexShrink: 0, fontWeight: s !== 0 ? 'bold' : 'normal' }}>{stageText(s)}</span>
-                    {s !== 0 && (
-                      <span style={{ color: stageColor(s), fontSize: '0.38rem', fontFamily: "'Press Start 2P', monospace", opacity: 0.8, flexShrink: 0 }}>
-                        ×{s >= 0 ? (2 + s) / 2 : (2 / (2 - s)).toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
 
       {/* ── Transition bar between arena and UI ── */}
       <div style={{ height: 6, background: 'linear-gradient(180deg, #1a1a2e 0%, #3a3050 40%, #706890 100%)', boxShadow: '0 -2px 0 #0a0a18' }} />
