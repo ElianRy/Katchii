@@ -1815,21 +1815,22 @@ export function BattleScreen({
         {/* Status move animation */}
         {statusAnim && (() => {
           const isEnemy = statusAnim.target === 'enemy';
-          const style: React.CSSProperties = isEnemy
-            ? { position: 'absolute', top: 'calc(5% + env(safe-area-inset-top,0px) + 60px)', right: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 }
-            : { position: 'absolute', bottom: 'calc(14% + 60px)', left: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 };
-          const color = statusAnim.positive ? '#4ade80' : '#f87171';
-          const icons = statusAnim.positive ? ['⬆️','✨','💫'] : ['⬇️','💢','😵'];
-          const animPrefix = statusAnim.positive ? 'status-burst' : 'status-burst-down';
+          const pos: React.CSSProperties = isEnemy
+            ? { position: 'absolute', top: 'calc(5% + env(safe-area-inset-top,0px) + 50px)', right: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 }
+            : { position: 'absolute', bottom: 'calc(14% + 50px)', left: 'max(9%, calc(50% - 200px))', pointerEvents: 'none' as const, zIndex: 30 };
+          const up = statusAnim.positive;
+          const arrowColor = up ? '#ff8c00' : '#4488ff';
+          const arrowChar = up ? '▲' : '▼';
+          const animName = up ? 'stat-arrow-up' : 'stat-arrow-down';
           return (
-            <div key={statusAnim.uid} style={style}>
-              {icons.map((icon, i) => (
+            <div key={statusAnim.uid} style={{ ...pos, display: 'flex', gap: 4 }}>
+              {[0, 1, 2].map(i => (
                 <span key={i} style={{
-                  position: 'absolute', fontSize: '1.6rem',
-                  left: `${(i - 1) * 28}px`, top: 0,
-                  animation: `${animPrefix}-${i % 2 === 0 ? 'a' : 'b'} 0.9s ease-out forwards`,
-                  filter: `drop-shadow(0 0 6px ${color})`,
-                }}>{icon}</span>
+                  fontSize: '1.5rem', fontWeight: 900, color: arrowColor,
+                  textShadow: `0 0 8px ${arrowColor}, 0 0 16px ${arrowColor}`,
+                  animation: `${animName} 1.1s ${i * 0.12}s ease-out forwards`,
+                  opacity: 0,
+                }}>{arrowChar}</span>
               ))}
             </div>
           );

@@ -220,9 +220,9 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   if (mode === 'level_select') {
     const selectedPreset = TRAINING_PRESETS.find(p => p.key === trainingPreset)!;
     return (
-      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 px-6">
-        <div className="w-full max-w-xs rounded-2xl p-6 text-center"
-          style={{ background: '#0f172a', border: `2px solid ${selectedPreset.color}`, boxShadow: `0 0 32px ${selectedPreset.color}44` }}>
+      <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 px-6" style={{ paddingBottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}>
+        <div className="w-full max-w-xs rounded-2xl p-6 text-center overflow-y-auto"
+          style={{ background: '#0f172a', border: `2px solid ${selectedPreset.color}`, boxShadow: `0 0 32px ${selectedPreset.color}44`, maxHeight: '100%' }}>
           <div className="text-3xl mb-2">⚔️</div>
           <div className="text-white font-black text-lg mb-1">Difficulté</div>
           <div className="text-slate-400 text-sm mb-4">Niveau de base adversaire : <span style={{ color: selectedPreset.color }} className="font-bold">{trainingLevel}</span></div>
