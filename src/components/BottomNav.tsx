@@ -23,11 +23,8 @@ const MAIN_ITEMS = [
 ];
 
 const MENU_ITEMS = [
-  { view: 'shop'     as View, icon: '🏪', label: 'Boutique',   color: '#34d399' },
-  { view: 'backpack' as View, icon: '🎒', label: 'Sac à dos',  color: '#fb923c' },
-  { view: 'raid'     as View, icon: '🐉', label: 'Raid',       color: '#f87171' },
-  { view: 'clan'     as View, icon: '🛡️', label: 'Clan',       color: '#fbbf24', soon: true },
-  { view: 'profile'  as View, icon: '👤', label: 'Mon profil', color: '#60a5fa' },
+  { view: 'shop'    as View, icon: '🏪', label: 'Boutique',   color: '#34d399' },
+  { view: 'profile' as View, icon: '👤', label: 'Mon profil', color: '#60a5fa' },
 ];
 
 type NavMood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited';
@@ -283,9 +280,6 @@ export function BottomNav({ currentView, onNavigate, favoritePokemon, onShowPlay
               >
                 <span className="text-2xl leading-none">{item.icon}</span>
                 <span className="text-xs font-bold" style={{ color: item.color }}>{item.label}</span>
-                {'soon' in item && item.soon && (
-                  <span className="text-[0.5rem] text-yellow-400 font-bold leading-none">Bientôt</span>
-                )}
               </button>
             ))}
             {onShowPlayers && (

@@ -14,8 +14,6 @@ interface Props {
   onVictory: () => void;
   onAddXp: (pokemonId: number, xp: number) => void;
   onZoneDiscovered?: () => void;
-  attackBoostCharges?: number;
-  onConsumeAttackBoost?: () => void;
 }
 
 type Phase =
@@ -855,7 +853,7 @@ function VictoryFinalScreen({ onClose, onZoneDiscovered }: { onClose: () => void
 }
 
 /* ── MAIN ── */
-export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZoneDiscovered, attackBoostCharges = 0, onConsumeAttackBoost }: Props) {
+export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZoneDiscovered }: Props) {
   const [phase, setPhase] = useState<Phase>('team_select');
   const [currentTeam, setCurrentTeam] = useState<TeamMember[]>([]);
   const [retrying, setRetrying] = useState(false);
@@ -894,15 +892,10 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     setCurrentTeam(team);
     setRetrying(false);
     setDefeatStats(null);
-    if (attackBoostCharges > 0) {
-      setDamageMult(1.25);
-      onConsumeAttackBoost?.();
-    } else {
-      setDamageMult(1);
-    }
+    setDamageMult(1);
     playLeagueBattleMusic();
     setPhase('dialogue_peter');
-  }, [state, attackBoostCharges, onConsumeAttackBoost]);
+  }, [state]);
 
   const handleBattleEnd = useCallback(
     (nextPhase: Phase, enemySpecs: ReadonlyArray<{ pokemonId: number; level: number; isShiny?: boolean }>) =>

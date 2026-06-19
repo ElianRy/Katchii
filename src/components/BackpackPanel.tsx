@@ -47,9 +47,8 @@ export function BackpackPanel({ state, onActivateLure, onActivateCooldownBoost, 
   const isSpawnActive = !!(state.activeSpawnBoost && Date.now() < state.activeSpawnBoost.expiresAt);
 
   const totalLures = LURE_TYPES.reduce((s, t) => s + (state.lures[t] ?? 0), 0);
-const totalBoosts = state.cooldownReducers ?? 0;
+  const totalBoosts = state.cooldownReducers ?? 0;
   const totalSpawnNets = state.spawnNets ?? 0;
-  const totalAttackBoosts = state.attackBoostCharges ?? 0;
   const totalCases = state.mysteryCases ?? 0;
 
   return (
@@ -60,7 +59,7 @@ const totalBoosts = state.cooldownReducers ?? 0;
         <div>
           <h2 className="text-white font-black text-xl">🎒 Sac à dos</h2>
           <p className="text-slate-400 text-xs">
-            {totalLures} leurre{totalLures !== 1 ? 's' : ''} · {totalBoosts + totalSpawnNets + totalAttackBoosts} boost{(totalBoosts + totalSpawnNets + totalAttackBoosts) !== 1 ? 's' : ''} · {totalCases} capsule{totalCases !== 1 ? 's' : ''}
+            {totalLures} leurre{totalLures !== 1 ? 's' : ''} · {totalBoosts + totalSpawnNets} boost{(totalBoosts + totalSpawnNets) !== 1 ? 's' : ''} · {totalCases} capsule{totalCases !== 1 ? 's' : ''}
           </p>
         </div>
       </div>
@@ -174,23 +173,6 @@ const totalBoosts = state.cooldownReducers ?? 0;
                 {isSpawnActive && <span className="text-xs text-green-400 font-bold">Actif ✓</span>}
               </div>
             </div>
-            {/* Boost Attaque */}
-            <div className="flex items-center gap-3 px-4 py-3.5">
-              <span className="text-2xl shrink-0">⚔️</span>
-              <div className="flex-1 min-w-0">
-                <div className="text-white font-semibold text-sm">Boost Attaque</div>
-                <div className="text-slate-400 text-xs mt-0.5">+25% dégâts · consommé au prochain combat</div>
-              </div>
-              <div className="flex flex-col items-end gap-1.5 shrink-0">
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                  style={{ color: '#f87171', background: '#f8717122', border: '1px solid #f8717144' }}>
-                  ×{totalAttackBoosts}
-                </span>
-                {totalAttackBoosts > 0 && (
-                  <span className="text-xs text-slate-400 text-right" style={{ maxWidth: 80 }}>Auto au prochain combat</span>
-                )}
-              </div>
-            </div>
             {/* Réducteur de cooldown */}
             <div className="flex items-center gap-3 px-4 py-3.5">
               <span className="text-2xl shrink-0">⏱️</span>
@@ -216,7 +198,7 @@ const totalBoosts = state.cooldownReducers ?? 0;
               </div>
             </div>
           </div>
-          {(totalSpawnNets + totalAttackBoosts + totalBoosts) === 0 && (
+          {(totalSpawnNets + totalBoosts) === 0 && (
             <p className="text-slate-500 text-xs text-center mt-2">Aucun boost — achète-en dans la Boutique 🏪</p>
           )}
         </section>

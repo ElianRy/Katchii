@@ -11,6 +11,44 @@ import { Zone, ZONE_BY_ID, ZONE_ORDER } from '../data/zones';
 import { ZoneUnlockCondition } from '../types';
 import { playZoneMusic, stopMusic, playSfxCapture, playSfxShinyCapture, playCatchPoke } from '../lib/audio';
 
+function formatBoostTime(expiresAt: number): string {
+  const ms = Math.max(0, expiresAt - Date.now());
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function BoostTimerBar({ activeCooldownBoost, activeSpawnBoost }: {
+  activeCooldownBoost?: { expiresAt: number };
+  activeSpawnBoost?: { expiresAt: number };
+}) {
+  const [, setTick] = useState(0);
+  const isCdActive = !!(activeCooldownBoost && Date.now() < activeCooldownBoost.expiresAt);
+  const isSpawnActive = !!(activeSpawnBoost && Date.now() < activeSpawnBoost.expiresAt);
+  useEffect(() => {
+    if (!isCdActive && !isSpawnActive) return;
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [isCdActive, isSpawnActive]);
+  if (!isCdActive && !isSpawnActive) return null;
+  return (
+    <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30 pointer-events-none">
+      {isCdActive && activeCooldownBoost && (
+        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+          style={{ background: 'rgba(34,211,238,0.18)', border: '1px solid rgba(34,211,238,0.4)', color: '#67e8f9' }}>
+          ⏱️ {formatBoostTime(activeCooldownBoost.expiresAt)}
+        </div>
+      )}
+      {isSpawnActive && activeSpawnBoost && (
+        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+          style={{ background: 'rgba(74,222,128,0.18)', border: '1px solid rgba(74,222,128,0.4)', color: '#86efac' }}>
+          🕸️ {formatBoostTime(activeSpawnBoost.expiresAt)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
   zone1: { ground: 'linear-gradient(to top, #14532d 0%, #166534 40%, transparent 100%)', bush: 'linear-gradient(to top, #15803d, #22c55e)' },
   zone2: { ground: 'linear-gradient(to top, #0c4a6e 0%, #075985 40%, transparent 100%)', bush: 'linear-gradient(to top, #0369a1, #38bdf8)' },
@@ -303,6 +341,12 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         );
       })}
 
+      {/* Active boost timers */}
+      <BoostTimerBar
+        activeCooldownBoost={gameState.state.activeCooldownBoost}
+        activeSpawnBoost={gameState.state.activeSpawnBoost}
+      />
+
       {/* HUD */}
       <HUD
         points={gameState.state.points}
@@ -450,8 +494,6 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
             const nz = ZONE_BY_ID['zone_libre'];
             if (nz) setDiscoveredZone({ name: nz.name, pokemonIds: nz.pokemonIds.slice(0, 8) });
           }}
-          attackBoostCharges={gameState.state.attackBoostCharges ?? 0}
-          onConsumeAttackBoost={gameState.consumeAttackBoost}
         />
       )}
 
@@ -470,8 +512,6 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
             const nz = fightZone && ZONE_BY_ID[ZONE_ORDER[ZONE_ORDER.indexOf(fightZone.id) + 1]];
             if (nz) setDiscoveredZone({ name: nz.name, pokemonIds: nz.pokemonIds.slice(0, 8) });
           }}
-          attackBoostCharges={gameState.state.attackBoostCharges ?? 0}
-          onConsumeAttackBoost={gameState.consumeAttackBoost}
         />
       )}
 

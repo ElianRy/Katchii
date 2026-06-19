@@ -1,14 +1,16 @@
-import { useState } from 'react';
-import { GameState, LureType, LURE_COSTS, LURE_LABELS, XpCandySize, COOLDOWN_REDUCER_COST, SPAWN_NET_COST, ATTACK_BOOST_COST, MYSTERY_CASE_COST } from '../types';
+import { useState, useEffect } from 'react';
+import { GameState, LureType, LURE_COSTS, LURE_LABELS, XpCandySize, COOLDOWN_REDUCER_COST, SPAWN_NET_COST, MYSTERY_CASE_COST } from '../types';
 
 interface Props {
   state: GameState;
   onBuyLure: (type: LureType) => void;
-  onBuyXpCandy: (size: XpCandySize) => boolean;
+  onBuyXpCandy?: (size: XpCandySize) => boolean;
   onBuyCooldownBoost: () => boolean;
   onBuySpawnNet: () => boolean;
-  onBuyAttackBoost: () => boolean;
   onBuyMysteryCase: () => boolean;
+  onActivateLure: (type: LureType) => boolean;
+  onActivateCooldownBoost: () => boolean;
+  onActivateSpawnNet: () => boolean;
   onClose: () => void;
 }
 
@@ -24,15 +26,33 @@ const LURE_COLORS: Record<LureType, string> = {
 };
 const LURE_TYPES: LureType[] = ['rare', 'epique', 'legendaire', 'shiny'];
 
+function formatRemaining(expiresAt: number): string {
+  const ms = Math.max(0, expiresAt - Date.now());
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
 
 interface Toast { id: number; text: string }
 
-export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet, onBuyAttackBoost, onBuyMysteryCase, onClose }: Omit<Props, 'onBuyXpCandy'> & { onBuyXpCandy?: (size: XpCandySize) => boolean }) {
+export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet, onBuyMysteryCase, onActivateLure, onActivateCooldownBoost, onActivateSpawnNet, onClose }: Props) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [counter, setCounter] = useState(0);
+  const [tick, setTick] = useState(0);
   const coins = state.points;
   const unlockedZones = state.zoneProgress?.unlockedZones ?? [];
   const hasZoneLibre = unlockedZones.includes('zone_libre');
+
+  const isLureActive = !!(state.activeLure && Date.now() < state.activeLure.expiresAt);
+  const isBoostActive = !!(state.activeCooldownBoost && Date.now() < state.activeCooldownBoost.expiresAt);
+  const isSpawnActive = !!(state.activeSpawnBoost && Date.now() < state.activeSpawnBoost.expiresAt);
+
+  useEffect(() => {
+    if (!isLureActive && !isBoostActive && !isSpawnActive) return;
+    const id = setInterval(() => setTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLureActive, isBoostActive, isSpawnActive, tick]);
 
   function addToast(text: string) {
     const id = counter;
@@ -43,11 +63,11 @@ export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet,
 
   function handleBuyLure(type: LureType) {
     onBuyLure(type);
-    addToast('🎒 Ajouté au sac à dos');
+    addToast('✅ Acheté !');
   }
 
-function handleBuyCooldownBoost() {
-    if (onBuyCooldownBoost()) addToast('🎒 Ajouté au sac à dos');
+  function handleBuyCooldownBoost() {
+    if (onBuyCooldownBoost()) addToast('✅ Acheté !');
   }
 
   return (
@@ -57,7 +77,7 @@ function handleBuyCooldownBoost() {
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
         <div className="flex-1">
           <h2 className="text-white font-black text-xl">🏪 Boutique</h2>
-          <p className="text-slate-400 text-xs">Les objets achetés vont dans ton sac à dos</p>
+          <p className="text-slate-400 text-xs">Achète et active tes objets ici</p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
           style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid rgba(251,191,36,0.3)' }}>
@@ -75,38 +95,61 @@ function handleBuyCooldownBoost() {
           <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden divide-y divide-slate-700/40">
             {LURE_TYPES.map(type => {
               const cost = LURE_COSTS[type];
+              const count = state.lures[type] ?? 0;
               const isLocked = type === 'legendaire' && !hasZoneLibre;
               const canAfford = !isLocked && coins >= cost;
               const color = LURE_COLORS[type];
+              const isThisActive = isLureActive && state.activeLure?.type === type;
+              const canActivate = count > 0 && !isLocked;
               return (
-                <div key={type} className="flex items-center gap-3 px-4 py-3.5"
+                <div key={type} className="flex items-start gap-3 px-4 py-3.5"
                   style={{ opacity: isLocked ? 0.55 : 1 }}>
-                  <span className="text-2xl shrink-0">{isLocked ? '🔒' : LURE_ICONS[type]}</span>
+                  <span className="text-2xl shrink-0 mt-0.5">{isLocked ? '🔒' : LURE_ICONS[type]}</span>
                   <div className="flex-1 min-w-0">
                     <div className="text-white font-semibold text-sm flex items-center gap-2">
                       {LURE_LABELS[type]}
-                      {isLocked && (
-                        <span className="text-slate-500 text-xs font-normal">— Zone Libre requise</span>
-                      )}
+                      {isLocked && <span className="text-slate-500 text-xs font-normal">— Zone Libre requise</span>}
                     </div>
                     <div className="text-slate-400 text-xs mt-0.5">{LURE_DESCS[type]}</div>
+                    {isThisActive && state.activeLure && (
+                      <div className="text-yellow-400 text-xs mt-1 font-bold animate-pulse">
+                        ● Actif — {formatRemaining(state.activeLure.expiresAt)} restant
+                      </div>
+                    )}
                   </div>
-                  <div className="flex flex-col items-end gap-1 shrink-0">
-                    <span className="text-xs font-bold" style={{ color: isLocked ? '#475569' : color }}>
-                      🪙 {cost}
-                    </span>
-                    <button
-                      onClick={() => !isLocked && canAfford && handleBuyLure(type)}
-                      disabled={isLocked || !canAfford}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
-                      style={{
-                        background: (isLocked || !canAfford) ? '#1e293b' : 'linear-gradient(135deg,#f59e0b,#ef7c00)',
-                        color: (isLocked || !canAfford) ? '#475569' : '#fff',
-                        cursor: (isLocked || !canAfford) ? 'not-allowed' : 'pointer',
-                      }}
-                    >
-                      {isLocked ? 'Verrouillé' : 'Acheter'}
-                    </button>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                        style={{ color, background: color + '22', border: `1px solid ${color}44` }}>
+                        ×{count}
+                      </span>
+                      <span className="text-xs font-bold" style={{ color: isLocked ? '#475569' : color }}>
+                        🪙{cost}
+                      </span>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {canActivate && (
+                        <button
+                          onClick={() => { if (onActivateLure(type)) addToast(isThisActive ? '⏱️ Durée prolongée !' : '✅ Leurre activé !'); }}
+                          className="text-xs font-bold px-2 py-1 rounded-lg transition-all active:scale-95"
+                          style={{ background: color + '33', color, border: `1px solid ${color}66` }}
+                        >
+                          {isThisActive ? '+10min' : 'Activer'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => !isLocked && canAfford && handleBuyLure(type)}
+                        disabled={isLocked || !canAfford}
+                        className="text-xs font-bold px-2 py-1 rounded-lg transition-all active:scale-95"
+                        style={{
+                          background: (isLocked || !canAfford) ? '#1e293b' : 'linear-gradient(135deg,#f59e0b,#ef7c00)',
+                          color: (isLocked || !canAfford) ? '#475569' : '#fff',
+                          cursor: (isLocked || !canAfford) ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        {isLocked ? '🔒' : 'Acheter'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -118,28 +161,69 @@ function handleBuyCooldownBoost() {
         <section>
           <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">⚡ Boosts</h3>
           <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 overflow-hidden divide-y divide-slate-700/40">
-            {[
-              { key: 'cooldown', icon: '⏱️', label: 'Réducteur de cooldown', desc: 'Cooldown réduit à 10 sec pendant 10 min', cost: COOLDOWN_REDUCER_COST, color: '#22d3ee', buy: handleBuyCooldownBoost },
-              { key: 'spawn',    icon: '🕸️', label: 'Filet Géant',           desc: 'Spawns ×2 pendant 5 min',               cost: SPAWN_NET_COST,         color: '#4ade80', buy: () => { if (onBuySpawnNet()) addToast('🎒 Ajouté au sac à dos'); } },
-              { key: 'attack',   icon: '⚔️', label: 'Boost Attaque',          desc: '+25% de dégâts pour 1 combat',           cost: ATTACK_BOOST_COST,      color: '#f87171', buy: () => { if (onBuyAttackBoost()) addToast('🎒 Ajouté au sac à dos'); } },
-            ].map(({ key, icon, label, desc, cost, color, buy }) => (
-              <div key={key} className="flex items-center gap-3 px-4 py-3.5">
-                <span className="text-2xl shrink-0">{icon}</span>
+            {([
+              {
+                key: 'cooldown',
+                icon: '⏱️',
+                label: 'Réducteur de cooldown',
+                desc: 'Cooldown réduit à 10 sec pendant 10 min',
+                cost: COOLDOWN_REDUCER_COST,
+                color: '#22d3ee',
+                count: state.cooldownReducers ?? 0,
+                isActive: isBoostActive,
+                activeLabel: isBoostActive && state.activeCooldownBoost ? `Actif — ${formatRemaining(state.activeCooldownBoost.expiresAt)}` : null,
+                buy: handleBuyCooldownBoost,
+                activate: () => { if (onActivateCooldownBoost()) addToast(isBoostActive ? '⏱️ Durée prolongée !' : '✅ Boost activé !'); },
+              },
+              {
+                key: 'spawn',
+                icon: '🕸️',
+                label: 'Filet Géant',
+                desc: 'Spawns ×2 pendant 5 min',
+                cost: SPAWN_NET_COST,
+                color: '#4ade80',
+                count: state.spawnNets ?? 0,
+                isActive: isSpawnActive,
+                activeLabel: isSpawnActive && state.activeSpawnBoost ? `Actif — ${formatRemaining(state.activeSpawnBoost.expiresAt)}` : null,
+                buy: () => { if (onBuySpawnNet()) addToast('✅ Acheté !'); },
+                activate: () => { if (onActivateSpawnNet()) addToast(isSpawnActive ? '⏱️ Durée prolongée !' : '✅ Boost activé !'); },
+              },
+            ] as const).map(({ key, icon, label, desc, cost, color, count, activeLabel, buy, activate }) => (
+              <div key={key} className="flex items-start gap-3 px-4 py-3.5">
+                <span className="text-2xl shrink-0 mt-0.5">{icon}</span>
                 <div className="flex-1 min-w-0">
                   <div className="text-white font-semibold text-sm">{label}</div>
                   <div className="text-slate-400 text-xs mt-0.5">{desc}</div>
+                  {activeLabel && (
+                    <div className="text-cyan-400 text-xs mt-1 font-bold animate-pulse">● {activeLabel}</div>
+                  )}
                 </div>
-                <div className="flex flex-col items-end gap-1 shrink-0">
-                  <span className="text-xs font-bold" style={{ color }}>🪙 {cost}</span>
-                  <button onClick={buy} disabled={coins < cost}
-                    className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
-                    style={{
-                      background: coins >= cost ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b',
-                      color: coins >= cost ? '#fff' : '#475569',
-                      cursor: coins >= cost ? 'pointer' : 'not-allowed',
-                    }}>
-                    Acheter
-                  </button>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
+                      style={{ color, background: color + '22', border: `1px solid ${color}44` }}>
+                      ×{count}
+                    </span>
+                    <span className="text-xs font-bold" style={{ color }}>🪙{cost}</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    {count > 0 && (
+                      <button onClick={activate}
+                        className="text-xs font-bold px-2 py-1 rounded-lg transition-all active:scale-95"
+                        style={{ background: color + '33', color, border: `1px solid ${color}66` }}>
+                        {activeLabel ? '+durée' : 'Activer'}
+                      </button>
+                    )}
+                    <button onClick={buy} disabled={coins < cost}
+                      className="text-xs font-bold px-2 py-1 rounded-lg transition-all active:scale-95"
+                      style={{
+                        background: coins >= cost ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b',
+                        color: coins >= cost ? '#fff' : '#475569',
+                        cursor: coins >= cost ? 'pointer' : 'not-allowed',
+                      }}>
+                      Acheter
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -160,9 +244,15 @@ function handleBuyCooldownBoost() {
                 <div className="text-slate-400 text-xs mt-0.5">Pokémon aléatoire jusqu'à Épique · 0,2% Shiny ✨</div>
               </div>
               <div className="flex flex-col items-end gap-1 shrink-0">
-                <span className="text-xs font-bold text-yellow-400">🪙 {MYSTERY_CASE_COST}</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full text-amber-400"
+                    style={{ background: '#f59e0b22', border: '1px solid #f59e0b44' }}>
+                    ×{state.mysteryCases ?? 0}
+                  </span>
+                  <span className="text-xs font-bold text-yellow-400">🪙 {MYSTERY_CASE_COST}</span>
+                </div>
                 <button
-                  onClick={() => { if (onBuyMysteryCase()) addToast('🎒 Ajouté au sac à dos'); }}
+                  onClick={() => { if (onBuyMysteryCase()) addToast('✅ Acheté !'); }}
                   disabled={coins < MYSTERY_CASE_COST}
                   className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
                   style={{
@@ -183,12 +273,11 @@ function handleBuyCooldownBoost() {
           <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🪙 Comment gagner des PokéCoins</h3>
           <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 divide-y divide-slate-700/30">
             {[
-              ['Capture (nouveau)',    'Varie selon la rareté', '15 – 250 🪙'],
-              ['Capture (doublon)',    'Moins, mais ça compte',  '5 – 75 🪙'],
-              ['Capture Shiny',        'Multiplicateur ×3',     '45 – 750 🪙'],
-              ['Entraînement gagné',   'Chaque combat remporté', '+10 🪙'],
-              ['Boss d\'arène vaincu', 'Victoire en zone',       '+80 🪙'],
-              ['Raid',                 'Proportionnel aux dégâts','Variable'],
+              ['Capture (nouveau)',    'Varie selon la rareté', '25 – 400 🪙'],
+              ['Capture (doublon)',    'Moins, mais ça compte',  '8 – 130 🪙'],
+              ['Capture Shiny',        'Multiplicateur ×3',     '75 – 1200 🪙'],
+              ['Entraînement gagné',   'Chaque combat remporté', '+25 🪙'],
+              ["Boss d'arène vaincu", 'Victoire en zone',       '+150 🪙'],
             ].map(([action, desc, amount]) => (
               <div key={action} className="flex items-center gap-3 px-4 py-2.5">
                 <div className="flex-1 min-w-0">

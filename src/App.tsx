@@ -573,8 +573,10 @@ export function App() {
           onBuyXpCandy={gameState.buyXpCandy}
           onBuyCooldownBoost={gameState.buyCooldownBoost}
           onBuySpawnNet={gameState.buySpawnNet}
-          onBuyAttackBoost={gameState.buyAttackBoost}
           onBuyMysteryCase={gameState.buyMysteryCase}
+          onActivateLure={gameState.activateLure}
+          onActivateCooldownBoost={gameState.activateCooldownBoost}
+          onActivateSpawnNet={gameState.activateSpawnNet}
           onClose={() => persistView('hunt')}
         />
       )}
@@ -605,15 +607,12 @@ export function App() {
       {showPlayers && <PlayersPanel onClose={() => setShowPlayers(false)} isAdmin={['admin', 'elian'].includes(username.toLowerCase())} onBattle3v3={handleBattle3v3} onPvpChallenge={handlePvpChallenge} />}
 
       {battle3v3 && (() => {
-        const hasAttackBoost = (gameState.state.attackBoostCharges ?? 0) > 0;
-        const damageMult = hasAttackBoost ? 1.25 : 1;
-        if (hasAttackBoost) gameState.consumeAttackBoost();
         return (
           <BattleScreen
             playerTeam={battle3v3.playerTeam}
             enemyTeam={battle3v3.enemyTeam}
             bossName={battle3v3.enemyName}
-            playerDamageMult={damageMult}
+            playerDamageMult={1}
             onBattleEnd={(won, _xp, _team, enemyDmg) => {
               if (battle3v3.onDone) {
                 const totalDmg = Object.values(enemyDmg ?? {}).reduce((s, n) => s + n, 0);

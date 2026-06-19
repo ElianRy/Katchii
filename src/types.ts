@@ -83,7 +83,6 @@ export interface GameState {
   activeCooldownBoost?: { expiresAt: number };
   spawnNets?: number;
   activeSpawnBoost?: { expiresAt: number };
-  attackBoostCharges?: number;
   mysteryCases?: number;
   activeLure: { type: LureType; expiresAt: number } | null;
   globalCooldownUntil: number | null;       // timestamp ms
@@ -184,35 +183,35 @@ export const RARITY_WEIGHTS: Record<Rarity, number> = {
 
 // PokéCoins earned on first capture
 export const FIRST_CAPTURE_POINTS: Record<Rarity, number> = {
-  commun:      15,
-  peu_commun:  35,
-  rare:        70,
-  elite:       120,
-  legendaire:  250,
+  commun:      25,
+  peu_commun:  55,
+  rare:        110,
+  elite:       200,
+  legendaire:  400,
 };
 
 // PokéCoins earned on duplicate capture
 export const DUPLICATE_CAPTURE_POINTS: Record<Rarity, number> = {
-  commun:     5,
-  peu_commun: 10,
-  rare:       20,
-  elite:      35,
-  legendaire: 75,
+  commun:     8,
+  peu_commun: 18,
+  rare:       35,
+  elite:      65,
+  legendaire: 130,
 };
 
 // Shiny multiplier on first shiny capture coins
 export const SHINY_COINS_MULT = 3;
 
 // PokéCoins earned from various actions
-export const COINS_TRAINING_WIN = 10;
-export const COINS_BOSS_DEFEAT  = 80;
-export const COINS_BOSS_ATTEMPT = 20; // even on loss
+export const COINS_TRAINING_WIN = 25;
+export const COINS_BOSS_DEFEAT  = 150;
+export const COINS_BOSS_ATTEMPT = 30; // even on loss
 
 export const LURE_COSTS: Record<LureType, number> = {
-  rare:       150,
-  epique:     300,
-  legendaire: 600,
-  shiny:      450,
+  rare:       600,
+  epique:     1200,
+  legendaire: 2400,
+  shiny:      1800,
 };
 
 export const XP_CANDY_COSTS: Record<XpCandySize, number> = {
@@ -221,11 +220,10 @@ export const XP_CANDY_COSTS: Record<XpCandySize, number> = {
   grand: 800,
 };
 
-export const COOLDOWN_REDUCER_COST  = 250;
-export const SPAWN_NET_COST         = 200;
+export const COOLDOWN_REDUCER_COST  = 400;
+export const SPAWN_NET_COST         = 300;
 export const SPAWN_NET_DURATION_MS  = 5 * 60_000;
-export const ATTACK_BOOST_COST      = 300;
-export const MYSTERY_CASE_COST      = 600;
+export const MYSTERY_CASE_COST      = 800;
 export const COOLDOWN_REDUCED_MS   = 10_000; // 10 seconds
 export const COOLDOWN_BOOST_DURATION_MS = 10 * 60_000; // 10 min
 

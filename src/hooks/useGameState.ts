@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { GameState, Rarity, LureType, XpCandySize, FIRST_CAPTURE_POINTS, DUPLICATE_CAPTURE_POINTS, SHINY_COINS_MULT, COINS_TRAINING_WIN, COINS_BOSS_DEFEAT, LURE_COSTS, XP_CANDY_COSTS, COOLDOWN_REDUCER_COST, COOLDOWN_REDUCED_MS, COOLDOWN_BOOST_DURATION_MS, SPAWN_NET_COST, SPAWN_NET_DURATION_MS, ATTACK_BOOST_COST, MYSTERY_CASE_COST, RARITY_WEIGHTS } from '../types';
+import { GameState, Rarity, LureType, XpCandySize, FIRST_CAPTURE_POINTS, DUPLICATE_CAPTURE_POINTS, SHINY_COINS_MULT, COINS_TRAINING_WIN, COINS_BOSS_DEFEAT, LURE_COSTS, XP_CANDY_COSTS, COOLDOWN_REDUCER_COST, COOLDOWN_REDUCED_MS, COOLDOWN_BOOST_DURATION_MS, SPAWN_NET_COST, SPAWN_NET_DURATION_MS, MYSTERY_CASE_COST, RARITY_WEIGHTS } from '../types';
 import { CAPTURE_XP } from '../lib/playerLevel';
 import { TeamMember } from '../components/TeamBuilder';
 import { loadState, loadUserState, saveState, saveUserState, DEFAULT_STATE } from '../lib/storage';
@@ -426,10 +426,14 @@ export function useGameState() {
         setBadgeToasts((b) => [...b, 'first_lure']);
       }
 
+      // Stack same lure type: extend expiry instead of resetting
+      const currentExpiry = prev.activeLure?.type === type && prev.activeLure.expiresAt > Date.now()
+        ? prev.activeLure.expiresAt
+        : Date.now();
       return {
         ...prev,
         lures: { ...prev.lures, [type]: prev.lures[type] - 1 },
-        activeLure: { type, expiresAt: Date.now() + LURE_DURATION_MS },
+        activeLure: { type, expiresAt: currentExpiry + LURE_DURATION_MS },
         dailyQuests: { ...prev.dailyQuests, quests },
         badges: newBadges.length > 0 ? [...prev.badges, ...newBadges] : prev.badges,
       };
@@ -775,32 +779,14 @@ export function useGameState() {
     let ok = false;
     update(prev => {
       if ((prev.spawnNets ?? 0) <= 0) return prev;
-      if (prev.activeSpawnBoost && Date.now() < prev.activeSpawnBoost.expiresAt) return prev;
       ok = true;
-      return { ...prev, spawnNets: (prev.spawnNets ?? 1) - 1, activeSpawnBoost: { expiresAt: Date.now() + SPAWN_NET_DURATION_MS } };
+      const currentExpiry = prev.activeSpawnBoost && Date.now() < prev.activeSpawnBoost.expiresAt
+        ? prev.activeSpawnBoost.expiresAt : Date.now();
+      return { ...prev, spawnNets: (prev.spawnNets ?? 1) - 1, activeSpawnBoost: { expiresAt: currentExpiry + SPAWN_NET_DURATION_MS } };
     });
     return ok;
   }, [update]);
 
-  const buyAttackBoost = useCallback((): boolean => {
-    let ok = false;
-    update(prev => {
-      if (prev.points < ATTACK_BOOST_COST) return prev;
-      ok = true;
-      return { ...prev, points: prev.points - ATTACK_BOOST_COST, attackBoostCharges: (prev.attackBoostCharges ?? 0) + 1 };
-    });
-    return ok;
-  }, [update]);
-
-  const consumeAttackBoost = useCallback((): boolean => {
-    let had = false;
-    update(prev => {
-      if ((prev.attackBoostCharges ?? 0) <= 0) return prev;
-      had = true;
-      return { ...prev, attackBoostCharges: (prev.attackBoostCharges ?? 1) - 1 };
-    });
-    return had;
-  }, [update]);
 
   const buyMysteryCase = useCallback((): boolean => {
     let ok = false;
@@ -845,12 +831,13 @@ export function useGameState() {
     let success = false;
     update(prev => {
       if ((prev.cooldownReducers ?? 0) <= 0) return prev;
-      if (prev.activeCooldownBoost && Date.now() < prev.activeCooldownBoost.expiresAt) return prev;
       success = true;
+      const currentExpiry = prev.activeCooldownBoost && Date.now() < prev.activeCooldownBoost.expiresAt
+        ? prev.activeCooldownBoost.expiresAt : Date.now();
       return {
         ...prev,
         cooldownReducers: (prev.cooldownReducers ?? 1) - 1,
-        activeCooldownBoost: { expiresAt: Date.now() + COOLDOWN_BOOST_DURATION_MS },
+        activeCooldownBoost: { expiresAt: currentExpiry + COOLDOWN_BOOST_DURATION_MS },
       };
     });
     return success;
@@ -990,8 +977,6 @@ export function useGameState() {
     activateCooldownBoost,
     buySpawnNet,
     activateSpawnNet,
-    buyAttackBoost,
-    consumeAttackBoost,
     buyMysteryCase,
     openMysteryCase,
     claimQuestReward,

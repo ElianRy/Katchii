@@ -2467,7 +2467,7 @@ export function BattleScreen({
               } as React.CSSProperties} />
             ))}
             <div className="absolute inset-x-0 top-1/2 flex flex-col items-center gap-2"
-              style={{ transform: 'translateY(-50%)', zIndex: 25, pointerEvents: pvpEndStats ? 'auto' : 'none' }}>
+              style={{ transform: 'translateY(-50%)', zIndex: 25, pointerEvents: (pvpEndStats || (pvpControls?.forceEnd !== null && pvpControls?.forceEnd !== undefined)) ? 'auto' : 'none' }}>
               {won.current ? (
                 <>
                   <div style={{ fontSize: '4rem', animation: 'victory-trophy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>🏆</div>
@@ -2488,6 +2488,14 @@ export function BattleScreen({
                     DÉFAITE…
                   </div>
                 </>
+              )}
+              {pvpControls && !pvpEndStats && pvpControls.forceEnd !== null && pvpControls.forceEnd !== undefined && (
+                <button
+                  className="mt-4 py-2 px-6 rounded-xl active:scale-95 transition-transform"
+                  style={{ background: 'linear-gradient(135deg,#1d4ed8,#2563eb)', color: 'white', border: '2px solid #3b82f6', fontFamily: "'Press Start 2P', monospace", fontSize: '0.45rem', boxShadow: '0 0 12px #3b82f644', animation: 'victory-title 0.5s 0.6s ease-out both' }}
+                  onClick={() => onBattleEnd(won.current, {})}>
+                  FERMER
+                </button>
               )}
               {pvpControls && pvpEndStats && (
                 <div className="mt-2 rounded-2xl px-5 py-4 flex flex-col gap-2 w-72"
