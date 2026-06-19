@@ -1147,7 +1147,7 @@ export function BattleScreen({
           durationMs: Date.now() - battleStartTimeRef.current,
         });
       } else {
-        onBattleEnd(wonSnap, snap, finalTeam, enemyDmgRef.current);
+        setTimeout(() => onBattleEnd(wonSnap, snap, finalTeam, enemyDmgRef.current), 500);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

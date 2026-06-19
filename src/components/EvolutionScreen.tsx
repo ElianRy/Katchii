@@ -9,28 +9,35 @@ interface Props {
   newPokemonId: number;
   oldName: string;
   newName: string;
+  choices?: number[];
+  choiceNames?: Record<number, string>;
+  ownedIds?: number[];
   onComplete: () => void;
   onCancel: () => void;
 }
 
-export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, onComplete, onCancel }: Props) {
-  const [phase, setPhase] = useState<'charging' | 'flashing' | 'white' | 'complete'>('charging');
+export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, choices, choiceNames, ownedIds, onComplete, onCancel }: Props) {
+  const [phase, setPhase] = useState<'pick' | 'charging' | 'flashing' | 'white' | 'complete'>(choices && choices.length > 0 ? 'pick' : 'charging');
+  const [resolvedNewId, setResolvedNewId] = useState<number>(newPokemonId);
+  const [resolvedNewName, setResolvedNewName] = useState<string>(newName);
   const [showOld, setShowOld] = useState(true);
   const [typeText, setTypeText] = useState('');
   const evoAudioRef = useRef<HTMLAudioElement | null>(null);
   const cancelledRef = useRef(false);
-  const fullText = `Félicitations ! ${oldName} a évolué en ${newName} !`;
+  const fullText = `Félicitations ! ${oldName} a évolué en ${resolvedNewName} !`;
 
   useEffect(() => {
+    if (phase === 'pick') return;
     const evo = new Audio(`${BASE_URL}/evolution.mp3`);
     evo.loop = true;
     evo.volume = 0.5;
     evo.play().catch(() => {});
     evoAudioRef.current = evo;
     return () => { evo.pause(); evo.src = ''; };
-  }, []);
+  }, [phase]);
 
   useEffect(() => {
+    if (phase === 'pick') return;
     if (phase === 'charging') {
       const t = setTimeout(() => { if (!cancelledRef.current) setPhase('flashing'); }, 1500);
       return () => clearTimeout(t);
@@ -54,7 +61,7 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
         if (cancelledRef.current) return;
         setPhase('complete');
         if (evoAudioRef.current) { evoAudioRef.current.pause(); }
-        playPokemonCry(newPokemonId);
+        playPokemonCry(resolvedNewId);
         setTimeout(() => {
           const congrats = new Audio(`${BASE_URL}/congrats.mp3`);
           congrats.volume = 0.5;
@@ -63,7 +70,7 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
       }, 200);
       return () => clearTimeout(t);
     }
-  }, [phase, newPokemonId]);
+  }, [phase, resolvedNewId]);
 
   useEffect(() => {
     if (phase !== 'complete') return;
@@ -81,6 +88,58 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
     if (evoAudioRef.current) { evoAudioRef.current.pause(); }
     onCancel();
   };
+
+  const handlePick = (id: number, name: string) => {
+    setResolvedNewId(id);
+    setResolvedNewName(name);
+    setPhase('charging');
+  };
+
+  if (phase === 'pick' && choices && choices.length > 0) {
+    const owned = new Set(ownedIds ?? []);
+    return (
+      <div className="fixed inset-0 z-[850] flex flex-col items-center justify-center bg-black px-6">
+        <div className="text-white text-2xl font-black mb-2">Que se passe-t-il ?!</div>
+        <ShinySprite pokemonId={oldPokemonId} isShiny={false} width={100} height={100}
+          style={{ filter: 'brightness(0) invert(1)', opacity: 0.8, marginBottom: 16 }} />
+        <div className="text-yellow-300 font-black text-base mb-4 text-center">
+          {oldName} peut évoluer !<br />
+          <span className="text-white/70 font-normal text-sm">Choisissez son évolution :</span>
+        </div>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          {choices.map(id => {
+            const name = choiceNames?.[id] ?? `#${id}`;
+            const alreadyOwned = owned.has(id);
+            return (
+              <button
+                key={id}
+                disabled={alreadyOwned}
+                onClick={() => !alreadyOwned && handlePick(id, name)}
+                className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all active:scale-95"
+                style={{
+                  background: alreadyOwned ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)',
+                  border: `2px solid ${alreadyOwned ? 'rgba(255,255,255,0.1)' : '#fbbf24'}`,
+                  opacity: alreadyOwned ? 0.4 : 1,
+                }}
+              >
+                <ShinySprite pokemonId={id} isShiny={false} width={52} height={52} />
+                <div className="flex flex-col items-start">
+                  <span className="text-white font-black text-base">{name}</span>
+                  {alreadyOwned && <span className="text-white/40 text-xs">Déjà capturé</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          onClick={onCancel}
+          className="mt-6 text-white/50 text-sm px-4 py-2 rounded-lg border border-white/15"
+        >
+          Annuler
+        </button>
+      </div>
+    );
+  }
 
   const bg = phase === 'white' ? '#ffffff' : '#000000';
 
@@ -110,7 +169,7 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
         <div className="flex flex-col items-center gap-6">
           <div className="text-white text-2xl font-black animate-pulse">Que se passe-t-il ?!</div>
           <ShinySprite
-            pokemonId={showOld ? oldPokemonId : newPokemonId}
+            pokemonId={showOld ? oldPokemonId : resolvedNewId}
             isShiny={false}
             width={120} height={120}
             style={{ filter: 'brightness(0) invert(1)', opacity: 0.9 }}
@@ -124,7 +183,7 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
 
       {phase === 'complete' && (
         <div className="flex flex-col items-center gap-6 px-6 w-full max-w-xs">
-          <ShinySprite pokemonId={newPokemonId} isShiny={false} width={140} height={140} />
+          <ShinySprite pokemonId={resolvedNewId} isShiny={false} width={140} height={140} />
           <div className="text-yellow-300 font-black text-lg text-center min-h-[3.5rem]">
             {typeText}
           </div>

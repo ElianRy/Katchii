@@ -1,5 +1,6 @@
 export interface EvolutionEntry {
-  evolvesInto: number;
+  evolvesInto?: number;
+  choices?: number[];
   level: number;
 }
 
@@ -69,7 +70,7 @@ export const EVOLUTION_DATA: Record<number, EvolutionEntry> = {
   118: { evolvesInto: 119, level: 33 },
   120: { evolvesInto: 121, level: 30 },
   129: { evolvesInto: 130, level: 20 },
-  133: { evolvesInto: 134, level: 30 },
+  133: { choices: [134, 135, 136], level: 30 },
   138: { evolvesInto: 139, level: 40 },
   140: { evolvesInto: 141, level: 40 },
   147: { evolvesInto: 148, level: 30 },
@@ -78,6 +79,12 @@ export const EVOLUTION_DATA: Record<number, EvolutionEntry> = {
 
 export function checkEvolution(pokemonId: number, level: number): number | null {
   const entry = EVOLUTION_DATA[pokemonId];
-  if (!entry) return null;
-  return level >= entry.level ? entry.evolvesInto : null;
+  if (!entry || level < entry.level) return null;
+  return entry.evolvesInto ?? null;
+}
+
+export function hasBranchingEvolution(pokemonId: number, level: number): boolean {
+  const entry = EVOLUTION_DATA[pokemonId];
+  if (!entry || level < entry.level) return false;
+  return !!(entry.choices && entry.choices.length > 0);
 }
