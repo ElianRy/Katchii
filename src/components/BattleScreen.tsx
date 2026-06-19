@@ -14,12 +14,11 @@ import {
   calcDamage, calcStruggle, chooseEnemyMoveIndex,
   emptyStages, getMoveListRaw, emptyStatus, checkCanAct, applyMajorStatus,
   calcEndOfTurnDamage, statusLabel, playerGoesFirst as calcTurnOrder,
-  registerMoves, evaluateMatchup, chooseBestBenchIndex, calcConfusionSelfDamage,
+  evaluateMatchup, chooseBestBenchIndex, calcConfusionSelfDamage,
   calcAttack, calcDefense,
 } from '../data/combatEngine';
 import type { Stages, StatusState, RawMove, MoveResult } from '../data/combatEngine';
-import { MOVES } from '../data/gen1Moves';
-registerMoves(MOVES as Parameters<typeof registerMoves>[0]);
+// Move registry is auto-initialized in combatEngine at module load — no explicit registerMoves() needed
 import { GEN1_STATS } from '../data/gen1Stats';
 import { TeamMember } from './TeamBuilder';
 import type { PokemonInstanceData } from '../types';
@@ -1246,9 +1245,11 @@ export function BattleScreen({
       }
       if (eCanActResult.canAct) {
         const ePlayerTypes = (POKEMON_TYPE[pFighterNew?.pokemonId ?? 0] ?? ['normal']) as PokemonType[];
+        const eVolSwitchCustomSlugs = enemyPokemonCustomMoves?.[eFighter.pokemonId] ?? pokemonCustomMoves?.[eFighter.pokemonId];
+        const eVolSwitchMoves = getMoveListRaw(eFighter.pokemonId, pokemonMoves?.[eFighter.pokemonId], eVolSwitchCustomSlugs);
         const eMoveIndex = chooseEnemyMoveIndex(
           eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
-          { condition: null }, eFighter.statusState, undefined,
+          { condition: null }, eFighter.statusState, eVolSwitchMoves,
           {
             attackerTypes: (POKEMON_TYPE[eFighter.pokemonId] ?? ['normal']) as PokemonType[],
             defenderStages: pFighterNew.stages,
@@ -1356,7 +1357,7 @@ export function BattleScreen({
       flush();
       const eMoveIndexSwitch = pvpPayload ? pvpPayload.enemyMoveIndex : chooseEnemyMoveIndex(
         eFighter.pokemonId, ePlayerTypesSwitch, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
-        pFighter.statusState, eFighter.statusState, undefined,
+        pFighter.statusState, eFighter.statusState, eRawMovesSwitch,
         { attackerTypes: (POKEMON_TYPE[eFighter.pokemonId] ?? ['normal']) as PokemonType[], defenderStages: pFighter.stages, defenderCurrentHp: pFighter.currentHp, attackerLevel: eFighter.level, defenderLevel: pFighter.level, defenderPokemonId: pFighter.pokemonId },
       );
       const eInst2 = pokemonData?.[eFighter.pokemonId];
@@ -1449,7 +1450,7 @@ export function BattleScreen({
     const eRawMovesBase = getMoveListRaw(ef[eIdx].pokemonId, pokemonMoves?.[ef[eIdx].pokemonId], eCustomSlugs);
     const eMoveIndexAI = chooseEnemyMoveIndex(
       eFighter.pokemonId, ePlayerTypes, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
-      pFighter.statusState, eFighter.statusState, undefined,
+      pFighter.statusState, eFighter.statusState, eRawMovesBase,
       {
         attackerTypes: eTypes,
         defenderStages: pFighter.stages,

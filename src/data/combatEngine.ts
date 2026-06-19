@@ -5,6 +5,7 @@ import { GEN1_STATS } from './gen1Stats';
 import { natureMult } from './natures';
 import type { StatKey } from './natures';
 import type { StatBoost } from './gen1Stats';
+import { MOVES_REGISTRY } from './movesRegistry';
 
 export const LEVEL_RANGE: Record<Rarity, [number, number]> = {
   commun: [1, 10],
@@ -551,25 +552,19 @@ export function getMoveListRaw(
   customIndices?: number[],
   customSlugs?: string[],
 ): RawMove[] {
-  // New system: slug-based custom moves from gen1Moves
+  // Slug-based custom moves — registry is always initialized at module load
   if (customSlugs && customSlugs.length > 0) {
-    try {
-      const movesMap = getMovesBySlug();
-      if (movesMap) {
-        const resolved = customSlugs.map(slug => movesMap[slug]).filter(Boolean) as RawMove[];
-        // Pad to 4 with default moves if some slugs were invalid or fewer than 4 saved
-        if (resolved.length < 4) {
-          const defaults = (GEN1_STATS[pokemonId]?.moves ?? []) as RawMove[];
-          for (const m of defaults) {
-            if (resolved.length >= 4) break;
-            if (!resolved.find(r => r.name === m.name)) resolved.push(m);
-          }
-        }
-        return resolved;
+    const movesMap = getMovesBySlug();
+    const resolved = customSlugs.map(slug => movesMap[slug]).filter(Boolean) as RawMove[];
+    // Pad to 4 with species defaults if some slugs were invalid
+    if (resolved.length < 4) {
+      const defaults = (GEN1_STATS[pokemonId]?.moves ?? []) as RawMove[];
+      for (const mv of defaults) {
+        if (resolved.length >= 4) break;
+        if (!resolved.find(r => r.id === mv.id || r.name === mv.name)) resolved.push(mv);
       }
-    } catch {
-      // fall through to old system
     }
+    return resolved;
   }
 
   const s = GEN1_STATS[pokemonId];
@@ -581,20 +576,19 @@ export function getMoveListRaw(
   return (s?.moves ?? []) as RawMove[];
 }
 
-// Registry for gen1Moves — populated at runtime by calling registerMoves()
-let _movesCache: Record<string, RawMove> | null = null;
-export function registerMoves(moves: Record<string, RawMove>): void {
-  _movesCache = moves;
-}
-export function getMovesBySlug(): Record<string, RawMove> | null {
+// Registry initialized at module load from movesRegistry — no runtime call needed
+let _movesCache: Record<string, RawMove> = MOVES_REGISTRY as unknown as Record<string, RawMove>;
+
+/** @deprecated Registry is now auto-initialized at module load. This is a no-op. */
+export function registerMoves(_moves: Record<string, RawMove>): void { /* no-op — kept for backward compat */ }
+
+export function getMovesBySlug(): Record<string, RawMove> {
   return _movesCache;
 }
 
-/** Get moves from gen1Moves by slug array */
+/** Get moves from the registry by slug array */
 export function getMovesBySlugList(slugs: string[]): RawMove[] {
-  const map = getMovesBySlug();
-  if (!map) return [];
-  return slugs.map(s => map[s]).filter(Boolean) as RawMove[];
+  return slugs.map(s => _movesCache[s]).filter(Boolean) as RawMove[];
 }
 
 // ── Type matchup utilities ────────────────────────────────────────────────────
