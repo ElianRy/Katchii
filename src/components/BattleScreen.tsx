@@ -186,7 +186,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
   const ox = isLtr ? 'calc(max(7%, calc(50% - 220px)) + 50px)' : 'calc(100% - max(7%, calc(50% - 220px)) - 90px)';
   const oy = isLtr ? '58%' : '18%';
 
-  // Sign of tx/ty flipped for rtl
+  // sign flips tx (horizontal) and ty (vertical) for rtl so particles travel toward the defender
   const sign = isLtr ? 1 : -1;
 
 
@@ -200,7 +200,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
             background: `radial-gradient(circle at 35% 35%, #FF6B1A, #FFD700)`,
             filter: 'drop-shadow(0 0 4px #FF4500)',
             '--vfx-tx': `${p.tx * sign}px`,
-            '--vfx-ty': `${p.ty}px`,
+            '--vfx-ty': `${p.ty * sign}px`,
             animationDelay: `${p.delay}s`,
             animation: `vfx-fire-particle-${direction} 0.62s ease-in forwards`,
           } as P} />
@@ -239,7 +239,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
               background: 'rgba(56,189,248,0.75)',
               border: '1px solid rgba(125,211,252,0.6)',
               '--vfx-tx': `${p.tx * sign}px`,
-              '--vfx-ty': `${p.ty}px`,
+              '--vfx-ty': `${p.ty * sign}px`,
               animationDelay: `${p.delay}s`,
               animation: `vfx-water-bubble-${direction} 0.65s ease-in forwards`,
             } as P} />
@@ -277,7 +277,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
               background: p.color,
               filter: `drop-shadow(0 0 4px ${p.color})`,
               '--vfx-tx': `${p.tx * sign}px`,
-              '--vfx-ty': `${p.ty}px`,
+              '--vfx-ty': `${p.ty * sign}px`,
               animationDelay: `${p.delay}s`,
               animation: `vfx-leaf-spin-${direction} 0.7s ease-in forwards`,
             } as P} />
@@ -319,7 +319,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
       // 5 ice shards as thin rotated rectangles
       const shards = [0,1,2,3,4].map(i => ({
         tx: (i % 2 === 0 ? 1 : -1) * (150 + i * 22) * sign,
-        ty: -(80 + i * 20),
+        ty: -(80 + i * 20) * sign,
         rot: -30 + i * 15,
         delay: i * 0.05,
       }));
@@ -356,7 +356,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
             background: 'radial-gradient(circle at 35% 35%, #f0abfc, #a855f7)',
             filter: 'drop-shadow(0 0 8px #d946ef)',
             '--vfx-tx': `${190 * sign}px`,
-            '--vfx-ty': `${-150}px`,
+            '--vfx-ty': `${-150 * sign}px`,
             animation: `vfx-fire-particle-${direction} 0.6s ease-in-out forwards`,
           } as P} />
           {/* Expanding rings at target */}
@@ -378,9 +378,9 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
 
     case 'fighting': {
       const impacts = [
-        { tx: 170 * sign, ty: -100, size: 24, delay: 0, color: '#f97316' },
-        { tx: 150 * sign, ty: -120, size: 18, delay: 0.1, color: '#fbbf24' },
-        { tx: 190 * sign, ty: -80,  size: 14, delay: 0.18, color: '#fb923c' },
+        { tx: 170 * sign, ty: -100 * sign, size: 24, delay: 0, color: '#f97316' },
+        { tx: 150 * sign, ty: -120 * sign, size: 18, delay: 0.1, color: '#fbbf24' },
+        { tx: 190 * sign, ty: -80 * sign,  size: 14, delay: 0.18, color: '#fb923c' },
       ];
       return (
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 15 } as P}>
@@ -403,7 +403,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
     case 'poison': {
       const blobs = [0,1,2,3].map(i => ({
         tx: (i % 2 === 0 ? 1 : -1) * (140 + i * 25) * sign,
-        ty: -(90 + i * 18),
+        ty: -(90 + i * 18) * sign,
         size: 12 + (i * 4) % 10,
         delay: i * 0.08,
       }));
@@ -429,7 +429,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
     case 'ghost': {
       const wisps = [0,1,2].map(i => ({
         tx: (i % 2 === 0 ? 1 : -1) * (120 + i * 40) * sign,
-        ty: -(100 + i * 30),
+        ty: -(100 + i * 30) * sign,
         size: 18 + i * 6,
         delay: i * 0.12,
       }));
@@ -454,7 +454,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
     case 'ground': {
       const rocks = [0,1,2,3].map(i => ({
         tx: (i % 2 === 0 ? 1 : -1) * (155 + i * 22) * sign,
-        ty: -(60 + i * 25),
+        ty: -(60 + i * 25) * sign,
         size: 14 + (i * 6) % 12,
         delay: i * 0.07,
       }));
@@ -499,7 +499,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
     case 'rock': {
       const rockParts = [0,1,2].map(i => ({
         tx: (i % 2 === 0 ? 1 : -1) * (160 + i * 25) * sign,
-        ty: -(80 + i * 28),
+        ty: -(80 + i * 28) * sign,
         size: 16 + i * 5,
         delay: i * 0.09,
       }));
@@ -524,7 +524,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
     case 'dragon': {
       const dParts = [0,1,2].map(i => ({
         tx: (180 + i * 15) * sign,
-        ty: -(130 + i * 12),
+        ty: -(130 + i * 12) * sign,
         size: 20 - i * 4,
         delay: i * 0.1,
         color: i === 0 ? '#818cf8' : '#a5b4fc',
@@ -551,7 +551,7 @@ function TypeVfx({ type, direction, uid: _uid, moveName }: { type: PokemonType; 
       // Normal / bug / steel / unknown — dash + impact sparks
       const sparks = [0,1,2,3].map(i => ({
         tx: (i % 2 === 0 ? 1 : -1) * (150 + i * 18) * sign,
-        ty: -(80 + i * 20),
+        ty: -(80 + i * 20) * sign,
         size: 10 + i * 3,
         delay: i * 0.06,
       }));
