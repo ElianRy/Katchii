@@ -146,7 +146,7 @@ function ParkAttackVfx({ pokemonId, facingRight }: { pokemonId: number; facingRi
       setShots(prev => [...prev.slice(-3), id]);
       const t = setTimeout(() => { if (active) setShots(prev => prev.filter(s => s !== id)); }, 800);
       timers.push(t);
-    }, 2200);
+    }, 6000);
     return () => { active = false; clearInterval(interval); timers.forEach(clearTimeout); };
   }, []);
 
@@ -710,6 +710,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const chatEndRef = useRef<HTMLDivElement>(null);
   const wanderRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mountedRef = useRef(true);
+  const lastPresenceSentRef = useRef<number>(0);
   useEffect(() => { mountedRef.current = true; return () => { mountedRef.current = false; }; }, []);
 
   const myFav = state.favoritePokemon;
@@ -842,13 +843,13 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         const dy = t.y - prev.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < 0.5) return prev;
-        const step = Math.min(dist, 5 + Math.random() * 3);
+        const step = Math.min(dist, 10 + Math.random() * 5);
         return {
           x: Math.max(2, Math.min(94, prev.x + (dx / dist) * step)),
           y: Math.max(2, Math.min(70, prev.y + (dy / dist) * step)),
         };
       });
-    }, 2000);
+    }, 4000);
     return () => { clearInterval(targetId); if (wanderRef.current) clearInterval(wanderRef.current); };
   }, [mood]);
 
@@ -923,10 +924,19 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     }, { onConflict: 'user_id' });
   }, [myUserId, myFav, username]);
 
-  // Sync presence when position/mood changes
+  // Sync presence at most every 30s, and on mood change
   useEffect(() => {
+    const now = Date.now();
+    if (now - lastPresenceSentRef.current < 30_000) return;
+    lastPresenceSentRef.current = now;
     upsertPresence(myPos, mood);
   }, [myPos, mood, upsertPresence]);
+
+  useEffect(() => {
+    lastPresenceSentRef.current = 0; // force send on mood change
+    upsertPresence(myPos, mood);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mood]);
 
   // Spread positions: each pokemon gets a random display position so they fill the field
   const spreadPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
