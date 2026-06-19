@@ -1256,3 +1256,5 @@ button:active{transform:scale(.93);transition:transform .08s ease}
 @keyframes pvp-shimmer { 0%,100%{transform:translateX(-100%)} 50%{transform:translateX(200%)} }
 @keyframes pvp-blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
 @keyframes pvp-dot-bounce { 0%,100%{transform:translateY(0);background:#475569} 50%{transform:translateY(-6px);background:#a78bfa} }
+
+@keyframes pvp-ready-pop { 0%{opacity:0;transform:translateX(-50%) scale(0.7) translateY(12px)} 70%{transform:translateX(-50%) scale(1.05) translateY(-2px)} 100%{opacity:1;transform:translateX(-50%) scale(1) translateY(0)} }

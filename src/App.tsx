@@ -669,6 +669,7 @@ export function App() {
         <div className="fixed inset-0 z-[700]">
           <PvpTeamSelect
             opponentName={pvpOpponentName}
+            isHost={pvpIsHost}
             onConfirm={handlePvpTeamConfirm}
             onCancel={cleanupPvp}
             pokemonCustomMoves={gameState.state.pokemonCustomMoves ?? {}}

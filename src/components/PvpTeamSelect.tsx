@@ -23,6 +23,7 @@ import { supabase } from '../lib/supabase';
 
 interface Props {
   opponentName: string;
+  isHost?: boolean;
   onConfirm: (team: TeamMember[]) => void;
   onCancel: () => void;
   pokemonCustomMoves?: Record<number, string[]>;
@@ -406,13 +407,14 @@ function MoveEditorStep({ teamIds, initialMoves, opponentName, isRental, onBack,
 type Phase = 'mode_select' | 'compose_grid' | 'rental_select' | 'move_editor' | 'waiting';
 
 export function PvpTeamSelect({
-  opponentName, onConfirm, onCancel,
+  opponentName, isHost, onConfirm, onCancel,
   pokemonCustomMoves, onSaveCustomMoves, sessionId,
 }: Props) {
   const [phase, setPhase] = useState<Phase>('mode_select');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [selectedRental, setSelectedRental] = useState<RentalTeamDef | null>(null);
   const [rentalRequired, setRentalRequired] = useState(false);
+  const [opponentReady, setOpponentReady] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressFired = useRef(false);
   const [statsModalId, setStatsModalId] = useState<number | null>(null);
@@ -424,16 +426,22 @@ export function PvpTeamSelect({
       return rb !== ra ? rb - ra : a.id - b.id;
     }), []);
 
-  // Sync rental_required depuis Supabase
+  // Sync rental_required + opponent readiness depuis Supabase
   useEffect(() => {
     if (!sessionId) return;
     const chan = supabase
-      .channel(`pvp_ts_rental_${sessionId}`)
+      .channel(`pvp_ts_${sessionId}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pvp_sessions', filter: `id=eq.${sessionId}` },
-        ({ new: row }) => { if ((row as Record<string, unknown>).rental_required === true) setRentalRequired(true); })
+        ({ new: row }) => {
+          const r = row as Record<string, unknown>;
+          if (r.rental_required === true) setRentalRequired(true);
+          // Detect opponent ready: host watches guest_ready, guest watches host_ready
+          const oppReadyField = isHost ? 'guest_ready' : 'host_ready';
+          if (r[oppReadyField] === true) setOpponentReady(true);
+        })
       .subscribe();
     return () => { supabase.removeChannel(chan); };
-  }, [sessionId]);
+  }, [sessionId, isHost]);
 
   // Long-press : uniquement pointer events (pas touch en parallèle)
   const onPointerDown = useCallback((pokemonId: number) => {
@@ -505,6 +513,14 @@ export function PvpTeamSelect({
     );
   }
 
+  // Shared banner — shown on all selection phases when opponent is already ready
+  const OpponentReadyBanner = opponentReady ? (
+    <div style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)', left: '50%', transform: 'translateX(-50%)', zIndex: 800, background: 'linear-gradient(135deg, #14532d, #166534)', border: '1.5px solid #4ade80aa', borderRadius: 24, padding: '10px 20px', display: 'flex', alignItems: 'center', gap: 8, boxShadow: '0 0 20px #4ade8033, 0 4px 12px rgba(0,0,0,0.5)', whiteSpace: 'nowrap', animation: 'pvp-ready-pop 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards' }}>
+      <span style={{ fontSize: '1rem' }}>✅</span>
+      <span style={{ color: '#86efac', fontWeight: 700, fontFamily: 'system-ui', fontSize: '0.875rem' }}><span style={{ color: '#4ade80', fontWeight: 900 }}>{opponentName}</span> est prêt(e) !</span>
+    </div>
+  ) : null;
+
   // ── Éditeur de moves ───────────────────────────────────────────────────────
   if (phase === 'move_editor') {
     const teamIds = selectedRental
@@ -526,14 +542,17 @@ export function PvpTeamSelect({
     }
 
     return (
-      <MoveEditorStep
-        teamIds={teamIds}
-        initialMoves={initialMoves}
-        opponentName={opponentName}
-        isRental={isRental}
-        onBack={() => setPhase(isRental ? 'rental_select' : 'compose_grid')}
-        onConfirm={handleMovesConfirm}
-      />
+      <>
+        <MoveEditorStep
+          teamIds={teamIds}
+          initialMoves={initialMoves}
+          opponentName={opponentName}
+          isRental={isRental}
+          onBack={() => setPhase(isRental ? 'rental_select' : 'compose_grid')}
+          onConfirm={handleMovesConfirm}
+        />
+        {OpponentReadyBanner}
+      </>
     );
   }
 
@@ -637,6 +656,7 @@ export function PvpTeamSelect({
             </button>
           ))}
         </div>
+        {OpponentReadyBanner}
       </div>
     );
   }
@@ -784,6 +804,7 @@ export function PvpTeamSelect({
             </div>
           );
         })()}
+        {OpponentReadyBanner}
       </div>
     );
   }
@@ -876,6 +897,8 @@ export function PvpTeamSelect({
           <div className="text-slate-400 text-xs mt-0.5" style={{ fontFamily: 'system-ui' }}>Mode compétitif · Gloire uniquement</div>
         )}
       </div>
+
+      {OpponentReadyBanner}
 
       {/* Mode buttons */}
       <div className="flex-1 flex flex-col justify-center gap-4 px-5 pb-8">
