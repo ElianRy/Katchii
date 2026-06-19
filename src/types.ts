@@ -208,10 +208,10 @@ export const COINS_BOSS_DEFEAT  = 180;
 export const COINS_BOSS_ATTEMPT = 40; // even on loss
 
 export const LURE_COSTS: Record<LureType, number> = {
-  rare:       600,
-  epique:     1200,
-  legendaire: 2400,
-  shiny:      1800,
+  rare:       400,
+  epique:     700,
+  legendaire: 1100,
+  shiny:      900,
 };
 
 export const XP_CANDY_COSTS: Record<XpCandySize, number> = {

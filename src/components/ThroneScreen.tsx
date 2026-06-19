@@ -417,7 +417,7 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
     const now = new Date().toISOString();
     const updatedClaims = { ...(throneData.coinClaims ?? {}), [username]: now };
     const newData: ThroneData = { ...throneData, coinClaims: updatedClaims };
-    await supabase.from('game_saves').upsert({ user_id: '__throne__', state: newData, updated_at: now });
+    await throneWrite(newData);
     setThroneData(newData);
     onClaimCoins(coinPopup.coins);
     setCoinPopup(null);
@@ -759,16 +759,39 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
           </div>
 
           {/* Launch button */}
-          <button
-            onClick={() => launchBattle(selectedPokemon, customMoves)}
-            className="w-full py-4 rounded-2xl font-black text-lg text-black"
-            style={{
-              background: 'linear-gradient(90deg, #f59e0b, #ef4444)',
-              boxShadow: '0 4px 24px rgba(245,158,11,0.5)',
-            }}
-          >
-            ⚔️ Lancer le combat !
-          </button>
+          {champion?.username === username ? (
+            <button
+              onClick={async () => {
+                if (!throneData || !champion) return;
+                const newData: ThroneData = {
+                  ...throneData,
+                  champion: { ...champion, team: selectedPokemon.map(p => ({ pokemonId: p.pokemonId, isShiny: p.isShiny })) },
+                };
+                await throneWrite(newData);
+                setThroneData(newData);
+                setPhase('view');
+                setSelectedPokemon([]);
+              }}
+              className="w-full py-4 rounded-2xl font-black text-lg text-black"
+              style={{
+                background: 'linear-gradient(90deg, #f59e0b, #fbbf24)',
+                boxShadow: '0 4px 24px rgba(245,158,11,0.5)',
+              }}
+            >
+              👑 Mettre à jour mon équipe
+            </button>
+          ) : (
+            <button
+              onClick={() => launchBattle(selectedPokemon, customMoves)}
+              className="w-full py-4 rounded-2xl font-black text-lg text-black"
+              style={{
+                background: 'linear-gradient(90deg, #f59e0b, #ef4444)',
+                boxShadow: '0 4px 24px rgba(245,158,11,0.5)',
+              }}
+            >
+              ⚔️ Lancer le combat !
+            </button>
+          )}
 
           <button
             onClick={() => setPhase('pick_pokemon')}
@@ -812,7 +835,7 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
                 <p className="text-slate-400 text-sm mt-1">Tu étais sur le Trône</p>
               </div>
               <div className="text-yellow-400 font-black text-4xl tabular-nums" style={{ textShadow: '0 0 20px rgba(245,158,11,0.8)' }}>
-                +{coinPopup.coins} 💎
+                +{coinPopup.coins} 🪙
               </div>
               <button
                 onClick={claimCoins}
@@ -874,7 +897,15 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
               )}
             </div>
 
-            {caughtIds.length >= 3 ? (
+            {champion?.username === username ? (
+              <button
+                onClick={() => setPhase('pick_mode')}
+                className="w-full py-4 rounded-2xl font-black text-lg text-black"
+                style={{ background: 'linear-gradient(90deg, #f59e0b, #fbbf24)', boxShadow: '0 4px 24px rgba(245,158,11,0.5)' }}
+              >
+                👑 Changer mon équipe du Trône
+              </button>
+            ) : caughtIds.length >= 3 ? (
               <button
                 onClick={() => setPhase('pick_mode')}
                 className="w-full py-4 rounded-2xl font-black text-lg text-black"

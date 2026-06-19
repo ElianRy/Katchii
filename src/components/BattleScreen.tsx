@@ -102,6 +102,7 @@ interface FighterState extends TeamMember {
   isConfused?: boolean;
   confusionTurns?: number;
   chargingMove?: { moveId: string; moveIndex: number } | null;
+  mustRecharge?: boolean;
   // Morphing (Transform) — ephemeral, only lives during combat
   transformOriginalId?: number;
   transformMoveOverride?: RawMove[];
@@ -1006,11 +1007,19 @@ export function BattleScreen({
 
   // Auto-trigger turn 2 of a charging move (e.g. Lance-Soleil)
   useEffect(() => {
-    if (phase !== 'player_turn' || pvpControls) return;
+    if (phase !== 'player_turn') return;
     const charging = playerFightersRef.current[playerIdxRef.current]?.chargingMove;
     if (!charging) return;
     const t = setTimeout(() => {
-      if (phaseRef.current === 'player_turn') executeTurnRef.current?.(charging.moveIndex);
+      if (phaseRef.current !== 'player_turn') return;
+      if (pvpControlsRef.current) {
+        // PvP: submit the forced move index (player is locked into using the charging move)
+        pvpControlsRef.current.onMoveSelect(charging.moveIndex);
+        phaseRef.current = 'resolving';
+        setPhase('resolving');
+      } else {
+        executeTurnRef.current?.(charging.moveIndex);
+      }
     }, 700);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1337,6 +1346,81 @@ export function BattleScreen({
       setEnemyFighters([...ef]);
     };
 
+    // PvP voluntary switch: player already switched locally; enemy attacks the new pokemon, player skips
+    if (playerMoveIndex === -99 && pvpControls) {
+      const eCustomSlugsSwitch = enemyPokemonCustomMoves?.[eFighter.pokemonId] ?? pokemonCustomMoves?.[eFighter.pokemonId];
+      const eRawMovesSwitch = getMoveListRaw(ef[eIdx].pokemonId, pokemonMoves?.[ef[eIdx].pokemonId], eCustomSlugsSwitch);
+      const ePlayerTypesSwitch = (POKEMON_TYPE[pFighter.pokemonId] ?? ['normal']) as PokemonType[];
+      const eCanActSwitch = checkCanAct(eFighter.statusState);
+      ef[eIdx] = { ...ef[eIdx], statusState: eCanActSwitch.nextStatus };
+      flush();
+      const eMoveIndexSwitch = pvpPayload ? pvpPayload.enemyMoveIndex : chooseEnemyMoveIndex(
+        eFighter.pokemonId, ePlayerTypesSwitch, eFighter.currentPP, eFighter.stages, turnNumberRef.current,
+        pFighter.statusState, eFighter.statusState, undefined,
+        { attackerTypes: (POKEMON_TYPE[eFighter.pokemonId] ?? ['normal']) as PokemonType[], defenderStages: pFighter.stages, defenderCurrentHp: pFighter.currentHp, attackerLevel: eFighter.level, defenderLevel: pFighter.level, defenderPokemonId: pFighter.pokemonId },
+      );
+      const eInst2 = pokemonData?.[eFighter.pokemonId];
+      const pInst2 = pokemonData?.[pFighter.pokemonId];
+      const eResultSwitch = eMoveIndexSwitch < 0
+        ? calcStruggle(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eInst2, pInst2)
+        : calcDamage(eFighter.pokemonId, eFighter.level, pFighter.pokemonId, pFighter.level, eMoveIndexSwitch, eInst2, pInst2, eFighter.stages, pFighter.stages, eRawMovesSwitch, eFighter.statusState, pFighter.statusState);
+      if (pvpControls.onTurnComputed) pvpControls.onTurnComputed({ playerMoveIndex: -99, enemyMoveIndex: eMoveIndexSwitch, pResult: { damage: 0, effectiveness: 1, moveName: '', isCrit: false, isMiss: true, moveType: 'normal' as PokemonType, recoil: 0, hits: 0 }, eResult: eResultSwitch });
+      const ePP2 = [...ef[eIdx].currentPP]; if (eMoveIndexSwitch >= 0 && ePP2[eMoveIndexSwitch] > 0) ePP2[eMoveIndexSwitch]--;
+      ef[eIdx] = { ...ef[eIdx], currentPP: ePP2 };
+      turnNumberRef.current++;
+      if (eCanActSwitch.canAct) {
+        const _eMsg = `${eName} utilise ${eResultSwitch.moveName} !`;
+        addLog(_eMsg, '#fde68a');
+        await sleep(logTypeDuration(_eMsg));
+        const uid = dmgCounter++;
+        setAttackEvt({ attacker: 'enemy', type: eResultSwitch.moveType, uid });
+        await sleep(VFX_DURATION[eResultSwitch.moveType] ?? 820);
+        setAttackEvt(null);
+        if (!eResultSwitch.isMiss && eResultSwitch.damage > 0) {
+          const newPHp = Math.max(0, pf[pIdx].currentHp - eResultSwitch.damage);
+          pf[pIdx] = { ...pf[pIdx], currentHp: newPHp };
+          flush();
+          if (eResultSwitch.effectiveness === 0) { /* immunity */ }
+          else if (eResultSwitch.effectiveness >= 2) playHitSuper();
+          else if (eResultSwitch.effectiveness < 1) playHitLow();
+          else playHit();
+          setHitFlash('player');
+          const hUid = dmgCounter++;
+          setHitEffect({ target: 'player', uid: hUid });
+          setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === hUid ? null : e); }, 350);
+          addDmg(eResultSwitch.damage, 'player', eResultSwitch.effectiveness, eResultSwitch.isCrit, false);
+          if (eResultSwitch.effectiveness >= 2) addLog('C\'est super efficace !', '#f87171');
+          pvpDmgReceivedRef.current += eResultSwitch.damage;
+        }
+      } else {
+        addLog(`${eName} ne peut pas bouger !`, '#94a3b8');
+      }
+      flush();
+      await sleep(600);
+      if (pf[pIdx].currentHp <= 0) {
+        addLog(`${pName} est mis K.O. !`, '#f87171');
+        playDeath();
+        flush();
+        setPvpWaitingEnemySwitch(false);
+        const nextP = pf.findIndex((f, i) => i !== pIdx && f.currentHp > 0);
+        if (nextP < 0) {
+          battleDone.current = true; won.current = false;
+          phaseRef.current = 'end'; setPhase('end');
+          if (pvpControlsRef.current) {
+            const sessionId = pvpControlsRef.current.sessionId;
+            if (sessionId) { try { localStorage.removeItem(`pvp_state_${sessionId}`); } catch {} }
+            setPvpEndStats({ dmgDealt: Object.values(playerStatsRef.current).reduce((s, v) => s + v.degatsInfliges, 0), dmgReceived: pvpDmgReceivedRef.current, koMade: 0, koTaken: pvpKoTakenRef.current, turns: turnNumberRef.current, durationMs: 0 });
+          }
+        } else {
+          setPhase('switch'); phaseRef.current = 'switch';
+        }
+      } else {
+        phaseRef.current = 'player_turn';
+        setPhase('player_turn');
+      }
+      return;
+    }
+
     // Status: tick counters + clear badges INSTANTLY, but log wake messages in turn order below
     const pCanActResult = checkCanAct(pFighter.statusState);
     const eCanActResult = checkCanAct(eFighter.statusState);
@@ -1543,6 +1627,19 @@ export function BattleScreen({
       const atkSide  = attackerSide;
       const defSide  = (isPlayer ? 'enemy' : 'player') as 'player' | 'enemy';
 
+      // Hyper Beam recharge: attacker must rest this turn
+      {
+        const atkArr = isPlayer ? pf : ef;
+        if (atkArr[atkIdx].mustRecharge) {
+          if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], mustRecharge: false };
+          else ef[atkIdx] = { ...ef[atkIdx], mustRecharge: false };
+          flush();
+          addLog(`${atkName} doit se recharger !`, '#94a3b8');
+          await sleep(1200);
+          return false;
+        }
+      }
+
       // Status block
       if (!canActResult.canAct) {
         const cond = (isPlayer ? pf : ef)[atkIdx].statusState.condition;
@@ -1634,14 +1731,11 @@ export function BattleScreen({
       if (rawMove?.id === 'solar-beam') {
         const atkArr = isPlayer ? pf : ef;
         if (!atkArr[atkIdx].chargingMove) {
-          // Turn 1 — charge
+          // Turn 1 — charge (no hit sound/VFX)
           const _solarMsg = `${atkName} utilise ${result.moveName} !`;
           addLog(_solarMsg, '#fde68a');
           await sleep(logTypeDuration(_solarMsg));
-          const uid2 = dmgCounter++;
-          setAttackEvt({ attacker: atkSide, type: 'grass', uid: uid2 });
-          await sleep(1250);
-          setAttackEvt(null);
+          await sleep(600);
           addLog(`${atkName} se gorge de lumière !`, '#adff2f');
           const storedIdx = isPlayer ? playerMoveIndex : eMoveIndex;
           if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: { moveId: 'solar-beam', moveIndex: storedIdx } };
@@ -1820,6 +1914,13 @@ export function BattleScreen({
         if (isPlayer) ef[defIdx] = { ...ef[defIdx], isSeeded: true };
         else          pf[defIdx] = { ...pf[defIdx], isSeeded: true };
         addLog(`${defName} est ensemencé(e) par la Vampigraine !`, '#86efac');
+      }
+
+      // Hyper Beam: set mustRecharge after use
+      if (rawMove?.id === 'hyper-beam' && result.damage > 0 && !result.isMiss) {
+        if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], mustRecharge: true };
+        else ef[atkIdx] = { ...ef[atkIdx], mustRecharge: true };
+        flush();
       }
 
       // Step E: pause
@@ -3003,8 +3104,15 @@ export function BattleScreen({
                 return (
                   <button key={i} onClick={() => {
                     setSwitchMenuOpen(false);
-                    if (pvpControls) handleSwitch(i, true);
-                    else handleVoluntarySwitch(i);
+                    if (pvpControls) {
+                      // PvP: switch locally, broadcast, then submit a "switch turn" so enemy attacks
+                      handleSwitch(i, true); // local switch + pvp_voluntary_switch broadcast
+                      pvpControls.onMoveSelect(-99);
+                      phaseRef.current = 'resolving';
+                      setPhase('resolving');
+                    } else {
+                      handleVoluntarySwitch(i);
+                    }
                   }}
                     className="flex items-center gap-3 bg-slate-800/90 border-2 border-slate-600 hover:border-yellow-400 rounded-xl px-3 py-2 transition-all text-left">
                     <ShinySprite pokemonId={f.pokemonId} isShiny={f.isShiny ?? false} width={48} height={48} compact
