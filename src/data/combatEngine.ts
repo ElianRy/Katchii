@@ -554,11 +554,18 @@ export function getMoveListRaw(
   // New system: slug-based custom moves from gen1Moves
   if (customSlugs && customSlugs.length > 0) {
     try {
-      // Dynamic import would cause issues — use lazy require pattern
-      // We'll resolve this via the MOVES_BY_ID map if available
       const movesMap = getMovesBySlug();
       if (movesMap) {
-        return customSlugs.map(slug => movesMap[slug]).filter(Boolean) as RawMove[];
+        const resolved = customSlugs.map(slug => movesMap[slug]).filter(Boolean) as RawMove[];
+        // Pad to 4 with default moves if some slugs were invalid or fewer than 4 saved
+        if (resolved.length < 4) {
+          const defaults = (GEN1_STATS[pokemonId]?.moves ?? []) as RawMove[];
+          for (const m of defaults) {
+            if (resolved.length >= 4) break;
+            if (!resolved.find(r => r.name === m.name)) resolved.push(m);
+          }
+        }
+        return resolved;
       }
     } catch {
       // fall through to old system

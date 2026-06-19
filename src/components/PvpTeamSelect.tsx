@@ -790,55 +790,129 @@ export function PvpTeamSelect({
 
   // ── Choix du mode ──────────────────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 z-[700] flex flex-col bg-slate-950"
-      style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-      <div className="shrink-0 px-4 pt-5 pb-4 border-b border-slate-800">
-        <div className="flex items-center justify-between mb-2">
-          <button onClick={onCancel} className="text-slate-400 text-sm py-1 active:text-white">← Annuler</button>
-          <span className="text-slate-500 text-xs">vs <span className="text-slate-300">{opponentName}</span></span>
+    <div className="fixed inset-0 z-[700] flex flex-col overflow-hidden"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)', background: 'radial-gradient(ellipse at 50% 30%, #1a0533 0%, #0a0a1a 60%, #000 100%)' }}>
+
+      {/* Animated background sparks */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(18)].map((_, i) => (
+          <div key={i} style={{
+            position: 'absolute',
+            left: `${5 + (i * 37 % 90)}%`,
+            top: `${10 + (i * 53 % 80)}%`,
+            width: i % 3 === 0 ? 3 : 2,
+            height: i % 3 === 0 ? 3 : 2,
+            borderRadius: '50%',
+            background: i % 4 === 0 ? '#f59e0b' : i % 4 === 1 ? '#a855f7' : i % 4 === 2 ? '#6366f1' : '#ffffff',
+            opacity: 0.6,
+            animation: `pvp-spark-float ${2.5 + (i % 5) * 0.6}s ${(i * 0.3) % 2}s ease-in-out infinite alternate`,
+          }} />
+        ))}
+      </div>
+
+      {/* Top: cancel + "vs" label */}
+      <div className="shrink-0 flex items-center justify-between px-4 pt-4 pb-2">
+        <button onClick={onCancel} className="text-slate-400 text-sm py-1 px-1 active:text-white" style={{ fontFamily: 'system-ui', letterSpacing: '0.01em' }}>← Annuler</button>
+        <span className="text-slate-500 text-xs">vs <span className="text-slate-300 font-bold">{opponentName}</span></span>
+      </div>
+
+      {/* VS Arena */}
+      <div className="shrink-0 flex items-center justify-center gap-0 px-4 py-4 relative" style={{ minHeight: 140 }}>
+        {/* Left trainer chip */}
+        <div className="flex-1 flex flex-col items-center gap-1">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-black border-2 border-indigo-500/60"
+            style={{ background: 'linear-gradient(135deg, #1e1b4b, #312e81)', boxShadow: '0 0 20px #6366f155' }}>
+            👤
+          </div>
+          <span className="text-indigo-300 text-xs font-bold" style={{ fontFamily: 'system-ui' }}>Toi</span>
         </div>
-        <div className="text-white font-black text-2xl">⚔️ Combat PvP</div>
+
+        {/* VS badge */}
+        <div className="flex-shrink-0 relative" style={{ width: 80 }}>
+          <div style={{
+            position: 'absolute', inset: 0, borderRadius: '50%',
+            background: 'radial-gradient(circle, #a855f755 0%, transparent 70%)',
+            animation: 'pvp-vs-pulse 1.5s ease-in-out infinite',
+          }} />
+          <div style={{
+            position: 'relative',
+            fontSize: '2.6rem',
+            fontWeight: 900,
+            fontFamily: "'Press Start 2P', system-ui, sans-serif",
+            background: 'linear-gradient(135deg, #facc15, #f97316, #ef4444)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            textAlign: 'center',
+            lineHeight: 1,
+            animation: 'pvp-vs-zoom 0.6s cubic-bezier(0.175,0.885,0.32,1.275) forwards, pvp-vs-shake 2s 0.7s ease-in-out infinite',
+            filter: 'drop-shadow(0 0 12px #f9731688) drop-shadow(0 0 24px #f97316aa)',
+          }}>VS</div>
+          {/* Electric arcs */}
+          <div style={{ position: 'absolute', top: '50%', left: '50%', width: 60, height: 60, transform: 'translate(-50%,-50%)', animation: 'pvp-arc-spin 1.8s linear infinite', pointerEvents: 'none' }}>
+            {['⚡', '⚡'].map((c, i) => (
+              <span key={i} style={{ position: 'absolute', fontSize: '0.7rem', opacity: 0.7, top: i === 0 ? -4 : 'auto', bottom: i === 1 ? -4 : 'auto', left: '50%', transform: 'translateX(-50%)' }}>{c}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Right trainer chip */}
+        <div className="flex-1 flex flex-col items-center gap-1">
+          <div className="w-14 h-14 rounded-full flex items-center justify-center text-2xl font-black border-2 border-red-500/60"
+            style={{ background: 'linear-gradient(135deg, #3b0a0a, #7f1d1d)', boxShadow: '0 0 20px #ef444455' }}>
+            👤
+          </div>
+          <span className="text-red-300 text-xs font-bold" style={{ fontFamily: 'system-ui' }}>{opponentName}</span>
+        </div>
+      </div>
+
+      {/* Title */}
+      <div className="shrink-0 text-center px-4 mb-2">
+        <div className="text-white font-black text-xl" style={{ fontFamily: 'system-ui', letterSpacing: '-0.01em' }}>⚔️ Combat PvP</div>
         {rentalRequired ? (
-          <div className="mt-1.5 text-yellow-400 font-bold text-sm">
+          <div className="mt-1 text-yellow-400 font-bold text-sm" style={{ fontFamily: 'system-ui' }}>
             ⚠️ {opponentName} a choisi une équipe de prêt — vous devez en faire autant.
           </div>
         ) : (
-          <div className="text-slate-400 text-sm mt-1">Mode compétitif · Aucune récompense · Gloire uniquement</div>
+          <div className="text-slate-400 text-xs mt-0.5" style={{ fontFamily: 'system-ui' }}>Mode compétitif · Gloire uniquement</div>
         )}
       </div>
 
-      <div className="flex-1 flex flex-col justify-center gap-5 px-5 py-6">
+      {/* Mode buttons */}
+      <div className="flex-1 flex flex-col justify-center gap-4 px-5 pb-8">
         {!rentalRequired && (
           <button
             onClick={() => setPhase('compose_grid')}
-            className="rounded-2xl p-5 text-left active:scale-[0.98] transition-transform"
-            style={{ background: 'linear-gradient(135deg, #1e1b4b, #312e81)', border: '2px solid #6366f1', boxShadow: '0 0 24px #6366f11a' }}>
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
-                style={{ background: 'rgba(99,102,241,0.2)' }}>📚</div>
-              <div className="flex-1">
-                <div className="text-white font-black text-lg leading-tight">Composer mon équipe</div>
-                <div className="text-indigo-300 text-sm mt-0.5">Pokédex complet · Niveau 100</div>
-                <div className="text-indigo-400/70 text-xs mt-1">Sélection → attaques → combat</div>
+            className="rounded-2xl text-left active:scale-[0.97] transition-transform"
+            style={{ background: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)', border: '2px solid #6366f1aa', boxShadow: '0 0 32px #6366f122, 0 4px 24px rgba(0,0,0,0.5)', padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
+            {/* Shimmer */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%)', animation: 'pvp-shimmer 3s 0.5s ease-in-out infinite' }} />
+            <div className="flex items-center gap-4 relative">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"
+                style={{ background: 'rgba(99,102,241,0.25)', border: '1px solid #6366f155' }}>📚</div>
+              <div className="flex-1 min-w-0">
+                <div className="text-white font-black text-base leading-tight" style={{ fontFamily: 'system-ui' }}>Composer mon équipe</div>
+                <div className="text-indigo-300 text-sm mt-0.5" style={{ fontFamily: 'system-ui' }}>Pokédex complet · Niveau 100</div>
+                <div className="text-indigo-400/60 text-xs mt-1" style={{ fontFamily: 'system-ui' }}>Sélection → attaques → combat</div>
               </div>
-              <span className="text-indigo-400 text-2xl">›</span>
+              <span className="text-indigo-400 text-xl shrink-0">›</span>
             </div>
           </button>
         )}
 
         <button
           onClick={() => setPhase('rental_select')}
-          className="rounded-2xl p-5 text-left active:scale-[0.98] transition-transform"
-          style={{ background: 'linear-gradient(135deg, #2d1b5e, #4c1d95)', border: '2px solid #a855f7', boxShadow: '0 0 24px #a855f71a' }}>
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl"
-              style={{ background: 'rgba(168,85,247,0.2)' }}>🎴</div>
-            <div className="flex-1">
-              <div className="text-white font-black text-lg leading-tight">Équipe de prêt</div>
-              <div className="text-purple-300 text-sm mt-0.5">6 équipes · Niveau 100 · Équilibrées</div>
-              <div className="text-purple-400/70 text-xs mt-1">Choix → attaques → combat</div>
+          className="rounded-2xl text-left active:scale-[0.97] transition-transform"
+          style={{ background: 'linear-gradient(135deg, #2d1b5e 0%, #4c1d95 100%)', border: '2px solid #a855f7aa', boxShadow: '0 0 32px #a855f722, 0 4px 24px rgba(0,0,0,0.5)', padding: '18px 20px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.04) 50%, transparent 60%)', animation: 'pvp-shimmer 3s 1.5s ease-in-out infinite' }} />
+          <div className="flex items-center gap-4 relative">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl shrink-0"
+              style={{ background: 'rgba(168,85,247,0.25)', border: '1px solid #a855f755' }}>🎴</div>
+            <div className="flex-1 min-w-0">
+              <div className="text-white font-black text-base leading-tight" style={{ fontFamily: 'system-ui' }}>Équipe de prêt</div>
+              <div className="text-purple-300 text-sm mt-0.5" style={{ fontFamily: 'system-ui' }}>6 équipes · Niveau 100 · Équilibrées</div>
+              <div className="text-purple-400/60 text-xs mt-1" style={{ fontFamily: 'system-ui' }}>Choix → attaques → combat</div>
             </div>
-            <span className="text-purple-400 text-2xl">›</span>
+            <span className="text-purple-400 text-xl shrink-0">›</span>
           </div>
         </button>
       </div>
