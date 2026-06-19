@@ -32,7 +32,7 @@ function BoostTimerBar({ activeCooldownBoost, activeSpawnBoost }: {
   }, [isCdActive, isSpawnActive]);
   if (!isCdActive && !isSpawnActive) return null;
   return (
-    <div className="absolute top-2 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30 pointer-events-none">
+    <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 z-30 pointer-events-none" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 52px)' }}>
       {isCdActive && activeCooldownBoost && (
         <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
           style={{ background: 'rgba(34,211,238,0.18)', border: '1px solid rgba(34,211,238,0.4)', color: '#67e8f9' }}>

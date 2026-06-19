@@ -20,6 +20,15 @@ export async function throneRead() {
 
 export async function throneWrite(state: unknown): Promise<string | null> {
   const { supabase: fallback } = await import('./supabase');
+  if (adminClient) {
+    // Ensure placeholder auth user exists to satisfy FK constraint
+    await (adminClient.auth.admin.createUser as Function)({
+      id: THRONE_UUID,
+      email: 'throne@katchii.internal',
+      password: crypto.randomUUID(),
+      email_confirm: true,
+    }).catch(() => {}); // ignore if already exists
+  }
   const client = adminClient ?? fallback;
   const { error } = await client.from('game_saves').upsert({ user_id: THRONE_UUID, state, updated_at: new Date().toISOString() });
   return error ? error.message : null;

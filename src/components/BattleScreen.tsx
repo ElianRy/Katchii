@@ -1806,6 +1806,16 @@ export function BattleScreen({
         flush();
       }
 
+      // Self heal (Recover etc.)
+      if (result.selfHeal && result.selfHeal > 0) {
+        const atkFighter = isPlayer ? pf[atkIdx] : ef[atkIdx];
+        const healAmt = Math.floor(atkFighter.maxHp * result.selfHeal);
+        if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], currentHp: Math.min(pf[atkIdx].maxHp, pf[atkIdx].currentHp + healAmt) };
+        else          ef[atkIdx] = { ...ef[atkIdx], currentHp: Math.min(ef[atkIdx].maxHp, ef[atkIdx].currentHp + healAmt) };
+        addLog(`${atkName} récupère des PV !`, '#86efac');
+        flush();
+      }
+
       // Recoil
       if (result.recoil > 0) {
         if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], currentHp: Math.max(0, pf[atkIdx].currentHp - result.recoil) };
