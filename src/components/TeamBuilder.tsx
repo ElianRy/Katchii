@@ -129,7 +129,8 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [teamName, setTeamName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewTeam, setViewTeam] = useState<{ id: string; name: string; members: TeamMember[] } | null>(null);
-  const [evoQueue, setEvoQueue] = useState<Array<{ oldId: number; newId: number }>>([]);
+  const [evoQueue, setEvoQueue] = useState<Array<{ oldId: number; newId: number; alreadyOwned?: boolean }>>([]);
+  const [blockedEvoMessages, setBlockedEvoMessages] = useState<Array<{ oldName: string; newName: string }>>([]);
 
   const owned = GEN1_POKEMON.filter(p =>
     (state.normalCollection[p.id] ?? 0) > 0 || (state.shinyCollection[p.id] ?? 0) > 0
@@ -222,19 +223,33 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     if (won) onBattleWin?.(selected);
     onTrainingBattle?.();
 
-    // Check for evolutions
-    const evos: Array<{ oldId: number; newId: number }> = [];
+    // Check for evolutions — check all levels from oldLevel+1 to newLevel
+    const evos: Array<{ oldId: number; newId: number; alreadyOwned: boolean }> = [];
     Object.entries(xpAfter).forEach(([idStr, lvData]) => {
       const id = Number(idStr);
-      const newId = checkEvolution(id, lvData.level);
-      if (newId && !(state.normalCollection[newId] ?? 0)) {
-        evos.push({ oldId: id, newId });
+      const oldLevel = state.pokemonLevels?.[id]?.level ?? 1;
+      let triggered = false;
+      for (let lv = oldLevel + 1; lv <= lvData.level && !triggered; lv++) {
+        const newId = checkEvolution(id, lv);
+        if (newId) {
+          triggered = true;
+          const alreadyOwned = (state.normalCollection[newId] ?? 0) > 0;
+          evos.push({ oldId: id, newId, alreadyOwned });
+        }
       }
     });
 
     setBattleResult({ won, xpGains, xpAfter });
-    if (evos.length > 0) {
-      setEvoQueue(evos);
+    const realEvos = evos.filter(e => !e.alreadyOwned);
+    const blockedEvos = evos.filter(e => e.alreadyOwned);
+    if (blockedEvos.length > 0) {
+      setBlockedEvoMessages(blockedEvos.map(e => ({
+        oldName: POKEMON_BY_ID[e.oldId]?.name ?? `#${e.oldId}`,
+        newName: POKEMON_BY_ID[e.newId]?.name ?? `#${e.newId}`,
+      })));
+    }
+    if (realEvos.length > 0) {
+      setEvoQueue(realEvos);
     } else {
       setMode('result');
     }
@@ -272,7 +287,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
 
   // Evolution screen: show one evolution at a time before the result screen
   if (evoQueue.length > 0) {
-    const { oldId, newId } = evoQueue[0];
+    const { oldId, newId } = evoQueue[0] as { oldId: number; newId: number; alreadyOwned?: boolean };
     const oldPoke = POKEMON_BY_ID[oldId];
     const newPoke = POKEMON_BY_ID[newId];
     return (
@@ -562,6 +577,16 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
                 <div className="text-slate-400 text-xs mt-1">XP réduite à 40% pour la défaite</div>
               )}
             </div>
+            {blockedEvoMessages.length > 0 && (
+              <div className="flex flex-col gap-1">
+                {blockedEvoMessages.map((msg, i) => (
+                  <div key={i} className="bg-red-900/30 border border-red-500/40 rounded-xl px-3 py-2 text-center">
+                    <div className="text-red-300 text-xs font-bold">Évolution échouée !</div>
+                    <div className="text-slate-300 text-xs">Vous avez déjà un(e) <span className="text-yellow-300 font-bold">{msg.newName}</span> dans votre PC.</div>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="flex flex-col gap-2">
               {Object.entries(battleResult.xpGains).map(([idStr, rawXp]) => {
                 const id = Number(idStr);

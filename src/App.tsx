@@ -452,18 +452,25 @@ export function App() {
       {view === 'team' && (
         <PcStorage
           state={gameState.state}
+          username={username}
           onUpdateParty={gameState.updateParty}
           onUpdatePcBoxes={gameState.updatePcBoxes}
+          onUpdateBoxNames={(names) => gameState.update(s => ({ ...s, pcBoxNames: names }))}
           onClose={() => persistView('hunt')}
           isAdmin={['admin', 'elian'].includes(username.toLowerCase())}
           onSetLevel={gameState.setAdminLevel}
           onTriggerEvolution={(pokemonId) => {
-            // Will be handled via EvolutionScreen in future — for now mark pending cleared
             gameState.update(s => ({
               ...s,
               pendingEvolutions: (s.pendingEvolutions ?? []).filter(id => id !== pokemonId),
             }));
           }}
+          currentZoneId={gameState.state.zoneProgress?.currentZoneId ?? 'zone1'}
+          onAddXp={gameState.addPokemonXp}
+          onBattleWin={gameState.addPokemonWins}
+          onTrainingBattle={gameState.addTrainingWin}
+          onTriggerEvo={gameState.triggerEvolution}
+          onMarkPendingEvolution={gameState.markPendingEvolution}
         />
       )}
 
