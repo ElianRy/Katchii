@@ -17,7 +17,7 @@ export interface Move {
     chance?: number; // 0-100
   };
   effect?: {
-    type: 'burn'|'poison'|'toxic'|'paralysis'|'sleep'|'freeze';
+    type: 'burn'|'poison'|'toxic'|'paralysis'|'sleep'|'freeze'|'confusion';
     chance: number;
   };
   recoil?: number;
@@ -146,9 +146,9 @@ export const MOVES: Record<string, Move> = {
   'fly': {id:'fly', name:'Vol', type:'flying', category:'physical', power:90, accuracy:95, pp:15, priority:0, description:'S\'envole au tour 1, attaque au tour 2.'},
 
   // Psychic
-  'confusion': {id:'confusion', name:'Choc Mental', type:'psychic', category:'special', power:50, accuracy:100, pp:25, priority:0, description:'Peut confondre.', effect:{type:'paralysis', chance:10}},
+  'confusion': {id:'confusion', name:'Choc Mental', type:'psychic', category:'special', power:50, accuracy:100, pp:25, priority:0, description:'Peut confondre.', effect:{type:'confusion', chance:10}},
   'psychic-move': {id:'psychic-move', name:'Psyko', type:'psychic', category:'special', power:90, accuracy:100, pp:10, priority:0, description:'Peut réduire la Défense Spéciale.', statBoost:{stat:'spDefense', target:'foe', stages:-1, chance:10}},
-  'psybeam': {id:'psybeam', name:'Rayon Psy', type:'psychic', category:'special', power:65, accuracy:100, pp:20, priority:0, description:'Peut confondre.', effect:{type:'paralysis', chance:10}},
+  'psybeam': {id:'psybeam', name:'Rayon Psy', type:'psychic', category:'special', power:65, accuracy:100, pp:20, priority:0, description:'Peut confondre.', effect:{type:'confusion', chance:10}},
   'hypnosis': {id:'hypnosis', name:'Hypnose', type:'psychic', category:'status', power:0, accuracy:60, pp:20, priority:0, description:'Endort l\'adversaire.', effect:{type:'sleep', chance:100}},
   'dream-eater': {id:'dream-eater', name:'Bouffe-Rêve', type:'psychic', category:'special', power:100, accuracy:100, pp:15, priority:0, description:'Fonctionne sur un Pokémon endormi.', draining:0.5},
   'amnesia': {id:'amnesia', name:'Amnésie', type:'psychic', category:'status', power:0, accuracy:100, pp:20, priority:0, description:'Augmente fortement l\'Attaque Spéciale.', statBoost:{stat:'spAttack', target:'self', stages:2}},
@@ -164,7 +164,7 @@ export const MOVES: Record<string, Move> = {
 
   // Ghost
   'night-shade': {id:'night-shade', name:'Ombre Nuit', type:'ghost', category:'special', power:60, accuracy:100, pp:15, priority:0, description:'Inflige des dégâts égaux au niveau.'},
-  'confuse-ray': {id:'confuse-ray', name:'Rayon Confus', type:'ghost', category:'status', power:0, accuracy:100, pp:10, priority:0, description:'Confond l\'adversaire.', effect:{type:'paralysis', chance:100}},
+  'confuse-ray': {id:'confuse-ray', name:'Rayon Confus', type:'ghost', category:'status', power:0, accuracy:100, pp:10, priority:0, description:'Confond l\'adversaire.', effect:{type:'confusion', chance:100}},
   'lick': {id:'lick', name:'Léchage', type:'ghost', category:'physical', power:20, accuracy:100, pp:30, priority:0, description:'Peut paralyser.', effect:{type:'paralysis', chance:30}},
 
   // Rock
@@ -174,6 +174,18 @@ export const MOVES: Record<string, Move> = {
   // Dragon
   'dragon-rage': {id:'dragon-rage', name:'Colère', type:'dragon', category:'special', power:80, accuracy:100, pp:10, priority:0, description:'Inflige des dégâts fixes.'},
   'dragon-breath': {id:'dragon-breath', name:'Draco-Souffle', type:'dragon', category:'special', power:60, accuracy:100, pp:20, priority:0, description:'Peut paralyser.', effect:{type:'paralysis', chance:30}},
+
+  // Confusion moves
+  'water-pulse': {id:'water-pulse', name:'Aqua-Anneau', type:'water', category:'special', power:60, accuracy:100, pp:20, priority:0, description:'Peut confondre.', effect:{type:'confusion', chance:20}},
+  'supersonic': {id:'supersonic', name:'Ultrasons', type:'normal', category:'status', power:0, accuracy:55, pp:20, priority:0, description:'Confond l\'adversaire.', effect:{type:'confusion', chance:100}},
+  'sweet-kiss': {id:'sweet-kiss', name:'Grobisou', type:'normal', category:'status', power:0, accuracy:75, pp:10, priority:0, description:'Confond l\'adversaire.', effect:{type:'confusion', chance:100}},
+  'teeter-dance': {id:'teeter-dance', name:'Danse Fofolle', type:'normal', category:'status', power:0, accuracy:100, pp:20, priority:0, description:'Confond tous les adversaires.', effect:{type:'confusion', chance:100}},
+  'dynamic-punch': {id:'dynamic-punch', name:'Dynamopoing', type:'fighting', category:'physical', power:100, accuracy:50, pp:5, priority:0, description:'Confond toujours si ça touche.', effect:{type:'confusion', chance:100}},
+  'signal-beam': {id:'signal-beam', name:'Dard-Météore', type:'bug', category:'special', power:75, accuracy:100, pp:15, priority:0, description:'Peut confondre.', effect:{type:'confusion', chance:10}},
+  'twister': {id:'twister', name:'Tourbillon', type:'dragon', category:'special', power:40, accuracy:100, pp:20, priority:0, description:'Peut confondre.', effect:{type:'confusion', chance:20}},
+  'outrage': {id:'outrage', name:'Colère', type:'dragon', category:'physical', power:120, accuracy:100, pp:10, priority:0, description:'Attaque 2-3 tours puis confond.', recoil:0},
+  'petal-dance': {id:'petal-dance', name:'Danse-Fleur', type:'grass', category:'special', power:120, accuracy:100, pp:10, priority:0, description:'Attaque 2-3 tours puis confond.'},
+  'thrash': {id:'thrash', name:'Frénésie', type:'normal', category:'physical', power:120, accuracy:100, pp:10, priority:0, description:'Attaque 2-3 tours puis confond.'},
 
   'splash': {id:'splash', name:'Éclaboussure', type:'normal', category:'status', power:0, accuracy:100, pp:40, priority:0, description:'N\'a aucun effet.'},
   'ancient-power': {id:'ancient-power', name:'Antique Pouvoir', type:'rock', category:'special', power:60, accuracy:100, pp:5, priority:0, description:'Peut augmenter toutes les stats.', allStatBoost:{stages:1, chance:10}},

@@ -14,7 +14,8 @@ import {
   calcDamage, calcStruggle, chooseEnemyMoveIndex,
   emptyStages, getMoveListRaw, emptyStatus, checkCanAct, applyMajorStatus,
   calcEndOfTurnDamage, statusLabel, playerGoesFirst as calcTurnOrder,
-  registerMoves, evaluateMatchup, chooseBestBenchIndex,
+  registerMoves, evaluateMatchup, chooseBestBenchIndex, calcConfusionSelfDamage,
+  calcAttack, calcDefense,
 } from '../data/combatEngine';
 import type { Stages, StatusState, RawMove, MoveResult } from '../data/combatEngine';
 import { MOVES } from '../data/gen1Moves';
@@ -98,6 +99,8 @@ interface FighterState extends TeamMember {
   stages: Stages;
   statusState: StatusState;
   isSeeded?: boolean;
+  isConfused?: boolean;
+  confusionTurns?: number;
   chargingMove?: { moveId: string; moveIndex: number } | null;
   // Morphing (Transform) — ephemeral, only lives during combat
   transformOriginalId?: number;
@@ -753,6 +756,24 @@ function SleepAppliedZzz({ uid: _uid }: { uid: number }) {
   );
 }
 
+function ConfusionAppliedVfx({ uid: _uid }: { uid: number }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 25 }}>
+      {(['⭐', '✨', '⭐'] as string[]).map((char, i) => (
+        <span key={i} style={{
+          position: 'absolute',
+          left: `${20 + i * 22}%`,
+          top: `${30 - i * 10}%`,
+          fontSize: `${1.1 + i * 0.1}rem`,
+          animation: `confusion-star-${i} 0.8s ${i * 0.15}s ease-out forwards`,
+        }}>
+          {char}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 export function BattleScreen({
   playerTeam, enemyTeam, bossName: _bossName, onBattleEnd,
@@ -874,6 +895,7 @@ export function BattleScreen({
   const [sleepApplied, setSleepApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const [paralysisApplied, setParalysisApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const [poisonApplied, setPoisonApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
+  const [confusionApplied, setConfusionApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const addLog = useCallback((text: string, color = '#e2e8f0') => {
     setLog(prev => [...prev.slice(-100), { text, color }]);
   }, []);
@@ -1533,6 +1555,52 @@ export function BattleScreen({
         return false;
       }
 
+      // Confusion check: before the move, handle confusion self-hit
+      {
+        const atkArr = isPlayer ? pf : ef;
+        if (atkArr[atkIdx].isConfused) {
+          const remainingTurns = (atkArr[atkIdx].confusionTurns ?? 1) - 1;
+          if (remainingTurns <= 0) {
+            // Snap out
+            if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], isConfused: false, confusionTurns: 0 };
+            else ef[atkIdx] = { ...ef[atkIdx], isConfused: false, confusionTurns: 0 };
+            flush();
+            addLog(`${atkName} n'est plus confus(e) !`, '#86efac');
+            await sleep(logTypeDuration(`${atkName} n'est plus confus(e) !`));
+          } else {
+            // Decrement turns
+            if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], confusionTurns: remainingTurns };
+            else ef[atkIdx] = { ...ef[atkIdx], confusionTurns: remainingTurns };
+            flush();
+            // 50% chance to self-hit
+            if (Math.random() < 0.5) {
+              addLog(`${atkName} est confus(e)... Il se blesse dans sa confusion !`, '#f59e0b');
+              await sleep(logTypeDuration(`${atkName} est confus(e)... Il se blesse dans sa confusion !`));
+              const atkFighter = (isPlayer ? pf : ef)[atkIdx];
+              const atkInst = pokemonData?.[atkFighter.pokemonId];
+              const atk = calcAttack(atkFighter.pokemonId, atkFighter.level, atkInst);
+              const def = calcDefense(atkFighter.pokemonId, atkFighter.level, atkInst);
+              const selfDmg = calcConfusionSelfDamage(atkFighter.level, atk, def);
+              const newHp = Math.max(0, atkFighter.currentHp - selfDmg);
+              if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], currentHp: newHp };
+              else ef[atkIdx] = { ...ef[atkIdx], currentHp: newHp };
+              flush();
+              const flashUid = dmgCounter++;
+              setHitFlash(atkSide);
+              setHitEffect({ target: atkSide, uid: flashUid });
+              setTimeout(() => { setHitFlash(null); setHitEffect(e => e?.uid === flashUid ? null : e); }, 450);
+              addDmg(selfDmg, atkSide, 1, false, false);
+              await sleep(850);
+              if ((isPlayer ? pf : ef)[atkIdx].currentHp <= 0) return true;
+              return false;
+            } else {
+              addLog(`${atkName} est confus(e) mais reprend ses esprits !`, '#f59e0b');
+              await sleep(logTypeDuration(`${atkName} est confus(e) mais reprend ses esprits !`));
+            }
+          }
+        }
+      }
+
       // Morphing: delegate entirely to transform handler, no damage
       if (rawMove?.id === 'transform' || rawMove?.name === 'Métamorph') {
         addLog(`${atkName} utilise Morphing !`, '#fde68a');
@@ -1804,6 +1872,23 @@ export function BattleScreen({
     // Appelé immédiatement après l'attaque (pas en fin de tour) pour que le sommeil
     // infligé par le premier attaquant bloque le second dans le même tour (règle Gen 4).
     const applyAttackerStatus = (attacker: 'player' | 'enemy', result: typeof pResult) => {
+      // Confusion (volatile)
+      if (result.appliedConfusion) {
+        const defIdx2 = attacker === 'player' ? eIdx : pIdx;
+        const defName2 = attacker === 'player' ? eName : pName;
+        const defSide2 = attacker === 'player' ? 'enemy' : 'player' as 'player' | 'enemy';
+        const defArr2 = attacker === 'player' ? ef : pf;
+        if (!defArr2[defIdx2].isConfused) {
+          const turns = 2 + Math.floor(Math.random() * 4); // 2-5 turns
+          if (attacker === 'player') ef[defIdx2] = { ...ef[defIdx2], isConfused: true, confusionTurns: turns };
+          else pf[defIdx2] = { ...pf[defIdx2], isConfused: true, confusionTurns: turns };
+          flush();
+          addLog(`${defName2} est confus(e) !`, '#f59e0b');
+          const cUid = dmgCounter++;
+          setConfusionApplied({ target: defSide2, uid: cUid });
+          setTimeout(() => setConfusionApplied(s => s?.uid === cUid ? null : s), 1500);
+        }
+      }
       if (!result.appliedStatus) return;
       const triggerStatusVfx = (target: 'player' | 'enemy') => {
         const st = result.appliedStatus;
@@ -2326,6 +2411,8 @@ export function BattleScreen({
             {paralysisApplied?.target === 'enemy' && <ParalysisAppliedVfx uid={paralysisApplied.uid} />}
             {/* Poison applied VFX on enemy */}
             {poisonApplied?.target === 'enemy' && <PoisonAppliedVfx uid={poisonApplied.uid} />}
+            {/* Confusion applied VFX on enemy */}
+            {confusionApplied?.target === 'enemy' && <ConfusionAppliedVfx uid={confusionApplied.uid} />}
             {/* Stat arrow animation on enemy */}
             {statusAnim?.target === 'enemy' && (() => {
               const up = statusAnim.positive;
@@ -2398,6 +2485,8 @@ export function BattleScreen({
             {paralysisApplied?.target === 'player' && <ParalysisAppliedVfx uid={paralysisApplied.uid} />}
             {/* Poison applied VFX on player */}
             {poisonApplied?.target === 'player' && <PoisonAppliedVfx uid={poisonApplied.uid} />}
+            {/* Confusion applied VFX on player */}
+            {confusionApplied?.target === 'player' && <ConfusionAppliedVfx uid={confusionApplied.uid} />}
             {/* Stat arrow animation on player */}
             {statusAnim?.target === 'player' && (() => {
               const up = statusAnim.positive;

@@ -1084,6 +1084,11 @@ button:active{transform:scale(.93);transition:transform .08s ease}
 /* ── FRZ pulse ── */
 @keyframes frz-pulse { 0%,100%{opacity:0} 25%,75%{opacity:.75} 50%{opacity:.4} }
 
+/* ── Confusion stars ── */
+@keyframes confusion-star-0 { 0%{opacity:0;transform:translate(0,0) scale(.5) rotate(0deg)} 20%{opacity:1} 80%{opacity:.8} 100%{opacity:0;transform:translate(-10px,-40px) scale(1.1) rotate(180deg)} }
+@keyframes confusion-star-1 { 0%{opacity:0;transform:translate(0,0) scale(.5) rotate(0deg)} 25%{opacity:1} 80%{opacity:.8} 100%{opacity:0;transform:translate(4px,-50px) scale(1.2) rotate(-120deg)} }
+@keyframes confusion-star-2 { 0%{opacity:0;transform:translate(0,0) scale(.5) rotate(0deg)} 30%{opacity:1} 80%{opacity:.7} 100%{opacity:0;transform:translate(14px,-38px) scale(0.9) rotate(240deg)} }
+
 /* ── BRN flicker ── */
 @keyframes brn-flicker { 0%{opacity:0} 15%{opacity:.85} 35%{opacity:.3} 55%{opacity:.75} 75%{opacity:.2} 100%{opacity:0} }
 

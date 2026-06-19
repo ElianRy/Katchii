@@ -322,6 +322,7 @@ export type MoveResult = {
   statusEffect?: { type: string; chance: number };
   statBoost?: StatBoost;
   appliedStatus?: MajorStatus;  // status actually applied this turn (after chance roll)
+  appliedConfusion?: boolean;   // confusion applied this turn (volatile, not major status)
   priority?: number;
   cureDefenderStatus?: boolean; // true when fire move thaws a frozen defender
   allStatBoosted?: boolean;
@@ -371,10 +372,15 @@ export function calcDamage(
   // Status-only moves: apply status if applicable
   if (moveCategory === 'status') {
     let appliedStatus: MajorStatus = null;
-    if (move.effect && defenderStatus) {
+    let appliedConfusion = false;
+    if (move.effect) {
       const roll = Math.random() * 100;
-      if (roll < move.effect.chance && defenderStatus.condition === null) {
-        appliedStatus = effectTypeToStatus(move.effect.type);
+      if (roll < move.effect.chance) {
+        if (move.effect.type === 'confusion') {
+          appliedConfusion = true;
+        } else if (defenderStatus?.condition === null) {
+          appliedStatus = effectTypeToStatus(move.effect.type);
+        }
       }
     }
     return {
@@ -383,6 +389,7 @@ export function calcDamage(
       statusEffect: move.effect,
       statBoost: move.statBoost,
       appliedStatus,
+      appliedConfusion: appliedConfusion || undefined,
       appliedSeed: !!(move.isSeed),
       priority: movePriority,
     };
@@ -444,10 +451,15 @@ export function calcDamage(
 
   // Secondary status effect (chance-based)
   let appliedStatus: MajorStatus = null;
+  let appliedConfusion = false;
   if (move.effect && defenderStatus) {
     const roll = Math.random() * 100;
-    if (roll < move.effect.chance && defenderStatus.condition === null) {
-      appliedStatus = effectTypeToStatus(move.effect.type);
+    if (roll < move.effect.chance) {
+      if (move.effect.type === 'confusion') {
+        appliedConfusion = true;
+      } else if (defenderStatus.condition === null) {
+        appliedStatus = effectTypeToStatus(move.effect.type);
+      }
     }
   }
 
@@ -462,6 +474,7 @@ export function calcDamage(
     statusEffect: move.effect,
     statBoost: move.statBoost,
     appliedStatus,
+    appliedConfusion: appliedConfusion || undefined,
     priority: movePriority,
     cureDefenderStatus,
     drainHeal,
@@ -479,6 +492,13 @@ function effectTypeToStatus(effectType: string): MajorStatus {
     case 'freeze':    return 'frz';
     default:          return null;
   }
+}
+
+/** Self-hit damage from confusion: base power 40, physical, typeless, uses attacker's own Atk/Def */
+export function calcConfusionSelfDamage(level: number, attack: number, defense: number): number {
+  const dmg = Math.floor(Math.floor(Math.floor((2 * level / 5) + 2) * 40 * (attack / defense)) / 50) + 2;
+  const rng = (85 + Math.floor(Math.random() * 16)) / 100;
+  return Math.max(1, Math.floor(dmg * rng));
 }
 
 // Struggle: used when all PP are depleted (power 50, 25% recoil)
