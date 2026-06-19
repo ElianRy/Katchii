@@ -11,6 +11,7 @@ import { xpToNextLevel, calcMaxHp } from '../data/combatEngine';
 import { playPokemonCry, stopMusic, playZoneMusic } from '../lib/audio';
 import { BattleScreen } from './BattleScreen';
 import { TeamMember } from './TeamBuilder';
+import { PlayerProfile } from './PlayerProfile';
 
 type Mood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited' | 'scared' | 'proud' | 'hungry' | 'curious';
 
@@ -466,9 +467,9 @@ function RaceModal({
 
 // ---- Interaction Modal ----
 function InteractionModal({
-  target, onWave, onRace, onDuel, onClose,
+  target, onWave, onRace, onDuel, onProfile, onClose,
 }: {
-  target: InteractionTarget; onWave: () => void; onRace: () => void; onDuel: () => void; onClose: () => void;
+  target: InteractionTarget; onWave: () => void; onRace: () => void; onDuel: () => void; onProfile: () => void; onClose: () => void;
 }) {
   const data = POKEMON_BY_ID[target.pokemonId];
   return (
@@ -486,9 +487,12 @@ function InteractionModal({
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <button onClick={onWave} className="py-3 rounded-xl bg-blue-600/80 text-white font-bold text-sm flex flex-col items-center gap-1">
             <span className="text-2xl">👋</span>Saluer
+          </button>
+          <button onClick={onProfile} className="py-3 rounded-xl bg-purple-600/80 text-white font-bold text-sm flex flex-col items-center gap-1">
+            <span className="text-2xl">👤</span>Profil
           </button>
           <button onClick={onDuel} className="py-3 rounded-xl bg-red-600/80 text-white font-bold text-sm flex flex-col items-center gap-1">
             <span className="text-2xl">⚔️</span>Duel
@@ -672,13 +676,14 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [waveTarget, setWaveTarget] = useState<string | null>(null);
   const [showRace, setShowRace] = useState(false);
   const [showDuel, setShowDuel] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
   const [justPlaced, setJustPlaced] = useState(false);
   const [myPokemonShake] = useState(false);
   const [displayedWave, setDisplayedWave] = useState<PresenceRow[]>([]);
   const [waveVisible, setWaveVisible] = useState(true);
   const wavePoolRef = useRef<PresenceRow[]>([]);
-  const waveOffsetRef = useRef(0);
+
   const [parkRevealed, setParkRevealed] = useState(!!state.favoritePokemon);
   const [xpPop, setXpPop] = useState<{ xp: number; key: number } | null>(null);
   const [offlineParkXp, setOfflineParkXp] = useState<{ xp: number; pokemonId: number; isShiny: boolean; levelBefore: number; levelAfter: number; xpBefore: number; xpAfter: number } | null>(null);
@@ -811,30 +816,40 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat]);
 
-  // Wander movement
+  // Target-based wander — pick a new destination across the full field periodically
+  const wanderTargetRef = useRef({ x: 5 + Math.random() * 88, y: 5 + Math.random() * 80 });
   useEffect(() => {
     if (mood === 'sleep') {
       if (wanderRef.current) clearInterval(wanderRef.current);
       return;
     }
-    const MOOD_SPEED: Record<Mood, number> = {
-      attack: 10, excited: 9, scared: 11, dance: 5,
-      happy: 4, hungry: 6, curious: 3, proud: 2, sleep: 0,
+    const MOOD_TARGET_INTERVAL: Record<Mood, number> = {
+      attack: 1200, excited: 1500, scared: 1000, dance: 2000,
+      happy: 3000, hungry: 2000, curious: 4500, proud: 5000, sleep: 0,
     };
-    const speed = MOOD_SPEED[mood] ?? 4;
-    const interval = mood === 'dance' ? 1500 : mood === 'proud' ? 4000 : 2500;
+    const targetInterval = MOOD_TARGET_INTERVAL[mood] ?? 3000;
+    // Pick new targets across the full field
+    const targetId = setInterval(() => {
+      if (!mountedRef.current) return;
+      wanderTargetRef.current = { x: 4 + Math.random() * 88, y: 4 + Math.random() * 82 };
+    }, targetInterval);
+    // Move toward target each tick
     wanderRef.current = setInterval(() => {
       if (!mountedRef.current) return;
       setMyPos(prev => {
-        const dx = (Math.random() - 0.5) * speed;
-        const dy = (Math.random() - 0.5) * speed;
+        const t = wanderTargetRef.current;
+        const dx = t.x - prev.x;
+        const dy = t.y - prev.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 0.5) return prev;
+        const step = Math.min(dist, 5 + Math.random() * 3);
         return {
-          x: Math.max(5, Math.min(85, prev.x + dx)),
-          y: Math.max(10, Math.min(70, prev.y + dy)),
+          x: Math.max(2, Math.min(94, prev.x + (dx / dist) * step)),
+          y: Math.max(2, Math.min(88, prev.y + (dy / dist) * step)),
         };
       });
-    }, interval);
-    return () => { if (wanderRef.current) clearInterval(wanderRef.current); };
+    }, 2000);
+    return () => { clearInterval(targetId); if (wanderRef.current) clearInterval(wanderRef.current); };
   }, [mood]);
 
   // Park XP tick — every 2 min, player + pokemon earn XP scaled by pokemon level
@@ -913,39 +928,27 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     upsertPresence(myPos, mood);
   }, [myPos, mood, upsertPresence]);
 
-  // Initialize wave pool when presence data loads or changes
+  // Spread positions: each pokemon gets a random display position so they fill the field
+  const spreadPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
+
+  // Initialize wave pool when presence data loads — show ALL Pokémons, spread across field
   useEffect(() => {
     const pool = shuffleArray(presence.filter(p => p.user_id !== myUserId));
     wavePoolRef.current = pool;
+    // Assign random spread positions to any new entrants
+    pool.forEach(p => {
+      if (!spreadPositionsRef.current[p.user_id]) {
+        spreadPositionsRef.current[p.user_id] = {
+          x: 4 + Math.random() * 88,
+          y: 4 + Math.random() * 82,
+        };
+      }
+    });
     if (pool.length > 0) {
-      setDisplayedWave(pool.slice(0, 5));
+      setDisplayedWave(pool);
       setWaveVisible(true);
     }
   }, [presence, myUserId]);
-
-  // Rotate wave every 60 seconds with fade animation
-  useEffect(() => {
-    const rotate = () => {
-      const pool = wavePoolRef.current;
-      if (pool.length <= 1) return;
-      setWaveVisible(false);
-      setTimeout(() => {
-        waveOffsetRef.current = (waveOffsetRef.current + 5) % Math.max(pool.length, 1);
-        if (waveOffsetRef.current === 0) {
-          wavePoolRef.current = shuffleArray(pool);
-        }
-        const offset = waveOffsetRef.current;
-        const slice = pool.slice(offset, offset + 5);
-        const wave = slice.length < 5 && pool.length >= 5
-          ? [...slice, ...pool.slice(0, 5 - slice.length)]
-          : slice;
-        setDisplayedWave(wave);
-        setTimeout(() => setWaveVisible(true), 50);
-      }, 600);
-    };
-    const id = setInterval(rotate, 60_000);
-    return () => clearInterval(id);
-  }, []);
 
   const sendChat = async () => {
     const msg = chatInput.trim();
@@ -1075,6 +1078,11 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const handleDuel = () => {
     if (!interactionTarget) return;
     setShowDuel(true);
+  };
+
+  const handleProfile = () => {
+    if (!interactionTarget) return;
+    setShowProfile(true);
   };
 
   const isPokelian = username.toLowerCase() === 'pokelian';
@@ -1291,26 +1299,19 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
             </div>
           </div>
 
-          {/* Wave indicator */}
-          {parkRevealed && wavePoolRef.current.length > 5 && (
-            <div className="absolute top-2 right-2">
-              <div className="text-xs text-slate-500 bg-black/40 rounded px-2 py-0.5">
-                vague {Math.floor(waveOffsetRef.current / 5) + 1}/{Math.ceil(wavePoolRef.current.length / 5)}
-              </div>
-            </div>
-          )}
 
           {/* Other players — hidden until park is revealed */}
           {parkRevealed && (
             <div style={{ transition: 'opacity 0.6s ease', opacity: waveVisible ? 1 : 0 }}>
               {displayedWave.map(p => {
                 const data = POKEMON_BY_ID[p.pokemon_id];
+                const spread = spreadPositionsRef.current[p.user_id] ?? { x: p.x, y: p.y };
                 return (
                   <div
                     key={p.user_id}
                     className="absolute"
                     style={{
-                      left: `${p.x}%`, top: `${p.y}%`,
+                      left: `${spread.x}%`, top: `${spread.y}%`,
                       transform: 'translate(-50%, -50%)',
                       animation: p.mood !== 'sleep'
                         ? (p.pokemon_id % 3 === 0 ? 'wander-a 8s ease-in-out infinite' : p.pokemon_id % 3 === 1 ? 'wander-b 10s ease-in-out infinite' : 'wander-c 12s ease-in-out infinite')
@@ -1523,14 +1524,26 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         />
       )}
 
-      {interactionTarget && !showRace && !showDuel && createPortal(
+      {interactionTarget && !showRace && !showDuel && !showProfile && createPortal(
         <InteractionModal
           target={interactionTarget}
           onWave={handleWave}
           onRace={handleRace}
           onDuel={handleDuel}
+          onProfile={handleProfile}
           onClose={() => setInteractionTarget(null)}
         />,
+        document.body
+      )}
+
+      {showProfile && interactionTarget && createPortal(
+        <div className="fixed inset-0 z-[600] overflow-y-auto">
+          <PlayerProfile
+            userId={interactionTarget.userId}
+            username={interactionTarget.username}
+            onClose={() => { setShowProfile(false); setInteractionTarget(null); }}
+          />
+        </div>,
         document.body
       )}
 
