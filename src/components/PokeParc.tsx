@@ -14,6 +14,15 @@ import { TeamMember } from './TeamBuilder';
 
 type Mood = 'happy' | 'sleep' | 'attack' | 'dance' | 'excited' | 'scared' | 'proud' | 'hungry' | 'curious';
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 interface PresenceRow {
   user_id: string;
   username: string;
@@ -666,6 +675,10 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const [showPicker, setShowPicker] = useState(false);
   const [justPlaced, setJustPlaced] = useState(false);
   const [myPokemonShake] = useState(false);
+  const [displayedWave, setDisplayedWave] = useState<PresenceRow[]>([]);
+  const [waveVisible, setWaveVisible] = useState(true);
+  const wavePoolRef = useRef<PresenceRow[]>([]);
+  const waveOffsetRef = useRef(0);
   const [parkRevealed, setParkRevealed] = useState(!!state.favoritePokemon);
   const [xpPop, setXpPop] = useState<{ xp: number; key: number } | null>(null);
   const [offlineParkXp, setOfflineParkXp] = useState<{ xp: number; pokemonId: number; isShiny: boolean; levelBefore: number; levelAfter: number; xpBefore: number; xpAfter: number } | null>(null);
@@ -716,7 +729,8 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     const chan = supabase.channel('pokepark_presence_changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'pokepark_presence' }, payload => {
         if (payload.eventType === 'DELETE') {
-          setPresence(prev => prev.filter(p => p.user_id !== (payload.old as PresenceRow).user_id));
+          // Ignore DELETE events — presence rows persist in DB after leaving
+          return;
         } else {
           const row = payload.new as PresenceRow;
           if (HIDDEN_USERS.includes(row.username?.toLowerCase() ?? '')) return;
@@ -899,14 +913,39 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     upsertPresence(myPos, mood);
   }, [myPos, mood, upsertPresence]);
 
-  // Remove presence on unmount
+  // Initialize wave pool when presence data loads or changes
   useEffect(() => {
-    return () => {
-      if (myUserId) {
-        supabase.from('pokepark_presence').delete().eq('user_id', myUserId);
-      }
+    const pool = shuffleArray(presence.filter(p => p.user_id !== myUserId));
+    wavePoolRef.current = pool;
+    if (pool.length > 0) {
+      setDisplayedWave(pool.slice(0, 5));
+      setWaveVisible(true);
+    }
+  }, [presence, myUserId]);
+
+  // Rotate wave every 60 seconds with fade animation
+  useEffect(() => {
+    const rotate = () => {
+      const pool = wavePoolRef.current;
+      if (pool.length <= 1) return;
+      setWaveVisible(false);
+      setTimeout(() => {
+        waveOffsetRef.current = (waveOffsetRef.current + 5) % Math.max(pool.length, 1);
+        if (waveOffsetRef.current === 0) {
+          wavePoolRef.current = shuffleArray(pool);
+        }
+        const offset = waveOffsetRef.current;
+        const slice = pool.slice(offset, offset + 5);
+        const wave = slice.length < 5 && pool.length >= 5
+          ? [...slice, ...pool.slice(0, 5 - slice.length)]
+          : slice;
+        setDisplayedWave(wave);
+        setTimeout(() => setWaveVisible(true), 50);
+      }, 600);
     };
-  }, [myUserId]);
+    const id = setInterval(rotate, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
   const sendChat = async () => {
     const msg = chatInput.trim();
@@ -1041,7 +1080,6 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   const isPokelian = username.toLowerCase() === 'pokelian';
   const canMute = isAdmin || isPokelian;
 
-  const others = presence.filter(p => p.user_id !== myUserId);
   const mySpriteData = myFav ? POKEMON_BY_ID[myFav.pokemonId] : null;
 
   return (
@@ -1249,52 +1287,65 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
           {/* Player count */}
           <div className="absolute top-2 left-2">
             <div className="text-xs text-slate-400 bg-black/40 rounded px-2 py-0.5">
-              {others.length + (myFav ? 1 : 0)} pokémons dans le parc
+              {presence.filter(p => p.user_id !== myUserId).length + (myFav ? 1 : 0)} pokémons dans le parc
             </div>
           </div>
 
-          {/* Other players — hidden until park is revealed */}
-          {parkRevealed && others.map(p => {
-            const data = POKEMON_BY_ID[p.pokemon_id];
-            return (
-              <div
-                key={p.user_id}
-                className="absolute"
-                style={{
-                  left: `${p.x}%`, top: `${p.y}%`,
-                  transform: 'translate(-50%, -50%)',
-                  animation: p.mood !== 'sleep'
-                    ? (p.pokemon_id % 3 === 0 ? 'wander-a 8s ease-in-out infinite' : p.pokemon_id % 3 === 1 ? 'wander-b 10s ease-in-out infinite' : 'wander-c 12s ease-in-out infinite')
-                    : undefined,
-                  animationDelay: `${(p.pokemon_id % 5) * 1.2}s`,
-                }}
-              >
-                <ParkSprite
-                  pokemonId={p.pokemon_id}
-                  isShiny={p.is_shiny}
-                  mood={p.mood}
-                  username={p.username}
-                  isMine={false}
-                  isOnline={Date.now() - new Date(p.updated_at).getTime() < 60000}
-                  waveTarget={waveTarget === p.user_id}
-                  onClick={() => {
-                    playPokemonCry(p.pokemon_id);
-                    setInteractionTarget({
-                      userId: p.user_id,
-                      username: p.username,
-                      pokemonId: p.pokemon_id,
-                      isShiny: p.is_shiny,
-                      level: p.pokemon_level ?? 1,
-                      rarity: data?.rarity ?? 'commun',
-                    });
-                    const tx = Math.max(5, Math.min(85, p.x + (p.x > 50 ? -12 : 12)));
-                    const ty = Math.max(10, Math.min(70, p.y + (p.y > 50 ? -8 : 8)));
-                    setMyPos({ x: tx, y: ty });
-                  }}
-                />
+          {/* Wave indicator */}
+          {parkRevealed && wavePoolRef.current.length > 5 && (
+            <div className="absolute top-2 right-2">
+              <div className="text-xs text-slate-500 bg-black/40 rounded px-2 py-0.5">
+                vague {Math.floor(waveOffsetRef.current / 5) + 1}/{Math.ceil(wavePoolRef.current.length / 5)}
               </div>
-            );
-          })}
+            </div>
+          )}
+
+          {/* Other players — hidden until park is revealed */}
+          {parkRevealed && (
+            <div style={{ transition: 'opacity 0.6s ease', opacity: waveVisible ? 1 : 0 }}>
+              {displayedWave.map(p => {
+                const data = POKEMON_BY_ID[p.pokemon_id];
+                return (
+                  <div
+                    key={p.user_id}
+                    className="absolute"
+                    style={{
+                      left: `${p.x}%`, top: `${p.y}%`,
+                      transform: 'translate(-50%, -50%)',
+                      animation: p.mood !== 'sleep'
+                        ? (p.pokemon_id % 3 === 0 ? 'wander-a 8s ease-in-out infinite' : p.pokemon_id % 3 === 1 ? 'wander-b 10s ease-in-out infinite' : 'wander-c 12s ease-in-out infinite')
+                        : undefined,
+                      animationDelay: `${(p.pokemon_id % 5) * 1.2}s`,
+                    }}
+                  >
+                    <ParkSprite
+                      pokemonId={p.pokemon_id}
+                      isShiny={p.is_shiny}
+                      mood={p.mood}
+                      username={p.username}
+                      isMine={false}
+                      isOnline={Date.now() - new Date(p.updated_at).getTime() < 60000}
+                      waveTarget={waveTarget === p.user_id}
+                      onClick={() => {
+                        playPokemonCry(p.pokemon_id);
+                        setInteractionTarget({
+                          userId: p.user_id,
+                          username: p.username,
+                          pokemonId: p.pokemon_id,
+                          isShiny: p.is_shiny,
+                          level: p.pokemon_level ?? 1,
+                          rarity: data?.rarity ?? 'commun',
+                        });
+                        const tx = Math.max(5, Math.min(85, p.x + (p.x > 50 ? -12 : 12)));
+                        const ty = Math.max(10, Math.min(70, p.y + (p.y > 50 ? -8 : 8)));
+                        setMyPos({ x: tx, y: ty });
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Gray overlay while picker is open */}
           {showPicker && (
