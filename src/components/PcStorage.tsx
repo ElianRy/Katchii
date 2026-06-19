@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID, GEN1_POKEMON } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
@@ -10,7 +10,6 @@ import { MOVES } from '../data/gen1Moves';
 import { EvolutionScreen } from './EvolutionScreen';
 import { BattleScreen } from './BattleScreen';
 import type { TeamMember } from './TeamBuilder';
-import { GEN1_POKEMON as _GEN1 } from '../data/gen1';
 import type { PokemonType } from '../data/pokemonTypes';
 
 const BOX_SIZE = 30;
@@ -65,12 +64,6 @@ interface Props {
   onSaveCustomMoves?: (pokemonId: number, slugs: string[]) => void;
 }
 
-interface AutoEvoItem {
-  oldId: number;
-  newId?: number;
-  choices?: number[];
-}
-
 interface DragState {
   pokemonId: number;
   fromType: 'pc' | 'party';
@@ -90,11 +83,20 @@ function chunkIntoBoxes(ids: number[]): number[][] {
 
 export function PcStorage({
   state, username, onUpdateParty, onUpdatePcBoxes, onUpdateBoxNames, onClose,
-  isAdmin, onSetLevel, onTriggerEvolution,
-  currentZoneId, onAddXp, onBattleWin, onTrainingBattle, onTriggerEvo, onMarkPendingEvolution,
+  isAdmin, onSetLevel,
+  currentZoneId, onAddXp, onBattleWin, onTrainingBattle, onTriggerEvo,
   onSaveCustomMoves,
 }: Props) {
-  const [boxIndex, setBoxIndex] = useState(0);
+  const PC_BOX_KEY = `katchii_pc_box_${username ?? 'default'}`;
+  const MAX_BOXES = 10;
+  const [boxIndex, setBoxIndex] = useState(() => {
+    try { return Math.max(0, Math.min(MAX_BOXES - 1, Number(localStorage.getItem(PC_BOX_KEY) ?? 0))); }
+    catch { return 0; }
+  });
+  const setBoxIndexPersisted = (idx: number) => {
+    setBoxIndex(idx);
+    try { localStorage.setItem(PC_BOX_KEY, String(idx)); } catch {}
+  };
   const [selected, setSelected] = useState<{ id: number; from: 'party' | 'pc' } | null>(null);
   const [editingBoxName, setEditingBoxName] = useState(false);
   const [boxNameInput, setBoxNameInput] = useState('');
@@ -110,9 +112,9 @@ export function PcStorage({
   const [battleTeam, setBattleTeam] = useState<{ playerTeam: TeamMember[]; enemyTeam: TeamMember[] } | null>(null);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
 
-  // Auto-evolution queue
-  const [autoEvoQueue, setAutoEvoQueue] = useState<AutoEvoItem[]>([]);
-  const autoEvoInitialized = useRef(false);
+  // Manual evolution trigger
+  const [evoConfirmId, setEvoConfirmId] = useState<number | null>(null);
+  const [pendingEvoChoice, setPendingEvoChoice] = useState<{ oldId: number; newId?: number; choices?: number[] } | null>(null);
 
   // Drag & drop
   const dragRef = useRef<DragState | null>(null);
@@ -162,27 +164,6 @@ export function PcStorage({
   const currentBox = pcBoxes[safeBoxIdx] ?? [];
   const currentBoxName = boxNames[safeBoxIdx] ?? `Boîte ${safeBoxIdx + 1}`;
 
-  // Auto-evolution scan on mount
-  useEffect(() => {
-    if (autoEvoInitialized.current) return;
-    autoEvoInitialized.current = true;
-    const ownedSet = new Set(owned);
-    const queue: AutoEvoItem[] = [];
-    for (const id of owned) {
-      const level = state.pokemonLevels?.[id]?.level ?? 1;
-      const entry = EVOLUTION_DATA[id];
-      if (!entry || level < entry.level) continue;
-      if (entry.choices) {
-        const availableChoices = entry.choices.filter(c => c <= 151 && !ownedSet.has(c));
-        if (availableChoices.length > 0) {
-          queue.push({ oldId: id, choices: availableChoices });
-        }
-      } else if (entry.evolvesInto && entry.evolvesInto <= 151 && !ownedSet.has(entry.evolvesInto)) {
-        queue.push({ oldId: id, newId: entry.evolvesInto });
-      }
-    }
-    if (queue.length > 0) setAutoEvoQueue(queue);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const moveToPC = useCallback((pokemonId: number) => {
     const newParty = party.filter(id => id !== pokemonId);
@@ -359,25 +340,6 @@ export function PcStorage({
 
     if (won) {
       onBattleWin?.(party);
-      // Check evolutions post-battle
-      const evoQueue: AutoEvoItem[] = [];
-      for (const id of party) {
-        const newLevel = finalTeam?.find(m => m.pokemonId === id)?.level ?? (state.pokemonLevels?.[id]?.level ?? 1);
-        const oldLevel = state.pokemonLevels?.[id]?.level ?? 1;
-        const ownedSet = new Set(owned);
-        for (let lv = oldLevel + 1; lv <= newLevel; lv++) {
-          const entry = EVOLUTION_DATA[id];
-          if (!entry || lv < entry.level) continue;
-          if (entry.choices) {
-            const avail = entry.choices.filter(c => c <= 151 && !ownedSet.has(c));
-            if (avail.length > 0) evoQueue.push({ oldId: id, choices: avail });
-          } else if (entry.evolvesInto && entry.evolvesInto <= 151 && !ownedSet.has(entry.evolvesInto)) {
-            evoQueue.push({ oldId: id, newId: entry.evolvesInto });
-          }
-          break;
-        }
-      }
-      if (evoQueue.length > 0) setAutoEvoQueue(prev => [...prev, ...evoQueue]);
     }
 
     setBattleResult({ won, xpGains });
@@ -395,11 +357,10 @@ export function PcStorage({
   const selectedPokemon = selected ? POKEMON_BY_ID[selected.id] : null;
   const selectedLevel = selected ? (state.pokemonLevels?.[selected.id]?.level ?? 1) : 1;
   const selectedXp = selected ? (state.pokemonLevels?.[selected.id]?.xp ?? 0) : 0;
-  const hasPendingEvo = selected ? (state.pendingEvolutions ?? []).includes(selected.id) : false;
 
-  // ── Evolution queue rendering ─────────────────────────────────────────────────
-  if (autoEvoQueue.length > 0) {
-    const item = autoEvoQueue[0];
+  // ── Manual evolution screen ───────────────────────────────────────────────────
+  if (pendingEvoChoice) {
+    const item = pendingEvoChoice;
     const oldName = POKEMON_BY_ID[item.oldId]?.name ?? `#${item.oldId}`;
     const resolveNewId = item.newId ?? item.choices?.[0] ?? 0;
     const resolveNewName = POKEMON_BY_ID[resolveNewId]?.name ?? `#${resolveNewId}`;
@@ -419,12 +380,11 @@ export function PcStorage({
         choiceNames={choiceNames}
         ownedIds={owned}
         onComplete={() => {
-          onTriggerEvo?.(item.oldId, resolveNewId);
-          setAutoEvoQueue(prev => prev.slice(1));
+          onTriggerEvo?.(item.oldId, item.newId ?? resolveNewId);
+          setPendingEvoChoice(null);
         }}
         onCancel={() => {
-          onMarkPendingEvolution?.(item.oldId);
-          setAutoEvoQueue(prev => prev.slice(1));
+          setPendingEvoChoice(null);
         }}
       />
     );
@@ -667,8 +627,8 @@ export function PcStorage({
 
   return (
     <div
-      className="fixed inset-0 z-[600] flex flex-col select-none"
-      style={{ height: '100dvh', background: '#c0d0e0', fontFamily: 'monospace' }}
+      className="fixed inset-x-0 top-0 z-[600] flex flex-col select-none"
+      style={{ bottom: 72, background: '#c0d0e0', fontFamily: 'monospace' }}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
@@ -701,7 +661,7 @@ export function PcStorage({
       {/* Box header with navigation */}
       <div className="flex items-center justify-between px-2 py-1 shrink-0" style={{ background: '#6c8fac', borderBottom: '2px solid #4a7090' }}>
         <button
-          onClick={() => setBoxIndex(Math.max(0, safeBoxIdx - 1))}
+          onClick={() => setBoxIndexPersisted(Math.max(0, safeBoxIdx - 1))}
           disabled={safeBoxIdx === 0}
           className="text-white font-black text-base px-2 disabled:opacity-30"
         >◀</button>
@@ -726,10 +686,11 @@ export function PcStorage({
         <button
           onClick={() => {
             const nextIdx = safeBoxIdx + 1;
-            if (nextIdx >= pcBoxes.length) onUpdatePcBoxes([...pcBoxes, []]);
-            setBoxIndex(nextIdx);
+            if (nextIdx >= pcBoxes.length && pcBoxes.length < MAX_BOXES) onUpdatePcBoxes([...pcBoxes, []]);
+            if (nextIdx < Math.min(pcBoxes.length + 1, MAX_BOXES)) setBoxIndexPersisted(nextIdx);
           }}
-          className="text-white font-black text-base px-2"
+          disabled={safeBoxIdx >= pcBoxes.length - 1 && pcBoxes.length >= MAX_BOXES}
+          className="text-white font-black text-base px-2 disabled:opacity-30"
         >▶</button>
       </div>
 
@@ -880,15 +841,50 @@ export function PcStorage({
                 </div>
               )}
 
-              {hasPendingEvo && EVOLUTION_DATA[selected.id] && onTriggerEvolution && (
-                <button
-                  onClick={() => { onTriggerEvolution(selected.id); setSelected(null); }}
-                  className="w-full py-1.5 rounded-lg font-black text-xs text-black mb-1.5"
-                  style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b)' }}
-                >
-                  ✨ Faire évoluer
-                </button>
-              )}
+              {(() => {
+                const evoEntry = EVOLUTION_DATA[selected.id];
+                if (!evoEntry || selectedLevel < evoEntry.level) return null;
+                const targets = evoEntry.choices ?? (evoEntry.evolvesInto ? [evoEntry.evolvesInto] : []);
+                const allOwned = targets.every(tid => (state.normalCollection[tid] ?? 0) > 0);
+                if (allOwned) return null;
+                if (evoConfirmId === selected.id) {
+                  return (
+                    <div className="mb-1.5 rounded-lg p-2" style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid #fbbf24' }}>
+                      <div className="text-xs text-slate-700 font-bold mb-1.5 text-center">Faire évoluer {selectedPokemon.name} ?</div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const entry = EVOLUTION_DATA[selected.id];
+                            if (!entry) return;
+                            if (entry.choices) {
+                              setPendingEvoChoice({ oldId: selected.id, choices: entry.choices });
+                            } else if (entry.evolvesInto) {
+                              setPendingEvoChoice({ oldId: selected.id, newId: entry.evolvesInto });
+                            }
+                            setEvoConfirmId(null);
+                          }}
+                          className="flex-1 py-1 rounded-lg font-black text-xs text-black"
+                          style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b)' }}
+                        >Oui !</button>
+                        <button
+                          onClick={() => setEvoConfirmId(null)}
+                          className="flex-1 py-1 rounded-lg font-bold text-xs text-slate-600"
+                          style={{ background: '#d0d8e0', border: '1px solid #a0b0c0' }}
+                        >Annuler</button>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
+                  <button
+                    onClick={() => setEvoConfirmId(selected.id)}
+                    className="w-full py-1.5 rounded-lg font-black text-xs text-black mb-1.5"
+                    style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b)' }}
+                  >
+                    ✨ Évoluer
+                  </button>
+                );
+              })()}
 
               <div className="flex gap-2">
                 <button

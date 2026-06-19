@@ -319,12 +319,27 @@ export function AdminPanel({ gameState, onClose }: Props) {
                     <div>
                       <p className="text-white font-bold">{throneData.champion.username}</p>
                       <p className="text-slate-400 text-xs">{throneData.champion.since === 'Depuis toujours' ? 'Depuis toujours' : new Date(throneData.champion.since).toLocaleString('fr-FR')}</p>
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex gap-2 mt-2 flex-wrap">
                         {throneData.champion.team.map((m, i) => (
                           <img key={i} src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${m.pokemonId}.png`}
                             alt="" width={36} height={36} style={{ imageRendering: 'pixelated' }} draggable={false} />
                         ))}
                       </div>
+                      {throneData.champion.since !== 'Depuis toujours' && (
+                        <button
+                          onClick={async () => {
+                            const now = new Date().toISOString();
+                            const newData: ThroneData = { ...throneData, champion: { ...throneData.champion!, since: now } };
+                            const err = await throneWrite(newData);
+                            if (!err) { setThroneData(newData); flash('⏱️ Temps réinitialisé depuis maintenant'); }
+                            else flash('Erreur: ' + String(err));
+                          }}
+                          className="mt-2 text-xs px-3 py-1 rounded-lg font-bold"
+                          style={{ background: '#ef444422', color: '#f87171', border: '1px solid #ef444444' }}
+                        >
+                          ⏱️ Réinitialiser le temps depuis maintenant
+                        </button>
+                      )}
                     </div>
                   ) : <p className="text-slate-400 text-sm">Aucun champion défini</p>}
                 </div>

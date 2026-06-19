@@ -523,7 +523,7 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
                 WebkitTextFillColor: 'transparent',
                 animation: 'throne-title-pulse 2s ease-in-out infinite',
               }}>
-              DÉFIER LE CHAMPION
+              {champion?.username === username ? 'CHANGER MON ÉQUIPE' : 'DÉFIER LE CHAMPION'}
             </h1>
             <p className="text-amber-700/70 text-sm mt-1 font-bold">Choisissez votre équipe de combat</p>
           </div>
@@ -637,7 +637,7 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
             })}
           </div>
         </div>
-        <div className="px-5 py-4 shrink-0 border-t border-slate-700">
+        <div className="px-5 pt-4 pb-[calc(1rem+72px)] shrink-0 border-t border-slate-700">
           <button
             onClick={() => { if (selectedPokemon.length === 3) setPhase('confirm'); }}
             disabled={selectedPokemon.length !== 3}

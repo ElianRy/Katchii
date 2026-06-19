@@ -831,7 +831,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     // Pick new targets across the full field
     const targetId = setInterval(() => {
       if (!mountedRef.current) return;
-      wanderTargetRef.current = { x: 4 + Math.random() * 88, y: 4 + Math.random() * 82 };
+      wanderTargetRef.current = { x: 4 + Math.random() * 88, y: 4 + Math.random() * 62 };
     }, targetInterval);
     // Move toward target each tick
     wanderRef.current = setInterval(() => {
@@ -845,7 +845,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         const step = Math.min(dist, 5 + Math.random() * 3);
         return {
           x: Math.max(2, Math.min(94, prev.x + (dx / dist) * step)),
-          y: Math.max(2, Math.min(88, prev.y + (dy / dist) * step)),
+          y: Math.max(2, Math.min(70, prev.y + (dy / dist) * step)),
         };
       });
     }, 2000);
@@ -940,7 +940,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
       if (!spreadPositionsRef.current[p.user_id]) {
         spreadPositionsRef.current[p.user_id] = {
           x: 4 + Math.random() * 88,
-          y: 4 + Math.random() * 82,
+          y: 4 + Math.random() * 62,
         };
       }
     });
@@ -965,7 +965,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
         const wave = slice.length < 5 ? [...slice, ...pool.slice(0, 5 - slice.length)] : slice;
         wave.forEach(p => {
           if (!spreadPositionsRef.current[p.user_id]) {
-            spreadPositionsRef.current[p.user_id] = { x: 4 + Math.random() * 88, y: 4 + Math.random() * 82 };
+            spreadPositionsRef.current[p.user_id] = { x: 4 + Math.random() * 88, y: 4 + Math.random() * 62 };
           }
         });
         setDisplayedWave(wave);
