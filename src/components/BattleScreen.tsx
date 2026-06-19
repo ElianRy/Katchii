@@ -823,13 +823,13 @@ export function BattleScreen({
   const [pvpEndStats, setPvpEndStats] = useState<{ dmgDealt: number; dmgReceived: number; koMade: number; koTaken: number; turns: number; durationMs: number } | null>(null);
   useEffect(() => { pvpControlsRef.current = pvpControls; }, [pvpControls]);
 
-  // PvP: persist battle state to localStorage between turns so a page refresh can resume
+  // PvP: persist battle state to localStorage — save on every HP change so a refresh always restores current HP
   useEffect(() => {
     const sessionId = pvpControlsRef.current?.sessionId;
-    if (phase !== 'player_turn' || !sessionId) return;
+    if (!sessionId || phaseRef.current === 'end') return;
     const state: PvpPersistedState = {
-      playerFighters: playerFightersRef.current,
-      enemyFighters: enemyFightersRef.current,
+      playerFighters,
+      enemyFighters,
       playerIdx: playerIdxRef.current,
       enemyIdx: enemyIdxRef.current,
       turnNumber: turnNumberRef.current,
@@ -841,7 +841,7 @@ export function BattleScreen({
     };
     try { localStorage.setItem(`pvp_state_${sessionId}`, JSON.stringify(state)); } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
+  }, [playerFighters, enemyFighters]);
 
   useEffect(() => {
     if (showFullLog && logScrollRef.current) logScrollRef.current.scrollTop = logScrollRef.current.scrollHeight;
