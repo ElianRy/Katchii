@@ -21,6 +21,7 @@ export function AdminPanel({ gameState, onClose }: Props) {
   const [throneLoading, setThroneLoading] = useState(false);
   const [filter, setFilter] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [manualUsername, setManualUsername] = useState('');
 
   const flash = (msg: string) => {
     setFeedback(msg);
@@ -59,8 +60,13 @@ export function AdminPanel({ gameState, onClose }: Props) {
       newRecords.push({ username: prev.champion.username, duration: Date.now() - new Date(prev.champion.since).getTime(), start: prev.champion.since, end: now });
     }
     const newData: ThroneData = { champion: { username: newUsername, team, since: now }, records: newRecords, coinClaims: throneData?.coinClaims ?? {} };
-    await throneWrite(newData);
+    const err = await throneWrite(newData);
+    if (err) {
+      flash(`❌ Erreur: ${err}`);
+      return;
+    }
     setThroneData(newData);
+    setManualUsername('');
     flash(`👑 ${newUsername} est maintenant champion !`);
   };
 
@@ -68,7 +74,8 @@ export function AdminPanel({ gameState, onClose }: Props) {
     if (!throneData) return;
     const newRecords = throneData.records.filter((_, i) => i !== idx);
     const newData: ThroneData = { ...throneData, records: newRecords };
-    await throneWrite(newData);
+    const err = await throneWrite(newData);
+    if (err) { flash(`❌ Erreur: ${err}`); return; }
     setThroneData(newData);
     flash('🗑️ Record supprimé.');
   };
@@ -322,25 +329,42 @@ export function AdminPanel({ gameState, onClose }: Props) {
                   ) : <p className="text-slate-400 text-sm">Aucun champion défini</p>}
                 </div>
 
-                {/* Set champion — player list */}
+                {/* Set champion — player list + manual input */}
                 <div className="bg-slate-800 rounded-xl p-4 border border-slate-600/40">
                   <p className="text-white font-black text-sm mb-3">⚔️ Définir un champion</p>
+                  {/* Manual input fallback */}
+                  <div className="flex gap-2 mb-3">
+                    <input
+                      value={manualUsername}
+                      onChange={e => setManualUsername(e.target.value)}
+                      placeholder="Nom d'utilisateur..."
+                      className="flex-1 bg-slate-700 text-white text-sm px-3 py-2 rounded-lg border border-slate-600 outline-none focus:border-amber-500"
+                    />
+                    <button
+                      onClick={() => manualUsername.trim() && setManualChampion(manualUsername.trim())}
+                      disabled={!manualUsername.trim()}
+                      className="px-3 py-2 rounded-lg text-sm font-bold transition-all"
+                      style={{ background: manualUsername.trim() ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b', color: manualUsername.trim() ? '#fff' : '#475569' }}
+                    >
+                      👑 Définir
+                    </button>
+                  </div>
                   {allPlayers.length === 0 ? (
-                    <p className="text-slate-500 text-xs">Aucun joueur chargé.</p>
+                    <p className="text-slate-500 text-xs">Aucun joueur chargé automatiquement — utilise le champ ci-dessus.</p>
                   ) : (
                     <div className="flex flex-col gap-2 max-h-52 overflow-y-auto">
-                      {allPlayers.map(username => (
+                      {allPlayers.map(uname => (
                         <button
-                          key={username}
-                          onClick={() => setManualChampion(username)}
+                          key={uname}
+                          onClick={() => setManualChampion(uname)}
                           className={`flex items-center justify-between px-3 py-2 rounded-xl border transition-all text-left ${
-                            throneData?.champion?.username === username
+                            throneData?.champion?.username === uname
                               ? 'border-amber-500 bg-amber-900/30 text-amber-300'
                               : 'border-slate-600 bg-slate-700/50 text-white hover:border-amber-400'
                           }`}
                         >
-                          <span className="font-bold text-sm">{username}</span>
-                          {throneData?.champion?.username === username && (
+                          <span className="font-bold text-sm">{uname}</span>
+                          {throneData?.champion?.username === uname && (
                             <span className="text-amber-400 text-xs font-black">👑 Actuel</span>
                           )}
                         </button>

@@ -15,10 +15,11 @@ export async function throneRead() {
   return data?.state ?? null;
 }
 
-export async function throneWrite(state: unknown) {
+export async function throneWrite(state: unknown): Promise<string | null> {
   const { supabase: fallback } = await import('./supabase');
   const client = adminClient ?? fallback;
-  await client.from('game_saves').upsert({ user_id: '__throne__', state, updated_at: new Date().toISOString() });
+  const { error } = await client.from('game_saves').upsert({ user_id: '__throne__', state, updated_at: new Date().toISOString() });
+  return error ? error.message : null;
 }
 
 export async function throneReadAllPlayers(): Promise<string[]> {

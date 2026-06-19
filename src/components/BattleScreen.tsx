@@ -773,8 +773,9 @@ export function BattleScreen({
     }));
 
   const savedState = pvpControls?.savedState ?? null;
-  const [playerFighters, setPlayerFighters] = useState<FighterState[]>(() => savedState ? savedState.playerFighters : initFighters(playerTeam, true));
-  const playerFightersRef = useRef<FighterState[]>(savedState ? savedState.playerFighters : initFighters(playerTeam, true));
+  const isPvp = !!pvpControls;
+  const [playerFighters, setPlayerFighters] = useState<FighterState[]>(() => savedState ? savedState.playerFighters : initFighters(playerTeam, !isPvp));
+  const playerFightersRef = useRef<FighterState[]>(savedState ? savedState.playerFighters : initFighters(playerTeam, !isPvp));
   const enemyFightersRef = useRef<FighterState[]>(savedState ? savedState.enemyFighters : initFighters(enemyTeam, false));
   const boostActiveRef = useRef(playerDamageMult > 1);
   const [boostActive, setBoostActive] = useState(playerDamageMult > 1);

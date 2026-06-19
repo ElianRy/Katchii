@@ -273,11 +273,11 @@ export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet,
           <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🪙 Comment gagner des PokéCoins</h3>
           <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 divide-y divide-slate-700/30">
             {[
-              ['Capture (nouveau)',    'Varie selon la rareté', '25 – 400 🪙'],
-              ['Capture (doublon)',    'Moins, mais ça compte',  '8 – 130 🪙'],
-              ['Capture Shiny',        'Multiplicateur ×3',     '75 – 1200 🪙'],
-              ['Entraînement gagné',   'Chaque combat remporté', '+25 🪙'],
-              ["Boss d'arène vaincu", 'Victoire en zone',       '+150 🪙'],
+              ['Capture (nouveau)',    'Varie selon la rareté', '30 – 450 🪙'],
+              ['Capture (doublon)',    'Moins, mais ça compte',  '10 – 150 🪙'],
+              ['Capture Shiny',        'Multiplicateur ×3',     '90 – 1350 🪙'],
+              ['Entraînement gagné',   'Chaque combat remporté', '+30 🪙'],
+              ["Boss d'arène vaincu", 'Victoire en zone',       '+180 🪙'],
             ].map(([action, desc, amount]) => (
               <div key={action} className="flex items-center gap-3 px-4 py-2.5">
                 <div className="flex-1 min-w-0">

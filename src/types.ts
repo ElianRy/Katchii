@@ -183,29 +183,29 @@ export const RARITY_WEIGHTS: Record<Rarity, number> = {
 
 // PokéCoins earned on first capture
 export const FIRST_CAPTURE_POINTS: Record<Rarity, number> = {
-  commun:      25,
-  peu_commun:  55,
-  rare:        110,
-  elite:       200,
-  legendaire:  400,
+  commun:      30,
+  peu_commun:  65,
+  rare:        130,
+  elite:       230,
+  legendaire:  450,
 };
 
 // PokéCoins earned on duplicate capture
 export const DUPLICATE_CAPTURE_POINTS: Record<Rarity, number> = {
-  commun:     8,
-  peu_commun: 18,
-  rare:       35,
-  elite:      65,
-  legendaire: 130,
+  commun:     10,
+  peu_commun: 22,
+  rare:       45,
+  elite:      80,
+  legendaire: 150,
 };
 
 // Shiny multiplier on first shiny capture coins
 export const SHINY_COINS_MULT = 3;
 
 // PokéCoins earned from various actions
-export const COINS_TRAINING_WIN = 25;
-export const COINS_BOSS_DEFEAT  = 150;
-export const COINS_BOSS_ATTEMPT = 30; // even on loss
+export const COINS_TRAINING_WIN = 30;
+export const COINS_BOSS_DEFEAT  = 180;
+export const COINS_BOSS_ATTEMPT = 40; // even on loss
 
 export const LURE_COSTS: Record<LureType, number> = {
   rare:       600,
