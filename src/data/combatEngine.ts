@@ -328,7 +328,6 @@ export type MoveResult = {
   allStatBoosted?: boolean;
   appliedSeed?: boolean;
   drainHeal?: number;
-  selfHeal?: number;
   failedSpecial?: string;
 };
 
@@ -392,7 +391,6 @@ export function calcDamage(
       appliedStatus,
       appliedConfusion: appliedConfusion || undefined,
       appliedSeed: !!(move.isSeed),
-      selfHeal: move.healing,
       priority: movePriority,
     };
   }
@@ -540,7 +538,6 @@ export type RawMove = {
   alwaysHit?: boolean;
   priority?: number;
   draining?: number;
-  healing?: number;
   allStatBoost?: { stages: number; chance: number };
   isSeed?: boolean;
 };

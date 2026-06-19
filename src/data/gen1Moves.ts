@@ -23,7 +23,6 @@ export interface Move {
   recoil?: number;
   alwaysHit?: boolean;
   draining?: number;
-  healing?: number;
   allStatBoost?: { stages: number; chance: number };
   isSeed?: boolean;
 }
@@ -153,7 +152,6 @@ export const MOVES: Record<string, Move> = {
   'hypnosis': {id:'hypnosis', name:'Hypnose', type:'psychic', category:'status', power:0, accuracy:60, pp:20, priority:0, description:'Endort l\'adversaire.', effect:{type:'sleep', chance:100}},
   'dream-eater': {id:'dream-eater', name:'Bouffe-Rêve', type:'psychic', category:'special', power:100, accuracy:100, pp:15, priority:0, description:'Fonctionne sur un Pokémon endormi.', draining:0.5},
   'amnesia': {id:'amnesia', name:'Amnésie', type:'psychic', category:'status', power:0, accuracy:100, pp:20, priority:0, description:'Augmente fortement l\'Attaque Spéciale.', statBoost:{stat:'spAttack', target:'self', stages:2}},
-  'recover': {id:'recover', name:'Soin', type:'normal', category:'status', power:0, accuracy:100, pp:20, priority:0, description:'Restaure la moitié des PV max.', healing:0.5},
   'barrier': {id:'barrier', name:'Barrière', type:'psychic', category:'status', power:0, accuracy:100, pp:30, priority:0, description:'Augmente fortement la Défense.', statBoost:{stat:'defense', target:'self', stages:2}},
   'calm-mind': {id:'calm-mind', name:'Méditation', type:'psychic', category:'status', power:0, accuracy:100, pp:20, priority:0, description:'Augmente l\'Attaque Spéciale.', statBoost:{stat:'spAttack', target:'self', stages:1}},
   'agility': {id:'agility', name:'Hâte', type:'psychic', category:'status', power:0, accuracy:100, pp:30, priority:0, description:'Augmente fortement la Vitesse.', statBoost:{stat:'speed', target:'self', stages:2}},

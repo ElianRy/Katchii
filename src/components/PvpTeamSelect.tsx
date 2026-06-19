@@ -45,7 +45,7 @@ export const RENTAL_TEAMS: RentalTeamDef[] = [
     description: 'Feu · Eau · Plante — le trio classique', color: '#f97316',
     members: [
       { pokemonId: 6,   moves: ['flamethrower', 'fly',         'nasty-plot',   'dragon-rage']   },
-      { pokemonId: 9,   moves: ['hydro-pump',   'ice-beam',    'surf',          'recover']       },
+      { pokemonId: 9,   moves: ['hydro-pump',   'ice-beam',    'surf',          'blizzard']      },
       { pokemonId: 3,   moves: ['solar-beam',   'sleep-powder','leech-seed',    'razor-leaf']    },
     ],
   },
@@ -62,7 +62,7 @@ export const RENTAL_TEAMS: RentalTeamDef[] = [
     id: 'C', name: 'Force Mentale', emoji: '🔮',
     description: 'Psy · Eau · Feu — puissance maximale', color: '#a855f7',
     members: [
-      { pokemonId: 65,  moves: ['psychic-move', 'calm-mind',   'confuse-ray',   'recover']       },
+      { pokemonId: 65,  moves: ['psychic-move', 'calm-mind',   'confuse-ray',   'agility']       },
       { pokemonId: 130, moves: ['waterfall',    'bite',        'swords-dance',  'hydro-pump']    },
       { pokemonId: 59,  moves: ['flame-wheel',  'quick-attack','agility',       'flamethrower']  },
     ],
@@ -73,7 +73,7 @@ export const RENTAL_TEAMS: RentalTeamDef[] = [
     members: [
       { pokemonId: 34,  moves: ['earthquake',   'rock-slide',  'toxic',         'body-slam']     },
       { pokemonId: 123, moves: ['x-scissor',    'swords-dance','aerial-ace',    'quick-attack']  },
-      { pokemonId: 121, moves: ['surf',         'psychic-move','ice-beam',      'recover']       },
+      { pokemonId: 121, moves: ['surf',         'psychic-move','ice-beam',      'thunderbolt']   },
     ],
   },
   {
