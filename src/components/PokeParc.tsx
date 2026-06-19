@@ -931,7 +931,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
   // Spread positions: each pokemon gets a random display position so they fill the field
   const spreadPositionsRef = useRef<Record<string, { x: number; y: number }>>({});
 
-  // Initialize wave pool when presence data loads — show ALL Pokémons, spread across field
+  // Initialize wave pool when presence data loads — show up to 5 at once
   useEffect(() => {
     const pool = shuffleArray(presence.filter(p => p.user_id !== myUserId));
     wavePoolRef.current = pool;
@@ -945,10 +945,35 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
       }
     });
     if (pool.length > 0) {
-      setDisplayedWave(pool);
+      const initial = pool.length > 5 ? pool.slice(0, 5) : pool;
+      setDisplayedWave(initial);
       setWaveVisible(true);
     }
   }, [presence, myUserId]);
+
+  // Rotate displayed wave every 25s through all Pokémons in pool
+  useEffect(() => {
+    const waveOffsetRef = { current: 0 };
+    const id = setInterval(() => {
+      const pool = wavePoolRef.current;
+      if (pool.length <= 5) return;
+      setWaveVisible(false);
+      setTimeout(() => {
+        waveOffsetRef.current = (waveOffsetRef.current + 5) % pool.length;
+        const offset = waveOffsetRef.current;
+        const slice = pool.slice(offset, offset + 5);
+        const wave = slice.length < 5 ? [...slice, ...pool.slice(0, 5 - slice.length)] : slice;
+        wave.forEach(p => {
+          if (!spreadPositionsRef.current[p.user_id]) {
+            spreadPositionsRef.current[p.user_id] = { x: 4 + Math.random() * 88, y: 4 + Math.random() * 82 };
+          }
+        });
+        setDisplayedWave(wave);
+        setTimeout(() => setWaveVisible(true), 50);
+      }, 500);
+    }, 25_000);
+    return () => clearInterval(id);
+  }, []);
 
   const sendChat = async () => {
     const msg = chatInput.trim();
