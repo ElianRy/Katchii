@@ -13,7 +13,7 @@ import { WelcomeAnimation } from './components/WelcomeAnimation';
 import { AuthScreen } from './components/AuthScreen';
 import { HomeScreen } from './components/HomeScreen';
 import { ProfileScreen } from './components/ProfileScreen';
-import { TeamBuilder } from './components/TeamBuilder';
+import { PcStorage } from './components/PcStorage';
 import { AdminPanel } from './components/AdminPanel';
 import { PokeParc } from './components/PokeParc';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -204,16 +204,15 @@ export function App() {
       pokemonId: p.pokemonId, isShiny: p.isShiny, level: p.level, xp: 0,
       currentHp: calcMaxHp(p.pokemonId, p.level), maxHp: calcMaxHp(p.pokemonId, p.level),
     }));
-    // Build player team: use favorite saved team if set, otherwise top 3 by level
+    // Build player team: use partyTeam if set, otherwise top 3 by level
     let playerTop3: TeamMember[];
-    const favTeam = gameState.state.favoriteTeamId
-      ? gameState.state.savedTeams?.find(t => t.id === gameState.state.favoriteTeamId)
-      : null;
-    if (favTeam && favTeam.members.length > 0) {
-      playerTop3 = favTeam.members.slice(0, 3).map(m => {
-        const level = gameState.state.pokemonLevels?.[m.pokemonId]?.level ?? m.level;
-        const xp = gameState.state.pokemonLevels?.[m.pokemonId]?.xp ?? m.xp;
-        return { pokemonId: m.pokemonId, isShiny: m.isShiny, level, xp, currentHp: calcMaxHp(m.pokemonId, level), maxHp: calcMaxHp(m.pokemonId, level) };
+    const partyIds = (gameState.state.partyTeam ?? []).filter(id => (gameState.state.normalCollection[id] ?? 0) > 0);
+    if (partyIds.length > 0) {
+      playerTop3 = partyIds.slice(0, 3).map(id => {
+        const level = gameState.state.pokemonLevels?.[id]?.level ?? 1;
+        const xp = gameState.state.pokemonLevels?.[id]?.xp ?? 0;
+        const isShiny = (gameState.state.shinyCollection[id] ?? 0) > 0;
+        return { pokemonId: id, isShiny, level, xp, currentHp: calcMaxHp(id, level), maxHp: calcMaxHp(id, level) };
       });
     } else {
       const RARITY_ORDER_MAP: Record<string, number> = { commun: 0, peu_commun: 1, rare: 2, elite: 3, legendaire: 4 };
@@ -451,20 +450,20 @@ export function App() {
       )}
 
       {view === 'team' && (
-        <TeamBuilder
+        <PcStorage
           state={gameState.state}
-          currentZoneId={gameState.state.zoneProgress?.currentZoneId ?? 'zone1'}
-          getPokemonLevel={gameState.getPokemonLevel}
-          onAddXp={gameState.addPokemonXp}
-          onBattleWin={gameState.addPokemonWins}
-          onTrainingBattle={gameState.addTrainingWin}
+          onUpdateParty={gameState.updateParty}
+          onUpdatePcBoxes={gameState.updatePcBoxes}
           onClose={() => persistView('hunt')}
-          savedTeams={gameState.state.savedTeams}
-          favoriteTeamId={gameState.state.favoriteTeamId}
-          onSaveTeam={gameState.saveTeam}
-          onDeleteTeam={gameState.deleteTeam}
-          onSetFavoriteTeamId={gameState.setFavoriteTeamId}
-          onMarkTutorialDone={() => gameState.update(s => ({ ...s, completedTutorials: [...(s.completedTutorials ?? []), 'team'] }))}
+          isAdmin={['admin', 'elian'].includes(username.toLowerCase())}
+          onSetLevel={gameState.setAdminLevel}
+          onTriggerEvolution={(pokemonId) => {
+            // Will be handled via EvolutionScreen in future — for now mark pending cleared
+            gameState.update(s => ({
+              ...s,
+              pendingEvolutions: (s.pendingEvolutions ?? []).filter(id => id !== pokemonId),
+            }));
+          }}
         />
       )}
 

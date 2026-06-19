@@ -953,6 +953,54 @@ export function useGameState() {
     update(prev => ({ ...prev, favoriteTeamId: id }));
   }, [update]);
 
+  const updateParty = useCallback((partyTeam: number[]) => {
+    update(prev => ({ ...prev, partyTeam }));
+  }, [update]);
+
+  const updatePcBoxes = useCallback((pcBoxes: number[][]) => {
+    update(prev => ({ ...prev, pcBoxes }));
+  }, [update]);
+
+  const setAdminLevel = useCallback((pokemonId: number, level: number) => {
+    update(prev => ({
+      ...prev,
+      pokemonLevels: { ...(prev.pokemonLevels ?? {}), [pokemonId]: { level, xp: 0 } },
+    }));
+  }, [update]);
+
+  const triggerEvolution = useCallback((oldPokemonId: number, newPokemonId: number) => {
+    update(prev => {
+      const next = { ...prev };
+      // Remove old from normalCollection (keep as "seen" with count 0)
+      next.normalCollection = { ...prev.normalCollection, [oldPokemonId]: 0, [newPokemonId]: 1 };
+      // Transfer level
+      const lvData = prev.pokemonLevels?.[oldPokemonId] ?? { level: 1, xp: 0 };
+      next.pokemonLevels = { ...(prev.pokemonLevels ?? {}), [newPokemonId]: lvData };
+      // Transfer pokemonData
+      if (prev.pokemonData?.[oldPokemonId]) {
+        next.pokemonData = { ...(prev.pokemonData ?? {}), [newPokemonId]: prev.pokemonData[oldPokemonId] };
+      }
+      // Update partyTeam: replace old with new
+      if (prev.partyTeam?.includes(oldPokemonId)) {
+        next.partyTeam = prev.partyTeam.map(id => id === oldPokemonId ? newPokemonId : id);
+      }
+      // Update pcBoxes: replace old with new
+      if (prev.pcBoxes) {
+        next.pcBoxes = prev.pcBoxes.map(box => box.map(id => id === oldPokemonId ? newPokemonId : id));
+      }
+      // Remove from pendingEvolutions
+      next.pendingEvolutions = (prev.pendingEvolutions ?? []).filter(id => id !== oldPokemonId);
+      return next;
+    });
+  }, [update]);
+
+  const markPendingEvolution = useCallback((pokemonId: number) => {
+    update(prev => ({
+      ...prev,
+      pendingEvolutions: [...new Set([...(prev.pendingEvolutions ?? []), pokemonId])],
+    }));
+  }, [update]);
+
   const adminGiveAllMax = useCallback(() => {
     update(prev => {
       const normalCollection = { ...prev.normalCollection };
@@ -1017,6 +1065,11 @@ export function useGameState() {
     saveTeam,
     deleteTeam,
     setFavoriteTeamId,
+    updateParty,
+    updatePcBoxes,
+    setAdminLevel,
+    triggerEvolution,
+    markPendingEvolution,
     clearForcePasswordChange,
     update,
   };

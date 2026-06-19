@@ -8,6 +8,8 @@ import { calcMaxHp, calcAttack, xpToNextLevel } from '../data/combatEngine';
 import { getAvailableMoves } from '../data/gen1Movepools';
 import { MOVES } from '../data/gen1Moves';
 import { BattleScreen } from './BattleScreen';
+import { EvolutionScreen } from './EvolutionScreen';
+import { checkEvolution } from '../data/evolutionData';
 import { setBattleMute } from '../lib/audio';
 import { ShinySprite } from './ShinySprite';
 import { playLevelUp } from '../lib/audio';
@@ -86,9 +88,11 @@ interface Props {
   onDeleteTeam?: (id: string) => void;
   onSetFavoriteTeamId?: (id: string | undefined) => void;
   onMarkTutorialDone?: () => void;
+  onTriggerEvolution?: (oldId: number, newId: number) => void;
+  onMarkPendingEvolution?: (pokemonId: number) => void;
 }
 
-export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattleWin, onTrainingBattle, onClose, title = 'Mon équipe', savedTeams, favoriteTeamId, onSaveTeam, onDeleteTeam, onSetFavoriteTeamId, onMarkTutorialDone }: Props) {
+export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattleWin, onTrainingBattle, onClose, title = 'Mon équipe', savedTeams, favoriteTeamId, onSaveTeam, onDeleteTeam, onSetFavoriteTeamId, onMarkTutorialDone, onTriggerEvolution, onMarkPendingEvolution }: Props) {
   const [showTutorial, setShowTutorial] = useState(() =>
     !state.completedTutorials?.includes('team') && !isTutorialDone('team')
   );
@@ -125,6 +129,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
   const [teamName, setTeamName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewTeam, setViewTeam] = useState<{ id: string; name: string; members: TeamMember[] } | null>(null);
+  const [evoQueue, setEvoQueue] = useState<Array<{ oldId: number; newId: number }>>([]);
 
   const owned = GEN1_POKEMON.filter(p =>
     (state.normalCollection[p.id] ?? 0) > 0 || (state.shinyCollection[p.id] ?? 0) > 0
@@ -216,8 +221,23 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     }
     if (won) onBattleWin?.(selected);
     onTrainingBattle?.();
+
+    // Check for evolutions
+    const evos: Array<{ oldId: number; newId: number }> = [];
+    Object.entries(xpAfter).forEach(([idStr, lvData]) => {
+      const id = Number(idStr);
+      const newId = checkEvolution(id, lvData.level);
+      if (newId && !(state.normalCollection[newId] ?? 0)) {
+        evos.push({ oldId: id, newId });
+      }
+    });
+
     setBattleResult({ won, xpGains, xpAfter });
-    setMode('result');
+    if (evos.length > 0) {
+      setEvoQueue(evos);
+    } else {
+      setMode('result');
+    }
   };
 
   // Dismiss level-up notifs after a few seconds
@@ -249,6 +269,33 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCountdown]);
+
+  // Evolution screen: show one evolution at a time before the result screen
+  if (evoQueue.length > 0) {
+    const { oldId, newId } = evoQueue[0];
+    const oldPoke = POKEMON_BY_ID[oldId];
+    const newPoke = POKEMON_BY_ID[newId];
+    return (
+      <EvolutionScreen
+        oldPokemonId={oldId}
+        newPokemonId={newId}
+        oldName={oldPoke?.name ?? `#${oldId}`}
+        newName={newPoke?.name ?? `#${newId}`}
+        onComplete={() => {
+          onTriggerEvolution?.(oldId, newId);
+          const remaining = evoQueue.slice(1);
+          setEvoQueue(remaining);
+          if (remaining.length === 0) setMode('result');
+        }}
+        onCancel={() => {
+          onMarkPendingEvolution?.(oldId);
+          const remaining = evoQueue.slice(1);
+          setEvoQueue(remaining);
+          if (remaining.length === 0) setMode('result');
+        }}
+      />
+    );
+  }
 
   if (mode === 'level_select') {
     const selectedPreset = TRAINING_PRESETS.find(p => p.key === trainingPreset)!;
