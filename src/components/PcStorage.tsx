@@ -113,6 +113,8 @@ export function PcStorage({
   // Battle state
   const [battleTeam, setBattleTeam] = useState<{ playerTeam: TeamMember[]; enemyTeam: TeamMember[] } | null>(null);
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
+  const [preCombatLevels, setPreCombatLevels] = useState<Record<number, { level: number; xp: number }>>({});
+  const [levelUpFlash, setLevelUpFlash] = useState<Record<number, number>>({}); // pokemonId -> new level
 
   // Manual evolution trigger
   const [_evoConfirmId, _setEvoConfirmId] = useState<number | null>(null);
@@ -314,6 +316,13 @@ export function PcStorage({
 
   const startTraining = useCallback(() => {
     if (party.length === 0) return;
+    // Capture pre-combat XP snapshot
+    const snapshot: Record<number, { level: number; xp: number }> = {};
+    for (const id of party) {
+      const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
+      snapshot[id] = { level: lvData.level, xp: lvData.xp };
+    }
+    setPreCombatLevels(snapshot);
     const playerTeam: TeamMember[] = party.map(id => {
       const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
       const moves = state.pokemonCustomMoves?.[id] ?? getAvailableMoves(id, lvData.level).slice(0, 4);
@@ -363,15 +372,66 @@ export function PcStorage({
   // XP bar animation on victory screen
   useEffect(() => {
     if (!battleResult) return;
-    setXpBarWidths({});
+
+    // Initialize bars at pre-combat percentages
+    const preWidths: Record<number, number> = {};
+    for (const id of party) {
+      const pre = preCombatLevels[id] ?? { level: 1, xp: 0 };
+      preWidths[id] = pre.level >= 100 ? 100 : Math.min(100, Math.floor(pre.xp / xpToNextLevel(pre.level) * 100));
+    }
+    setXpBarWidths(preWidths);
+    setLevelUpFlash({});
+
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    // After a brief delay, animate each bar forward
     const t = setTimeout(() => {
-      const widths: Record<number, number> = {};
+      const postWidths: Record<number, number> = {};
+      const flashMap: Record<number, number> = {};
+
       for (const id of party) {
-        widths[id] = Math.min(100, Math.round(((battleResult.xpGains[id] ?? 0) / 50) * 100));
+        const pre = preCombatLevels[id] ?? { level: 1, xp: 0 };
+        const post = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
+        const gained = battleResult.xpGains[id] ?? 0;
+
+        if (gained <= 0 || pre.level >= 100) {
+          postWidths[id] = preWidths[id];
+          continue;
+        }
+
+        const leveledUp = post.level > pre.level;
+
+        if (!leveledUp) {
+          // Simple animation: pre% → post%
+          postWidths[id] = post.level >= 100 ? 100 : Math.min(100, Math.floor(post.xp / xpToNextLevel(post.level) * 100));
+        } else {
+          // Animate to 100%, then reset and fill to post%
+          postWidths[id] = 100;
+          flashMap[id] = post.level;
+          // After 600ms: flash level-up, reset to 0%, then animate to post%
+          const t2 = setTimeout(() => {
+            setLevelUpFlash(prev => ({ ...prev, [id]: post.level }));
+            setXpBarWidths(prev => ({ ...prev, [id]: 0 }));
+            const t3 = setTimeout(() => {
+              const finalPct = post.level >= 100 ? 100 : Math.min(100, Math.floor(post.xp / xpToNextLevel(post.level) * 100));
+              setXpBarWidths(prev => ({ ...prev, [id]: finalPct }));
+              // Clear flash after animation
+              const t4 = setTimeout(() => setLevelUpFlash(prev => { const n = { ...prev }; delete n[id]; return n; }), 800);
+              timers.push(t4);
+            }, 100);
+            timers.push(t3);
+          }, 600);
+          timers.push(t2);
+        }
       }
-      setXpBarWidths(widths);
-    }, 50);
-    return () => clearTimeout(t);
+
+      setXpBarWidths(postWidths);
+      // Don't set flash here - level-up ones are handled by the delayed timers above
+      // But for non-leveled pokemon postWidths is already correct
+    }, 80);
+    timers.push(t);
+
+    return () => { timers.forEach(clearTimeout); };
   }, [battleResult]);
 
   // ── Pokemon detail overlay ────────────────────────────────────────────────────
@@ -411,40 +471,18 @@ export function PcStorage({
           <ShinySprite pokemonId={detailId} isShiny={detailIsShiny} width={96} height={96} />
         </div>
 
-        {/* Stats */}
-        <div className="mx-3 mb-3 rounded-xl px-3 py-2" style={{ background: 'rgba(255,255,255,0.6)', border: '2px solid #6c90b0' }}>
-          <div className="flex items-center gap-1 mb-2">
-            {(POKEMON_TYPE[detailId] ?? []).map(t => (
-              <span key={t} className="text-white font-bold px-1.5 py-0.5 rounded" style={{ background: TYPE_COLORS[t] ?? '#888', fontSize: '0.6rem' }}>{t.toUpperCase()}</span>
-            ))}
+        {/* XP bar */}
+        {detailLevel < 100 && (
+          <div className="mx-3 mb-3 rounded-xl px-3 py-2" style={{ background: 'rgba(255,255,255,0.6)', border: '2px solid #6c90b0' }}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-slate-500 text-xs font-bold">XP</span>
+              <span className="text-slate-500 text-xs">{detailXp}/{xpToNextLevel(detailLevel)}</span>
+            </div>
+            <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(0,0,0,0.15)' }}>
+              <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.floor(detailXp / xpToNextLevel(detailLevel) * 100))}%`, background: '#3b82f6' }} />
+            </div>
           </div>
-          <div className="font-black text-slate-700 text-xs mb-2">Statistiques</div>
-          {[
-            { label: 'HP', value: calcMaxHp(detailId, detailLevel) },
-            { label: 'Attaque', value: calcAttack(detailId, detailLevel) },
-            { label: 'Défense', value: calcDefense(detailId, detailLevel) },
-            { label: 'Sp.Atk', value: calcSpAttack(detailId, detailLevel) },
-            { label: 'Sp.Déf', value: calcSpDefense(detailId, detailLevel) },
-            { label: 'Vitesse', value: calcSpeed(detailId, detailLevel) },
-          ].map(({ label, value }) => (
-            <div key={label} className="flex items-center justify-between py-0.5">
-              <span className="text-slate-600 text-xs">{label}</span>
-              <span className="font-black text-slate-800 text-xs">{value}</span>
-            </div>
-          ))}
-          {/* XP bar */}
-          {detailLevel < 100 && (
-            <div className="mt-2">
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-slate-500 text-xs">XP</span>
-                <span className="text-slate-500 text-xs">{detailXp}/{xpToNextLevel(detailLevel)}</span>
-              </div>
-              <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(0,0,0,0.15)' }}>
-                <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.floor(detailXp / xpToNextLevel(detailLevel) * 100))}%`, background: '#3b82f6' }} />
-              </div>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Moves */}
         <div className="mx-3 mb-3 rounded-xl px-3 py-2" style={{ background: 'rgba(255,255,255,0.6)', border: '2px solid #6c90b0' }}>
@@ -475,6 +513,29 @@ export function PcStorage({
               );
             })}
           </div>
+        </div>
+
+        {/* Stats */}
+        <div className="mx-3 mb-3 rounded-xl px-3 py-2" style={{ background: 'rgba(255,255,255,0.6)', border: '2px solid #6c90b0' }}>
+          <div className="flex items-center gap-1 mb-2">
+            {(POKEMON_TYPE[detailId] ?? []).map(t => (
+              <span key={t} className="text-white font-bold px-1.5 py-0.5 rounded" style={{ background: TYPE_COLORS[t] ?? '#888', fontSize: '0.6rem' }}>{t.toUpperCase()}</span>
+            ))}
+          </div>
+          <div className="font-black text-slate-700 text-xs mb-2">Statistiques</div>
+          {[
+            { label: 'HP', value: calcMaxHp(detailId, detailLevel) },
+            { label: 'Attaque', value: calcAttack(detailId, detailLevel) },
+            { label: 'Défense', value: calcDefense(detailId, detailLevel) },
+            { label: 'Sp.Atk', value: calcSpAttack(detailId, detailLevel) },
+            { label: 'Sp.Déf', value: calcSpDefense(detailId, detailLevel) },
+            { label: 'Vitesse', value: calcSpeed(detailId, detailLevel) },
+          ].map(({ label, value }) => (
+            <div key={label} className="flex items-center justify-between py-0.5">
+              <span className="text-slate-600 text-xs">{label}</span>
+              <span className="font-black text-slate-800 text-xs">{value}</span>
+            </div>
+          ))}
         </div>
 
         {/* Actions */}
@@ -603,22 +664,41 @@ export function PcStorage({
               const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
               const gained = battleResult.xpGains[id] ?? 0;
               const isShiny = (state.shinyCollection[id] ?? 0) > 0;
+              const flashLevel = levelUpFlash[id];
               return (
-                <div key={id} className="flex items-center gap-3 px-4 py-2.5">
+                <div key={id} className="flex items-center gap-3 px-4 py-2.5" style={{ position: 'relative' }}>
                   <ShinySprite pokemonId={id} isShiny={isShiny} width={36} height={36} compact />
                   <div className="flex-1 min-w-0">
                     <div className="text-white font-black text-xs truncate">{poke?.name ?? `#${id}`}</div>
                     <div className="text-white/40 text-xs">Niv. {lvData.level}</div>
                     {gained > 0 && (
-                      <div style={{ width: '100%', height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, marginTop: 2 }}>
+                      <div style={{ position: 'relative', width: '100%', height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 2, marginTop: 2 }}>
                         <div style={{
                           width: `${xpBarWidths[id] ?? 0}%`,
                           height: '100%',
                           borderRadius: 2,
                           background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
                           transition: 'width 1.2s ease-out',
-                          transitionDelay: `${index * 200}ms`,
+                          transitionDelay: `${index * 150}ms`,
                         }} />
+                      </div>
+                    )}
+                    {flashLevel !== undefined && (
+                      <div style={{
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        pointerEvents: 'none',
+                        animation: 'levelFlash 0.7s ease-out',
+                        color: '#fbbf24',
+                        fontWeight: 900,
+                        fontSize: '0.85rem',
+                        textShadow: '0 0 12px rgba(251,191,36,0.9)',
+                        zIndex: 2,
+                      }}>
+                        Niveau {flashLevel} !
                       </div>
                     )}
                   </div>

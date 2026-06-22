@@ -927,6 +927,7 @@ export function BattleScreen({
   const [hitEffect, setHitEffect] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const [statusBlockOverlay, setStatusBlockOverlay] = useState<{ target: 'player' | 'enemy'; condition: string | null; uid: number } | null>(null);
   const [poisonBubbles, setPoisonBubbles] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
+  const [_solarCharging, setSolarCharging] = useState(false);
   const [morphVfxState, setMorphVfxState] = useState<{ target: 'player' | 'enemy'; phase: 'blink' | 'squish'; uid: number } | null>(null);
   const [sleepApplied, setSleepApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const [paralysisApplied, setParalysisApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
@@ -1784,12 +1785,15 @@ export function BattleScreen({
       if (rawMove?.id === 'solar-beam') {
         const atkArr = isPlayer ? pf : ef;
         if (!atkArr[atkIdx].chargingMove) {
-          // Turn 1 — charge (no hit sound/VFX)
-          const _solarMsg = `${atkName} utilise ${result.moveName} !`;
-          addLog(_solarMsg, '#fde68a');
-          await sleep(logTypeDuration(_solarMsg));
+          // Turn 1 — charge only, no damage, no hit VFX
+          const _solarChargeMsg = `${atkName} utilise ${result.moveName} !`;
+          addLog(_solarChargeMsg, '#fde68a');
+          await sleep(logTypeDuration(_solarChargeMsg));
+          setSolarCharging(true);
+          await sleep(1200);
+          setSolarCharging(false);
+          addLog(`Le soleil se charge !`, '#fde68a');
           await sleep(600);
-          addLog(`${atkName} se gorge de lumière !`, '#adff2f');
           const storedIdx = isPlayer ? playerMoveIndex : eMoveIndex;
           if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: { moveId: 'solar-beam', moveIndex: storedIdx } };
           else ef[atkIdx] = { ...ef[atkIdx], chargingMove: { moveId: 'solar-beam', moveIndex: storedIdx } };
@@ -2168,6 +2172,9 @@ export function BattleScreen({
       addDmg(pEot.damage, 'player', 1);
       if (pEotCond === 'psn' || pEotCond === 'tox') addLog(`${pName} est blessé(e) par le poison !`, '#a855f7');
       else if (pEotCond === 'brn') addLog(`${pName} souffre de sa brûlure !`, '#f97316');
+      if (pEotCond === 'psn' && pEot.nextStatus.condition === null) {
+        addLog(`${pName} n'est plus empoisonné(e) !`, '#4ade80');
+      }
       const c = pf[pIdx].statusState.condition;
       if (c === 'psn' || c === 'tox') {
         const uid = dmgCounter++;
@@ -2183,6 +2190,9 @@ export function BattleScreen({
       addDmg(eEot.damage, 'enemy', 1);
       if (eEotCond === 'psn' || eEotCond === 'tox') addLog(`${eName} est blessé(e) par le poison !`, '#a855f7');
       else if (eEotCond === 'brn') addLog(`${eName} souffre de sa brûlure !`, '#f97316');
+      if (eEotCond === 'psn' && eEot.nextStatus.condition === null) {
+        addLog(`${eName} n'est plus empoisonné(e) !`, '#4ade80');
+      }
       const c = ef[eIdx].statusState.condition;
       if (c === 'psn' || c === 'tox') {
         const uid = dmgCounter++;
@@ -2204,6 +2214,9 @@ export function BattleScreen({
           const bName = POKEMON_BY_ID[f.pokemonId]?.name ?? '???';
           if (cond === 'psn' || cond === 'tox') addLog(`${bName} (banc) souffre du poison !`, '#a855f7');
           else addLog(`${bName} (banc) souffre de sa brûlure !`, '#f97316');
+          if (cond === 'psn' && eot.nextStatus.condition === null) {
+            addLog(`${bName} n'est plus empoisonné(e) !`, '#4ade80');
+          }
           benchChanged = true;
         }
       } else if (cond === 'slp' && f.statusState.sleepTurns !== undefined) {
