@@ -11,12 +11,12 @@ interface Props {
   newName: string;
   choices?: number[];
   choiceNames?: Record<number, string>;
-  ownedIds?: number[];
+  ownedIds?: number[]; // kept for API compatibility
   onComplete: () => void;
   onCancel: () => void;
 }
 
-export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, choices, choiceNames, ownedIds, onComplete, onCancel }: Props) {
+export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, choices, choiceNames, ownedIds: _ownedIds, onComplete, onCancel }: Props) {
   const [phase, setPhase] = useState<'pick' | 'dialog_start' | 'charging' | 'flashing' | 'white' | 'reveal' | 'complete'>(choices && choices.length > 0 ? 'pick' : 'dialog_start');
   const [resolvedNewId, setResolvedNewId] = useState<number>(newPokemonId);
   const [resolvedNewName, setResolvedNewName] = useState<string>(newName);
@@ -78,17 +78,18 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
 
     if (phase === 'reveal') {
       if (evoAudioRef.current) { evoAudioRef.current.pause(); evoAudioRef.current = null; }
-      playPokemonCry(resolvedNewId);
+      // Small delay so the white-flash→reveal transition settles before the cry
+      const cryTimer = setTimeout(() => playPokemonCry(resolvedNewId), 100);
       const t = setTimeout(() => {
         if (cancelledRef.current) return;
         setPhase('complete');
         setTimeout(() => {
           const congrats = new Audio(`${BASE_URL}/congrats.mp3`);
-          congrats.volume = 0.5;
+          congrats.volume = 0.6;
           congrats.play().catch(() => {});
-        }, 400);
-      }, 1500);
-      return () => clearTimeout(t);
+        }, 300);
+      }, 1800);
+      return () => { clearTimeout(cryTimer); clearTimeout(t); };
     }
   }, [phase, resolvedNewId]);
 
@@ -165,7 +166,6 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
 
   // Pick phase
   if (phase === 'pick' && choices && choices.length > 0) {
-    const owned = new Set(ownedIds ?? []);
     return (
       <div className="fixed inset-0 z-[850] flex flex-col items-center justify-center bg-black px-6">
         <div className="text-white text-2xl font-black mb-2">Que se passe-t-il ?!</div>
@@ -178,23 +178,19 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
         <div className="flex flex-col gap-3 w-full max-w-xs">
           {choices.map(id => {
             const name = choiceNames?.[id] ?? `#${id}`;
-            const alreadyOwned = owned.has(id);
             return (
               <button
                 key={id}
-                disabled={alreadyOwned}
-                onClick={() => !alreadyOwned && handlePick(id, name)}
+                onClick={() => handlePick(id, name)}
                 className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all active:scale-95"
                 style={{
-                  background: alreadyOwned ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.12)',
-                  border: `2px solid ${alreadyOwned ? 'rgba(255,255,255,0.1)' : '#fbbf24'}`,
-                  opacity: alreadyOwned ? 0.4 : 1,
+                  background: 'rgba(255,255,255,0.12)',
+                  border: '2px solid #fbbf24',
                 }}
               >
                 <ShinySprite pokemonId={id} isShiny={false} width={52} height={52} />
                 <div className="flex flex-col items-start">
                   <span className="text-white font-black text-base">{name}</span>
-                  {alreadyOwned && <span className="text-white/40 text-xs">Déjà capturé</span>}
                 </div>
               </button>
             );

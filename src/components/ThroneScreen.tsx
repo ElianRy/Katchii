@@ -501,7 +501,7 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-6 pb-2 shrink-0 relative z-10">
+        <div className="flex items-center justify-between px-5 pb-2 shrink-0 relative z-10" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}>
           <button onClick={() => setPhase('view')} className="text-amber-500/70 hover:text-amber-300 text-xl px-2">✕</button>
         </div>
 
@@ -595,7 +595,7 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
         <style>{`
           @keyframes throne-sheet-up { from{transform:translateY(100%)} to{transform:translateY(0)} }
         `}</style>
-        <div className="flex items-center justify-between px-5 pt-6 pb-3 shrink-0 border-b border-slate-700">
+        <div className="flex items-center justify-between px-5 pb-3 shrink-0 border-b border-slate-700" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}>
           <div>
             <h1 className="text-white font-black text-lg">Choisis 3 Pokémon</h1>
             <p className="text-slate-400 text-xs">{selectedPokemon.length}/3 sélectionnés · Maintiens pour voir les stats</p>
@@ -689,7 +689,7 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
           @keyframes throne-title-pulse { 0%,100%{text-shadow:0 0 20px #f59e0b,0 0 40px #ef444488} 50%{text-shadow:0 0 30px #fbbf24,0 0 60px #ef444488,0 0 80px #f97316} }
         `}</style>
 
-        <div className="flex items-center justify-between px-5 pt-6 pb-2 shrink-0">
+        <div className="flex items-center justify-between px-5 pb-2 shrink-0" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}>
           <h1 className="text-yellow-400 font-black text-xl" style={{ animation: 'throne-title-pulse 2s ease-in-out infinite' }}>
             ⚔️ Mon Équipe
           </h1>
@@ -808,7 +808,7 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
   return (
     <div className="fixed inset-0 z-40 flex flex-col bg-slate-900 overflow-y-auto"
       style={{ background: 'linear-gradient(180deg, #0a0800 0%, #1a1000 40%, #0d0a00 100%)' }}>
-      <div className="flex items-center justify-between px-5 pt-6 pb-2 shrink-0">
+      <div className="flex items-center justify-between px-5 pb-2 shrink-0" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}>
         <h1 className="text-yellow-400 font-black text-2xl tracking-wide">👑 Trône</h1>
         <button onClick={onClose} className="text-slate-400 hover:text-white text-xl px-2">✕</button>
       </div>

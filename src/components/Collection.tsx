@@ -101,7 +101,7 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
   ];
 
   return (
-    <div className="fixed inset-x-0 top-0 z-[510] flex flex-col" style={{ bottom: 72, background: '#b91c1c', fontFamily: 'monospace' }}>
+    <div className="fixed inset-x-0 top-0 z-[510] flex flex-col" style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))', background: '#b91c1c', fontFamily: 'monospace' }}>
       {/* Header */}
       <div
         style={{

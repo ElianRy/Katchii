@@ -296,7 +296,7 @@ export function BottomNav({ currentView, onNavigate, favoritePokemon, onShowPlay
       </div>
 
       {/* Main nav bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-[500] pointer-events-none">
+      <div className="fixed bottom-0 left-0 right-0 z-[520] pointer-events-none">
         {/* Favorite pokemon wandering above the nav */}
         {favoritePokemon && !hideCompanion && (
           <FavoritePokemon

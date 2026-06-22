@@ -877,7 +877,7 @@ export function PcStorage({
   return (
     <div
       className="fixed inset-x-0 top-0 z-[600] flex flex-col select-none"
-      style={{ bottom: 72, background: '#c0d0e0', fontFamily: 'monospace' }}
+      style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))', background: '#c0d0e0', fontFamily: 'monospace' }}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >

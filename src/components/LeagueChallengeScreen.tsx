@@ -144,126 +144,113 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
     });
   };
 
+  const SLOT_SIZE = 52;
+
   return (
-    <div className="fixed inset-0 z-[600] flex flex-col bg-slate-950">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pb-3 border-b border-slate-700 shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
-        <div>
-          <h2 className="text-white font-black text-lg">🏆 Défi de la Ligue</h2>
-          <p className="text-slate-400 text-xs">
-            {retrying ? '❌ Défaite — choisis à nouveau ton équipe' : 'Max 6 Pokémon · même équipe pour les 3 combats · HP non restaurés'}
-          </p>
-        </div>
-        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-2">✕</button>
+    <div className="fixed inset-0 z-[600] flex flex-col" style={{ background: '#c0d0e0', fontFamily: 'monospace' }}>
+      {/* DS-style header */}
+      <div className="shrink-0 flex items-center justify-between px-3 py-2"
+        style={{ background: 'linear-gradient(180deg,#8fafcf 0%,#6c90b0 100%)', borderBottom: '3px solid #4a7090', paddingTop: 'calc(0.6rem + env(safe-area-inset-top, 0px))' }}>
+        <button onClick={onClose} className="text-white font-black text-xs px-2 py-1 rounded" style={{ background: '#4a7090', border: '1px solid #2a5070' }}>✕ Fermer</button>
+        <div className="text-white font-black text-sm">🏆 Ligue Pokémon</div>
+        <div className="text-blue-100 text-xs font-bold">{selected.length}/6</div>
       </div>
 
-      {/* Opponents row */}
-      <div className="flex gap-2 px-3 pt-2 pb-1 shrink-0">
+      {/* Opponents mini-row */}
+      <div className="shrink-0 flex gap-1.5 px-2 py-1.5" style={{ borderBottom: '2px solid #4a7090' }}>
         {TRAINER_CONFIGS.map((t, i) => (
-          <div key={t.id} className="flex-1 rounded-xl p-2 border text-center"
-            style={{ borderColor: `${t.color}44`, background: t.accentBg }}>
-            <div className="text-xs font-black" style={{ color: t.color }}>Combat {i + 1} — {t.name}</div>
-            <div className="text-slate-400 text-xs">max Nv.{Math.max(...t.teamSpec.map(s => s.level))}</div>
+          <div key={t.id} className="flex-1 rounded-lg px-1.5 py-1 text-center"
+            style={{ background: `${t.color}22`, border: `1px solid ${t.color}55` }}>
+            <div className="font-black" style={{ color: t.color, fontSize: '0.55rem' }}>#{i + 1} {t.name}</div>
+            <div className="text-slate-600" style={{ fontSize: '0.48rem' }}>max Nv.{Math.max(...t.teamSpec.map(s => s.level))}</div>
           </div>
         ))}
       </div>
 
-      {/* Warning */}
-      <div className="mx-3 mb-1 mt-1 px-3 py-1.5 rounded-xl bg-yellow-950/40 border border-yellow-700/30 shrink-0">
-        <p className="text-yellow-300 text-xs font-semibold">⚠️ HP non restaurés entre les combats — KO = absent du combat suivant</p>
-      </div>
-
-      {/* Sort + search */}
-      <div className="px-3 py-1.5 flex gap-2 shrink-0">
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Rechercher..."
-          className="flex-1 bg-slate-800 text-white rounded-xl px-3 py-1.5 text-sm border border-slate-700 outline-none"
-        />
-        <div className="flex gap-1 shrink-0">
-          {([['level_desc', '↓Nv'], ['level_asc', '↑Nv'], ['rarity', '★']] as const).map(([k, label]) => (
-            <button key={k} onClick={() => setSort(k)}
-              className="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all"
-              style={{
-                background: sort === k ? '#6366f1' : 'rgba(255,255,255,0.05)',
-                color: sort === k ? 'white' : '#94a3b8',
-                border: sort === k ? '1px solid #818cf8' : '1px solid rgba(255,255,255,0.1)',
-              }}>
-              {label}
-            </button>
-          ))}
+      {/* Warning + search */}
+      <div className="shrink-0 px-2 pt-1.5 pb-1 flex flex-col gap-1">
+        {retrying && (
+          <div className="px-2 py-1 rounded-lg text-center font-bold text-xs" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid #ef444444' }}>
+            ❌ Défaite — recompose ton équipe
+          </div>
+        )}
+        <div className="flex gap-1.5">
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher..."
+            className="flex-1 rounded-lg px-2 py-1 text-xs outline-none"
+            style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid #8fa8c0', fontFamily: 'monospace' }} />
+          <div className="flex gap-0.5">
+            {([['level_desc', '↓Nv'], ['level_asc', '↑Nv'], ['rarity', '★']] as const).map(([k, label]) => (
+              <button key={k} onClick={() => setSort(k)} className="px-2 py-1 rounded-lg text-xs font-black transition-all"
+                style={{ background: sort === k ? '#4a7090' : 'rgba(255,255,255,0.4)', color: sort === k ? 'white' : '#4a6070', border: `1px solid ${sort === k ? '#2a5070' : '#8fa8c0'}` }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="text-xs font-bold" style={{ color: '#4a6070' }}>
+          ⚠️ HP non restaurés entre combats — KO = absent du combat suivant
         </div>
       </div>
 
-      {/* Selection count */}
-      <div className="px-3 pb-1 shrink-0">
-        <div className="text-slate-500 text-xs">{selected.length}/6 sélectionnés</div>
-      </div>
-
-      {/* Pokemon list */}
-      <div className="flex-1 overflow-y-auto px-3 pb-28">
-        <div className="flex flex-col gap-1.5">
+      {/* Pokemon grid — PC style */}
+      <div className="flex-1 overflow-y-auto px-2 pb-2">
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(6, ${SLOT_SIZE}px)`, gap: 4, justifyContent: 'center', paddingBottom: 80 }}>
           {filtered.map(id => {
             const p = POKEMON_BY_ID[id];
             if (!p) return null;
             const isSelected = selected.includes(id);
+            const selIdx = selected.indexOf(id);
             const lvData = state.pokemonLevels?.[id] ?? { level: 1 };
             const isShiny = !!state.shinyCollection?.[id];
-            const rarityColor = RARITY_COLORS[p.rarity];
             return (
               <button key={id} onClick={() => toggle(id)}
-                className="flex items-center gap-3 px-3 py-2 rounded-xl border-2 transition-all text-left"
-                style={{
-                  borderColor: isSelected ? '#fbbf24' : 'rgba(255,255,255,0.08)',
-                  background: isSelected ? 'rgba(251,191,36,0.08)' : 'rgba(255,255,255,0.02)',
-                }}>
-                {/* Sprite — compact mode to avoid sparkle lag */}
-                <div className="relative shrink-0">
-                  <ShinySprite pokemonId={id} isShiny={isShiny} width={44} height={44} alt={p.name} compact />
-                  {isShiny && <span className="absolute -top-1 -right-1 text-xs leading-none">✨</span>}
-                </div>
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-white font-bold text-sm truncate">{p.name}</span>
-                    {isShiny && <span className="text-xs font-bold text-yellow-400 shrink-0">SHINY</span>}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    <span className="text-slate-400 text-xs">Nv.{lvData.level}</span>
-                    <span className="text-xs font-bold px-1.5 py-0.5 rounded"
-                      style={{ background: `${rarityColor}22`, color: rarityColor, fontSize: '0.55rem' }}>
-                      {p.rarity.toUpperCase().replace('_', ' ')}
-                    </span>
-                    {(POKEMON_TYPE[id] ?? []).map(t => (
-                      <span key={t} className="text-white font-bold rounded px-1 py-0.5"
-                        style={{ background: TYPE_COLORS[t] ?? '#888', fontSize: '0.48rem' }}>
-                        {t.toUpperCase()}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                {/* Checkmark */}
-                <div className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center"
-                  style={{ background: isSelected ? '#fbbf24' : 'rgba(255,255,255,0.08)' }}>
-                  {isSelected && <span className="text-black font-black text-xs">✓</span>}
-                </div>
+                className="rounded flex flex-col items-center justify-center p-0.5 relative transition-all active:scale-95"
+                style={{ width: SLOT_SIZE, height: SLOT_SIZE, background: isSelected ? 'rgba(251,191,36,0.35)' : 'rgba(255,255,255,0.25)', border: `2px solid ${isSelected ? '#f59e0b' : '#8fa8c0'}`, outline: isSelected ? '1px solid #fbbf24' : 'none' }}>
+                <ShinySprite pokemonId={id} isShiny={isShiny} width={32} height={32} compact />
+                <span className="font-black" style={{ fontSize: '0.42rem', color: isSelected ? '#92400e' : '#1e3a1e' }}>Nv.{lvData.level}</span>
+                {isSelected && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center font-black text-white"
+                    style={{ background: '#f59e0b', fontSize: '0.5rem', border: '1px solid #b45309', zIndex: 2 }}>{selIdx + 1}</span>
+                )}
+                {isShiny && !isSelected && (
+                  <span className="absolute top-0 right-0 text-xs leading-none" style={{ fontSize: '0.5rem' }}>✨</span>
+                )}
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* CTA */}
-      <div className="fixed bottom-0 left-0 right-0 z-[610] p-4 bg-slate-950/98 border-t border-slate-800">
-        <button disabled={selected.length < 1} onClick={() => onConfirm(selected)}
-          className="w-full py-4 rounded-2xl font-black text-lg transition-all"
-          style={{
-            background: selected.length >= 1 ? 'linear-gradient(90deg, #f59e0b, #ef4444, #a855f7)' : '#374151',
-            color: selected.length >= 1 ? 'black' : '#6b7280',
-          }}>
-          {selected.length < 1 ? 'Sélectionne jusqu\'à 6 Pokémon' : `⚔️ Commencer avec ${selected.length} Pokémon !`}
-        </button>
+      {/* Selected team preview + CTA */}
+      <div className="shrink-0" style={{ background: '#c0d0e0', borderTop: '3px solid #4a7090', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <div className="flex gap-1 px-2 pt-1.5 pb-1">
+          {Array.from({ length: 6 }).map((_, i) => {
+            const id = selected[i];
+            if (!id) return (
+              <div key={i} className="flex-1 rounded-xl flex items-center justify-center"
+                style={{ height: 52, background: 'rgba(0,0,0,0.08)', border: '2px dashed #8fa8c0' }}>
+                <span style={{ fontSize: '0.55rem', color: '#8fa8c0' }}>{i + 1}</span>
+              </div>
+            );
+            const lvData = state.pokemonLevels?.[id] ?? { level: 1 };
+            const isShiny = !!state.shinyCollection?.[id];
+            return (
+              <button key={i} onClick={() => toggle(id)}
+                className="flex-1 rounded-xl flex flex-col items-center justify-center gap-0.5 active:scale-95"
+                style={{ height: 52, background: 'rgba(255,255,255,0.5)', border: '2px solid #f59e0b' }}>
+                <ShinySprite pokemonId={id} isShiny={isShiny} width={28} height={28} compact />
+                <span className="font-black" style={{ fontSize: '0.4rem', color: '#92400e' }}>Nv.{lvData.level}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="px-2 pb-2">
+          <button disabled={selected.length < 1} onClick={() => onConfirm(selected)}
+            className="w-full py-3 rounded-xl font-black text-sm transition-all"
+            style={{ background: selected.length >= 1 ? 'linear-gradient(90deg,#f59e0b,#ef4444,#a855f7)' : '#8fa8c0', color: selected.length >= 1 ? 'black' : '#c0d0e0' }}>
+            {selected.length < 1 ? 'Sélectionne tes Pokémon (max 6)' : `⚔️ Entrer dans la Ligue avec ${selected.length} Pokémon !`}
+          </button>
+        </div>
       </div>
     </div>
   );
