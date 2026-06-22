@@ -719,6 +719,9 @@ input, textarea, select {
 @keyframes hit-flash { 0%,100%{opacity:0} 50%{opacity:0.35} }
 .battle-hit-flash { animation: hit-flash 0.4s ease-out forwards; }
 
+/* solar beam charge overlay fade-in */
+@keyframes solar-charge-in { from { opacity: 0 } to { opacity: 1 } }
+
 /* attacker lunge */
 @keyframes lunge-right { 0%,100%{transform:translateX(0)} 40%{transform:translateX(18px)} }
 @keyframes lunge-left  { 0%,100%{transform:translateX(0)} 40%{transform:translateX(-18px)} }

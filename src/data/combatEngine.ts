@@ -149,6 +149,7 @@ export interface StatusState {
   condition: MajorStatus;
   sleepTurns?: number;    // turns remaining asleep (determined at sleep application)
   parTurns?: number;      // turns remaining paralyzed (2-6 turns)
+  psnTurns?: number;      // turns remaining poisoned (1-5 turns)
   toxicCounter?: number;  // N for Toxic (N/16 dmg per turn, resets on switch)
 }
 
@@ -169,6 +170,9 @@ export function applyMajorStatus(
   }
   if (newStatus === 'par') {
     next.parTurns = 2 + Math.floor(Math.random() * 5); // 2-6 turns
+  }
+  if (newStatus === 'psn') {
+    next.psnTurns = 1 + Math.floor(Math.random() * 5); // 1-5 turns
   }
   if (newStatus === 'tox') {
     next.toxicCounter = 0; // increments at start of each end-of-turn phase
@@ -231,10 +235,20 @@ export function calcEndOfTurnDamage(
   maxHp: number,
   status: StatusState,
 ): { damage: number; nextStatus: StatusState } {
-  if (status.condition === 'brn' || status.condition === 'psn') {
+  if (status.condition === 'brn') {
     return {
       damage: Math.max(1, Math.floor(maxHp / 8)),
       nextStatus: status,
+    };
+  }
+  if (status.condition === 'psn') {
+    const remaining = (status.psnTurns ?? 1) - 1;
+    const nextStatus: StatusState = remaining <= 0
+      ? { condition: null }
+      : { ...status, psnTurns: remaining };
+    return {
+      damage: Math.max(1, Math.floor(maxHp / 8)),
+      nextStatus,
     };
   }
   if (status.condition === 'tox') {

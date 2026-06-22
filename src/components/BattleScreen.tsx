@@ -927,7 +927,7 @@ export function BattleScreen({
   const [hitEffect, setHitEffect] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const [statusBlockOverlay, setStatusBlockOverlay] = useState<{ target: 'player' | 'enemy'; condition: string | null; uid: number } | null>(null);
   const [poisonBubbles, setPoisonBubbles] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
-  const [_solarCharging, setSolarCharging] = useState(false);
+  const [solarCharging, setSolarCharging] = useState(false);
   const [morphVfxState, setMorphVfxState] = useState<{ target: 'player' | 'enemy'; phase: 'blink' | 'squish'; uid: number } | null>(null);
   const [sleepApplied, setSleepApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
   const [paralysisApplied, setParalysisApplied] = useState<{ target: 'player' | 'enemy'; uid: number } | null>(null);
@@ -2493,6 +2493,20 @@ export function BattleScreen({
 
         {attackEvt && <TypeVfx key={attackEvt.uid} type={attackEvt.type} direction={attackEvt.attacker === 'player' ? 'ltr' : 'rtl'} uid={attackEvt.uid} moveName={attackEvt.attacker === 'player' ? playerMoves[playerIdx]?.name : undefined} />}
         {hitFlash && <div className="absolute inset-0 pointer-events-none battle-hit-flash" style={{ background: hitFlash === 'player' ? 'rgba(239,68,68,0.2)' : 'rgba(250,204,21,0.13)' }} />}
+        {/* Solar Beam charge overlay */}
+        {solarCharging && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 999,
+            background: 'radial-gradient(circle,rgba(255,220,50,0.85),rgba(255,140,0,0.6))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexDirection: 'column', gap: '1rem',
+            animation: 'solar-charge-in 300ms ease-out forwards',
+            pointerEvents: 'none',
+          }}>
+            <span style={{ fontSize: '6rem', lineHeight: 1 }}>☀️</span>
+            <span style={{ fontSize: '1.5rem', color: '#fff', fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Le soleil se charge...</span>
+          </div>
+        )}
         {/* Status move animation — rendered inside sprites below */}
 
         {/* Floating damage */}
