@@ -1524,14 +1524,14 @@ export function BattleScreen({
       pInst, eInst, pRawMoves, eRawMovesBase,
     );
 
-    // PP deduction
+    // PP deduction — only when the Pokémon can actually act (not blocked by sleep/freeze/paralysis)
     const pHasMoves = getMoveList(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId], pCustomSlugs).length > 0;
     const playerUsesStruggle = pHasMoves && pFighter.currentPP[playerMoveIndex] <= 0;
     const pPP = [...pf[pIdx].currentPP];
-    if (!playerUsesStruggle && pHasMoves && pPP[playerMoveIndex] > 0) pPP[playerMoveIndex]--;
+    if (pCanActResult.canAct && !playerUsesStruggle && pHasMoves && pPP[playerMoveIndex] > 0) pPP[playerMoveIndex]--;
     pf[pIdx] = { ...pf[pIdx], currentPP: pPP };
     const ePP = [...ef[eIdx].currentPP];
-    if (eMoveIndex >= 0 && ePP[eMoveIndex] > 0) ePP[eMoveIndex]--;
+    if (eCanActResult.canAct && eMoveIndex >= 0 && ePP[eMoveIndex] > 0) ePP[eMoveIndex]--;
     ef[eIdx] = { ...ef[eIdx], currentPP: ePP };
 
     // Raw move references for transform detection
@@ -1782,10 +1782,12 @@ export function BattleScreen({
       }
 
       // Lance-Soleil: 2-turn charge mechanic
+      let solarBeamCharging = false;
       if (rawMove?.id === 'solar-beam') {
         const atkArr = isPlayer ? pf : ef;
         if (!atkArr[atkIdx].chargingMove) {
           // Turn 1 — charge only, no damage, no hit VFX
+          // We do NOT return early so the enemy can still act this turn.
           const _solarChargeMsg = `${atkName} utilise ${result.moveName} !`;
           addLog(_solarChargeMsg, '#fde68a');
           await sleep(logTypeDuration(_solarChargeMsg));
@@ -1798,13 +1800,19 @@ export function BattleScreen({
           if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: { moveId: 'solar-beam', moveIndex: storedIdx } };
           else ef[atkIdx] = { ...ef[atkIdx], chargingMove: { moveId: 'solar-beam', moveIndex: storedIdx } };
           flush();
-          return false;
+          // Mark that we are in charge phase so damage steps are skipped below
+          solarBeamCharging = true;
         } else {
           // Turn 2 — clear flag and proceed with normal damage
           if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: null };
           else ef[atkIdx] = { ...ef[atkIdx], chargingMove: null };
           flush();
         }
+      }
+
+      // If charge turn, skip all damage/VFX steps and let the turn end normally
+      if (solarBeamCharging) {
+        return false;
       }
 
       const isStatusOnly = result.damage === 0 && !!result.statBoost && !result.isMiss;
