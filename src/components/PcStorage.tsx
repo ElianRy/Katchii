@@ -445,9 +445,7 @@ export function PcStorage({
     const detailMoves = state.pokemonCustomMoves?.[detailId] ?? getAvailableMoves(detailId, detailLevel).slice(0, 4);
     const detailEvoEntry = EVOLUTION_DATA[detailId];
     const detailCanEvolve = detailEvoEntry && detailLevel >= detailEvoEntry.level;
-    const detailEvoTargets = detailEvoEntry?.choices ?? (detailEvoEntry?.evolvesInto ? [detailEvoEntry.evolvesInto] : []);
-    const detailAllOwned = detailEvoTargets.every(tid => (state.normalCollection[tid] ?? 0) > 0);
-    const detailShowEvo = detailCanEvolve && !detailAllOwned;
+    const detailShowEvo = !!detailCanEvolve;
 
     return (
       <div className="fixed inset-0 z-[650] flex flex-col overflow-y-auto"
@@ -568,11 +566,6 @@ export function PcStorage({
               style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b)' }}
             >✨ Évoluer</button>
           )}
-          <button
-            onClick={() => setPokemonDetailId(null)}
-            className="py-2 px-3 rounded-xl font-bold text-xs text-slate-600"
-            style={{ background: '#d0d8e0', border: '2px solid #a0b0c0' }}
-          >✕</button>
         </div>
       </div>
     );
