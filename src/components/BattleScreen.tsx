@@ -2158,6 +2158,9 @@ export function BattleScreen({
     }
 
     // ── End-of-turn: BRN/PSN/TOX ──
+    // Small pause so any status-application animation (e.g. poison splash) can
+    // finish before EOT damage fires on the very same turn it was inflicted.
+    await sleep(400);
     const pEot = calcEndOfTurnDamage(pf[pIdx].maxHp, pf[pIdx].statusState);
     if (pEot.damage > 0) {
       const pEotCond = pf[pIdx].statusState.condition;
@@ -2170,9 +2173,6 @@ export function BattleScreen({
         const uid = dmgCounter++;
         setPoisonBubbles({ target: 'player', uid });
         setTimeout(() => setPoisonBubbles(b => b?.uid === uid ? null : b), 1100);
-        const uid2 = dmgCounter++;
-        setPoisonApplied({ target: 'player', uid: uid2 });
-        setTimeout(() => setPoisonApplied(s => s?.uid === uid2 ? null : s), 1100);
       }
       flush();
     }
@@ -2188,9 +2188,6 @@ export function BattleScreen({
         const uid = dmgCounter++;
         setPoisonBubbles({ target: 'enemy', uid });
         setTimeout(() => setPoisonBubbles(b => b?.uid === uid ? null : b), 1100);
-        const uid2 = dmgCounter++;
-        setPoisonApplied({ target: 'enemy', uid: uid2 });
-        setTimeout(() => setPoisonApplied(s => s?.uid === uid2 ? null : s), 1100);
       }
       flush();
     }
