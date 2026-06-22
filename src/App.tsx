@@ -627,6 +627,8 @@ export function App() {
               setBattle3v3(null);
             }}
             onQuit={() => { battle3v3.onDone?.(0, false); setBattle3v3(null); }}
+            pokemonCustomMoves={gameState.state.pokemonCustomMoves}
+            pokemonMoves={gameState.state.pokemonMoves}
           />
         );
       })()}

@@ -308,6 +308,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
       <HUD
         points={gameState.state.points}
         activeLure={gameState.state.activeLure}
+        activeCooldownBoost={gameState.state.activeCooldownBoost}
+        activeSpawnBoost={gameState.state.activeSpawnBoost}
         cooldownRemaining={cooldownSecs}
         isOnCooldown={onCooldown}
         onOpenCollection={onOpenCollection}
@@ -339,8 +341,6 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         conditionDescription={conditionDescription}
         currentZoneId={currentZoneId}
         onFightBoss={() => { setFightZone(currentZone ?? null); setShowBossFight(true); }}
-        activeCooldownBoost={gameState.state.activeCooldownBoost}
-        activeSpawnBoost={gameState.state.activeSpawnBoost}
       />
 
 

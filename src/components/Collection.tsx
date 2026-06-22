@@ -486,8 +486,7 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
         // Level-gated pool: unlock moves based on level
         const pool = GEN1_MOVEPOOL[selectedId] ?? [];
         const availablePool = getAvailableMoves(selectedId, lvData.level);
-        const currentSlugs: string[] = state.pokemonCustomMoves?.[selectedId] ?? availablePool.slice(0, 4);
-        const activeSlugs = currentSlugs;
+        const activeSlugs: string[] = state.pokemonCustomMoves?.[selectedId] ?? availablePool.slice(0, 4);
 
         return (
           <div
@@ -622,7 +621,7 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
                   {/* Movepool editor */}
                   {pool.length > 0 && (
                     <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 12px', border: '1px solid #a0c0d8' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
                         <span style={{ color: '#4a6a8a', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>ATTAQUES ACTIVES</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>

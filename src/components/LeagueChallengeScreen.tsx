@@ -910,15 +910,15 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     setPhase('dialogue_peter');
   }, [state]);
 
-  // Feature 7: auto-confirm party team on mount
+  // Auto-confirm party team whenever team_select phase is entered (mount or retry)
   const handleTeamConfirmRef = useRef(handleTeamConfirm);
   handleTeamConfirmRef.current = handleTeamConfirm;
   useEffect(() => {
-    if ((state.partyTeam?.length ?? 0) > 0) {
+    if (phase === 'team_select' && (state.partyTeam?.length ?? 0) > 0) {
       handleTeamConfirmRef.current(state.partyTeam!);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [phase]);
 
   const handleBattleEnd = useCallback(
     (nextPhase: Phase, enemySpecs: ReadonlyArray<{ pokemonId: number; level: number; isShiny?: boolean }>) =>
