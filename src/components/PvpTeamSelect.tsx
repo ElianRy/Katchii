@@ -94,6 +94,42 @@ export const RENTAL_TEAMS: RentalTeamDef[] = [
       { pokemonId: 18,  moves: ['wing-attack',  'aerial-ace',  'agility',       'drill-peck']    },
     ],
   },
+  {
+    id: 'G', name: 'Force Tellurique', emoji: '🌍',
+    description: 'Dragon · Combat · Eau — pression maximale', color: '#d97706',
+    members: [
+      { pokemonId: 445, moves: ['dragon-claw',   'earthquake',  'swords-dance',  'stone-edge']    },
+      { pokemonId: 448, moves: ['close-combat',  'flash-cannon','extreme-speed', 'dark-pulse']    },
+      { pokemonId: 350, moves: ['surf',          'ice-beam',    'recover',       'toxic']         },
+    ],
+  },
+  {
+    id: 'H', name: 'Ciel Flamboyant', emoji: '🌅',
+    description: 'Fée · Feu · Plante — contrôle et setup', color: '#f43f5e',
+    members: [
+      { pokemonId: 468, moves: ['air-slash',     'aura-sphere', 'thunder-wave',  'roost']         },
+      { pokemonId: 229, moves: ['dark-pulse',    'flamethrower','nasty-plot',    'sludge-bomb']   },
+      { pokemonId: 470, moves: ['leaf-blade',    'x-scissor',   'swords-dance',  'quick-attack']  },
+    ],
+  },
+  {
+    id: 'I', name: 'Élémentaire Volatil', emoji: '⚗️',
+    description: 'Électrik · Feu · Eau/Sol — couverture parfaite', color: '#8b5cf6',
+    members: [
+      { pokemonId: 466, moves: ['thunderbolt',   'ice-punch',   'fire-punch',    'cross-chop']    },
+      { pokemonId: 467, moves: ['flamethrower',  'psychic-move','thunderbolt',   'sunny-day']     },
+      { pokemonId: 260, moves: ['waterfall',     'earthquake',  'ice-beam',      'protect']       },
+    ],
+  },
+  {
+    id: 'J', name: 'Bastion Antique', emoji: '🏛️',
+    description: 'Roche · Psy · Glace — vitesse et priorité', color: '#64748b',
+    members: [
+      { pokemonId: 142, moves: ['stone-edge',    'fly',         'crunch',        'agility']       },
+      { pokemonId: 196, moves: ['psychic-move',  'shadow-ball', 'calm-mind',     'morning-sun']   },
+      { pokemonId: 473, moves: ['ice-shard',     'earthquake',  'icicle-crash',  'bite']          },
+    ],
+  },
 ];
 
 const RARITY_ORDER: Record<string, number> = { commun: 0, peu_commun: 1, rare: 2, elite: 3, legendaire: 4 };

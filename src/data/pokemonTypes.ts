@@ -1,13 +1,13 @@
 export type PokemonType =
   | 'normal' | 'fire' | 'water' | 'grass' | 'electric' | 'ice'
   | 'fighting' | 'poison' | 'ground' | 'flying' | 'psychic' | 'bug'
-  | 'rock' | 'ghost' | 'dragon';
+  | 'rock' | 'ghost' | 'dragon' | 'dark' | 'steel';
 
 export const TYPE_COLORS: Record<PokemonType, string> = {
   normal: '#a8a878', fire: '#f08030', water: '#6890f0', grass: '#78c850',
   electric: '#f8d030', ice: '#98d8d8', fighting: '#c03028', poison: '#a040a0',
   ground: '#e0c068', flying: '#a890f0', psychic: '#f85888', bug: '#a8b820',
-  rock: '#b8a038', ghost: '#705898', dragon: '#7038f8',
+  rock: '#b8a038', ghost: '#705898', dragon: '#7038f8', dark: '#705848', steel: '#b8b8d0',
 };
 
 export const POKEMON_TYPE: Record<number, PokemonType[]> = {
@@ -87,6 +87,18 @@ export const POKEMON_TYPE: Record<number, PokemonType[]> = {
   144: ['ice','flying'], 145: ['electric','flying'], 146: ['fire','flying'],
   147: ['dragon'], 148: ['dragon'], 149: ['dragon','flying'],
   150: ['psychic'], 151: ['psychic'],
+  // Gen 2-4 (équipes PVP de prêt)
+  196: ['psychic'],
+  229: ['dark','fire'],
+  260: ['water','ground'],
+  350: ['water'],
+  445: ['dragon','ground'],
+  448: ['fighting','steel'],
+  466: ['electric'],
+  467: ['fire'],
+  468: ['normal','flying'],
+  470: ['grass'],
+  473: ['ice','ground'],
 };
 
 export const TYPE_CHART: Partial<Record<PokemonType, Partial<Record<PokemonType, number>>>> = {

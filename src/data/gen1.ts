@@ -155,6 +155,19 @@ export const GEN1_POKEMON: PokemonData[] = [
   { id: 143, name: 'Ronflex', rarity: 'elite' },
   { id: 149, name: 'Dracolosse', rarity: 'elite' },
 
+  // Équipes PVP de prêt (Gen 2-4, non capturables)
+  { id: 196, name: 'Mentali', rarity: 'elite' },
+  { id: 229, name: 'Démolosse', rarity: 'elite' },
+  { id: 260, name: 'Laggron', rarity: 'elite' },
+  { id: 350, name: 'Milobellus', rarity: 'elite' },
+  { id: 466, name: 'Élekable', rarity: 'elite' },
+  { id: 467, name: 'Magmortem', rarity: 'elite' },
+  { id: 468, name: 'Togekiss', rarity: 'elite' },
+  { id: 470, name: 'Phyllali', rarity: 'elite' },
+  { id: 473, name: 'Mammochon', rarity: 'elite' },
+  { id: 445, name: 'Carchacrok', rarity: 'legendaire' },
+  { id: 448, name: 'Lucario', rarity: 'legendaire' },
+
   // Niveau 5 — Légendaire
   { id: 144, name: 'Artikodin', rarity: 'legendaire' },
   { id: 145, name: 'Électhor', rarity: 'legendaire' },

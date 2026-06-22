@@ -329,6 +329,7 @@ export type MoveResult = {
   allStatBoosted?: boolean;
   appliedSeed?: boolean;
   drainHeal?: number;
+  selfHeal?: number;
   failedSpecial?: string;
 };
 
@@ -392,6 +393,7 @@ export function calcDamage(
       appliedStatus,
       appliedConfusion: appliedConfusion || undefined,
       appliedSeed: !!(move.isSeed),
+      selfHeal: (move as { selfHeal?: number }).selfHeal ? Math.floor(((move as { selfHeal?: number }).selfHeal ?? 0) * calcMaxHp(attackerId, attackerLevel, attackerInst)) : undefined,
       priority: movePriority,
     };
   }

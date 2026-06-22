@@ -37,6 +37,7 @@ export interface MoveRegistryEntry {
   recoil?: number;
   alwaysHit?: boolean;
   draining?: number;
+  selfHeal?: number;
   allStatBoost?: { stages: number; chance: number };
   isSeed?: boolean;
   /** True for 2-turn moves (fly, solar-beam) */
@@ -216,7 +217,45 @@ export const MOVES_REGISTRY: Record<string, MoveRegistryEntry> = {
   // ── Dragon ────────────────────────────────────────────────────────────────
   'dragon-rage':   m('dragon-rage','Rage du Dragon','Dragon Rage','dragon','special',80,100,10,0,"Inflige des dégâts fixes."),
   'dragon-breath': m('dragon-breath','Draco-Souffle','DragonBreath','dragon','special',60,100,20,0,"Peut paralyser.",{effect:{type:'paralysis',chance:30}}),
+  'dragon-claw':   m('dragon-claw','Draco-Griffe','Dragon Claw','dragon','physical',80,100,15,0,"Griffes de dragon puissantes."),
   'outrage':       m('outrage','Colère','Outrage','dragon','physical',120,100,10,0,"Attaque 2-3 tours puis confond.",{recoil:0}),
+
+  // ── Steel ─────────────────────────────────────────────────────────────────
+  'flash-cannon':  m('flash-cannon','Éclat Acier','Flash Cannon','steel','special',80,100,10,0,"Peut réduire la Déf. Spé.",{statBoost:{stat:'spDefense',target:'foe',stages:-1,chance:10}}),
+  'iron-tail':     m('iron-tail','Queue de Fer','Iron Tail','steel','physical',100,75,15,0,"Peut réduire la Défense.",{statBoost:{stat:'defense',target:'foe',stages:-1,chance:30}}),
+
+  // ── Fairy ─────────────────────────────────────────────────────────────────
+  'aura-sphere':   m('aura-sphere','Aura Sphère','Aura Sphere','fighting','special',80,0,20,0,"Ne rate jamais.",{alwaysHit:true}),
+
+  // ── Additional Normal ─────────────────────────────────────────────────────
+  'extreme-speed': m('extreme-speed','Vive-Attaque+','Extreme Speed','normal','physical',80,100,5,2,"Attaque avec une priorité très haute."),
+  'morning-sun':   m('morning-sun','Aurore','Morning Sun','normal','status',0,100,5,0,"Restaure 50% des PV.",{selfHeal:0.5}),
+  'recover':       m('recover','Soin','Recover','normal','status',0,100,10,0,"Restaure 50% des PV.",{selfHeal:0.5}),
+  'protect':       m('protect','Abri','Protect','normal','status',0,100,10,3,"Augmente fortement la Défense ce tour.",{statBoost:{stat:'defense',target:'self',stages:2}}),
+  'sunny-day':     m('sunny-day','Zénith','Sunny Day','fire','status',0,100,5,0,"Augmente l'Att. Spé. temporairement.",{statBoost:{stat:'spAttack',target:'self',stages:1}}),
+
+  // ── Additional Flying ─────────────────────────────────────────────────────
+  'air-slash':     m('air-slash','Tranche-Air','Air Slash','flying','special',75,95,15,0,"Peut faire sursauter.",{effect:{type:'paralysis',chance:30}}),
+  'roost':         m('roost','Repos','Roost','flying','status',0,100,10,0,"Restaure 50% des PV.",{selfHeal:0.5}),
+
+  // ── Additional Grass ──────────────────────────────────────────────────────
+  'leaf-blade':    m('leaf-blade','Lame-Feuille','Leaf Blade','grass','physical',90,100,15,0,"Taux de critiques élevé.",{highCrit:true}),
+
+  // ── Additional Fighting ───────────────────────────────────────────────────
+  'cross-chop':    m('cross-chop','Coup Croix','Cross Chop','fighting','physical',100,80,5,0,"Taux de critiques élevé.",{highCrit:true}),
+
+  // ── Additional Rock ───────────────────────────────────────────────────────
+  'stone-edge':    m('stone-edge','Lame de Roc','Stone Edge','rock','physical',100,80,5,0,"Taux de critiques élevé.",{highCrit:true}),
+
+  // ── Additional Ghost ──────────────────────────────────────────────────────
+  'shadow-ball':   m('shadow-ball','Ball\'Ombre','Shadow Ball','ghost','special',80,100,15,0,"Peut réduire la Déf. Spé.",{statBoost:{stat:'spDefense',target:'foe',stages:-1,chance:20}}),
+
+  // ── Additional Dark ───────────────────────────────────────────────────────
+  'dark-pulse':    m('dark-pulse','Ténèbres','Dark Pulse','dark','special',80,100,15,0,"Peut faire sursauter.",{effect:{type:'paralysis',chance:20}}),
+
+  // ── Additional Ice ────────────────────────────────────────────────────────
+  'ice-shard':     m('ice-shard','Éclats Glace','Ice Shard','ice','physical',40,100,30,1,"Attaque en priorité."),
+  'icicle-crash':  m('icicle-crash','Chute Givre','Icicle Crash','ice','physical',85,90,10,0,"Peut faire tituber.",{effect:{type:'paralysis',chance:30}}),
 };
 
 export const MOVE_IDS = Object.keys(MOVES_REGISTRY);

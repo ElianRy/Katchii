@@ -284,4 +284,16 @@ export const GEN1_STATS: Record<number, PokemonStatData> = {
   149: { id: 149, hp: 91, attack: 134, defense: 95, spAttack: 100, spDefense: 100, speed: 80, baseXp: 218, evYield: { attack: 3 }, moves: [DRAGON_RAGE, AERIAL_ACE, AGILITY, SLASH] },
   150: { id: 150, hp: 106, attack: 110, defense: 90, spAttack: 154, spDefense: 90, speed: 130, baseXp: 220, evYield: { spAttack: 3 }, moves: [PSYCHIC, NASTY_PLOT, RECOVER, BARRIER] },
   151: { id: 151, hp: 100, attack: 100, defense: 100, spAttack: 100, spDefense: 100, speed: 100, baseXp: 64, evYield: { hp: 3 }, moves: [PSYCHIC, NASTY_PLOT, CALM_MIND, TRANSFORM] },
+  // Gen 2-4 (équipes PVP de prêt)
+  196: { id: 196, hp: 65,  attack: 65,  defense: 60,  spAttack: 130, spDefense: 95,  speed: 110, baseXp: 184, evYield: { spAttack: 2, speed: 1 }, moves: [PSYCHIC, CALM_MIND, RECOVER, AGILITY] },
+  229: { id: 229, hp: 75,  attack: 90,  defense: 50,  spAttack: 110, spDefense: 80,  speed: 95,  baseXp: 175, evYield: { spAttack: 2, attack: 1 }, moves: [FLAMETHROWER, NASTY_PLOT, BITE, SLASH] },
+  260: { id: 260, hp: 100, attack: 110, defense: 90,  spAttack: 85,  spDefense: 90,  speed: 60,  baseXp: 188, evYield: { hp: 1, attack: 2 }, moves: [SURF, EARTHQUAKE, ICE_BEAM, BODY_SLAM] },
+  350: { id: 350, hp: 95,  attack: 60,  defense: 79,  spAttack: 100, spDefense: 125, speed: 81,  baseXp: 189, evYield: { spDefense: 2, spAttack: 1 }, moves: [SURF, ICE_BEAM, RECOVER, TOXIC] },
+  445: { id: 445, hp: 108, attack: 130, defense: 95,  spAttack: 80,  spDefense: 85,  speed: 102, baseXp: 220, evYield: { attack: 3 }, moves: [EARTHQUAKE, DRAGON_RAGE, SLASH, AGILITY] },
+  448: { id: 448, hp: 70,  attack: 110, defense: 70,  spAttack: 115, spDefense: 70,  speed: 90,  baseXp: 220, evYield: { attack: 2, spAttack: 1 }, moves: [CLOSE_COMBAT, PSYCHIC, NASTY_PLOT, AGILITY] },
+  466: { id: 466, hp: 75,  attack: 123, defense: 67,  spAttack: 95,  spDefense: 85,  speed: 95,  baseXp: 206, evYield: { attack: 3 }, moves: [THUNDERBOLT, FIRE_PUNCH, ICE_BEAM, CLOSE_COMBAT] },
+  467: { id: 467, hp: 75,  attack: 95,  defense: 67,  spAttack: 125, spDefense: 95,  speed: 83,  baseXp: 206, evYield: { spAttack: 3 }, moves: [FLAMETHROWER, PSYCHIC, THUNDERBOLT, NASTY_PLOT] },
+  468: { id: 468, hp: 85,  attack: 50,  defense: 95,  spAttack: 120, spDefense: 115, speed: 80,  baseXp: 220, evYield: { spAttack: 2, spDefense: 1 }, moves: [AERIAL_ACE, THUNDERBOLT, NASTY_PLOT, BODY_SLAM] },
+  470: { id: 470, hp: 65,  attack: 110, defense: 130, spAttack: 60,  spDefense: 65,  speed: 95,  baseXp: 184, evYield: { defense: 2, attack: 1 }, moves: [RAZOR_LEAF, SLASH, SWORDS_DANCE, X_SCISSOR] },
+  473: { id: 473, hp: 110, attack: 130, defense: 80,  spAttack: 70,  spDefense: 60,  speed: 80,  baseXp: 200, evYield: { attack: 3 }, moves: [ICE_BEAM, EARTHQUAKE, BITE, SLASH] },
 };

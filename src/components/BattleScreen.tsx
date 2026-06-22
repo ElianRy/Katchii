@@ -1942,6 +1942,14 @@ export function BattleScreen({
         flush();
       }
 
+      // Self-heal (recover/roost/morning-sun)
+      if (result.selfHeal && result.selfHeal > 0) {
+        if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], currentHp: Math.min(pf[atkIdx].maxHp, pf[atkIdx].currentHp + result.selfHeal) };
+        else          ef[atkIdx] = { ...ef[atkIdx], currentHp: Math.min(ef[atkIdx].maxHp, ef[atkIdx].currentHp + result.selfHeal) };
+        addLog(`${atkName} récupère des PV !`, '#86efac');
+        flush();
+      }
+
 
       // Recoil
       if (result.recoil > 0) {
