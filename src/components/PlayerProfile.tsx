@@ -195,6 +195,10 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
               if (profileFilter === 'shinies') {
                 displayIds = ALL_151.filter(id => (shiny[id] ?? 0) > 0);
               } else if (profileFilter === 'manquants') {
+                const missingCount = ALL_151.filter(id => (normal[id] ?? 0) === 0).length;
+                if (missingCount === 0) {
+                  return <div className="text-slate-500 text-sm text-center py-6">🎉 Aucun Pokémon manquant !</div>;
+                }
                 displayIds = ALL_151; // show all 151, grayed if not owned
               } else {
                 displayIds = ownedIds; // already sorted by rarity desc

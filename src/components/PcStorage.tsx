@@ -698,7 +698,7 @@ export function PcStorage({
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* PC Grid */}
         <div className="flex-1 overflow-y-auto p-2" style={{ background: '#c8dce8', backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,40,0.04) 0px, rgba(0,0,40,0.04) 1px, transparent 1px, transparent 3px)' }}>
-          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${BOX_COLS}, 52px)`, width: 'fit-content', margin: '0 auto' }}>
+          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${BOX_COLS}, 52px)`, width: 'fit-content', margin: '0 auto', overflow: 'visible' }}>
             {Array.from({ length: BOX_SIZE }).map((_, slotIdx) => {
               const id = currentBox[slotIdx];
               if (!id) {
@@ -747,7 +747,7 @@ export function PcStorage({
                     Niv.{lvData.level}
                   </span>
                   {showEvoBadge && (
-                    <span style={{ position: 'absolute', top: 2, right: 2, width: 10, height: 10, borderRadius: '50%', background: '#ffcc00', border: '1.5px solid #b8860b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.45rem', lineHeight: 1 }}>▲</span>
+                    <span style={{ position: 'absolute', top: -3, right: -3, width: 13, height: 13, borderRadius: '50%', background: '#ffcc00', border: '2px solid #b8860b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', lineHeight: 1, zIndex: 10, boxShadow: '0 0 4px rgba(0,0,0,0.5)' }}>▲</span>
                   )}
                 </button>
               );

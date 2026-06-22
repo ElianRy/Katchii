@@ -988,6 +988,10 @@ export function useGameState() {
       if (prev.pcBoxes) {
         next.pcBoxes = prev.pcBoxes.map(box => box.map(id => id === oldPokemonId ? newPokemonId : id));
       }
+      // Update favoritePokemon (poképarc): replace old with new
+      if (prev.favoritePokemon?.pokemonId === oldPokemonId) {
+        next.favoritePokemon = { ...prev.favoritePokemon, pokemonId: newPokemonId };
+      }
       // Remove from pendingEvolutions
       next.pendingEvolutions = (prev.pendingEvolutions ?? []).filter(id => id !== oldPokemonId);
       return next;
