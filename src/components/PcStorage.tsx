@@ -445,7 +445,11 @@ export function PcStorage({
     const detailMoves = state.pokemonCustomMoves?.[detailId] ?? getAvailableMoves(detailId, detailLevel).slice(0, 4);
     const detailEvoEntry = EVOLUTION_DATA[detailId];
     const detailCanEvolve = detailEvoEntry && detailLevel >= detailEvoEntry.level;
-    const detailShowEvo = !!detailCanEvolve;
+    const detailEvoTargets = detailEvoEntry
+      ? (detailEvoEntry.choices ?? (detailEvoEntry.evolvesInto ? [detailEvoEntry.evolvesInto] : []))
+      : [];
+    const detailEvoBlocked = detailEvoTargets.some(tid => (state.normalCollection[tid] ?? 0) > 0 || party.includes(tid));
+    const detailShowEvo = !!detailCanEvolve && !detailEvoBlocked;
 
     return (
       <div className="fixed inset-0 z-[650] flex flex-col overflow-y-auto"
@@ -556,7 +560,9 @@ export function PcStorage({
                 const entry = EVOLUTION_DATA[detailId];
                 if (!entry) return;
                 if (entry.choices) {
-                  setPendingEvoChoice({ oldId: detailId, choices: entry.choices });
+                  const availableChoices = entry.choices.filter(tid => (state.normalCollection[tid] ?? 0) === 0 && !party.includes(tid));
+                  if (availableChoices.length === 0) return;
+                  setPendingEvoChoice({ oldId: detailId, choices: availableChoices });
                 } else if (entry.evolvesInto) {
                   setPendingEvoChoice({ oldId: detailId, newId: entry.evolvesInto });
                 }

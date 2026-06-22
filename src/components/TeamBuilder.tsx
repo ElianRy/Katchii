@@ -233,7 +233,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         const newId = checkEvolution(id, lv);
         if (newId) {
           triggered = true;
-          const alreadyOwned = (state.normalCollection[newId] ?? 0) > 0;
+          const alreadyOwned = (state.normalCollection[newId] ?? 0) > 0 || (state.partyTeam ?? []).includes(newId);
           evos.push({ oldId: id, newId, alreadyOwned });
         }
       }

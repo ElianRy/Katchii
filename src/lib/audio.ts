@@ -369,23 +369,10 @@ export function playLevelUp()          { playSfxFile('level_up'); }
 export function playPokemonCry(pokemonId: number) {
   const s = loadAudioSettings();
   if (!s.sound) return;
-  // GitHub cries: no crossOrigin needed (CORS allowed), but createMediaElementSource
-  // may fail for cross-origin — use element volume directly as fallback
+  // Play cry directly without Web Audio (GitHub raw CORS blocks createMediaElementSource)
   const audio = new Audio(`${CRY_BASE}/${pokemonId}.ogg`);
-  audio.crossOrigin = 'anonymous';
-  audio.volume = 1;
-  try {
-    const c = getCtx();
-    const source = c.createMediaElementSource(audio);
-    const gain   = c.createGain();
-    gain.gain.value = 0.8;
-    source.connect(gain);
-    gain.connect(_sfxGain!);
-    audio.play().catch(() => {});
-  } catch {
-    audio.volume = Math.min(1, s.sfxVolume * s.globalVolume * 0.8);
-    audio.play().catch(() => {});
-  }
+  audio.volume = Math.min(1, s.sfxVolume * s.globalVolume);
+  audio.play().catch(() => {});
 }
 
 // ── Web Audio synth (generated sounds) ───────────────────────────────────
