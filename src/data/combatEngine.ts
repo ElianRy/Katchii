@@ -148,7 +148,6 @@ export type MajorStatus = 'par' | 'brn' | 'psn' | 'tox' | 'slp' | 'frz' | null;
 export interface StatusState {
   condition: MajorStatus;
   sleepTurns?: number;    // turns remaining asleep (determined at sleep application)
-  parTurns?: number;      // turns remaining paralyzed (2-4 turns)
   toxicCounter?: number;  // N for Toxic (N/16 dmg per turn, resets on switch)
 }
 
@@ -165,12 +164,9 @@ export function applyMajorStatus(
   if (newStatus === null) return null;
   const next: StatusState = { condition: newStatus };
   if (newStatus === 'slp') {
-    next.sleepTurns = 1 + Math.floor(Math.random() * 3); // HG/SS: 1-3 turns
+    next.sleepTurns = 1 + Math.floor(Math.random() * 7); // Gen 4: 1-7 turns
   }
-  if (newStatus === 'par') {
-    next.parTurns = 2 + Math.floor(Math.random() * 3); // 2-4 turns
-  }
-  if (newStatus === 'tox') {
+  if (newStatus === 'tox' {
     next.toxicCounter = 0; // increments at start of each end-of-turn phase
   }
   return next;
@@ -180,7 +176,7 @@ export function applyMajorStatus(
  * Check if a Pokémon can act this turn. Returns true = can act, false = loses turn.
  * Also returns updated StatusState (sleep counter ticking, etc.)
  */
-export function checkCanAct(status: StatusState): { canAct: boolean; nextStatus: StatusState; wokeUp?: boolean; curedPar?: boolean } {
+export function checkCanAct(status: StatusState): { canAct: boolean; nextStatus: StatusState; wokeUp?: boolean } {
   if (status.condition === null) return { canAct: true, nextStatus: status };
 
   if (status.condition === 'slp') {
@@ -201,11 +197,11 @@ export function checkCanAct(status: StatusState): { canAct: boolean; nextStatus:
   }
 
   if (status.condition === 'par') {
-    const remaining = (status.parTurns ?? 1) - 1;
-    if (remaining <= 0) {
-      return { canAct: true, nextStatus: { condition: null }, curedPar: true };
+    // Gen 4: 25% chance to be fully paralyzed (no turn limit)
+    if (Math.random() < 0.25) {
+      return { canAct: false, nextStatus: status };
     }
-    return { canAct: false, nextStatus: { ...status, parTurns: remaining } };
+    return { canAct: true, nextStatus: status };
   }
 
   // BRN / PSN / TOX: don't prevent action
@@ -543,6 +539,7 @@ export type RawMove = {
   draining?: number;
   allStatBoost?: { stages: number; chance: number };
   isSeed?: boolean;
+  isProtect?: boolean;
 };
 
 /**

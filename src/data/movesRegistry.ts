@@ -44,6 +44,8 @@ export interface MoveRegistryEntry {
   isTwoTurnMove?: boolean;
   /** Message shown on the charging turn (e.g. "se gorge de lumière !") */
   chargingMessage?: string;
+  /** True for protect-type moves — grants full immunity for the turn */
+  isProtect?: boolean;
 }
 
 function m(
@@ -193,7 +195,7 @@ export const MOVES_REGISTRY: Record<string, MoveRegistryEntry> = {
   'psybeam':       m('psybeam','Rayon Psy','Psybeam','psychic','special',65,100,20,0,"Peut confondre.",{effect:{type:'confusion',chance:10}}),
   'hypnosis':      m('hypnosis','Hypnose','Hypnosis','psychic','status',0,60,20,0,"Endort l'adversaire.",{effect:{type:'sleep',chance:100}}),
   'dream-eater':   m('dream-eater','Bouffe-Rêve','Dream Eater','psychic','special',100,100,15,0,"Fonctionne sur un Pokémon endormi.",{draining:0.5}),
-  'amnesia':       m('amnesia','Amnésie','Amnesia','psychic','status',0,100,20,0,"Augmente fortement l'Attaque Spéciale.",{statBoost:{stat:'spAttack',target:'self',stages:2}}),
+  'amnesia':       m('amnesia','Amnésie','Amnesia','psychic','status',0,100,20,0,"Augmente fortement la Défense Spéciale.",{statBoost:{stat:'spDefense',target:'self',stages:2}}),
   'barrier':       m('barrier','Barrière','Barrier','psychic','status',0,100,30,0,"Augmente fortement la Défense.",{statBoost:{stat:'defense',target:'self',stages:2}}),
   'calm-mind':     m('calm-mind','Méditation','Calm Mind','psychic','status',0,100,20,0,"Augmente l'Attaque Spéciale.",{statBoost:{stat:'spAttack',target:'self',stages:1}}),
   'agility':       m('agility','Hâte','Agility','psychic','status',0,100,30,0,"Augmente fortement la Vitesse.",{statBoost:{stat:'speed',target:'self',stages:2}}),
@@ -231,7 +233,7 @@ export const MOVES_REGISTRY: Record<string, MoveRegistryEntry> = {
   'extreme-speed': m('extreme-speed','Vive-Attaque+','Extreme Speed','normal','physical',80,100,5,2,"Attaque avec une priorité très haute."),
   'morning-sun':   m('morning-sun','Aurore','Morning Sun','normal','status',0,100,5,0,"Restaure 50% des PV.",{selfHeal:0.5}),
   'recover':       m('recover','Soin','Recover','normal','status',0,100,10,0,"Restaure 50% des PV.",{selfHeal:0.5}),
-  'protect':       m('protect','Abri','Protect','normal','status',0,100,10,3,"Augmente fortement la Défense ce tour.",{statBoost:{stat:'defense',target:'self',stages:2}}),
+  'protect':       m('protect','Abri','Protect','normal','status',0,100,10,3,"Immunise complètement contre les attaques directes ce tour.",{isProtect:true}),
   'sunny-day':     m('sunny-day','Zénith','Sunny Day','fire','status',0,100,5,0,"Augmente l'Att. Spé. temporairement.",{statBoost:{stat:'spAttack',target:'self',stages:1}}),
 
   // ── Additional Flying ─────────────────────────────────────────────────────

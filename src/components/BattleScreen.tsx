@@ -115,6 +115,8 @@ interface FighterState extends TeamMember {
   confusionTurns?: number;
   chargingMove?: { moveId: string; moveIndex: number } | null;
   mustRecharge?: boolean;
+  isProtecting?: boolean;
+  protectConsecutive?: number; // tracks consecutive protect uses for 50% success rate halving
   // Morphing (Transform) — ephemeral, only lives during combat
   transformOriginalId?: number;
   transformMoveOverride?: RawMove[];
@@ -1277,9 +1279,6 @@ export function BattleScreen({
       if (!eCanActResult.canAct) {
         const cond = ef[eIdx].statusState.condition;
         addLog(cond === 'slp' ? `${eName} dort profondément.` : `${eName} est complètement paralysé(e) ! Il ne peut pas bouger !`, '#94a3b8');
-      } else if (eCanActResult.curedPar) {
-        addLog(`${eName} n'est plus paralysé(e) !`, '#86efac');
-        await sleep(logTypeDuration(`${eName} n'est plus paralysé(e) !`));
       } else if (eCanActResult.wokeUp) {
         addLog(`${eName} se réveille !`, '#86efac');
         await sleep(logTypeDuration(`${eName} se réveille !`));
@@ -1473,10 +1472,7 @@ export function BattleScreen({
     // ── helpers pour injecter le message de réveil/guérison en ordre de jeu ──
     const logWakeIfNeeded = async (_side: 'player' | 'enemy', canActRes: ReturnType<typeof checkCanAct>, name: string, blocked: boolean) => {
       if (blocked) return;
-      if (canActRes.curedPar) {
-        addLog(`${name} n'est plus paralysé(e) !`, '#86efac');
-        await sleep(logTypeDuration(`${name} n'est plus paralysé(e) !`));
-      } else if (canActRes.wokeUp) {
+      if (canActRes.wokeUp) {
         addLog(`${name} se réveille !`, '#86efac');
         await sleep(logTypeDuration(`${name} se réveille !`));
       }
@@ -1668,6 +1664,17 @@ export function BattleScreen({
       const defIdx   = isPlayer ? eIdx  : pIdx;
       const atkSide  = attackerSide;
       const defSide  = (isPlayer ? 'enemy' : 'player') as 'player' | 'enemy';
+
+      // Protect: if defender is protecting, block this attack entirely
+      {
+        const defArr = isPlayer ? ef : pf;
+        const defFighter = defArr[defIdx];
+        if (defFighter.isProtecting) {
+          addLog(`${defName} est protégé(e) par Abri !`, '#86efac');
+          await sleep(1200);
+          return false;
+        }
+      }
 
       // Hyper Beam recharge: attacker must rest this turn
       {
@@ -1973,6 +1980,25 @@ export function BattleScreen({
         flush();
       }
 
+      // Protect: activate for this turn if move is protect
+      if (rawMove?.id === 'protect') {
+        const atkArr = isPlayer ? pf : ef;
+        const consecutive = atkArr[atkIdx].protectConsecutive ?? 0;
+        // Success rate halves each consecutive use: 100% → 50% → 25% etc.
+        const successRate = Math.pow(0.5, consecutive);
+        if (Math.random() < successRate) {
+          if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], isProtecting: true, protectConsecutive: consecutive + 1 };
+          else ef[atkIdx] = { ...ef[atkIdx], isProtecting: true, protectConsecutive: consecutive + 1 };
+          addLog(`${atkName} se protège !`, '#86efac');
+        } else {
+          if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], isProtecting: false, protectConsecutive: 0 };
+          else ef[atkIdx] = { ...ef[atkIdx], isProtecting: false, protectConsecutive: 0 };
+          addLog(`${atkName} rate sa protection !`, '#94a3b8');
+        }
+        flush();
+        await sleep(800);
+      }
+
       // Step E: pause
       await sleep(850);
 
@@ -2183,10 +2209,6 @@ export function BattleScreen({
         const remaining = f.statusState.sleepTurns - 1;
         pf[i] = { ...pf[i], statusState: remaining <= 0 ? { condition: null } : { condition: 'slp', sleepTurns: remaining } };
         benchChanged = true;
-      } else if (cond === 'par' && f.statusState.parTurns !== undefined) {
-        const remaining = f.statusState.parTurns - 1;
-        pf[i] = { ...pf[i], statusState: remaining <= 0 ? { condition: null } : { condition: 'par', parTurns: remaining } };
-        benchChanged = true;
       }
     });
     ef.forEach((f, i) => {
@@ -2201,10 +2223,6 @@ export function BattleScreen({
       } else if (cond === 'slp' && f.statusState.sleepTurns !== undefined) {
         const remaining = f.statusState.sleepTurns - 1;
         ef[i] = { ...ef[i], statusState: remaining <= 0 ? { condition: null } : { condition: 'slp', sleepTurns: remaining } };
-        benchChanged = true;
-      } else if (cond === 'par' && f.statusState.parTurns !== undefined) {
-        const remaining = f.statusState.parTurns - 1;
-        ef[i] = { ...ef[i], statusState: remaining <= 0 ? { condition: null } : { condition: 'par', parTurns: remaining } };
         benchChanged = true;
       }
     });
@@ -2990,13 +3008,19 @@ export function BattleScreen({
         {/* Move selection — shown during player_turn */}
         {(phase === 'player_turn' || phase === 'resolving') && (
           <div className="px-2 pb-2 pt-1">
+            {activePF?.mustRecharge && (
+                <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: '0.48rem', color: '#f87171', textAlign: 'center', padding: '4px 0', background: 'rgba(0,0,0,0.2)', borderRadius: 4, marginBottom: 4 }}>
+                  ⚡ Rechargement en cours...
+                </div>
+              )}
             {playerMoves.length > 0 ? (
               <div className="grid grid-cols-2 gap-1.5">
                 {playerMoves.map((move, i) => {
                   const pp = activePF?.currentPP[i] ?? 0;
                   const isCharging = !!(activePF?.chargingMove);
                   const isThisChargingMove = activePF?.chargingMove?.moveIndex === i;
-                  const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat || !!(pvpControls?.isWaiting) || isCharging || pvpWaitingEnemySwitch || !!(pvpControls?.opponentIsSwitching);
+                  const isRecharging = !!(activePF?.mustRecharge);
+                  const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat || !!(pvpControls?.isWaiting) || isCharging || pvpWaitingEnemySwitch || !!(pvpControls?.opponentIsSwitching) || isRecharging;
                   const typeColor = TYPE_COLORS[move.type as PokemonType] ?? '#888';
                   const ppLow = pp <= Math.floor((move.pp ?? 15) / 4);
                   return (
