@@ -16,7 +16,7 @@ export const BOTTOM_NAV_HEIGHT = 72;
 
 const MAIN_ITEMS = [
   { view: 'hunt'       as View, icon: '🎯', label: 'Chasse',     color: 'text-white',       active: 'bg-white/10' },
-  { view: 'collection' as View, icon: '📚', label: 'Collection', color: 'text-blue-400',    active: 'bg-blue-900/30' },
+  { view: 'collection' as View, icon: '📚', label: 'Pokédex',    color: 'text-blue-400',    active: 'bg-blue-900/30' },
   { view: 'team'       as View, icon: '🖥️', label: 'PC',         color: 'text-emerald-400', active: 'bg-emerald-900/30' },
   { view: 'pokepark'   as View, icon: '🌿', label: 'PokéParc',   color: 'text-green-300',   active: 'bg-green-900/30' },
   { view: 'throne'     as View, icon: '👑', label: 'Trône',      color: 'text-yellow-400',  active: 'bg-yellow-900/30' },

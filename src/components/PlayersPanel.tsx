@@ -230,7 +230,7 @@ export function PlayersPanel({ onClose, isAdmin = false, onBattle3v3, onPvpChall
       <div className="flex gap-1.5 px-4 py-2 border-b border-slate-700/50 shrink-0 overflow-x-auto">
         {([
           ['alpha', '🔤 A→Z'],
-          ['collection', '📚 Collection'],
+          ['collection', '📚 Pokédex'],
           ['shiny', '✨ Shinies'],
         ] as [typeof sort, string][]).map(([key, label]) => (
           <button

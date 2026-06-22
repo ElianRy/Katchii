@@ -124,21 +124,24 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
           <div className="flex items-center gap-2 flex-1">
             {/* Pokéball icon */}
             <div style={{
-              width: 20, height: 20, borderRadius: '50%',
-              background: 'linear-gradient(180deg, white 50%, #1f2937 50%)',
-              border: '2px solid white',
-              boxShadow: '0 0 4px rgba(0,0,0,0.5)',
+              width: 22, height: 22, borderRadius: '50%',
+              background: 'linear-gradient(180deg, #dc2626 50%, white 50%)',
+              border: '2px solid #111',
+              boxShadow: '0 0 4px rgba(0,0,0,0.4)',
+              position: 'relative',
               flexShrink: 0,
-            }} />
+            }}>
+              <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 2, background: '#111', transform: 'translateY(-50%)' }} />
+              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 6, height: 6, borderRadius: '50%', background: 'white', border: '1.5px solid #111', zIndex: 1 }} />
+            </div>
             <span style={{ color: 'white', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '0.15em', fontFamily: 'monospace' }}>
               POKÉDEX
             </span>
+            <div style={{ flex: 1 }} />
+            <span style={{ color: '#fecaca', fontSize: '0.6rem', fontFamily: 'monospace' }}>
+              {totalCaught}/151 · {totalShinyCaught}✨
+            </span>
           </div>
-        </div>
-        <div style={{ marginTop: '0.2rem', paddingLeft: '2rem' }}>
-          <span style={{ color: '#fecaca', fontSize: '0.65rem', fontFamily: 'monospace' }}>
-            GÉN. I — {totalCaught}/151 capturés · {totalShinyCaught} ✨ shinies
-          </span>
         </div>
       </div>
 
@@ -245,64 +248,66 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
 
           {/* Filter dropdown */}
           {filterOpen && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 10px', borderBottom: '1px solid #7f1d1d', background: '#7f1d1d', flexShrink: 0 }}>
-              {filterTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => { applyFilter(tab.id); setFilterOpen(false); }}
-                  style={{
-                    padding: '3px 10px', borderRadius: 99,
-                    fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace',
-                    cursor: 'pointer', whiteSpace: 'nowrap',
-                    background: filter === tab.id
-                      ? (RARITY_ORDER.includes(tab.id as Rarity) ? RARITY_COLORS[tab.id as Rarity] : '#dc2626')
-                      : '#991b1b',
-                    color: filter === tab.id ? 'white' : '#fca5a5',
-                    border: `1px solid ${filter === tab.id ? 'transparent' : '#ef444433'}`,
-                  }}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div style={{ borderBottom: '1px solid #7f1d1d', background: '#7f1d1d', flexShrink: 0, padding: '8px 10px' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                {filterTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => { applyFilter(tab.id); setFilterOpen(false); }}
+                    style={{
+                      padding: '3px 10px', borderRadius: 99,
+                      fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace',
+                      cursor: 'pointer', whiteSpace: 'nowrap',
+                      background: filter === tab.id
+                        ? (RARITY_ORDER.includes(tab.id as Rarity) ? RARITY_COLORS[tab.id as Rarity] : '#dc2626')
+                        : '#991b1b',
+                      color: filter === tab.id ? 'white' : '#fca5a5',
+                      border: `1px solid ${filter === tab.id ? 'transparent' : '#ef444433'}`,
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+              {/* Type filter inside dropdown */}
+              <div style={{ display: 'flex', gap: 5, overflowX: 'auto', paddingBottom: 2 }}>
+                {([null, 'normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon'] as (PokemonType | null)[]).map((t) => (
+                  <button
+                    key={t ?? 'all'}
+                    onClick={() => setTypeFilter(t === typeFilter ? null : t)}
+                    style={{
+                      padding: '2px 8px', borderRadius: 99,
+                      fontSize: '0.6rem', fontWeight: 900, fontFamily: 'monospace',
+                      cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                      ...(t === null
+                        ? {
+                            background: typeFilter === null ? '#5a0e0e' : '#991b1b',
+                            color: typeFilter === null ? '#fca5a5' : '#9ca3af',
+                            border: `1px solid ${typeFilter === null ? '#ef4444' : '#374151'}`,
+                          }
+                        : {
+                            background: typeFilter === t ? (TYPE_COLORS[t] ?? '#888') : `${TYPE_COLORS[t] ?? '#888'}22`,
+                            color: typeFilter === t ? 'white' : TYPE_COLORS[t] ?? '#888',
+                            border: `1px solid ${TYPE_COLORS[t] ?? '#888'}${typeFilter === t ? '' : '55'}`,
+                          }
+                      ),
+                    }}
+                  >
+                    {t === null ? 'Tous types' : t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Type filter row */}
-          <div style={{ display: 'flex', gap: 5, padding: '5px 10px', borderBottom: '1px solid #7f1d1d', background: '#991b1b', overflowX: 'auto', flexShrink: 0 }}>
-            {([null, 'normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon'] as (PokemonType | null)[]).map((t) => (
-              <button
-                key={t ?? 'all'}
-                onClick={() => setTypeFilter(t === typeFilter ? null : t)}
-                style={{
-                  padding: '2px 8px', borderRadius: 99,
-                  fontSize: '0.6rem', fontWeight: 900, fontFamily: 'monospace',
-                  cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-                  ...(t === null
-                    ? {
-                        background: typeFilter === null ? '#7f1d1d' : '#1f2937',
-                        color: typeFilter === null ? '#fca5a5' : '#9ca3af',
-                        border: `1px solid ${typeFilter === null ? '#ef4444' : '#374151'}`,
-                      }
-                    : {
-                        background: typeFilter === t ? (TYPE_COLORS[t] ?? '#888') : `${TYPE_COLORS[t] ?? '#888'}22`,
-                        color: typeFilter === t ? 'white' : TYPE_COLORS[t] ?? '#888',
-                        border: `1px solid ${TYPE_COLORS[t] ?? '#888'}${typeFilter === t ? '' : '55'}`,
-                      }
-                  ),
-                }}
-              >
-                {t === null ? 'Tous' : t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            ))}
-          </div>
-
           {/* LCD Screen wrapping the grid */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '8px', background: '#b91c1c' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px 80px 8px', background: '#b91c1c' }}>
             <div style={{
-              background: '#0f1a0f',
+              background: '#c8dce8',
+              backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,40,0.04) 0px, rgba(0,0,40,0.04) 1px, transparent 1px, transparent 3px)',
               borderRadius: 12,
               padding: '10px 8px',
-              boxShadow: 'inset 0 0 16px rgba(0,0,0,0.6), inset 0 0 4px rgba(74,222,128,0.08)',
+              boxShadow: 'inset 0 0 20px rgba(0,0,80,0.15), inset 0 0 4px rgba(100,150,200,0.3)',
               minHeight: '100%',
             }}>
               <div style={{
@@ -328,9 +333,9 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                         padding: '5px 3px 4px',
                         borderRadius: 6,
                         cursor: caught ? 'pointer' : 'default',
-                        background: caught ? '#1a2a1a' : '#111c11',
-                        border: '1px solid #1f2d1f',
-                        borderTop: caught ? `2px solid ${rarityColor}` : '2px solid #1f2d1f',
+                        background: caught ? 'rgba(255,255,255,0.5)' : 'rgba(180,200,220,0.4)',
+                        border: caught ? '1px solid rgba(100,150,200,0.4)' : '1px solid rgba(100,150,200,0.15)',
+                        borderTop: caught ? `2px solid ${rarityColor}` : '2px solid rgba(100,150,200,0.15)',
                         position: 'relative',
                       }}
                     >
@@ -338,7 +343,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                       <div style={{
                         fontSize: '0.5rem',
                         fontFamily: 'monospace',
-                        color: caught ? '#4ade80' : '#2d4a2d',
+                        color: caught ? '#2c4a6a' : 'rgba(80,120,160,0.4)',
                         lineHeight: 1,
                         alignSelf: 'flex-start',
                         paddingLeft: 2,
@@ -379,7 +384,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                       <div style={{
                         fontSize: '0.5rem',
                         fontFamily: 'monospace',
-                        color: caught ? 'white' : '#2d4a2d',
+                        color: caught ? '#1a2a3a' : 'rgba(80,120,160,0.4)',
                         textAlign: 'center',
                         lineHeight: 1.2,
                         overflow: 'hidden',
@@ -489,7 +494,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
         return (
           <div
             className="fixed inset-0 z-[520] flex flex-col"
-            style={{ background: '#b91c1c', fontFamily: 'monospace' }}
+            style={{ background: '#dce8f0', fontFamily: 'monospace' }}
           >
             {/* Top bar */}
             <div
@@ -516,7 +521,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
             </div>
 
             {/* Scrollable content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 80px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 80px', display: 'flex', flexDirection: 'column', gap: 12, background: '#dce8f0' }}>
 
               {/* Sprite + name block */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
@@ -524,10 +529,11 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                   className={isShiny ? 'shiny-rainbow' : ''}
                   style={{
                     display: 'inline-block',
-                    background: '#0f1a0f',
+                    background: '#c8dce8',
+                    backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,40,0.04) 0px, rgba(0,0,40,0.04) 1px, transparent 1px, transparent 3px)',
                     borderRadius: 16,
                     padding: '12px',
-                    boxShadow: `0 0 24px ${rarityColor}66, inset 0 0 10px rgba(0,0,0,0.5)`,
+                    boxShadow: `0 0 24px ${rarityColor}66, inset 0 0 10px rgba(0,0,80,0.1)`,
                     border: `2px solid ${rarityColor}44`,
                   }}
                 >
@@ -543,8 +549,8 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                   />
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ color: 'white', fontWeight: 900, fontSize: '1.3rem', fontFamily: 'monospace' }}>{p.name}</div>
-                  <div style={{ color: '#4ade80', fontSize: '0.75rem', fontFamily: 'monospace', marginTop: 2 }}>{numStr}</div>
+                  <div style={{ color: '#1a2a3a', fontWeight: 900, fontSize: '1.3rem', fontFamily: 'monospace' }}>{p.name}</div>
+                  <div style={{ color: '#2c4a6a', fontSize: '0.75rem', fontFamily: 'monospace', marginTop: 2 }}>{numStr}</div>
                   <div style={{ color: rarityColor, fontSize: '0.65rem', fontFamily: 'monospace', marginTop: 2 }}>{RARITY_LABELS[p.rarity]}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -561,11 +567,11 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                 </div>
                 {/* Capture count chip */}
                 <div style={{
-                  background: '#0f1a0f',
-                  border: '1px solid #4ade8033',
+                  background: 'white',
+                  border: '1px solid rgba(60,100,150,0.3)',
                   borderRadius: 99,
                   padding: '3px 12px',
-                  color: '#4ade80',
+                  color: '#2c4a6a',
                   fontSize: '0.65rem',
                   fontFamily: 'monospace',
                   fontWeight: 700,
@@ -575,16 +581,16 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
               </div>
 
               {/* Level / XP bar */}
-              <div style={{ background: '#111c11', borderRadius: 10, padding: '10px 14px', border: '1px solid #1f2d1f', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 14px', border: '1px solid #a0c0d8', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#6b7280', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700 }}>NIVEAU</span>
-                  <span style={{ color: 'white', fontSize: '0.85rem', fontFamily: 'monospace', fontWeight: 900 }}>{lvData.level >= 100 ? 'MAX' : lvData.level}</span>
+                  <span style={{ color: '#4a6a8a', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700 }}>NIVEAU</span>
+                  <span style={{ color: '#1a2a3a', fontSize: '0.85rem', fontFamily: 'monospace', fontWeight: 900 }}>{lvData.level >= 100 ? 'MAX' : lvData.level}</span>
                 </div>
-                <div style={{ width: '100%', background: '#0f1a0f', borderRadius: 99, height: 6, border: '1px solid #1f2d1f' }}>
+                <div style={{ width: '100%', background: '#a8c0d0', borderRadius: 99, height: 6, border: '1px solid #90b0c8' }}>
                   <div style={{ height: '100%', borderRadius: 99, transition: 'width 0.4s', width: `${xpPct}%`, background: `linear-gradient(90deg, ${rarityColor}, #fbbf24)` }} />
                 </div>
                 {lvData.level < 100 && (
-                  <div style={{ textAlign: 'right', fontSize: '0.6rem', color: '#4ade8066', fontFamily: 'monospace' }}>
+                  <div style={{ textAlign: 'right', fontSize: '0.6rem', color: '#4a6a8a', fontFamily: 'monospace' }}>
                     {lvData.xp} / {xpToNextLevel(lvData.level)} XP
                   </div>
                 )}
@@ -596,16 +602,16 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
               </div>
 
               {/* Tab selector */}
-              <div style={{ display: 'flex', gap: 6, background: '#991b1b', borderRadius: 8, padding: 4 }}>
+              <div style={{ display: 'flex', gap: 6, background: 'rgba(100,150,200,0.2)', borderRadius: 8, padding: 4 }}>
                 {(['attaques', 'stats'] as const).map(tab => (
                   <button key={tab} onClick={() => setDetailTab(tab)}
                     style={{
                       flex: 1, padding: '6px', borderRadius: 6,
                       fontSize: '0.68rem', fontWeight: 900, fontFamily: 'monospace',
                       cursor: 'pointer', border: 'none',
-                      background: detailTab === tab ? '#1f2937' : 'transparent',
-                      color: detailTab === tab ? '#4ade80' : '#fca5a5',
-                      boxShadow: detailTab === tab ? 'inset 0 1px 3px rgba(0,0,0,0.4)' : 'none',
+                      background: detailTab === tab ? 'rgba(255,255,255,0.8)' : 'transparent',
+                      color: detailTab === tab ? '#1a4a7a' : '#4a6a8a',
+                      boxShadow: detailTab === tab ? 'inset 0 1px 3px rgba(0,0,80,0.15)' : 'none',
                     }}>
                     {tab === 'attaques' ? '⚔️ ATTAQUES' : '📊 STATS'}
                   </button>
@@ -617,9 +623,9 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                 <>
                   {/* Movepool editor */}
                   {pool.length > 0 && (
-                    <div style={{ background: '#111c11', borderRadius: 10, padding: '10px 12px', border: '1px solid #1f2d1f' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 12px', border: '1px solid #a0c0d8' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                        <span style={{ color: '#6b7280', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>ATTAQUES ACTIVES</span>
+                        <span style={{ color: '#4a6a8a', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>ATTAQUES ACTIVES</span>
                         {onSaveCustomMoves && !editingMoves && (
                           <button
                             style={{ fontSize: '0.6rem', fontWeight: 900, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 99, background: '#7f1d1d', color: '#fca5a5', border: '1px solid #ef444455', cursor: 'pointer' }}
@@ -662,7 +668,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                         </div>
                       ) : (
                         <div>
-                          <div style={{ color: '#6b7280', fontSize: '0.6rem', marginBottom: 6, fontFamily: 'monospace' }}>Sélectionnez exactement 4 attaques ({pendingMoves.length}/4)</div>
+                          <div style={{ color: '#4a6a8a', fontSize: '0.6rem', marginBottom: 6, fontFamily: 'monospace' }}>Sélectionnez exactement 4 attaques ({pendingMoves.length}/4)</div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 220, overflowY: 'auto' }}>
                             {availablePool.map(slug => {
                               const m = MOVES[slug];
@@ -675,8 +681,8 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                                   style={{
                                     display: 'flex', flexDirection: 'column',
                                     borderRadius: 7, padding: '6px 8px', textAlign: 'left', gap: 3,
-                                    background: isSelected ? '#1a3a1a' : '#0f1a0f',
-                                    border: `1px solid ${isSelected ? '#4ade80' : '#1f2d1f'}`,
+                                    background: isSelected ? 'rgba(100,150,200,0.2)' : 'rgba(255,255,255,0.4)',
+                                    border: `1px solid ${isSelected ? '#4a7ab0' : '#a0c0d8'}`,
                                     cursor: 'pointer',
                                   }}
                                   onClick={() => {
@@ -692,9 +698,9 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                                       width: 14, height: 14, borderRadius: 3, flexShrink: 0,
                                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                                       fontSize: '0.55rem', fontFamily: 'monospace', fontWeight: 900,
-                                      background: isSelected ? '#4ade80' : 'transparent',
-                                      color: isSelected ? '#0f1a0f' : '#4ade8044',
-                                      border: `1px solid ${isSelected ? '#4ade80' : '#2d4a2d'}`,
+                                      background: isSelected ? '#1a4a7a' : 'transparent',
+                                      color: isSelected ? 'white' : '#a0c0d8',
+                                      border: `1px solid ${isSelected ? '#1a4a7a' : '#a0c0d8'}`,
                                     }}>
                                       {isSelected ? '✓' : ''}
                                     </span>
@@ -734,27 +740,27 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                 const profileLabel = profile === 'tank' ? '🛡️ Tank' : profile === 'equilibre' ? '⚖️ Équilibré' : '💥 Attaquant';
                 const profileColor = profile === 'tank' ? '#4ade80' : profile === 'equilibre' ? '#60a5fa' : '#f87171';
                 return (
-                  <div style={{ background: '#111c11', borderRadius: 10, padding: '12px 14px', border: '1px solid #1f2d1f', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '12px 14px', border: '1px solid #a0c0d8', display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span style={{ color: '#6b7280', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>PROFIL :</span>
+                      <span style={{ color: '#4a6a8a', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>PROFIL :</span>
                       <span style={{ fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 99, color: profileColor, background: `${profileColor}22`, border: `1px solid ${profileColor}55` }}>{profileLabel}</span>
                     </div>
-                    <div style={{ color: '#4ade80', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 900, letterSpacing: '0.1em', borderBottom: '1px solid #1f2d1f', paddingBottom: 6, marginBottom: 4 }}>
+                    <div style={{ color: '#1a4a7a', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 900, letterSpacing: '0.1em', borderBottom: '1px solid #a0c0d8', paddingBottom: 6, marginBottom: 4 }}>
                       STATS DE BASE
                     </div>
                     {rows.map(([label, val, color]) => (
                       <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ color: '#6b7280', fontWeight: 700, fontSize: '0.65rem', fontFamily: 'monospace', width: 28, flexShrink: 0 }}>{label}</span>
-                        <div style={{ flex: 1, background: '#0f1a0f', borderRadius: 99, height: 6, border: '1px solid #1f2d1f' }}>
+                        <span style={{ color: '#4a6a8a', fontWeight: 700, fontSize: '0.65rem', fontFamily: 'monospace', width: 28, flexShrink: 0 }}>{label}</span>
+                        <div style={{ flex: 1, background: '#a8c0d0', borderRadius: 99, height: 6, border: '1px solid #90b0c8' }}>
                           <div style={{ height: '100%', borderRadius: 99, background: color, width: `${Math.round((val / maxStat) * 100)}%`, transition: 'width 0.4s' }} />
                         </div>
-                        <span style={{ color: 'white', fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace', width: 24, textAlign: 'right' }}>{val}</span>
+                        <span style={{ color: '#1a2a3a', fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace', width: 24, textAlign: 'right' }}>{val}</span>
                       </div>
                     ))}
-                    <div style={{ marginTop: 4, paddingTop: 8, borderTop: '1px solid #1f2d1f', fontSize: '0.6rem', fontFamily: 'monospace', color: '#6b7280' }}>
+                    <div style={{ marginTop: 4, paddingTop: 8, borderTop: '1px solid #a0c0d8', fontSize: '0.6rem', fontFamily: 'monospace', color: '#4a6a8a' }}>
                       <span style={{ fontWeight: 700 }}>Attaque signature : </span>
-                      <span style={{ color: 'white', fontWeight: 700 }}>{stats.moves[0].name}</span>
-                      <span style={{ color: '#4b5563' }}> ({stats.moves[0].power} pts · {stats.moves[0].category === 'physical' ? 'Physique' : 'Spéciale'})</span>
+                      <span style={{ color: '#1a2a3a', fontWeight: 700 }}>{stats.moves[0].name}</span>
+                      <span style={{ color: '#6a8aaa' }}> ({stats.moves[0].power} pts · {stats.moves[0].category === 'physical' ? 'Physique' : 'Spéciale'})</span>
                     </div>
                   </div>
                 );
