@@ -83,7 +83,7 @@ function chunkIntoBoxes(ids: number[]): number[][] {
 
 export function PcStorage({
   state, username, onUpdateParty, onUpdatePcBoxes, onUpdateBoxNames, onClose,
-  isAdmin, onSetLevel,
+  isAdmin: _isAdmin, onSetLevel: _onSetLevel,
   currentZoneId, onAddXp, onBattleWin, onTrainingBattle, onTriggerEvo,
   onSaveCustomMoves,
 }: Props) {
@@ -97,7 +97,6 @@ export function PcStorage({
     setBoxIndex(idx);
     try { localStorage.setItem(PC_BOX_KEY, String(idx)); } catch {}
   };
-  const [selected, setSelected] = useState<{ id: number; from: 'party' | 'pc' } | null>(null);
   const [pokemonDetailId, setPokemonDetailId] = useState<number | null>(null);
   const [autoTraining, setAutoTraining] = useState(false);
   const [xpBarWidths, setXpBarWidths] = useState<Record<number, number>>({});
@@ -116,7 +115,7 @@ export function PcStorage({
   const [battleResult, setBattleResult] = useState<{ won: boolean; xpGains: Record<number, number> } | null>(null);
 
   // Manual evolution trigger
-  const [evoConfirmId, setEvoConfirmId] = useState<number | null>(null);
+  const [_evoConfirmId, _setEvoConfirmId] = useState<number | null>(null);
   const [pendingEvoChoice, setPendingEvoChoice] = useState<{ oldId: number; newId?: number; choices?: number[] } | null>(null);
 
   // Drag & drop
@@ -175,7 +174,6 @@ export function PcStorage({
     );
     onUpdateParty(newParty);
     onUpdatePcBoxes(newBoxes);
-    setSelected(null);
   }, [party, pcBoxes, safeBoxIdx, onUpdateParty, onUpdatePcBoxes]);
 
   const moveToParty = useCallback((pokemonId: number) => {
@@ -183,7 +181,6 @@ export function PcStorage({
     const newParty = [...party, pokemonId];
     onUpdateParty(newParty);
     onUpdatePcBoxes(newBoxes);
-    setSelected(null);
     setSwapPickOpen(false);
     setPendingPcId(null);
   }, [party, pcBoxes, onUpdateParty, onUpdatePcBoxes]);
@@ -198,7 +195,6 @@ export function PcStorage({
     );
     onUpdateParty(newParty);
     onUpdatePcBoxes(newBoxes);
-    setSelected(null);
     setSwapPickOpen(false);
     setPendingPcId(null);
   }, [party, pcBoxes, safeBoxIdx, onUpdateParty, onUpdatePcBoxes]);
@@ -254,7 +250,6 @@ export function PcStorage({
     longPressTimerRef.current = setTimeout(() => {
       dragRef.current = { pokemonId, fromType, fromIdx, x: touch.clientX, y: touch.clientY };
       setDragging({ pokemonId, x: touch.clientX, y: touch.clientY });
-      setSelected(null);
     }, 450);
   }, []);
 
@@ -379,10 +374,6 @@ export function PcStorage({
     return () => clearTimeout(t);
   }, [battleResult]);
 
-  const selectedPokemon = selected ? POKEMON_BY_ID[selected.id] : null;
-  const selectedLevel = selected ? (state.pokemonLevels?.[selected.id]?.level ?? 1) : 1;
-  const selectedXp = selected ? (state.pokemonLevels?.[selected.id]?.xp ?? 0) : 0;
-
   // ── Pokemon detail overlay ────────────────────────────────────────────────────
   if (pokemonDetailId !== null) {
     const detailId = pokemonDetailId;
@@ -422,6 +413,11 @@ export function PcStorage({
 
         {/* Stats */}
         <div className="mx-3 mb-3 rounded-xl px-3 py-2" style={{ background: 'rgba(255,255,255,0.6)', border: '2px solid #6c90b0' }}>
+          <div className="flex items-center gap-1 mb-2">
+            {(POKEMON_TYPE[detailId] ?? []).map(t => (
+              <span key={t} className="text-white font-bold px-1.5 py-0.5 rounded" style={{ background: TYPE_COLORS[t] ?? '#888', fontSize: '0.6rem' }}>{t.toUpperCase()}</span>
+            ))}
+          </div>
           <div className="font-black text-slate-700 text-xs mb-2">Statistiques</div>
           {[
             { label: 'HP', value: calcMaxHp(detailId, detailLevel) },
@@ -895,7 +891,6 @@ export function PcStorage({
               }
               const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
               const isShiny = (state.shinyCollection[id] ?? 0) > 0;
-              const isSel = selected?.id === id;
               const isDragged = dragging?.pokemonId === id;
               const evoEntry = EVOLUTION_DATA[id];
               const canEvolve = evoEntry && lvData.level >= evoEntry.level;
@@ -909,7 +904,6 @@ export function PcStorage({
                   data-slot-idx={slotIdx}
                   onClick={() => {
                     if (dragging) return;
-                    setSelected(null);
                     setPokemonDetailId(id);
                     setSwapPickOpen(false);
                   }}
@@ -917,14 +911,13 @@ export function PcStorage({
                   className="rounded flex flex-col items-center justify-center p-0.5 transition-all active:scale-95"
                   style={{
                     width: 52, height: 52,
-                    background: isSel ? 'rgba(255,220,100,0.7)' : 'rgba(255,255,255,0.15)',
-                    outline: isSel ? '2px solid #f59e0b' : 'none',
+                    background: 'rgba(255,255,255,0.15)',
                     opacity: isDragged ? 0.3 : 1,
                     position: 'relative',
                   }}
                 >
                   <ShinySprite pokemonId={id} isShiny={isShiny} width={32} height={32} compact />
-                  <span className="font-black" style={{ fontSize: '0.42rem', color: isSel ? '#92400e' : '#1e3a1e' }}>
+                  <span className="font-black" style={{ fontSize: '0.42rem', color: '#1e3a1e' }}>
                     Niv.{lvData.level}
                   </span>
                   {showEvoBadge && (
@@ -963,7 +956,6 @@ export function PcStorage({
               const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
               const isShiny = (state.shinyCollection[id] ?? 0) > 0;
               const color = RARITY_COLORS[poke?.rarity ?? 'commun'];
-              const isSel = selected?.id === id;
               const isDragged = dragging?.pokemonId === id;
               return (
                 <button
@@ -972,15 +964,14 @@ export function PcStorage({
                   data-slot-idx={i}
                   onClick={() => {
                     if (dragging) return;
-                    setSelected(null);
                     setPokemonDetailId(id);
                     setSwapPickOpen(false);
                   }}
                   onTouchStart={e => handleTouchStart(e, id, 'party', i)}
                   className="flex-1 h-16 rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95"
                   style={{
-                    background: isSel ? 'rgba(255,220,80,0.6)' : 'rgba(255,255,255,0.5)',
-                    border: `2px solid ${isSel ? '#f59e0b' : '#8fa8c0'}`,
+                    background: 'rgba(255,255,255,0.5)',
+                    border: '2px solid #8fa8c0',
                     opacity: isDragged ? 0.3 : 1,
                   }}
                 >
@@ -991,127 +982,6 @@ export function PcStorage({
             })}
           </div>
 
-          {/* Selected pokemon detail */}
-          {selected && selectedPokemon && (
-            <div className="mx-2 mb-2 px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.6)', border: '2px solid #6c90b0' }}>
-              <div className="flex items-center gap-2 mb-1.5">
-                <ShinySprite pokemonId={selected.id} isShiny={(state.shinyCollection[selected.id] ?? 0) > 0} width={44} height={44} />
-                <div className="flex-1">
-                  <div className="font-black text-slate-800 text-sm">{selectedPokemon.name}</div>
-                  <div className="flex gap-1 mb-1">
-                    {(POKEMON_TYPE[selected.id] ?? []).map(t => (
-                      <span key={t} className="text-white font-bold px-1 py-0.5 rounded" style={{ background: TYPE_COLORS[t] ?? '#888', fontSize: '0.55rem' }}>
-                        {t.toUpperCase().slice(0, 4)}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="text-slate-600 text-xs">
-                    Niv. {selectedLevel} · HP {calcMaxHp(selected.id, selectedLevel)} · ATK {calcAttack(selected.id, selectedLevel)}
-                  </div>
-                  {selectedLevel < 100 && (
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <div className="flex-1 bg-slate-300 rounded-full overflow-hidden" style={{ height: 4 }}>
-                        <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.floor(selectedXp / xpToNextLevel(selectedLevel) * 100))}%`, background: '#3b82f6' }} />
-                      </div>
-                      <span className="text-slate-500" style={{ fontSize: '0.42rem' }}>{selectedXp}/{xpToNextLevel(selectedLevel)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {isAdmin && onSetLevel && (
-                <div className="mb-1.5">
-                  <div className="text-slate-500 text-xs mb-0.5">Niveau (admin)</div>
-                  <input
-                    type="range" min={1} max={100}
-                    value={selectedLevel}
-                    onChange={e => onSetLevel(selected.id, Number(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
-              )}
-
-              {(() => {
-                const evoEntry = EVOLUTION_DATA[selected.id];
-                if (!evoEntry || selectedLevel < evoEntry.level) return null;
-                const targets = evoEntry.choices ?? (evoEntry.evolvesInto ? [evoEntry.evolvesInto] : []);
-                const allOwned = targets.every(tid => (state.normalCollection[tid] ?? 0) > 0);
-                if (allOwned) return null;
-                if (evoConfirmId === selected.id) {
-                  return (
-                    <div className="mb-1.5 rounded-lg p-2" style={{ background: 'rgba(251,191,36,0.15)', border: '1px solid #fbbf24' }}>
-                      <div className="text-xs text-slate-700 font-bold mb-1.5 text-center">Faire évoluer {selectedPokemon.name} ?</div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            const entry = EVOLUTION_DATA[selected.id];
-                            if (!entry) return;
-                            if (entry.choices) {
-                              setPendingEvoChoice({ oldId: selected.id, choices: entry.choices });
-                            } else if (entry.evolvesInto) {
-                              setPendingEvoChoice({ oldId: selected.id, newId: entry.evolvesInto });
-                            }
-                            setEvoConfirmId(null);
-                          }}
-                          className="flex-1 py-1 rounded-lg font-black text-xs text-black"
-                          style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b)' }}
-                        >Oui !</button>
-                        <button
-                          onClick={() => setEvoConfirmId(null)}
-                          className="flex-1 py-1 rounded-lg font-bold text-xs text-slate-600"
-                          style={{ background: '#d0d8e0', border: '1px solid #a0b0c0' }}
-                        >Annuler</button>
-                      </div>
-                    </div>
-                  );
-                }
-                return (
-                  <button
-                    onClick={() => setEvoConfirmId(selected.id)}
-                    className="w-full py-1.5 rounded-lg font-black text-xs text-black mb-1.5"
-                    style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b)' }}
-                  >
-                    ✨ Évoluer
-                  </button>
-                );
-              })()}
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => openMoveEditor(selected.id)}
-                  className="flex-1 py-1.5 rounded-lg font-bold text-xs text-white"
-                  style={{ background: '#5b6fac', border: '2px solid #3a4f8c', boxShadow: '0 2px 0 #2a3570' }}
-                >
-                  ⚔️ Attaques
-                </button>
-                {selected.from === 'party' && (
-                  <button
-                    onClick={() => moveToPC(selected.id)}
-                    className="flex-1 py-1.5 rounded-lg font-bold text-xs text-white"
-                    style={{ background: '#6c8fac', border: '2px solid #4a7090', boxShadow: '0 2px 0 #2a5070' }}
-                  >
-                    Déposer
-                  </button>
-                )}
-                {selected.from === 'pc' && (
-                  <button
-                    onClick={() => handleTakeFromPC(selected.id)}
-                    className="flex-1 py-1.5 rounded-lg font-bold text-xs text-white"
-                    style={{ background: '#e06020', border: '2px solid #b04010', boxShadow: '0 2px 0 #802808' }}
-                  >
-                    Prendre
-                  </button>
-                )}
-                <button
-                  onClick={() => setSelected(null)}
-                  className="py-1.5 px-3 rounded-lg font-bold text-xs text-slate-600"
-                  style={{ background: '#d0d8e0', border: '2px solid #a0b0c0' }}
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
