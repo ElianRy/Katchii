@@ -51,6 +51,7 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
   const [opponentSwitchIdx, setOpponentSwitchIdx] = useState<number | null>(null);
   const [opponentVoluntarySwitchIdx, setOpponentVoluntarySwitchIdx] = useState<number | null>(null);
   const [opponentCustomMoves, setOpponentCustomMoves] = useState<Record<number, string[]>>({});
+  const [opponentIsSwitching, setOpponentIsSwitching] = useState(false);
   const myMoveRef = useRef<number | null>(null);
   const opponentMoveRef = useRef<number | null>(null);
   const channelRef = useRef<ReturnType<typeof getPvpBattleChannel> | null>(null);
@@ -80,9 +81,15 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
       tryStartTurn();
     });
 
+    // Opponent signals they need to pick a replacement after KO
+    channel.on('broadcast', { event: 'pvp_needs_switch' }, () => {
+      setOpponentIsSwitching(true);
+    });
+
     // KO-forced switch (opponent selected new pokemon after their pokemon fainted)
     channel.on('broadcast', { event: 'pvp_switch' }, ({ payload }) => {
       const { switchIdx } = payload as { switchIdx: number };
+      setOpponentIsSwitching(false);
       setOpponentSwitchIdx(null);
       setTimeout(() => setOpponentSwitchIdx(switchIdx), 0);
     });
@@ -191,6 +198,10 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
     channelRef.current?.send({ type: 'broadcast', event: 'pvp_state_sync', payload: sync });
   }, []);
 
+  const handleSwitchNeeded = useCallback(() => {
+    channelRef.current?.send({ type: 'broadcast', event: 'pvp_needs_switch', payload: {} });
+  }, []);
+
   const handleBattleEnd = useCallback(async (won: boolean) => {
     try { localStorage.removeItem(pvpStateKey(session.id)); } catch {}
     if (!battleEndedRef.current) {
@@ -230,6 +241,8 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
         pendingStateSync,
         onAbandon: handleAbandon,
         forceEnd,
+        onSwitchNeeded: handleSwitchNeeded,
+        opponentIsSwitching,
         onSwitch: (newIdx: number, voluntary?: boolean) => {
           if (voluntary) {
             channelRef.current?.send({ type: 'broadcast', event: 'pvp_voluntary_switch', payload: { switchIdx: newIdx } });

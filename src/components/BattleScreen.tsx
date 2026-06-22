@@ -83,8 +83,10 @@ interface Props {
     onAbandon?: () => void;
     forceEnd?: boolean | null;
     onSwitch?: (newIdx: number, voluntary?: boolean) => void;
+    onSwitchNeeded?: () => void;
     opponentSwitchIdx?: number | null;
     opponentVoluntarySwitchIdx?: number | null;
+    opponentIsSwitching?: boolean;
     sessionId?: string;
     savedState?: PvpPersistedState | null;
   };
@@ -1205,6 +1207,13 @@ export function BattleScreen({
     }
     pvpControls?.onSwitch?.(idx, fromPvp);
   }, [playerFighters, addLog, pvpControls]);
+
+  // PvP: notify opponent when we need to switch after KO
+  useEffect(() => {
+    if (phase !== 'switch' || !pvpControls) return;
+    pvpControls.onSwitchNeeded?.();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   // Auto combat: smart bench selection on forced switch
   useEffect(() => {
@@ -2701,7 +2710,7 @@ export function BattleScreen({
               } as React.CSSProperties} />
             ))}
             <div className="absolute inset-x-0 top-1/2 flex flex-col items-center gap-2"
-              style={{ transform: 'translateY(-50%)', zIndex: 25, pointerEvents: (pvpEndStats || (pvpControls?.forceEnd !== null && pvpControls?.forceEnd !== undefined)) ? 'auto' : 'none' }}>
+              style={{ transform: 'translateY(-50%)', zIndex: 60, pointerEvents: (pvpEndStats || (pvpControls?.forceEnd !== null && pvpControls?.forceEnd !== undefined)) ? 'auto' : 'none' }}>
               {won.current ? (
                 <>
                   <div style={{ fontSize: '4rem', animation: 'victory-trophy 0.7s cubic-bezier(.175,.885,.32,1.275) forwards' }}>🏆</div>
@@ -2979,7 +2988,7 @@ export function BattleScreen({
                   const pp = activePF?.currentPP[i] ?? 0;
                   const isCharging = !!(activePF?.chargingMove);
                   const isThisChargingMove = activePF?.chargingMove?.moveIndex === i;
-                  const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat || !!(pvpControls?.isWaiting) || isCharging || pvpWaitingEnemySwitch;
+                  const disabled = phase === 'resolving' || pp <= 0 || !!autoCombat || !!(pvpControls?.isWaiting) || isCharging || pvpWaitingEnemySwitch || !!(pvpControls?.opponentIsSwitching);
                   const typeColor = TYPE_COLORS[move.type as PokemonType] ?? '#888';
                   const ppLow = pp <= Math.floor((move.pp ?? 15) / 4);
                   return (
@@ -3065,7 +3074,7 @@ export function BattleScreen({
               </div>
             )}
 
-            {pvpWaitingEnemySwitch && (
+            {(pvpWaitingEnemySwitch || pvpControls?.opponentIsSwitching) && (
               <div className="mt-1.5 rounded-xl py-3 px-4 flex items-center justify-center gap-2"
                 style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', border: '2px solid #6366f1', boxShadow: '0 0 16px #6366f144' }}>
                 <span className="text-base" style={{ animation: 'pvp-blink 1s ease-in-out infinite' }}>⏳</span>
