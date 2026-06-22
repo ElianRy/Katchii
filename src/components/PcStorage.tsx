@@ -22,12 +22,15 @@ const ZONE_LEVEL_RANGE: Record<string, [number, number]> = {
   zone7: [70, 95], zone8: [80, 100], ligue: [85, 100], zone_libre: [85, 100],
 };
 
-function buildEnemyTeam(zoneId: string): TeamMember[] {
-  const [minLv, maxLv] = ZONE_LEVEL_RANGE[zoneId] ?? [10, 30];
-  const rarities: string[] = maxLv <= 25 ? ['commun', 'commun', 'peu_commun']
-    : maxLv <= 40 ? ['commun', 'peu_commun', 'peu_commun']
-    : maxLv <= 55 ? ['peu_commun', 'peu_commun', 'rare']
-    : maxLv <= 70 ? ['peu_commun', 'rare', 'rare']
+function buildEnemyTeam(_zoneId: string, avgLevel = 20): TeamMember[] {
+  // Enemy levels scale around the player's average team level (±20%)
+  const spread = Math.max(3, Math.round(avgLevel * 0.2));
+  const minLv = Math.max(1, avgLevel - spread);
+  const maxLv = Math.min(100, avgLevel + spread);
+  const rarities: string[] = avgLevel <= 25 ? ['commun', 'commun', 'peu_commun']
+    : avgLevel <= 40 ? ['commun', 'peu_commun', 'peu_commun']
+    : avgLevel <= 55 ? ['peu_commun', 'peu_commun', 'rare']
+    : avgLevel <= 70 ? ['peu_commun', 'rare', 'rare']
     : ['rare', 'elite', 'elite'];
   const picked: number[] = [];
   for (const rarity of rarities) {
@@ -329,7 +332,8 @@ export function PcStorage({
       const maxHp = calcMaxHp(id, lvData.level);
       return { pokemonId: id, level: lvData.level, xp: lvData.xp, currentHp: maxHp, maxHp, isShiny: (state.shinyCollection[id] ?? 0) > 0, moves };
     });
-    const enemyTeam = buildEnemyTeam(currentZoneId ?? 'zone1');
+    const avgLevel = Math.round(playerTeam.reduce((s, m) => s + m.level, 0) / playerTeam.length);
+    const enemyTeam = buildEnemyTeam(currentZoneId ?? 'zone1', avgLevel);
     setBattleTeam({ playerTeam, enemyTeam });
   }, [party, state.pokemonLevels, state.pokemonCustomMoves, state.shinyCollection, currentZoneId]);
 
