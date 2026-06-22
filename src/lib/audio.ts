@@ -251,10 +251,62 @@ export function playMenuMusic()         { playMusic('ecran_menu'); }
 export function playShinySpawn()        { playSfxFile('spawn_shiny'); }
 export function playShinySpawnLoud()    { playSfxFile('spawn_shiny', 1.5); }
 
+// ── Pooled SFX elements — reused to avoid accumulating AudioContext nodes ─
+// Each cached entry holds the HTMLAudioElement and its connected GainNode.
+// On replay we just reset currentTime and call play() instead of creating
+// new MediaElementSource nodes (which are one-shot in the Web Audio API).
+const _sfxPool: Map<string, { audio: HTMLAudioElement; gain: GainNode | null }> = new Map();
+
+function _getPooled(name: string, volMult: number): { audio: HTMLAudioElement; gain: GainNode | null } {
+  const key = name;
+  if (_sfxPool.has(key)) return _sfxPool.get(key)!;
+
+  const audio = new Audio(`${BASE_URL}/${name}.mp3`);
+  audio.crossOrigin = 'anonymous';
+  audio.volume = 1;
+
+  let gainNode: GainNode | null = null;
+  try {
+    const c = getCtx();
+    const source = c.createMediaElementSource(audio);
+    gainNode = c.createGain();
+    gainNode.gain.value = volMult;
+    source.connect(gainNode);
+    gainNode.connect(_sfxGain!);
+  } catch {
+    // fallback: element volume path — gain stays null
+  }
+
+  const entry = { audio, gain: gainNode };
+  _sfxPool.set(key, entry);
+  return entry;
+}
+
 // ── One-shot SFX from Supabase ────────────────────────────────────────────
 function playSfxFile(name: string, volMult = 1) {
   const s = loadAudioSettings();
   if (!s.sound) return;
+
+  // High-frequency SFX (catch_poke fired on every capture) are pooled so we
+  // reuse the same HTMLAudioElement + MediaElementSource rather than creating
+  // new Web Audio nodes on every call, which caused graph growth and stutter.
+  const POOLED_SFX = new Set(['catch_poke', 'sfx_capture', 'hit', 'mort']);
+  if (POOLED_SFX.has(name)) {
+    const { audio, gain } = _getPooled(name, volMult);
+    if (gain) {
+      gain.gain.value = volMult;
+    } else {
+      audio.volume = Math.min(1, s.sfxVolume * s.globalVolume * volMult);
+    }
+    audio.currentTime = 0;
+    const c = _ctx;
+    if (c && c.state !== 'running') {
+      c.resume().then(() => audio.play()).catch(() => {});
+    } else {
+      audio.play().catch(() => {});
+    }
+    return;
+  }
 
   const audio = new Audio(`${BASE_URL}/${name}.mp3`);
   audio.crossOrigin = 'anonymous';

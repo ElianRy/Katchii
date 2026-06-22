@@ -18,7 +18,7 @@ interface Props {
 }
 
 type Phase =
-  | 'team_select'
+  | 'league_team_select' | 'team_select'
   | 'dialogue_peter'    | 'starter_peter'    | 'battle_peter'
   | 'dialogue_giovanni' | 'starter_giovanni' | 'battle_giovanni'
   | 'dialogue_master'   | 'master_pick3'     | 'epic_intro' | 'battle_master'
@@ -139,7 +139,7 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
   const toggle = (id: number) => {
     setSelected(prev => {
       if (prev.includes(id)) return prev.filter(x => x !== id);
-      if (prev.length >= 5) return prev;
+      if (prev.length >= 6) return prev;
       return [...prev, id];
     });
   };
@@ -151,7 +151,7 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
         <div>
           <h2 className="text-white font-black text-lg">🏆 Défi de la Ligue</h2>
           <p className="text-slate-400 text-xs">
-            {retrying ? '❌ Défaite — choisis à nouveau ton équipe' : 'Max 5 Pokémon · même équipe pour les 3 combats · HP non restaurés'}
+            {retrying ? '❌ Défaite — choisis à nouveau ton équipe' : 'Max 6 Pokémon · même équipe pour les 3 combats · HP non restaurés'}
           </p>
         </div>
         <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-2">✕</button>
@@ -198,7 +198,7 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
 
       {/* Selection count */}
       <div className="px-3 pb-1 shrink-0">
-        <div className="text-slate-500 text-xs">{selected.length}/5 sélectionnés</div>
+        <div className="text-slate-500 text-xs">{selected.length}/6 sélectionnés</div>
       </div>
 
       {/* Pokemon list */}
@@ -262,7 +262,7 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
             background: selected.length >= 1 ? 'linear-gradient(90deg, #f59e0b, #ef4444, #a855f7)' : '#374151',
             color: selected.length >= 1 ? 'black' : '#6b7280',
           }}>
-          {selected.length < 1 ? 'Sélectionne tes Pokémon' : `⚔️ Commencer avec ${selected.length} Pokémon !`}
+          {selected.length < 1 ? 'Sélectionne jusqu\'à 6 Pokémon' : `⚔️ Commencer avec ${selected.length} Pokémon !`}
         </button>
       </div>
     </div>
@@ -866,7 +866,7 @@ function VictoryFinalScreen({ onClose, onZoneDiscovered, totalMoneyEarned }: { o
 
 /* ── MAIN ── */
 export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZoneDiscovered, onEarnMoney }: Props) {
-  const [phase, setPhase] = useState<Phase>('team_select');
+  const [phase, setPhase] = useState<Phase>('league_team_select');
   const [currentTeam, setCurrentTeam] = useState<TeamMember[]>([]);
   const [retrying, setRetrying] = useState(false);
   const [victoryHandled, setVictoryHandled] = useState(false);
@@ -910,15 +910,6 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     setPhase('dialogue_peter');
   }, [state]);
 
-  // Auto-confirm party team whenever team_select phase is entered (mount or retry)
-  const handleTeamConfirmRef = useRef(handleTeamConfirm);
-  handleTeamConfirmRef.current = handleTeamConfirm;
-  useEffect(() => {
-    if (phase === 'team_select' && (state.partyTeam?.length ?? 0) > 0) {
-      handleTeamConfirmRef.current(state.partyTeam!);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
 
   const handleBattleEnd = useCallback(
     (nextPhase: Phase, enemySpecs: ReadonlyArray<{ pokemonId: number; level: number; isShiny?: boolean }>) =>
@@ -938,6 +929,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
             damageByEnemy,
           });
           setRetrying(true);
+          stopMusic(0.3);
           setPhase('defeat');
           return;
         }
@@ -968,7 +960,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     [onAddXp, onVictory, victoryHandled, onEarnMoney]
   );
 
-  if (phase === 'team_select') {
+  if (phase === 'league_team_select' || phase === 'team_select') {
     return <TeamSelectScreen state={state} retrying={retrying} onConfirm={handleTeamConfirm} onClose={onClose} />;
   }
   if (phase === 'dialogue_peter') {
@@ -983,7 +975,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
       <div className="fixed inset-0 z-[600]">
         <BattleScreen isLeague suppressVictorySound playerDamageMult={damageMult} playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
           bossName="Peter" trainerImage="/trainers/peter.png" trainerColor="#ef4444" onBattleEnd={handleBattleEnd('dialogue_giovanni', TRAINER_CONFIGS[0].teamSpec)}
-          onQuit={() => { setRetrying(true); setPhase('team_select'); }}
+          onQuit={() => { setRetrying(true); setPhase('league_team_select'); }}
           pokemonCustomMoves={state.pokemonCustomMoves} pokemonMoves={state.pokemonMoves} />
       </div>
     );
@@ -1000,7 +992,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
       <div className="fixed inset-0 z-[600]">
         <BattleScreen keepMusic suppressVictorySound playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
           bossName="Giovanni" trainerImage="/trainers/giovanni.webp" trainerColor="#9ca3af" onBattleEnd={handleBattleEnd('dialogue_master', TRAINER_CONFIGS[1].teamSpec)}
-          onQuit={() => { setRetrying(true); setPhase('team_select'); }}
+          onQuit={() => { setRetrying(true); setPhase('league_team_select'); }}
           pokemonCustomMoves={state.pokemonCustomMoves} pokemonMoves={state.pokemonMoves} />
       </div>
     );
@@ -1021,14 +1013,14 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           trainerImage="/trainers/master.png" trainerColor="#a855f7"
           sideOverlay={<MasterSideEffects />}
           onBattleEnd={handleBattleEnd('victory', TRAINER_CONFIGS[2].teamSpec)}
-          onQuit={() => { setRetrying(true); setPhase('team_select'); }}
+          onQuit={() => { setRetrying(true); setPhase('league_team_select'); }}
           pokemonCustomMoves={state.pokemonCustomMoves} pokemonMoves={state.pokemonMoves} />
       </div>
     );
   }
   if (phase === 'defeat' && defeatStats) {
     return <DefeatScreen stats={defeatStats}
-      onRetry={() => { setPhase('team_select'); }}
+      onRetry={() => { setPhase('league_team_select'); }}
       onClose={onClose} />;
   }
   if (phase === 'victory') {

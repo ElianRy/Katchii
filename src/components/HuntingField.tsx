@@ -140,7 +140,10 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
           setTimeout(() => { if (isEpic) playSfxShinyCapture(); else playSfxCapture(); }, 700);
         } else {
-          addGroupedNotification(['Doublon !', `+${doublonXp} XP !`, `+${pts} 🪙`], x, y, false);
+          const doublonLines = doubonLevel >= 100
+            ? ['Doublon !', `+${pts} 🪙`]
+            : ['Doublon !', `+${doublonXp} XP !`, `+${pts} 🪙`];
+          addGroupedNotification(doublonLines, x, y, false);
           if (isEpic) {
             setNewCaptureInfo({ pokemonName: pokemon.name, pokemonId, isShiny, rarity: pokemon.rarity, level: pokemonLevel, totalCaught });
             setTimeout(() => playSfxShinyCapture(), 700);
@@ -150,7 +153,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         capturingRef.current = false; // UNLOCK
       }, 700);
     },
-    [spawner, gameState, addNotification]
+    [spawner, gameState, addNotification, addGroupedNotification]
   );
 
   const capturedCount = Object.keys(gameState.state.normalCollection).length;
