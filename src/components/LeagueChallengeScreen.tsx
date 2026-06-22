@@ -14,6 +14,7 @@ interface Props {
   onVictory: () => void;
   onAddXp: (pokemonId: number, xp: number) => void;
   onZoneDiscovered?: () => void;
+  onEarnMoney?: (amount: number) => void;
 }
 
 type Phase =
@@ -118,15 +119,10 @@ function TeamSelectScreen({ state, retrying, onConfirm, onClose }: {
     ...(state.partyTeam ?? []),
     ...(state.pcBoxes ?? []).flat(),
   ]);
-
   const ownedIds = Array.from(new Set([
-    ...Object.keys(state.normalCollection)
-      .map(Number)
-      .filter(id => (state.normalCollection[id] ?? 0) > 0 && actuallyOwned.has(id)),
-    ...Object.keys(state.shinyCollection ?? {})
-      .map(Number)
-      .filter(id => (state.shinyCollection?.[id] ?? 0) > 0 && actuallyOwned.has(id)),
-  ])).sort((a, b) => {
+    ...Object.keys(state.normalCollection).filter(k => (state.normalCollection[Number(k)] ?? 0) > 0 && actuallyOwned.has(Number(k))),
+    ...Object.keys(state.shinyCollection ?? {}).filter(k => (state.shinyCollection?.[Number(k)] ?? 0) > 0 && actuallyOwned.has(Number(k))),
+  ].map(Number))).sort((a, b) => {
     const pa = POKEMON_BY_ID[a], pb = POKEMON_BY_ID[b];
     const la = state.pokemonLevels?.[a]?.level ?? 1;
     const lb = state.pokemonLevels?.[b]?.level ?? 1;
@@ -783,7 +779,7 @@ function DefeatScreen({ stats, onRetry, onClose }: {
 }
 
 /* ── VICTORY FINAL ── */
-function VictoryFinalScreen({ onClose, onZoneDiscovered, moneyEarned }: { onClose: () => void; onZoneDiscovered?: () => void; moneyEarned?: number }) {
+function VictoryFinalScreen({ onClose, onZoneDiscovered, totalMoneyEarned }: { onClose: () => void; onZoneDiscovered?: () => void; totalMoneyEarned: number }) {
   const CONFETTI = Array.from({ length: 24 }, (_, i) => ({
     color: ['#fbbf24','#f472b6','#60a5fa','#4ade80','#fb923c','#a855f7','#34d399'][i % 7],
     left: `${(i * 41 + 7) % 100}%`,
@@ -823,13 +819,13 @@ function VictoryFinalScreen({ onClose, onZoneDiscovered, moneyEarned }: { onClos
             Tu as battu Peter, Giovanni et le Maître de la Ligue.<br />Tu es le nouveau Champion de Kanto !
           </p>
         </div>
-        {moneyEarned && moneyEarned > 0 ? (
-          <div className="bg-yellow-950/40 rounded-2xl p-4 border border-yellow-600/30 w-full max-w-sm text-center"
-            style={{ animation: 'badge-pop 0.5s 0.8s ease-out both' }}>
-            <div className="text-yellow-400 font-black text-2xl">🪙 +{moneyEarned.toLocaleString()}</div>
-            <div className="text-yellow-200/60 text-sm">PokéCoins gagnés</div>
+        {totalMoneyEarned > 0 && (
+          <div className="bg-yellow-950/60 rounded-2xl p-4 border border-yellow-500/40 w-full max-w-sm text-center"
+            style={{ animation: 'badge-pop 0.5s 0.75s ease-out both' }}>
+            <div className="text-yellow-400 font-black text-lg">💰 {totalMoneyEarned.toLocaleString()} PokéCoins gagnés !</div>
+            <div className="text-yellow-200/60 text-sm mt-1">Récompense pour avoir vaincu la Ligue</div>
           </div>
-        ) : null}
+        )}
         <div className="bg-purple-950/60 rounded-2xl p-5 border border-purple-500/40 w-full max-w-sm"
           style={{ animation: 'badge-pop 0.5s 0.9s ease-out both', boxShadow: '0 0 20px rgba(168,85,247,0.2)' }}>
           <div className="flex items-center gap-2 mb-3">
@@ -868,20 +864,14 @@ function VictoryFinalScreen({ onClose, onZoneDiscovered, moneyEarned }: { onClos
   );
 }
 
-const TRAINER_REWARDS: Record<string, number> = {
-  peter: 5000,
-  giovanni: 10000,
-  master: 25000,
-};
-
 /* ── MAIN ── */
-export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZoneDiscovered }: Props) {
+export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZoneDiscovered, onEarnMoney }: Props) {
   const [phase, setPhase] = useState<Phase>('team_select');
   const [currentTeam, setCurrentTeam] = useState<TeamMember[]>([]);
   const [retrying, setRetrying] = useState(false);
   const [victoryHandled, setVictoryHandled] = useState(false);
   const [damageMult, setDamageMult] = useState(1);
-  const [moneyEarned, setMoneyEarned] = useState(0);
+  const [totalMoneyEarned, setTotalMoneyEarned] = useState(0);
 
   // Music transitions per phase
   useEffect(() => {
@@ -920,19 +910,15 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
     setPhase('dialogue_peter');
   }, [state]);
 
-  // Feature 7: auto-confirm party team when not retrying
+  // Feature 7: auto-confirm party team on mount
   const handleTeamConfirmRef = useRef(handleTeamConfirm);
   handleTeamConfirmRef.current = handleTeamConfirm;
   useEffect(() => {
-    if (phase === 'team_select' && !retrying) {
-      const party = state.partyTeam ?? [];
-      const validParty = party.filter(id => (state.normalCollection[id] ?? 0) > 0);
-      if (validParty.length > 0) {
-        handleTeamConfirmRef.current(validParty);
-      }
+    if ((state.partyTeam?.length ?? 0) > 0) {
+      handleTeamConfirmRef.current(state.partyTeam!);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, retrying]);
+  }, []);
 
   const handleBattleEnd = useCallback(
     (nextPhase: Phase, enemySpecs: ReadonlyArray<{ pokemonId: number; level: number; isShiny?: boolean }>) =>
@@ -960,14 +946,12 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           setCurrentTeam(survivors);
         }
         // Feature 8: track money earned per trainer beaten
-        const rewardKey = nextPhase === 'dialogue_giovanni' ? 'peter'
-          : nextPhase === 'dialogue_master' ? 'giovanni'
-          : nextPhase === 'victory' ? 'master'
-          : null;
-        if (rewardKey) {
-          setMoneyEarned(prev => prev + (TRAINER_REWARDS[rewardKey] ?? 0));
+        const rewardMap: Record<string, number> = { dialogue_giovanni: 5000, dialogue_master: 10000, victory: 25000 };
+        const reward = rewardMap[nextPhase] ?? 0;
+        if (reward > 0) {
+          setTotalMoneyEarned(prev => prev + reward);
+          onEarnMoney?.(reward);
         }
-
         if (nextPhase === 'dialogue_giovanni') {
           // music handled by top-level phase useEffect
         } else if (nextPhase === 'dialogue_master') {
@@ -981,7 +965,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
         }
         setPhase(nextPhase);
       },
-    [onAddXp, onVictory, victoryHandled]
+    [onAddXp, onVictory, victoryHandled, onEarnMoney]
   );
 
   if (phase === 'team_select') {
@@ -999,7 +983,6 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
       <div className="fixed inset-0 z-[600]">
         <BattleScreen isLeague suppressVictorySound playerDamageMult={damageMult} playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
           bossName="Peter" trainerImage="/trainers/peter.png" trainerColor="#ef4444" onBattleEnd={handleBattleEnd('dialogue_giovanni', TRAINER_CONFIGS[0].teamSpec)}
-          pokemonCustomMoves={state.pokemonCustomMoves}
           onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
       </div>
     );
@@ -1046,7 +1029,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
       onClose={onClose} />;
   }
   if (phase === 'victory') {
-    return <VictoryFinalScreen onClose={onClose} onZoneDiscovered={onZoneDiscovered} moneyEarned={moneyEarned} />;
+    return <VictoryFinalScreen onClose={onClose} onZoneDiscovered={onZoneDiscovered} totalMoneyEarned={totalMoneyEarned} />;
   }
   return null;
 }
