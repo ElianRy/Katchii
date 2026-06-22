@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ShinySprite } from './ShinySprite';
-import { playPokemonCry } from '../lib/audio';
+import { playPokemonCry, stopMusic } from '../lib/audio';
 
 const BASE_URL = 'https://kbegumpzvyjagfikjdxi.supabase.co/storage/v1/object/public/sounds';
 
@@ -17,7 +17,7 @@ interface Props {
 }
 
 export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, choices, choiceNames, ownedIds, onComplete, onCancel }: Props) {
-  const [phase, setPhase] = useState<'pick' | 'charging' | 'flashing' | 'reveal' | 'complete'>(choices && choices.length > 0 ? 'pick' : 'charging');
+  const [phase, setPhase] = useState<'pick' | 'dialog_start' | 'charging' | 'flashing' | 'white' | 'reveal' | 'complete'>(choices && choices.length > 0 ? 'pick' : 'dialog_start');
   const [resolvedNewId, setResolvedNewId] = useState<number>(newPokemonId);
   const [resolvedNewName, setResolvedNewName] = useState<string>(newName);
   const [showOld, setShowOld] = useState(true);
@@ -26,27 +26,26 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
   const [timer4sDone, setTimer4sDone] = useState(false);
   const [showContinue, setShowContinue] = useState(false);
   const [cancelOverlay, setCancelOverlay] = useState(false);
+  const [dialogText, setDialogText] = useState('');
   const evoAudioRef = useRef<HTMLAudioElement | null>(null);
   const cancelledRef = useRef(false);
-  const musicStartedRef = useRef(false);
   const fullText = `${oldName} a évolué en ${resolvedNewName} !`;
 
-  // Play evolution music once when animation starts (any non-pick phase)
+  // Start evolution music once on mount (for non-pick phase) — stop background music first
   useEffect(() => {
-    if (phase === 'pick') return;
-    if (musicStartedRef.current) return;
-    musicStartedRef.current = true;
+    if (choices && choices.length > 0) return; // pick phase, wait for handlePick
+    stopMusic(0);
     const evo = new Audio(`${BASE_URL}/evolution.mp3`);
     evo.loop = true;
     evo.volume = 0.5;
     evo.play().catch(() => {});
     evoAudioRef.current = evo;
     return () => { evo.pause(); evo.src = ''; };
-  }, [phase]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Phase transitions
   useEffect(() => {
-    if (phase === 'pick') return;
+    if (phase === 'pick' || phase === 'dialog_start') return;
 
     if (phase === 'charging') {
       const t = setTimeout(() => {
@@ -64,14 +63,21 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
         count++;
         if (count >= total) {
           clearInterval(interval);
-          setPhase('reveal');
+          setPhase('white');
         }
       }, 150);
       return () => clearInterval(interval);
     }
 
+    if (phase === 'white') {
+      const t = setTimeout(() => {
+        if (!cancelledRef.current) setPhase('reveal');
+      }, 600);
+      return () => clearTimeout(t);
+    }
+
     if (phase === 'reveal') {
-      if (evoAudioRef.current) { evoAudioRef.current.pause(); }
+      if (evoAudioRef.current) { evoAudioRef.current.pause(); evoAudioRef.current = null; }
       playPokemonCry(resolvedNewId);
       const t = setTimeout(() => {
         if (cancelledRef.current) return;
@@ -85,6 +91,23 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
       return () => clearTimeout(t);
     }
   }, [phase, resolvedNewId]);
+
+  // dialog_start phase: typewriter "???" then transition to charging
+  useEffect(() => {
+    if (phase !== 'dialog_start') return;
+    const text = '???';
+    setDialogText('');
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      setDialogText(text.slice(0, i));
+      if (i >= text.length) clearInterval(interval);
+    }, 120);
+    const t = setTimeout(() => {
+      if (!cancelledRef.current) setPhase('charging');
+    }, 1500);
+    return () => { clearInterval(interval); clearTimeout(t); };
+  }, [phase]);
 
   // Typewriter effect in complete phase
   useEffect(() => {
@@ -130,7 +153,14 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
   const handlePick = (id: number, name: string) => {
     setResolvedNewId(id);
     setResolvedNewName(name);
-    setPhase('charging');
+    // Start music now (was pick phase, music not started yet)
+    stopMusic(0);
+    const evo = new Audio(`${BASE_URL}/evolution.mp3`);
+    evo.loop = true;
+    evo.volume = 0.5;
+    evo.play().catch(() => {});
+    evoAudioRef.current = evo;
+    setPhase('dialog_start');
   };
 
   // Pick phase
@@ -196,7 +226,7 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
 
       <div
         className="fixed inset-0 z-[850] flex flex-col items-center justify-center"
-        style={{ background: '#000000' }}
+        style={{ background: phase === 'white' ? '#ffffff' : '#000000', transition: phase === 'white' ? 'background 0.1s' : 'none' }}
       >
         {/* Cancel overlay */}
         {cancelOverlay && (
@@ -238,6 +268,31 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
           </div>
         )}
 
+        {/* dialog_start phase: Pokémon-style dialog box with typewriter */}
+        {phase === 'dialog_start' && (
+          <div className="flex flex-col items-center gap-6 w-full px-6" style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+              <ShinySprite pokemonId={oldPokemonId} isShiny={false} width={120} height={120}
+                style={{ filter: 'brightness(0) invert(1)', opacity: 0.8 }} />
+            </div>
+            <div style={{
+              position: 'absolute', bottom: 40, left: 16, right: 16,
+              background: 'rgba(0,0,0,0.88)',
+              border: '3px solid white',
+              borderRadius: 8,
+              padding: '14px 18px',
+              fontFamily: 'monospace',
+              color: 'white',
+              fontSize: '1.1rem',
+              fontWeight: 700,
+              minHeight: 64,
+              letterSpacing: '0.05em',
+            }}>
+              {dialogText}
+            </div>
+          </div>
+        )}
+
         {/* Charging phase: old pokemon with pulsing white glow */}
         {phase === 'charging' && (
           <div className="flex flex-col items-center gap-6">
@@ -260,10 +315,15 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
           </div>
         )}
 
+        {/* White flash phase */}
+        {phase === 'white' && (
+          <div style={{ width: '100%', height: '100%', background: 'white' }} />
+        )}
+
         {/* Reveal phase: new pokemon with shake animation */}
         {phase === 'reveal' && (
           <div className="flex flex-col items-center gap-6">
-            <div className="text-white text-2xl font-black">Que se passe-t-il ?!</div>
+            <div className="text-white text-2xl font-black">Félicitations !</div>
             <div style={{ animation: 'evo-shake 0.15s ease-in-out infinite' }}>
               <ShinySprite pokemonId={resolvedNewId} isShiny={false} width={140} height={140}
                 style={{ filter: 'drop-shadow(0 0 16px white) drop-shadow(0 0 32px #fbbf24)' }} />
@@ -271,21 +331,43 @@ export function EvolutionScreen({ oldPokemonId, newPokemonId, oldName, newName, 
           </div>
         )}
 
-        {/* Complete phase */}
+        {/* Complete phase: Pokémon-style dialog box */}
         {phase === 'complete' && (
-          <div className="flex flex-col items-center gap-6 px-6 w-full max-w-xs">
+          <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ShinySprite pokemonId={resolvedNewId} isShiny={false} width={140} height={140}
-              style={{ filter: 'drop-shadow(0 0 12px #fbbf24)' }} />
-            <div className="text-yellow-300 font-black text-lg text-center min-h-[3.5rem]">
+              style={{ filter: 'drop-shadow(0 0 12px #fbbf24)', marginBottom: showContinue ? 80 : 40 }} />
+            <div style={{
+              position: 'absolute', bottom: showContinue ? 90 : 40, left: 16, right: 16,
+              background: 'rgba(0,0,0,0.88)',
+              border: '3px solid white',
+              borderRadius: 8,
+              padding: '14px 18px',
+              fontFamily: 'monospace',
+              color: 'white',
+              fontSize: '1rem',
+              fontWeight: 700,
+              minHeight: 64,
+              letterSpacing: '0.03em',
+            }}>
               {typeText}
             </div>
             {showContinue && (
               <button
                 onClick={onComplete}
-                className="mt-2 px-8 py-3 rounded-2xl font-black text-base text-black"
-                style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b)' }}
+                style={{
+                  position: 'absolute', bottom: 40, left: 16, right: 16,
+                  padding: '14px',
+                  borderRadius: 8,
+                  fontFamily: 'monospace',
+                  fontWeight: 900,
+                  fontSize: '1rem',
+                  color: 'black',
+                  background: 'linear-gradient(135deg,#fbbf24,#f59e0b)',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
               >
-                Continuer
+                Continuer ▶
               </button>
             )}
           </div>

@@ -971,8 +971,8 @@ export function useGameState() {
   const triggerEvolution = useCallback((oldPokemonId: number, newPokemonId: number) => {
     update(prev => {
       const next = { ...prev };
-      // Remove old from normalCollection (keep as "seen" with count 0)
-      next.normalCollection = { ...prev.normalCollection, [oldPokemonId]: 0, [newPokemonId]: 1 };
+      // Keep old pokémon in normalCollection, add new pokémon
+      next.normalCollection = { ...prev.normalCollection, [newPokemonId]: (prev.normalCollection[newPokemonId] ?? 0) + 1 };
       // Transfer level
       const lvData = prev.pokemonLevels?.[oldPokemonId] ?? { level: 1, xp: 0 };
       next.pokemonLevels = { ...(prev.pokemonLevels ?? {}), [newPokemonId]: lvData };

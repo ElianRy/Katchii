@@ -103,7 +103,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
   ];
 
   return (
-    <div className="fixed inset-0 z-[510] flex flex-col" style={{ background: '#b91c1c', fontFamily: 'monospace' }}>
+    <div className="fixed inset-x-0 top-0 z-[510] flex flex-col" style={{ bottom: 72, background: '#b91c1c', fontFamily: 'monospace' }}>
       {/* Header */}
       <div
         style={{
@@ -493,8 +493,8 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
 
         return (
           <div
-            className="fixed inset-0 z-[520] flex flex-col"
-            style={{ background: '#dce8f0', fontFamily: 'monospace' }}
+            className="fixed inset-x-0 top-0 z-[520] flex flex-col"
+            style={{ bottom: 72, background: '#dce8f0', fontFamily: 'monospace' }}
           >
             {/* Top bar */}
             <div
@@ -655,7 +655,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                               <div key={slug} style={{ borderRadius: 7, padding: '7px 10px', background: `${typeColor}18`, border: `1px solid ${typeColor}44` }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                   <span style={{ color: 'white', fontWeight: 900, borderRadius: 3, padding: '1px 5px', flexShrink: 0, background: typeColor, fontSize: '0.42rem', fontFamily: 'monospace' }}>{m.type.toUpperCase()}</span>
-                                  <span style={{ color: 'white', fontSize: '0.72rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
+                                  <span style={{ color: '#1a2a3a', fontSize: '0.72rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
                                   <span style={{ color: '#9ca3af', fontSize: '0.6rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
                                   {m.power > 0 && <span style={{ color: '#e2e8f0', fontSize: '0.65rem', fontWeight: 900, flexShrink: 0, fontFamily: 'monospace' }}>{m.power}</span>}
                                 </div>
@@ -705,7 +705,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                                       {isSelected ? '✓' : ''}
                                     </span>
                                     <span style={{ color: 'white', fontWeight: 900, borderRadius: 3, padding: '1px 4px', flexShrink: 0, background: typeColor, fontSize: '0.4rem', fontFamily: 'monospace' }}>{m.type.toUpperCase()}</span>
-                                    <span style={{ color: 'white', fontSize: '0.68rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
+                                    <span style={{ color: '#1a2a3a', fontSize: '0.68rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
                                     {m.power > 0 && <span style={{ color: '#9ca3af', fontSize: '0.6rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.power}</span>}
                                     <span style={{ color: '#6b7280', fontSize: '0.58rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
                                   </div>

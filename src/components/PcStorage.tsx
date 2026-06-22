@@ -697,8 +697,8 @@ export function PcStorage({
       {/* Main area */}
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* PC Grid */}
-        <div className="flex-1 overflow-y-auto p-2" style={{ background: '#88a878' }}>
-          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${BOX_COLS}, 64px)`, width: 'fit-content', margin: '0 auto' }}>
+        <div className="flex-1 overflow-y-auto p-2" style={{ background: '#c8dce8', backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,40,0.04) 0px, rgba(0,0,40,0.04) 1px, transparent 1px, transparent 3px)' }}>
+          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${BOX_COLS}, 52px)`, width: 'fit-content', margin: '0 auto' }}>
             {Array.from({ length: BOX_SIZE }).map((_, slotIdx) => {
               const id = currentBox[slotIdx];
               if (!id) {
@@ -708,7 +708,7 @@ export function PcStorage({
                     className="rounded flex items-center justify-center"
                     data-slot-type="pc"
                     data-slot-idx={slotIdx}
-                    style={{ width: 64, height: 64, background: 'rgba(0,0,0,0.1)' }}
+                    style={{ width: 52, height: 52, background: 'rgba(0,0,0,0.1)' }}
                   />
                 );
               }
@@ -735,19 +735,19 @@ export function PcStorage({
                   onTouchStart={e => handleTouchStart(e, id, 'pc', slotIdx)}
                   className="rounded flex flex-col items-center justify-center p-0.5 transition-all active:scale-95"
                   style={{
-                    width: 64, height: 64,
+                    width: 52, height: 52,
                     background: isSel ? 'rgba(255,220,100,0.7)' : 'rgba(255,255,255,0.15)',
                     outline: isSel ? '2px solid #f59e0b' : 'none',
                     opacity: isDragged ? 0.3 : 1,
                     position: 'relative',
                   }}
                 >
-                  <ShinySprite pokemonId={id} isShiny={isShiny} width={40} height={40} compact />
+                  <ShinySprite pokemonId={id} isShiny={isShiny} width={32} height={32} compact />
                   <span className="font-black" style={{ fontSize: '0.42rem', color: isSel ? '#92400e' : '#1e3a1e' }}>
                     Niv.{lvData.level}
                   </span>
                   {showEvoBadge && (
-                    <span style={{ position: 'absolute', top: 1, right: 1, fontSize: '0.5rem', lineHeight: 1 }}>⬆️</span>
+                    <span style={{ position: 'absolute', top: 2, right: 2, width: 10, height: 10, borderRadius: '50%', background: '#ffcc00', border: '1.5px solid #b8860b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.45rem', lineHeight: 1 }}>▲</span>
                   )}
                 </button>
               );
