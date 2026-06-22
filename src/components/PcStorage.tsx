@@ -55,40 +55,48 @@ interface PcTheme {
   titleColor: string;
   screenBg: string;
   hasAnimation?: boolean;
+  textColor?: string;
+  subTextColor?: string;
 }
 
 export const PC_THEMES: PcTheme[] = [
-  { id: 'default',  name: 'Classique',  emoji: '🔵', price: 0,    bg: '#c0d0e0', headerGrad: 'linear-gradient(180deg,#8fafcf 0%,#6c90b0 100%)', border: '#4a7090', boxHeaderBg: '#6c8fac', titleColor: 'white',    screenBg: '#c8dce8' },
-  { id: 'nuit',     name: 'Nuit',       emoji: '🌙', price: 500,  bg: '#1a2035', headerGrad: 'linear-gradient(180deg,#2a3550 0%,#1a2540 100%)', border: '#3a5080', boxHeaderBg: '#1e2d45', titleColor: '#93c5fd', screenBg: '#1a2035' },
-  { id: 'foret',    name: 'Forêt',      emoji: '🌿', price: 500,  bg: '#c0e0c0', headerGrad: 'linear-gradient(180deg,#8fbe8f 0%,#5a9060 100%)', border: '#3a7040', boxHeaderBg: '#6a9f6a', titleColor: 'white',    screenBg: '#1a2d1a' },
-  { id: 'feu',      name: 'Feu',        emoji: '🔥', price: 1500, bg: '#e0c0a0', headerGrad: 'linear-gradient(180deg,#cf8f60 0%,#a05030 100%)', border: '#803020', boxHeaderBg: '#c07050', titleColor: 'white',    screenBg: '#2d1a0e', hasAnimation: true },
-  { id: 'sakura',   name: 'Sakura',     emoji: '🌸', price: 1500, bg: '#2d1520', headerGrad: 'linear-gradient(180deg,#8b2252 0%,#5a0a30 100%)', border: '#a03060', boxHeaderBg: '#7a1a40', titleColor: '#ffb0d0', screenBg: '#2d1520', hasAnimation: true },
-  { id: 'galaxie',  name: 'Galaxie',    emoji: '🌌', price: 2000, bg: '#120820', headerGrad: 'linear-gradient(180deg,#2a1060 0%,#1a0840 100%)', border: '#5020a0', boxHeaderBg: '#1e0e40', titleColor: '#c084fc', screenBg: '#050510', hasAnimation: true },
+  { id: 'default',  name: 'Classique',  emoji: '🔵', price: 0,    bg: '#c0d0e0', headerGrad: 'linear-gradient(180deg,#8fafcf 0%,#6c90b0 100%)', border: '#4a7090', boxHeaderBg: '#6c8fac', titleColor: 'white',    screenBg: '#c8dce8', textColor: '#1e293b', subTextColor: '#475569' },
+  { id: 'nuit',     name: 'Nuit',       emoji: '🌙', price: 500,  bg: '#1a2035', headerGrad: 'linear-gradient(180deg,#2a3550 0%,#1a2540 100%)', border: '#3a5080', boxHeaderBg: '#1e2d45', titleColor: '#93c5fd', screenBg: '#1a2035', textColor: '#e2e8f0', subTextColor: '#94a3b8' },
+  { id: 'foret',    name: 'Forêt',      emoji: '🌿', price: 500,  bg: '#c0e0c0', headerGrad: 'linear-gradient(180deg,#8fbe8f 0%,#5a9060 100%)', border: '#3a7040', boxHeaderBg: '#6a9f6a', titleColor: 'white',    screenBg: '#1a2d1a', textColor: '#dcfce7', subTextColor: '#86efac' },
+  { id: 'feu',      name: 'Feu',        emoji: '🔥', price: 1500, bg: '#e0c0a0', headerGrad: 'linear-gradient(180deg,#cf8f60 0%,#a05030 100%)', border: '#803020', boxHeaderBg: '#c07050', titleColor: 'white',    screenBg: '#2d1a0e', hasAnimation: true, textColor: '#fed7aa', subTextColor: '#fb923c' },
+  { id: 'sakura',   name: 'Sakura',     emoji: '🌸', price: 1500, bg: '#2d1520', headerGrad: 'linear-gradient(180deg,#8b2252 0%,#5a0a30 100%)', border: '#a03060', boxHeaderBg: '#7a1a40', titleColor: '#ffb0d0', screenBg: '#2d1520', hasAnimation: true, textColor: '#fce7f3', subTextColor: '#f9a8d4' },
+  { id: 'galaxie',  name: 'Galaxie',    emoji: '🌌', price: 2000, bg: '#120820', headerGrad: 'linear-gradient(180deg,#2a1060 0%,#1a0840 100%)', border: '#5020a0', boxHeaderBg: '#1e0e40', titleColor: '#c084fc', screenBg: '#050510', hasAnimation: true, textColor: '#e0e7ff', subTextColor: '#a5b4fc' },
 ];
 
 function AnimatedPcOverlay({ themeId }: { themeId: string }) {
   if (themeId === 'feu') {
-    const particles = Array.from({ length: 10 }, (_, i) => i);
+    const particles = Array.from({ length: 15 }, (_, i) => i);
     return (
       <>
         <style>{`
           @keyframes pc-flame-rise {
-            0% { transform: translateY(0) scale(1); opacity: 0.8; }
+            0% { transform: translateY(0) scale(1); opacity: 0.85; }
             100% { transform: translateY(-120px) scale(0.3); opacity: 0; }
           }
+          @keyframes pc-fire-title-pulse {
+            0%, 100% { color: #fb923c; text-shadow: 0 0 8px #fb923c; }
+            50% { color: #ef4444; text-shadow: 0 0 16px #ef4444, 0 0 32px #fb923c; }
+          }
         `}</style>
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 10, pointerEvents: 'none' }}>
           {particles.map(i => (
             <div key={i} style={{
               position: 'absolute',
               bottom: `${(i % 3) * 10}%`,
-              left: `${5 + i * 9}%`,
-              width: 8 + (i % 3) * 4,
-              height: 8 + (i % 3) * 4,
+              left: `${3 + i * 6}%`,
+              width: 10 + (i % 4) * 5,
+              height: 10 + (i % 4) * 5,
               borderRadius: '50% 50% 30% 30%',
               background: 'radial-gradient(circle, #ffcc44, #ff6600)',
-              animation: `pc-flame-rise ${1.2 + (i % 3) * 0.5}s ${i * 0.18}s ease-out infinite`,
-              opacity: 0.8,
+              animation: `pc-flame-rise ${1.2 + (i % 3) * 0.5}s ${i * 0.15}s ease-out infinite`,
+              opacity: 0.7 + (i % 3) * 0.1,
+              zIndex: 10,
+              pointerEvents: 'none',
             }} />
           ))}
         </div>
@@ -96,27 +104,33 @@ function AnimatedPcOverlay({ themeId }: { themeId: string }) {
     );
   }
   if (themeId === 'sakura') {
-    const petals = Array.from({ length: 12 }, (_, i) => i);
+    const petals = Array.from({ length: 18 }, (_, i) => i);
     return (
       <>
         <style>{`
           @keyframes pc-petal-fall {
-            0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0.9; }
+            0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0.95; }
             100% { transform: translateY(110%) translateX(40px) rotate(180deg); opacity: 0; }
           }
+          @keyframes pc-sakura-title-glow {
+            0%, 100% { text-shadow: 0 0 8px #f9a8d4, 0 0 16px #f9a8d4; }
+            50% { text-shadow: 0 0 20px #fce7f3, 0 0 40px #f9a8d4; }
+          }
         `}</style>
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 10, pointerEvents: 'none' }}>
           {petals.map(i => (
             <div key={i} style={{
               position: 'absolute',
               top: '-10px',
-              left: `${(i / 12) * 100 + (i % 3) * 3}%`,
-              width: 8 + (i % 3) * 3,
-              height: 8 + (i % 3) * 3,
+              left: `${(i / 18) * 100 + (i % 3) * 2}%`,
+              width: 12 + (i % 3) * 4,
+              height: 12 + (i % 3) * 4,
               borderRadius: '50% 0 50% 0',
-              background: '#ffb0c8',
-              animation: `pc-petal-fall ${2.5 + (i % 4) * 0.5}s ${i * 0.3}s linear infinite`,
-              opacity: 0.85,
+              background: i % 3 === 0 ? '#ffb0c8' : i % 3 === 1 ? '#ffd6e7' : '#ff88b8',
+              animation: `pc-petal-fall ${2.5 + (i % 4) * 0.5}s ${i * 0.25}s linear infinite`,
+              opacity: 0.9,
+              zIndex: 10,
+              pointerEvents: 'none',
             }} />
           ))}
         </div>
@@ -124,25 +138,35 @@ function AnimatedPcOverlay({ themeId }: { themeId: string }) {
     );
   }
   if (themeId === 'galaxie') {
-    const stars = Array.from({ length: 30 }, (_, i) => i);
+    const stars = Array.from({ length: 50 }, (_, i) => i);
     const shootingStars = [0, 1, 2];
     return (
       <>
         <style>{`
-          @keyframes pc-twinkle { 0%,100% { opacity: 0.2; } 50% { opacity: 1; } }
+          @keyframes pc-twinkle { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
           @keyframes pc-shoot { 0% { transform: translateX(0) translateY(0); opacity: 1; } 100% { transform: translateX(80px) translateY(40px); opacity: 0; } }
+          @keyframes pc-galaxie-title {
+            0% { color: #a5b4fc; text-shadow: 0 0 8px #a5b4fc; }
+            25% { color: #f9a8d4; text-shadow: 0 0 12px #f9a8d4; }
+            50% { color: #86efac; text-shadow: 0 0 12px #86efac; }
+            75% { color: #fde68a; text-shadow: 0 0 12px #fde68a; }
+            100% { color: #a5b4fc; text-shadow: 0 0 8px #a5b4fc; }
+          }
         `}</style>
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 10, pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 60%, rgba(99,40,180,0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
           {stars.map(i => (
             <div key={i} style={{
               position: 'absolute',
               top: `${(i * 37) % 100}%`,
               left: `${(i * 61) % 100}%`,
-              width: 2 + (i % 2),
-              height: 2 + (i % 2),
+              width: 2 + (i % 3),
+              height: 2 + (i % 3),
               borderRadius: '50%',
-              background: 'white',
+              background: i % 4 === 0 ? '#f9a8d4' : i % 4 === 1 ? '#86efac' : i % 4 === 2 ? '#a5b4fc' : 'white',
               animation: `pc-twinkle ${1 + (i % 3)}s ${(i % 4) * 0.5}s ease-in-out infinite`,
+              zIndex: 10,
+              pointerEvents: 'none',
             }} />
           ))}
           {shootingStars.map(i => (
@@ -150,12 +174,14 @@ function AnimatedPcOverlay({ themeId }: { themeId: string }) {
               position: 'absolute',
               top: `${10 + i * 25}%`,
               left: `${10 + i * 20}%`,
-              width: 40,
-              height: 1.5,
+              width: 50,
+              height: 2,
               background: 'linear-gradient(90deg, white, transparent)',
               borderRadius: 99,
               animation: `pc-shoot ${2 + i * 1.5}s ${i * 2.5}s linear infinite`,
               opacity: 0,
+              zIndex: 10,
+              pointerEvents: 'none',
             }} />
           ))}
         </div>
@@ -1027,7 +1053,21 @@ export function PcStorage({
       <div className="flex items-center justify-between px-3 shrink-0"
         style={{ background: theme.headerGrad, borderBottom: `3px solid ${theme.border}`, paddingTop: 'calc(0.5rem + env(safe-area-inset-top,0px))', paddingBottom: '0.5rem' }}>
         <div style={{ width: 32 }} />
-        <div className="font-black text-sm" style={{ color: theme.titleColor }}>PC de {username ?? 'Léo'}</div>
+        <div className="font-black text-sm" style={{ color: theme.titleColor }}>
+          {theme.hasAnimation && theme.id === 'feu' ? (
+            <span>{'PC de '.split('').map((char, i) => (
+              <span key={i} style={{ animation: `pc-fire-title-pulse 1.5s ${i * 0.1}s ease-in-out infinite`, display: 'inline-block' }}>{char}</span>
+            ))}{(username ?? 'Léo').split('').map((char, i) => (
+              <span key={i} style={{ animation: `pc-fire-title-pulse 1.5s ${(i + 5) * 0.1}s ease-in-out infinite`, display: 'inline-block' }}>{char}</span>
+            ))}</span>
+          ) : theme.hasAnimation && theme.id === 'sakura' ? (
+            <span style={{ animation: 'pc-sakura-title-glow 2s ease-in-out infinite' }}>PC de {username ?? 'Léo'}</span>
+          ) : theme.hasAnimation && theme.id === 'galaxie' ? (
+            <span style={{ animation: 'pc-galaxie-title 4s linear infinite' }}>PC de {username ?? 'Léo'}</span>
+          ) : (
+            `PC de ${username ?? 'Léo'}`
+          )}
+        </div>
         <button onClick={() => setShowThemeModal(true)} className="w-8 h-8 flex items-center justify-center rounded-lg text-base"
           style={{ background: 'rgba(255,255,255,0.15)', border: `1px solid ${theme.border}` }}>⚙️</button>
       </div>
@@ -1115,7 +1155,7 @@ export function PcStorage({
                   }}
                 >
                   <ShinySprite pokemonId={id} isShiny={isShiny} width={32} height={32} compact />
-                  <span className="font-black" style={{ fontSize: '0.42rem', color: '#1e3a1e' }}>
+                  <span className="font-black" style={{ fontSize: '0.42rem', color: theme.subTextColor ?? '#475569' }}>
                     Niv.{lvData.level}
                   </span>
                   {showEvoBadge && (
@@ -1130,7 +1170,7 @@ export function PcStorage({
         {/* Bottom: Party + detail */}
         <div className="shrink-0" style={{ background: theme.bg, borderTop: `3px solid ${theme.border}` }}>
           <div className="px-3 pt-1.5 pb-1 flex items-center justify-between">
-            <div className="font-black text-xs text-slate-700">Équipe ({party.length}/3)</div>
+            <div className="font-black text-xs" style={{ color: theme.textColor ?? '#1e293b' }}>Équipe ({party.length}/3)</div>
           </div>
 
           {/* Party slots */}

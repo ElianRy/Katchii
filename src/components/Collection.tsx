@@ -28,66 +28,84 @@ interface DexTheme {
   inputBg: string;
   cardBg: string;
   hasAnimation?: boolean;
+  textColor?: string;
+  subTextColor?: string;
 }
 
 export const DEX_THEMES: DexTheme[] = [
-  { id: 'default',  name: 'Classique',  emoji: '🔴', price: 0,    bg: '#b91c1c', headerGrad: 'linear-gradient(180deg,#dc2626 0%,#991b1b 100%)', border: '#7f1d1d', tabBg: '#991b1b', titleColor: 'white',    contentBg: '#b91c1c', searchBg: '#991b1b', filterTabBg: '#991b1b', filterTabActive: '#7f1d1d', inputBg: '#1f2937', cardBg: 'rgba(255,255,255,0.5)' },
-  { id: 'ocean',    name: 'Océan',      emoji: '🌊', price: 500,  bg: '#1c3fb9', headerGrad: 'linear-gradient(180deg,#2563dc 0%,#1d2d9b 100%)', border: '#1d2d7f', tabBg: '#1d3a9b', titleColor: 'white',    contentBg: '#1c3fb9', searchBg: '#1d3a9b', filterTabBg: '#1d3a9b', filterTabActive: '#1d2d7f', inputBg: '#0f1f3d', cardBg: 'rgba(255,255,255,0.15)' },
-  { id: 'foret',    name: 'Forêt',      emoji: '🌿', price: 500,  bg: '#166534', headerGrad: 'linear-gradient(180deg,#16a34a 0%,#14532d 100%)', border: '#14532d', tabBg: '#166534', titleColor: 'white',    contentBg: '#166534', searchBg: '#166534', filterTabBg: '#166534', filterTabActive: '#14532d', inputBg: '#0a2a15', cardBg: 'rgba(255,255,255,0.15)' },
-  { id: 'nuit',     name: 'Nuit',       emoji: '🌙', price: 1000, bg: '#0f0f1e', headerGrad: 'linear-gradient(180deg,#1e1b4b 0%,#0f0f1e 100%)', border: '#312e81', tabBg: '#1e1b4b', titleColor: '#a5b4fc', contentBg: '#0f0f1e', searchBg: '#1e1b4b', filterTabBg: '#1e1b4b', filterTabActive: '#312e81', inputBg: '#0a0a14', cardBg: 'rgba(255,255,255,0.08)' },
-  { id: 'rose',     name: 'Sakura',     emoji: '🌸', price: 1500, bg: '#9d174d', headerGrad: 'linear-gradient(180deg,#db2777 0%,#9d174d 100%)', border: '#831843', tabBg: '#be185d', titleColor: 'white',    contentBg: '#9d174d', searchBg: '#be185d', filterTabBg: '#be185d', filterTabActive: '#831843', inputBg: '#3d0a20', cardBg: 'rgba(255,255,255,0.15)', hasAnimation: true },
-  { id: 'dore',     name: 'Légendaire', emoji: '⭐', price: 2000, bg: '#78350f', headerGrad: 'linear-gradient(180deg,#d97706 0%,#92400e 100%)', border: '#451a03', tabBg: '#92400e', titleColor: '#fde68a', contentBg: '#78350f', searchBg: '#92400e', filterTabBg: '#92400e', filterTabActive: '#451a03', inputBg: '#1a0a00', cardBg: 'rgba(255,255,255,0.12)', hasAnimation: true },
+  { id: 'default',  name: 'Classique',  emoji: '🔴', price: 0,    bg: '#b91c1c', headerGrad: 'linear-gradient(180deg,#dc2626 0%,#991b1b 100%)', border: '#7f1d1d', tabBg: '#991b1b', titleColor: 'white',    contentBg: '#b91c1c', searchBg: '#991b1b', filterTabBg: '#991b1b', filterTabActive: '#7f1d1d', inputBg: '#1f2937', cardBg: 'rgba(255,255,255,0.5)', textColor: '#1e293b', subTextColor: '#475569' },
+  { id: 'ocean',    name: 'Océan',      emoji: '🌊', price: 500,  bg: '#1c3fb9', headerGrad: 'linear-gradient(180deg,#2563dc 0%,#1d2d9b 100%)', border: '#1d2d7f', tabBg: '#1d3a9b', titleColor: 'white',    contentBg: '#1c3fb9', searchBg: '#1d3a9b', filterTabBg: '#1d3a9b', filterTabActive: '#1d2d7f', inputBg: '#0f1f3d', cardBg: 'rgba(255,255,255,0.15)', textColor: '#e0f2fe', subTextColor: '#7dd3fc' },
+  { id: 'foret',    name: 'Forêt',      emoji: '🌿', price: 500,  bg: '#166534', headerGrad: 'linear-gradient(180deg,#16a34a 0%,#14532d 100%)', border: '#14532d', tabBg: '#166534', titleColor: 'white',    contentBg: '#166534', searchBg: '#166534', filterTabBg: '#166534', filterTabActive: '#14532d', inputBg: '#0a2a15', cardBg: 'rgba(255,255,255,0.15)', textColor: '#dcfce7', subTextColor: '#86efac' },
+  { id: 'nuit',     name: 'Nuit',       emoji: '🌙', price: 1000, bg: '#0f0f1e', headerGrad: 'linear-gradient(180deg,#1e1b4b 0%,#0f0f1e 100%)', border: '#312e81', tabBg: '#1e1b4b', titleColor: '#a5b4fc', contentBg: '#0f0f1e', searchBg: '#1e1b4b', filterTabBg: '#1e1b4b', filterTabActive: '#312e81', inputBg: '#0a0a14', cardBg: 'rgba(255,255,255,0.08)', textColor: '#e2e8f0', subTextColor: '#94a3b8' },
+  { id: 'rose',     name: 'Sakura',     emoji: '🌸', price: 1500, bg: '#9d174d', headerGrad: 'linear-gradient(180deg,#db2777 0%,#9d174d 100%)', border: '#831843', tabBg: '#be185d', titleColor: 'white',    contentBg: '#9d174d', searchBg: '#be185d', filterTabBg: '#be185d', filterTabActive: '#831843', inputBg: '#3d0a20', cardBg: 'rgba(255,255,255,0.15)', hasAnimation: true, textColor: '#fce7f3', subTextColor: '#f9a8d4' },
+  { id: 'galaxie',  name: 'Galaxie',    emoji: '🌌', price: 2000, bg: '#020209', headerGrad: 'linear-gradient(135deg, #0a0a2e 0%, #1a0a3e 50%, #0a1a3e 100%)', border: '#4338ca', tabBg: '#0a0a2e', titleColor: '#a5b4fc', contentBg: '#030312', searchBg: '#0a0a2e', filterTabBg: '#0f0f35', filterTabActive: '#4338ca', inputBg: '#0a0a2e', cardBg: '#0a0a2e', hasAnimation: true, textColor: '#e0e7ff', subTextColor: '#a5b4fc' },
 ];
 
 function AnimatedDexOverlay({ themeId }: { themeId: string }) {
   if (themeId === 'rose') {
-    const petals = Array.from({ length: 12 }, (_, i) => i);
+    const petals = Array.from({ length: 18 }, (_, i) => i);
     return (
       <>
         <style>{`
           @keyframes dex-petal-fall {
-            0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0.85; }
+            0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0.95; }
             100% { transform: translateY(110%) translateX(40px) rotate(180deg); opacity: 0; }
           }
+          @keyframes dex-sakura-title {
+            0%, 100% { text-shadow: 0 0 8px #f9a8d4, 0 0 16px #f9a8d4; }
+            50% { text-shadow: 0 0 20px #fce7f3, 0 0 40px #f9a8d4; }
+          }
         `}</style>
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 10, pointerEvents: 'none' }}>
           {petals.map(i => (
             <div key={i} style={{
               position: 'absolute',
               top: '-10px',
-              left: `${(i / 12) * 100 + (i % 3) * 3}%`,
-              width: 8 + (i % 3) * 3,
-              height: 8 + (i % 3) * 3,
+              left: `${(i / 18) * 100 + (i % 3) * 2}%`,
+              width: 12 + (i % 3) * 4,
+              height: 12 + (i % 3) * 4,
               borderRadius: '50% 0 50% 0',
-              background: '#ffb0c8',
-              animation: `dex-petal-fall ${2.5 + (i % 4) * 0.5}s ${i * 0.3}s linear infinite`,
-              opacity: 0.85,
+              background: i % 3 === 0 ? '#ffb0c8' : i % 3 === 1 ? '#ffd6e7' : '#ff88b8',
+              animation: `dex-petal-fall ${2.5 + (i % 4) * 0.5}s ${i * 0.25}s linear infinite`,
+              opacity: 0.9,
+              zIndex: 10,
+              pointerEvents: 'none',
             }} />
           ))}
         </div>
       </>
     );
   }
-  if (themeId === 'dore') {
-    const stars = Array.from({ length: 30 }, (_, i) => i);
+  if (themeId === 'galaxie') {
+    const stars = Array.from({ length: 50 }, (_, i) => i);
     const shootingStars = [0, 1, 2];
     return (
       <>
         <style>{`
-          @keyframes dex-twinkle { 0%,100% { opacity: 0.2; } 50% { opacity: 1; } }
+          @keyframes dex-twinkle { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
           @keyframes dex-shoot { 0% { transform: translateX(0) translateY(0); opacity: 1; } 100% { transform: translateX(80px) translateY(40px); opacity: 0; } }
+          @keyframes dex-galaxie-title {
+            0% { color: #a5b4fc; text-shadow: 0 0 8px #a5b4fc; }
+            25% { color: #f9a8d4; text-shadow: 0 0 12px #f9a8d4; }
+            50% { color: #86efac; text-shadow: 0 0 12px #86efac; }
+            75% { color: #fde68a; text-shadow: 0 0 12px #fde68a; }
+            100% { color: #a5b4fc; text-shadow: 0 0 8px #a5b4fc; }
+          }
         `}</style>
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 10, pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 60%, rgba(67,56,202,0.4) 0%, transparent 70%)', pointerEvents: 'none' }} />
           {stars.map(i => (
             <div key={i} style={{
               position: 'absolute',
               top: `${(i * 37) % 100}%`,
               left: `${(i * 61) % 100}%`,
-              width: 2 + (i % 2),
-              height: 2 + (i % 2),
+              width: 2 + (i % 3),
+              height: 2 + (i % 3),
               borderRadius: '50%',
-              background: '#fde68a',
+              background: i % 4 === 0 ? '#f9a8d4' : i % 4 === 1 ? '#86efac' : i % 4 === 2 ? '#a5b4fc' : 'white',
               animation: `dex-twinkle ${1 + (i % 3)}s ${(i % 4) * 0.5}s ease-in-out infinite`,
+              zIndex: 10,
+              pointerEvents: 'none',
             }} />
           ))}
           {shootingStars.map(i => (
@@ -95,12 +113,14 @@ function AnimatedDexOverlay({ themeId }: { themeId: string }) {
               position: 'absolute',
               top: `${10 + i * 25}%`,
               left: `${10 + i * 20}%`,
-              width: 40,
-              height: 1.5,
-              background: 'linear-gradient(90deg, #fde68a, transparent)',
+              width: 50,
+              height: 2,
+              background: 'linear-gradient(90deg, white, transparent)',
               borderRadius: 99,
               animation: `dex-shoot ${2 + i * 1.5}s ${i * 2.5}s linear infinite`,
               opacity: 0,
+              zIndex: 10,
+              pointerEvents: 'none',
             }} />
           ))}
         </div>
@@ -231,7 +251,11 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 6, height: 6, borderRadius: '50%', background: 'white', border: '1.5px solid #111', zIndex: 1 }} />
             </div>
             <span style={{ color: dexTheme.titleColor, fontWeight: 900, fontSize: '1.1rem', letterSpacing: '0.15em', fontFamily: 'monospace' }}>
-              POKÉDEX
+              {dexTheme.hasAnimation && dexTheme.id === 'rose' ? (
+                <span style={{ animation: 'dex-sakura-title 2s ease-in-out infinite' }}>POKÉDEX</span>
+              ) : dexTheme.hasAnimation && dexTheme.id === 'galaxie' ? (
+                <span style={{ animation: 'dex-galaxie-title 4s linear infinite' }}>POKÉDEX</span>
+              ) : 'POKÉDEX'}
             </span>
             <div style={{ flex: 1 }} />
             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.6rem', fontFamily: 'monospace' }}>
@@ -402,7 +426,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
           {/* LCD Screen wrapping the grid */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px 80px 8px', background: dexTheme.contentBg, position: 'relative', zIndex: 1 }}>
             <div style={{
-              background: '#c8dce8',
+              background: dexTheme.cardBg,
               backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,40,0.04) 0px, rgba(0,0,40,0.04) 1px, transparent 1px, transparent 3px)',
               borderRadius: 12,
               padding: '10px 8px',
@@ -483,7 +507,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                       <div style={{
                         fontSize: '0.5rem',
                         fontFamily: 'monospace',
-                        color: caught ? '#1a2a3a' : 'rgba(80,120,160,0.4)',
+                        color: caught ? dexTheme.titleColor : 'rgba(180,200,220,0.4)',
                         textAlign: 'center',
                         lineHeight: 1.2,
                         overflow: 'hidden',
@@ -592,17 +616,17 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
         return (
           <div
             className="fixed inset-x-0 top-0 z-[520] flex flex-col"
-            style={{ bottom: 72, background: '#dce8f0', fontFamily: 'monospace' }}
+            style={{ bottom: 72, background: dexTheme.contentBg, fontFamily: 'monospace' }}
           >
             {/* Top bar */}
             <div
               style={{
-                background: 'linear-gradient(180deg, #dc2626 0%, #991b1b 100%)',
+                background: dexTheme.headerGrad,
                 paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
                 paddingBottom: '0.6rem',
                 paddingLeft: '1rem',
                 paddingRight: '1rem',
-                borderBottom: '2px solid #7f1d1d',
+                borderBottom: `2px solid ${dexTheme.border}`,
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
@@ -611,7 +635,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
             >
               <button
                 onClick={() => setSelectedId(null)}
-                style={{ color: '#fca5a5', fontSize: '0.85rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 900 }}
+                style={{ color: dexTheme.titleColor, fontSize: '0.85rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 900 }}
               >← Retour</button>
               <span style={{ color: 'white', fontWeight: 900, fontSize: '0.9rem', fontFamily: 'monospace', flex: 1 }}>
                 <span style={{ color: '#4ade80' }}>{numStr}</span> — {p.name.toUpperCase()}
@@ -619,7 +643,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
             </div>
 
             {/* Scrollable content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 80px', display: 'flex', flexDirection: 'column', gap: 12, background: '#dce8f0' }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 80px', display: 'flex', flexDirection: 'column', gap: 12, background: dexTheme.contentBg }}>
 
               {/* Sprite + name block */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
@@ -627,8 +651,8 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                   className={isShiny ? 'shiny-rainbow' : ''}
                   style={{
                     display: 'inline-block',
-                    background: '#c8dce8',
-                    backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,40,0.04) 0px, rgba(0,0,40,0.04) 1px, transparent 1px, transparent 3px)',
+                    background: dexTheme.searchBg,
+                    backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,40,0.06) 0px, rgba(0,0,40,0.06) 1px, transparent 1px, transparent 3px)',
                     borderRadius: 16,
                     padding: '12px',
                     boxShadow: `0 0 24px ${rarityColor}66, inset 0 0 10px rgba(0,0,80,0.1)`,
@@ -665,11 +689,11 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                 </div>
                 {/* Capture count chip */}
                 <div style={{
-                  background: 'white',
-                  border: '1px solid rgba(60,100,150,0.3)',
+                  background: dexTheme.cardBg,
+                  border: `1px solid ${dexTheme.border}`,
                   borderRadius: 99,
                   padding: '3px 12px',
-                  color: '#2c4a6a',
+                  color: dexTheme.titleColor,
                   fontSize: '0.65rem',
                   fontFamily: 'monospace',
                   fontWeight: 700,
@@ -679,36 +703,36 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
               </div>
 
               {/* Level / XP bar */}
-              <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 14px', border: '1px solid #a0c0d8', display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ background: dexTheme.cardBg, borderRadius: 10, padding: '10px 14px', border: `1px solid ${dexTheme.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: '#4a6a8a', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700 }}>NIVEAU</span>
-                  <span style={{ color: '#1a2a3a', fontSize: '0.85rem', fontFamily: 'monospace', fontWeight: 900 }}>{lvData.level >= 100 ? 'MAX' : lvData.level}</span>
+                  <span style={{ color: dexTheme.titleColor, fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700 }}>NIVEAU</span>
+                  <span style={{ color: dexTheme.titleColor, fontSize: '0.85rem', fontFamily: 'monospace', fontWeight: 900 }}>{lvData.level >= 100 ? 'MAX' : lvData.level}</span>
                 </div>
-                <div style={{ width: '100%', background: '#a8c0d0', borderRadius: 99, height: 6, border: '1px solid #90b0c8' }}>
+                <div style={{ width: '100%', background: dexTheme.filterTabBg, borderRadius: 99, height: 6, border: `1px solid ${dexTheme.border}` }}>
                   <div style={{ height: '100%', borderRadius: 99, transition: 'width 0.4s', width: `${xpPct}%`, background: `linear-gradient(90deg, ${rarityColor}, #fbbf24)` }} />
                 </div>
                 {lvData.level < 100 && (
-                  <div style={{ textAlign: 'right', fontSize: '0.6rem', color: '#4a6a8a', fontFamily: 'monospace' }}>
+                  <div style={{ textAlign: 'right', fontSize: '0.6rem', color: dexTheme.titleColor, fontFamily: 'monospace', opacity: 0.7 }}>
                     {lvData.xp} / {xpToNextLevel(lvData.level)} XP
                   </div>
                 )}
                 {pool.length > 0 && availablePool.length < pool.length && (
-                  <div style={{ fontSize: '0.6rem', color: '#6b7280', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: '0.6rem', color: dexTheme.titleColor, fontFamily: 'monospace', opacity: 0.6 }}>
                     🔓 {availablePool.length}/{pool.length} attaques débloquées
                   </div>
                 )}
               </div>
 
               {/* Tab selector */}
-              <div style={{ display: 'flex', gap: 6, background: 'rgba(100,150,200,0.2)', borderRadius: 8, padding: 4 }}>
+              <div style={{ display: 'flex', gap: 6, background: dexTheme.filterTabBg, borderRadius: 8, padding: 4 }}>
                 {(['attaques', 'stats'] as const).map(tab => (
                   <button key={tab} onClick={() => setDetailTab(tab)}
                     style={{
                       flex: 1, padding: '6px', borderRadius: 6,
                       fontSize: '0.68rem', fontWeight: 900, fontFamily: 'monospace',
                       cursor: 'pointer', border: 'none',
-                      background: detailTab === tab ? 'rgba(255,255,255,0.8)' : 'transparent',
-                      color: detailTab === tab ? '#1a4a7a' : '#4a6a8a',
+                      background: detailTab === tab ? dexTheme.filterTabActive : 'transparent',
+                      color: dexTheme.titleColor,
                       boxShadow: detailTab === tab ? 'inset 0 1px 3px rgba(0,0,80,0.15)' : 'none',
                     }}>
                     {tab === 'attaques' ? '⚔️ ATTAQUES' : '📊 STATS'}
@@ -721,9 +745,9 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                 <>
                   {/* Movepool editor */}
                   {pool.length > 0 && (
-                    <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 12px', border: '1px solid #a0c0d8' }}>
+                    <div style={{ background: dexTheme.cardBg, borderRadius: 10, padding: '10px 12px', border: `1px solid ${dexTheme.border}` }}>
                       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                        <span style={{ color: '#4a6a8a', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>ATTAQUES ACTIVES</span>
+                        <span style={{ color: dexTheme.titleColor, fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>ATTAQUES ACTIVES</span>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {activeSlugs.map(slug => {
@@ -734,7 +758,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                             <div key={slug} style={{ borderRadius: 7, padding: '7px 10px', background: `${typeColor}18`, border: `1px solid ${typeColor}44` }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <span style={{ color: 'white', fontWeight: 900, borderRadius: 3, padding: '1px 5px', flexShrink: 0, background: typeColor, fontSize: '0.42rem', fontFamily: 'monospace' }}>{m.type.toUpperCase()}</span>
-                                <span style={{ color: '#1a2a3a', fontSize: '0.72rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
+                                <span style={{ color: dexTheme.titleColor, fontSize: '0.72rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
                                 <span style={{ color: '#9ca3af', fontSize: '0.6rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
                                 {m.power > 0 && <span style={{ color: '#e2e8f0', fontSize: '0.65rem', fontWeight: 900, flexShrink: 0, fontFamily: 'monospace' }}>{m.power}</span>}
                               </div>
@@ -767,27 +791,27 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                 const profileLabel = profile === 'tank' ? '🛡️ Tank' : profile === 'equilibre' ? '⚖️ Équilibré' : '💥 Attaquant';
                 const profileColor = profile === 'tank' ? '#4ade80' : profile === 'equilibre' ? '#60a5fa' : '#f87171';
                 return (
-                  <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '12px 14px', border: '1px solid #a0c0d8', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ background: dexTheme.cardBg, borderRadius: 10, padding: '12px 14px', border: `1px solid ${dexTheme.border}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span style={{ color: '#4a6a8a', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>PROFIL :</span>
+                      <span style={{ color: dexTheme.titleColor, fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>PROFIL :</span>
                       <span style={{ fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 99, color: profileColor, background: `${profileColor}22`, border: `1px solid ${profileColor}55` }}>{profileLabel}</span>
                     </div>
-                    <div style={{ color: '#1a4a7a', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 900, letterSpacing: '0.1em', borderBottom: '1px solid #a0c0d8', paddingBottom: 6, marginBottom: 4 }}>
+                    <div style={{ color: dexTheme.titleColor, fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 900, letterSpacing: '0.1em', borderBottom: `1px solid ${dexTheme.border}`, paddingBottom: 6, marginBottom: 4 }}>
                       STATS DE BASE
                     </div>
                     {rows.map(([label, val, color]) => (
                       <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ color: '#4a6a8a', fontWeight: 700, fontSize: '0.65rem', fontFamily: 'monospace', width: 28, flexShrink: 0 }}>{label}</span>
-                        <div style={{ flex: 1, background: '#a8c0d0', borderRadius: 99, height: 6, border: '1px solid #90b0c8' }}>
+                        <div style={{ flex: 1, background: dexTheme.filterTabBg, borderRadius: 99, height: 6, border: `1px solid ${dexTheme.border}` }}>
                           <div style={{ height: '100%', borderRadius: 99, background: color, width: `${Math.round((val / maxStat) * 100)}%`, transition: 'width 0.4s' }} />
                         </div>
-                        <span style={{ color: '#1a2a3a', fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace', width: 24, textAlign: 'right' }}>{val}</span>
+                        <span style={{ color: dexTheme.titleColor, fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace', width: 24, textAlign: 'right' }}>{val}</span>
                       </div>
                     ))}
-                    <div style={{ marginTop: 4, paddingTop: 8, borderTop: '1px solid #a0c0d8', fontSize: '0.6rem', fontFamily: 'monospace', color: '#4a6a8a' }}>
+                    <div style={{ marginTop: 4, paddingTop: 8, borderTop: `1px solid ${dexTheme.border}`, fontSize: '0.6rem', fontFamily: 'monospace', color: dexTheme.titleColor, opacity: 0.8 }}>
                       <span style={{ fontWeight: 700 }}>Attaque signature : </span>
-                      <span style={{ color: '#1a2a3a', fontWeight: 700 }}>{stats.moves[0].name}</span>
-                      <span style={{ color: '#6a8aaa' }}> ({stats.moves[0].power} pts · {stats.moves[0].category === 'physical' ? 'Physique' : 'Spéciale'})</span>
+                      <span style={{ fontWeight: 700 }}>{stats.moves[0].name}</span>
+                      <span style={{ opacity: 0.7 }}> ({stats.moves[0].power} pts · {stats.moves[0].category === 'physical' ? 'Physique' : 'Spéciale'})</span>
                     </div>
                   </div>
                 );
