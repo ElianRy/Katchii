@@ -103,32 +103,67 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
   ];
 
   return (
-    <div className="fixed inset-0 z-[510] bg-slate-950/95 flex flex-col">
+    <div className="fixed inset-0 z-[510] flex flex-col" style={{ background: '#b91c1c', fontFamily: 'monospace' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pb-3 border-b border-slate-700" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))' }}>
-        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
-        <div>
-          <h2 className="text-white font-bold text-xl">Pokédex — Génération 1</h2>
-          <p className="text-slate-400 text-sm">
-            {totalCaught}/151 capturés · {totalShinyCaught} shinies
-          </p>
+      <div
+        style={{
+          background: 'linear-gradient(180deg, #dc2626 0%, #991b1b 100%)',
+          paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
+          paddingBottom: '0.5rem',
+          paddingLeft: '1rem',
+          paddingRight: '1rem',
+          borderBottom: '2px solid #7f1d1d',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onClose}
+            style={{ color: '#fca5a5', fontSize: '1.25rem', padding: '0 4px', background: 'none', border: 'none', cursor: 'pointer' }}
+          >←</button>
+          <div className="flex items-center gap-2 flex-1">
+            {/* Pokéball icon */}
+            <div style={{
+              width: 20, height: 20, borderRadius: '50%',
+              background: 'linear-gradient(180deg, white 50%, #1f2937 50%)',
+              border: '2px solid white',
+              boxShadow: '0 0 4px rgba(0,0,0,0.5)',
+              flexShrink: 0,
+            }} />
+            <span style={{ color: 'white', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '0.15em', fontFamily: 'monospace' }}>
+              POKÉDEX
+            </span>
+          </div>
+        </div>
+        <div style={{ marginTop: '0.2rem', paddingLeft: '2rem' }}>
+          <span style={{ color: '#fecaca', fontSize: '0.65rem', fontFamily: 'monospace' }}>
+            GÉN. I — {totalCaught}/151 capturés · {totalShinyCaught} ✨ shinies
+          </span>
         </div>
       </div>
 
       {/* Main tabs */}
-      <div className="flex gap-2 px-4 pt-2 border-b border-slate-700 shrink-0">
+      <div className="flex shrink-0" style={{ background: '#991b1b', borderBottom: '2px solid #7f1d1d', padding: '6px 12px', gap: 8 }}>
         {([
-          { id: 'collection' as MainTab, label: '📚 Collection' },
-          { id: 'badges' as MainTab, label: '🥇 Badges' },
+          { id: 'collection' as MainTab, label: '📚 POKÉDEX' },
+          { id: 'badges' as MainTab, label: '🥇 BADGES' },
         ]).map((tab) => (
           <button
             key={tab.id}
             onClick={() => setMainTab(tab.id)}
-            className={`px-4 py-2 text-sm font-bold border-b-2 transition-colors ${
-              mainTab === tab.id
-                ? 'border-blue-500 text-blue-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
+            style={{
+              padding: '5px 14px',
+              borderRadius: 6,
+              fontSize: '0.7rem',
+              fontWeight: 900,
+              fontFamily: 'monospace',
+              letterSpacing: '0.08em',
+              border: 'none',
+              cursor: 'pointer',
+              background: mainTab === tab.id ? '#1f2937' : '#b91c1c',
+              color: mainTab === tab.id ? '#4ade80' : '#fca5a5',
+              boxShadow: mainTab === tab.id ? 'inset 0 2px 4px rgba(0,0,0,0.4)' : '0 1px 3px rgba(0,0,0,0.3)',
+            }}
           >
             {tab.label}
           </button>
@@ -138,22 +173,39 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
       {mainTab === 'collection' && (
         <>
           {/* Search bar + sort */}
-          <div className="px-4 pt-2 pb-1 shrink-0 flex gap-2">
+          <div style={{ padding: '6px 10px', background: '#991b1b', display: 'flex', gap: 8, flexShrink: 0 }}>
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher un Pokémon…"
-              className="flex-1 bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+              placeholder="Rechercher…"
+              style={{
+                flex: 1,
+                background: '#1f2937',
+                border: '1px solid #374151',
+                borderRadius: 6,
+                padding: '5px 10px',
+                fontSize: '0.75rem',
+                color: 'white',
+                fontFamily: 'monospace',
+                outline: 'none',
+              }}
+              onFocus={e => { e.currentTarget.style.borderColor = '#dc2626'; e.currentTarget.style.boxShadow = '0 0 0 2px #dc262655'; }}
+              onBlur={e => { e.currentTarget.style.borderColor = '#374151'; e.currentTarget.style.boxShadow = 'none'; }}
             />
-            <div className="flex gap-1 shrink-0">
+            <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
               {([['id', '#'], ['rarity_desc', '★'], ['level_desc', '↓Nv']] as const).map(([k, label]) => (
                 <button key={k} onClick={() => applySortMode(k)}
-                  className="px-2 py-1.5 rounded-lg text-xs font-bold transition-all"
                   style={{
-                    background: sortMode === k ? '#6366f1' : 'rgba(255,255,255,0.06)',
-                    color: sortMode === k ? 'white' : '#94a3b8',
-                    border: sortMode === k ? '1px solid #818cf8' : '1px solid rgba(255,255,255,0.08)',
+                    padding: '4px 8px',
+                    borderRadius: 5,
+                    fontSize: '0.65rem',
+                    fontWeight: 900,
+                    fontFamily: 'monospace',
+                    cursor: 'pointer',
+                    background: sortMode === k ? '#7f1d1d' : '#1f2937',
+                    color: sortMode === k ? '#fca5a5' : '#9ca3af',
+                    border: `1px solid ${sortMode === k ? '#ef4444' : '#374151'}`,
                   }}>
                   {label}
                 </button>
@@ -162,41 +214,52 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
           </div>
 
           {/* Filter button */}
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-slate-700 shrink-0">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px', background: '#991b1b', borderBottom: '1px solid #7f1d1d', flexShrink: 0 }}>
             <button
               onClick={() => setFilterOpen(o => !o)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-700 text-slate-200 hover:bg-slate-600"
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '4px 10px', borderRadius: 6,
+                fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace',
+                background: '#7f1d1d', color: '#fca5a5',
+                border: '1px solid #ef444466', cursor: 'pointer',
+              }}
             >
               <span>🔍</span>
-              <span>Filtrer</span>
+              <span>FILTRER</span>
               {filter !== 'tous' && (
-                <span className="ml-1 px-1.5 py-0.5 rounded-full text-white font-black text-[0.55rem]"
-                  style={{ background: RARITY_ORDER.includes(filter as Rarity) ? RARITY_COLORS[filter as Rarity] : '#3b82f6' }}>
+                <span style={{
+                  marginLeft: 2, padding: '1px 6px', borderRadius: 99,
+                  color: 'white', fontWeight: 900, fontSize: '0.55rem',
+                  background: RARITY_ORDER.includes(filter as Rarity) ? RARITY_COLORS[filter as Rarity] : '#dc2626',
+                }}>
                   {filterTabs.find(t => t.id === filter)?.label}
                 </span>
               )}
               <span style={{ transform: filterOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', display: 'inline-block' }}>▾</span>
             </button>
             {filter !== 'tous' && (
-              <button onClick={() => applyFilter('tous')} className="text-slate-400 hover:text-white text-xs">✕ Réinitialiser</button>
+              <button onClick={() => applyFilter('tous')} style={{ color: '#fca5a5', fontSize: '0.65rem', background: 'none', border: 'none', cursor: 'pointer' }}>✕ Réinitialiser</button>
             )}
           </div>
 
           {/* Filter dropdown */}
           {filterOpen && (
-            <div className="flex flex-wrap gap-1.5 px-4 py-2 border-b border-slate-700 bg-slate-900/80 shrink-0">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 10px', borderBottom: '1px solid #7f1d1d', background: '#7f1d1d', flexShrink: 0 }}>
               {filterTabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => { applyFilter(tab.id); setFilterOpen(false); }}
-                  className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
-                    filter === tab.id ? 'text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                  }`}
-                  style={
-                    filter === tab.id
-                      ? { background: RARITY_ORDER.includes(tab.id as Rarity) ? RARITY_COLORS[tab.id as Rarity] + 'dd' : '#3b82f6' }
-                      : undefined
-                  }
+                  style={{
+                    padding: '3px 10px', borderRadius: 99,
+                    fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace',
+                    cursor: 'pointer', whiteSpace: 'nowrap',
+                    background: filter === tab.id
+                      ? (RARITY_ORDER.includes(tab.id as Rarity) ? RARITY_COLORS[tab.id as Rarity] : '#dc2626')
+                      : '#991b1b',
+                    color: filter === tab.id ? 'white' : '#fca5a5',
+                    border: `1px solid ${filter === tab.id ? 'transparent' : '#ef444433'}`,
+                  }}
                 >
                   {tab.label}
                 </button>
@@ -205,122 +268,196 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
           )}
 
           {/* Type filter row */}
-          <div className="flex gap-1.5 px-4 py-2 border-b border-slate-700 overflow-x-auto shrink-0 scrollbar-none">
+          <div style={{ display: 'flex', gap: 5, padding: '5px 10px', borderBottom: '1px solid #7f1d1d', background: '#991b1b', overflowX: 'auto', flexShrink: 0 }}>
             {([null, 'normal', 'fire', 'water', 'grass', 'electric', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon'] as (PokemonType | null)[]).map((t) => (
               <button
                 key={t ?? 'all'}
                 onClick={() => setTypeFilter(t === typeFilter ? null : t)}
-                className="px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap shrink-0 transition-all"
-                style={t === null
-                  ? { background: typeFilter === null ? '#6366f1' : 'rgba(255,255,255,0.06)', color: typeFilter === null ? 'white' : '#94a3b8', border: typeFilter === null ? '1px solid #818cf8' : '1px solid rgba(255,255,255,0.08)' }
-                  : { background: typeFilter === t ? (TYPE_COLORS[t] ?? '#888') : `${TYPE_COLORS[t] ?? '#888'}22`, color: typeFilter === t ? 'white' : TYPE_COLORS[t] ?? '#888', border: `1px solid ${TYPE_COLORS[t] ?? '#888'}${typeFilter === t ? '' : '55'}` }
-                }
+                style={{
+                  padding: '2px 8px', borderRadius: 99,
+                  fontSize: '0.6rem', fontWeight: 900, fontFamily: 'monospace',
+                  cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+                  ...(t === null
+                    ? {
+                        background: typeFilter === null ? '#7f1d1d' : '#1f2937',
+                        color: typeFilter === null ? '#fca5a5' : '#9ca3af',
+                        border: `1px solid ${typeFilter === null ? '#ef4444' : '#374151'}`,
+                      }
+                    : {
+                        background: typeFilter === t ? (TYPE_COLORS[t] ?? '#888') : `${TYPE_COLORS[t] ?? '#888'}22`,
+                        color: typeFilter === t ? 'white' : TYPE_COLORS[t] ?? '#888',
+                        border: `1px solid ${TYPE_COLORS[t] ?? '#888'}${typeFilter === t ? '' : '55'}`,
+                      }
+                  ),
+                }}
               >
-                {t === null ? 'Tous types' : t.charAt(0).toUpperCase() + t.slice(1)}
+                {t === null ? 'Tous' : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
             ))}
           </div>
 
-          {/* Grid */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
-            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
-              {filteredPokemon.map((pokemon) => {
-                const caught = (state.normalCollection[pokemon.id] ?? 0) > 0;
-                const shinyCaught = (state.shinyCollection[pokemon.id] ?? 0) > 0;
-                const rarityColor = RARITY_COLORS[pokemon.rarity];
+          {/* LCD Screen wrapping the grid */}
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px', background: '#b91c1c' }}>
+            <div style={{
+              background: '#0f1a0f',
+              borderRadius: 12,
+              padding: '10px 8px',
+              boxShadow: 'inset 0 0 16px rgba(0,0,0,0.6), inset 0 0 4px rgba(74,222,128,0.08)',
+              minHeight: '100%',
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(5, 1fr)',
+                gap: 6,
+              }}>
+                {filteredPokemon.map((pokemon) => {
+                  const caught = (state.normalCollection[pokemon.id] ?? 0) > 0;
+                  const shinyCaught = (state.shinyCollection[pokemon.id] ?? 0) > 0;
+                  const rarityColor = RARITY_COLORS[pokemon.rarity];
+                  const numStr = `#${String(pokemon.id).padStart(3, '0')}`;
 
-                return (
-                  <div key={pokemon.id} className="flex flex-col items-center gap-1 relative cursor-pointer" onClick={() => caught && setSelectedId(pokemon.id)}>
-                    <div className={`relative${shinyCaught ? ' shiny-rainbow' : ''}`} style={{ display: 'inline-block' }}>
-                      <img
-                        src={
-                          caught
-                            ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${shinyCaught ? 'shiny/' : ''}${pokemon.id}.png`
-                            : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`
-                        }
-                        alt={caught ? pokemon.name : '???'}
-                        width={48}
-                        height={48}
-                        style={{
-                          imageRendering: 'pixelated',
-                          filter: caught && !shinyCaught
-                            ? `drop-shadow(0 0 5px ${rarityColor}) drop-shadow(0 0 2px ${rarityColor}88)`
-                            : caught ? undefined : 'grayscale(1) opacity(0.35)',
-                        }}
-                        draggable={false}
-                      />
+                  return (
+                    <div
+                      key={pokemon.id}
+                      onClick={() => caught && setSelectedId(pokemon.id)}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 2,
+                        padding: '5px 3px 4px',
+                        borderRadius: 6,
+                        cursor: caught ? 'pointer' : 'default',
+                        background: caught ? '#1a2a1a' : '#111c11',
+                        border: '1px solid #1f2d1f',
+                        borderTop: caught ? `2px solid ${rarityColor}` : '2px solid #1f2d1f',
+                        position: 'relative',
+                      }}
+                    >
+                      {/* Number */}
+                      <div style={{
+                        fontSize: '0.5rem',
+                        fontFamily: 'monospace',
+                        color: caught ? '#4ade80' : '#2d4a2d',
+                        lineHeight: 1,
+                        alignSelf: 'flex-start',
+                        paddingLeft: 2,
+                      }}>
+                        {caught ? numStr : '#???'}
+                      </div>
+
+                      {/* Sprite */}
+                      <div className={shinyCaught ? 'shiny-rainbow' : ''} style={{ display: 'inline-block', position: 'relative' }}>
+                        <img
+                          src={
+                            caught
+                              ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${shinyCaught ? 'shiny/' : ''}${pokemon.id}.png`
+                              : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemon.id}.png`
+                          }
+                          alt={caught ? pokemon.name : '???'}
+                          width={40}
+                          height={40}
+                          style={{
+                            imageRendering: 'pixelated',
+                            filter: caught
+                              ? (shinyCaught
+                                ? undefined
+                                : `drop-shadow(0 0 4px ${rarityColor}) drop-shadow(0 0 1px ${rarityColor}88)`)
+                              : 'brightness(0) opacity(0.25)',
+                          }}
+                          draggable={false}
+                        />
+                        {shinyCaught && (
+                          <>
+                            <span className="absolute -top-2 -right-1" style={{ animation: 'pokedex-star-orbit-a 2s linear infinite', fontSize: '0.55rem' }}>⭐</span>
+                            <span className="absolute -bottom-1 -left-1" style={{ animation: 'pokedex-star-orbit-b 2.5s linear infinite', fontSize: '0.5rem' }}>✦</span>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Name */}
+                      <div style={{
+                        fontSize: '0.5rem',
+                        fontFamily: 'monospace',
+                        color: caught ? 'white' : '#2d4a2d',
+                        textAlign: 'center',
+                        lineHeight: 1.2,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '100%',
+                      }}>
+                        {caught ? pokemon.name : '???'}
+                      </div>
+
+                      {/* Shiny badge */}
                       {shinyCaught && (
-                        <>
-                          <span className="absolute -top-2 -right-1 text-xs" style={{ animation: 'pokedex-star-orbit-a 2s linear infinite' }}>⭐</span>
-                          <span className="absolute -bottom-1 -left-1 text-xs" style={{ animation: 'pokedex-star-orbit-b 2.5s linear infinite' }}>✦</span>
-                          <span className="absolute top-0 -right-2" style={{ fontSize: 8, animation: 'pokedex-star-orbit-c 1.8s linear infinite' }}>★</span>
-                        </>
+                        <span style={{ position: 'absolute', top: 2, right: 2, fontSize: '0.55rem' }}>✨</span>
                       )}
                     </div>
-                    <div
-                      className="text-center leading-tight"
-                      style={{ color: caught ? '#e2e8f0' : '#4b5563', fontSize: '0.6rem' }}
-                    >
-                      {caught ? pokemon.name : '???'}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {filteredPokemon.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-                <div className="text-4xl mb-3">🔍</div>
-                <p className="text-lg font-bold">Aucun Pokémon trouvé</p>
-                <p className="text-sm">Continuez à chasser !</p>
+                  );
+                })}
               </div>
-            )}
+
+              {filteredPokemon.length === 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', color: '#2d4a2d' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: 8 }}>🔍</div>
+                  <p style={{ fontSize: '0.8rem', fontWeight: 900, fontFamily: 'monospace', color: '#4ade8044' }}>AUCUN RÉSULTAT</p>
+                  <p style={{ fontSize: '0.65rem', fontFamily: 'monospace', color: '#2d4a2d' }}>Continuez à chasser !</p>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
 
       {mainTab === 'badges' && (
-        <div className="flex-1 overflow-y-auto px-4 py-4 pb-24">
-          <p className="text-slate-400 text-xs mb-4 text-center">Bats les maîtres d'arène pour débloquer leurs badges</p>
-          <div className="flex flex-col gap-3">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 96px', background: '#b91c1c' }}>
+          <p style={{ color: '#fca5a5', fontSize: '0.65rem', fontFamily: 'monospace', textAlign: 'center', marginBottom: 12 }}>
+            BATS LES MAÎTRES D'ARÈNE POUR DÉBLOQUER LEURS BADGES
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {ARENA_BADGES.map(({ zoneId, badge, bossName, bossTitle, zoneName }) => {
               const earned = !!(state.zoneProgress?.bossDefeated?.[zoneId]);
               return (
                 <div
                   key={zoneId}
-                  className="flex items-center gap-4 rounded-2xl px-4 py-3 border"
                   style={{
-                    background: earned ? 'rgba(234,179,8,0.12)' : 'rgba(30,41,59,0.5)',
-                    borderColor: earned ? 'rgba(234,179,8,0.45)' : 'rgba(100,116,139,0.2)',
-                    boxShadow: earned ? '0 0 18px rgba(234,179,8,0.2)' : 'none',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    borderRadius: 10, padding: '10px 14px',
+                    background: earned ? '#1a1200' : '#111c11',
+                    border: `1px solid ${earned ? 'rgba(234,179,8,0.45)' : '#1f2d1f'}`,
+                    boxShadow: earned ? '0 0 12px rgba(234,179,8,0.15)' : 'none',
+                    fontFamily: 'monospace',
                   }}
                 >
-                  {/* Badge icon */}
                   <div
-                    className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 text-2xl"
                     style={{
-                      background: earned ? 'rgba(234,179,8,0.25)' : 'rgba(30,41,59,0.8)',
-                      border: `2px solid ${earned ? 'rgba(234,179,8,0.6)' : 'rgba(100,116,139,0.3)'}`,
-                      filter: earned ? 'none' : 'grayscale(1) opacity(0.35)',
+                      width: 48, height: 48, borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '1.4rem', flexShrink: 0,
+                      background: earned ? 'rgba(234,179,8,0.2)' : '#1a1a1a',
+                      border: `2px solid ${earned ? 'rgba(234,179,8,0.6)' : '#2d2d2d'}`,
+                      filter: earned ? 'none' : 'grayscale(1) opacity(0.3)',
                     }}
                   >
                     🥇
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-black text-base" style={{ color: earned ? '#fde68a' : '#4b5563' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 900, fontSize: '0.85rem', color: earned ? '#fde68a' : '#2d4a2d' }}>
                       {badge}
                     </div>
-                    <div className="text-xs font-bold" style={{ color: earned ? '#94a3b8' : '#374151' }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: earned ? '#94a3b8' : '#1f2d1f' }}>
                       {bossName} · {bossTitle}
                     </div>
-                    <div className="text-xs" style={{ color: earned ? '#64748b' : '#374151' }}>
+                    <div style={{ fontSize: '0.6rem', color: earned ? '#475569' : '#1f2d1f' }}>
                       {zoneName}
                     </div>
                   </div>
                   {earned ? (
-                    <span className="text-yellow-400 text-xl shrink-0">✅</span>
+                    <span style={{ color: '#fde68a', fontSize: '1.2rem', flexShrink: 0 }}>✅</span>
                   ) : (
-                    <span className="text-slate-600 text-xl shrink-0">🔒</span>
+                    <span style={{ color: '#2d4a2d', fontSize: '1.2rem', flexShrink: 0 }}>🔒</span>
                   )}
                 </div>
               );
@@ -329,7 +466,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
         </div>
       )}
 
-      {/* Pokemon detail modal */}
+      {/* Pokemon detail — full screen */}
       {selectedId !== null && (() => {
         const p = POKEMON_BY_ID[selectedId];
         if (!p) return null;
@@ -341,6 +478,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
         const types = POKEMON_TYPE[selectedId] ?? ['normal'];
         const rarityColor = RARITY_COLORS[p.rarity];
         const normalCount = state.normalCollection[selectedId] ?? 0;
+        const numStr = `#${String(selectedId).padStart(3, '0')}`;
 
         // Level-gated pool: unlock moves based on level
         const pool = GEN1_MOVEPOOL[selectedId] ?? [];
@@ -349,45 +487,127 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
         const activeSlugs = editingMoves ? pendingMoves : currentSlugs;
 
         return (
-          <div className="fixed inset-0 z-[520] flex items-center justify-center bg-black/70" onClick={() => setSelectedId(null)}>
+          <div
+            className="fixed inset-0 z-[520] flex flex-col"
+            style={{ background: '#b91c1c', fontFamily: 'monospace' }}
+          >
+            {/* Top bar */}
             <div
-              className="relative bg-slate-900 rounded-3xl p-5 w-80 flex flex-col items-center gap-3 border-2 max-h-[90vh] overflow-y-auto"
-              style={{ borderColor: rarityColor }}
-              onClick={e => e.stopPropagation()}
+              style={{
+                background: 'linear-gradient(180deg, #dc2626 0%, #991b1b 100%)',
+                paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
+                paddingBottom: '0.6rem',
+                paddingLeft: '1rem',
+                paddingRight: '1rem',
+                borderBottom: '2px solid #7f1d1d',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                flexShrink: 0,
+              }}
             >
-              <button className="absolute top-3 right-4 text-slate-400 text-xl" onClick={() => setSelectedId(null)}>✕</button>
+              <button
+                onClick={() => setSelectedId(null)}
+                style={{ color: '#fca5a5', fontSize: '0.85rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 900 }}
+              >← Retour</button>
+              <span style={{ color: 'white', fontWeight: 900, fontSize: '0.9rem', fontFamily: 'monospace', flex: 1 }}>
+                <span style={{ color: '#4ade80' }}>{numStr}</span> — {p.name.toUpperCase()}
+              </span>
+            </div>
 
-              {/* Header: sprite + name + type */}
-              <div className={isShiny ? 'shiny-rainbow' : ''} style={{ display: 'inline-block' }}>
-                <img
-                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${isShiny ? 'shiny/' : ''}${selectedId}.png`}
-                  alt={p.name} width={80} height={80}
-                  style={{ imageRendering: 'pixelated', filter: `drop-shadow(0 0 8px ${rarityColor})` }}
-                />
+            {/* Scrollable content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 80px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+
+              {/* Sprite + name block */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                <div
+                  className={isShiny ? 'shiny-rainbow' : ''}
+                  style={{
+                    display: 'inline-block',
+                    background: '#0f1a0f',
+                    borderRadius: 16,
+                    padding: '12px',
+                    boxShadow: `0 0 24px ${rarityColor}66, inset 0 0 10px rgba(0,0,0,0.5)`,
+                    border: `2px solid ${rarityColor}44`,
+                  }}
+                >
+                  <img
+                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${isShiny ? 'shiny/' : ''}${selectedId}.png`}
+                    alt={p.name}
+                    width={120}
+                    height={120}
+                    style={{
+                      imageRendering: 'pixelated',
+                      filter: isShiny ? undefined : `drop-shadow(0 0 10px ${rarityColor})`,
+                    }}
+                  />
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ color: 'white', fontWeight: 900, fontSize: '1.3rem', fontFamily: 'monospace' }}>{p.name}</div>
+                  <div style={{ color: '#4ade80', fontSize: '0.75rem', fontFamily: 'monospace', marginTop: 2 }}>{numStr}</div>
+                  <div style={{ color: rarityColor, fontSize: '0.65rem', fontFamily: 'monospace', marginTop: 2 }}>{RARITY_LABELS[p.rarity]}</div>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {types.map(t => (
+                    <span key={t}
+                      style={{
+                        background: TYPE_COLORS[t as PokemonType] ?? '#888',
+                        color: 'white', fontWeight: 900, fontFamily: 'monospace',
+                        borderRadius: 4, padding: '2px 10px', fontSize: '0.65rem',
+                      }}>
+                      {t.charAt(0).toUpperCase() + t.slice(1)}
+                    </span>
+                  ))}
+                </div>
+                {/* Capture count chip */}
+                <div style={{
+                  background: '#0f1a0f',
+                  border: '1px solid #4ade8033',
+                  borderRadius: 99,
+                  padding: '3px 12px',
+                  color: '#4ade80',
+                  fontSize: '0.65rem',
+                  fontFamily: 'monospace',
+                  fontWeight: 700,
+                }}>
+                  Capturé {normalCount} fois
+                </div>
               </div>
-              <div className="text-center">
-                <div className="font-black text-xl text-white">{p.name}</div>
-                <div className="text-xs mt-0.5" style={{ color: rarityColor }}>{RARITY_LABELS[p.rarity]}</div>
-              </div>
-              <div className="flex gap-1.5">
-                {types.map(t => (
-                  <span key={t} className="text-white font-bold rounded px-2 py-0.5 text-xs"
-                    style={{ background: TYPE_COLORS[t as PokemonType] ?? '#888' }}>
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </span>
-                ))}
+
+              {/* Level / XP bar */}
+              <div style={{ background: '#111c11', borderRadius: 10, padding: '10px 14px', border: '1px solid #1f2d1f', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: '#6b7280', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700 }}>NIVEAU</span>
+                  <span style={{ color: 'white', fontSize: '0.85rem', fontFamily: 'monospace', fontWeight: 900 }}>{lvData.level >= 100 ? 'MAX' : lvData.level}</span>
+                </div>
+                <div style={{ width: '100%', background: '#0f1a0f', borderRadius: 99, height: 6, border: '1px solid #1f2d1f' }}>
+                  <div style={{ height: '100%', borderRadius: 99, transition: 'width 0.4s', width: `${xpPct}%`, background: `linear-gradient(90deg, ${rarityColor}, #fbbf24)` }} />
+                </div>
+                {lvData.level < 100 && (
+                  <div style={{ textAlign: 'right', fontSize: '0.6rem', color: '#4ade8066', fontFamily: 'monospace' }}>
+                    {lvData.xp} / {xpToNextLevel(lvData.level)} XP
+                  </div>
+                )}
+                {pool.length > 0 && availablePool.length < pool.length && (
+                  <div style={{ fontSize: '0.6rem', color: '#6b7280', fontFamily: 'monospace' }}>
+                    🔓 {availablePool.length}/{pool.length} attaques débloquées
+                  </div>
+                )}
               </div>
 
               {/* Tab selector */}
-              <div className="flex w-full border-b border-slate-700">
+              <div style={{ display: 'flex', gap: 6, background: '#991b1b', borderRadius: 8, padding: 4 }}>
                 {(['attaques', 'stats'] as const).map(tab => (
                   <button key={tab} onClick={() => setDetailTab(tab)}
-                    className={`flex-1 py-2 text-xs font-bold border-b-2 transition-colors ${
-                      detailTab === tab
-                        ? 'border-blue-500 text-blue-400'
-                        : 'border-transparent text-slate-500 hover:text-slate-300'
-                    }`}>
-                    {tab === 'attaques' ? '⚔️ Attaques' : '📊 Stats'}
+                    style={{
+                      flex: 1, padding: '6px', borderRadius: 6,
+                      fontSize: '0.68rem', fontWeight: 900, fontFamily: 'monospace',
+                      cursor: 'pointer', border: 'none',
+                      background: detailTab === tab ? '#1f2937' : 'transparent',
+                      color: detailTab === tab ? '#4ade80' : '#fca5a5',
+                      boxShadow: detailTab === tab ? 'inset 0 1px 3px rgba(0,0,0,0.4)' : 'none',
+                    }}>
+                    {tab === 'attaques' ? '⚔️ ATTAQUES' : '📊 STATS'}
                   </button>
                 ))}
               </div>
@@ -395,68 +615,46 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
               {/* Tab: Attaques */}
               {detailTab === 'attaques' && (
                 <>
-                  {/* Level / XP */}
-                  <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex flex-col gap-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-400 font-bold">Niveau</span>
-                      <span className="text-white font-black">{lvData.level >= 100 ? 'MAX' : lvData.level}</span>
-                    </div>
-                    <div className="w-full bg-slate-700 rounded-full h-2">
-                      <div className="h-2 rounded-full transition-all" style={{ width: `${xpPct}%`, background: `linear-gradient(90deg, ${rarityColor}, #fbbf24)` }} />
-                    </div>
-                    {lvData.level < 100 && (
-                      <div className="text-right text-xs text-slate-500">{lvData.xp} / {xpToNextLevel(lvData.level)} XP</div>
-                    )}
-                    {pool.length > 0 && availablePool.length < pool.length && (
-                      <div className="text-xs text-slate-500 mt-0.5">
-                        🔓 {availablePool.length}/{pool.length} attaques débloquées
-                      </div>
-                    )}
-                  </div>
-
                   {/* Movepool editor */}
                   {pool.length > 0 && (
-                    <div className="w-full bg-slate-800 rounded-2xl px-4 py-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-slate-400 text-xs font-bold">Attaques actives</span>
+                    <div style={{ background: '#111c11', borderRadius: 10, padding: '10px 12px', border: '1px solid #1f2d1f' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                        <span style={{ color: '#6b7280', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>ATTAQUES ACTIVES</span>
                         {onSaveCustomMoves && !editingMoves && (
                           <button
-                            className="text-xs font-bold px-2 py-0.5 rounded-full"
-                            style={{ background: '#3b82f633', color: '#60a5fa', border: '1px solid #3b82f655' }}
+                            style={{ fontSize: '0.6rem', fontWeight: 900, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 99, background: '#7f1d1d', color: '#fca5a5', border: '1px solid #ef444455', cursor: 'pointer' }}
                             onClick={() => { setPendingMoves([...currentSlugs]); setEditingMoves(true); }}
                           >Modifier</button>
                         )}
                         {editingMoves && (
-                          <div className="flex gap-1.5">
+                          <div style={{ display: 'flex', gap: 6 }}>
                             <button
-                              className="text-xs font-bold px-2 py-0.5 rounded-full"
-                              style={{ background: '#ef444433', color: '#f87171', border: '1px solid #ef444455' }}
+                              style={{ fontSize: '0.6rem', fontWeight: 900, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 99, background: '#ef444433', color: '#f87171', border: '1px solid #ef444455', cursor: 'pointer' }}
                               onClick={() => setEditingMoves(false)}
                             >Annuler</button>
                             <button
-                              className="text-xs font-bold px-2 py-0.5 rounded-full"
-                              style={{ background: '#22c55e33', color: '#4ade80', border: '1px solid #22c55e55', opacity: pendingMoves.length === 4 ? 1 : 0.4 }}
+                              style={{ fontSize: '0.6rem', fontWeight: 900, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 99, background: '#22c55e33', color: '#4ade80', border: '1px solid #22c55e55', cursor: 'pointer', opacity: pendingMoves.length === 4 ? 1 : 0.4 }}
                               onClick={() => { if (pendingMoves.length === 4) { onSaveCustomMoves?.(selectedId, pendingMoves); setEditingMoves(false); } }}
                             >Sauvegarder</button>
                           </div>
                         )}
                       </div>
                       {!editingMoves ? (
-                        <div className="flex flex-col gap-2">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {activeSlugs.map(slug => {
                             const m = MOVES[slug];
                             if (!m) return null;
                             const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
                             return (
-                              <div key={slug} className="rounded-lg px-2 py-1.5" style={{ background: `${typeColor}18`, border: `1px solid ${typeColor}44` }}>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-white font-bold rounded px-1.5 py-0.5 shrink-0" style={{ background: typeColor, fontSize: '0.42rem' }}>{m.type.toUpperCase()}</span>
-                                  <span className="text-white text-xs font-bold flex-1">{m.name}</span>
-                                  <span className="text-slate-400 text-xs shrink-0">{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
-                                  {m.power > 0 && <span className="text-slate-300 text-xs font-black shrink-0">{m.power}</span>}
+                              <div key={slug} style={{ borderRadius: 7, padding: '7px 10px', background: `${typeColor}18`, border: `1px solid ${typeColor}44` }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                  <span style={{ color: 'white', fontWeight: 900, borderRadius: 3, padding: '1px 5px', flexShrink: 0, background: typeColor, fontSize: '0.42rem', fontFamily: 'monospace' }}>{m.type.toUpperCase()}</span>
+                                  <span style={{ color: 'white', fontSize: '0.72rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
+                                  <span style={{ color: '#9ca3af', fontSize: '0.6rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
+                                  {m.power > 0 && <span style={{ color: '#e2e8f0', fontSize: '0.65rem', fontWeight: 900, flexShrink: 0, fontFamily: 'monospace' }}>{m.power}</span>}
                                 </div>
                                 {m.description && (
-                                  <div className="text-slate-400 mt-0.5" style={{ fontSize: '0.6rem', lineHeight: 1.4 }}>{m.description}</div>
+                                  <div style={{ color: '#6b7280', marginTop: 3, fontSize: '0.58rem', lineHeight: 1.4, fontFamily: 'monospace' }}>{m.description}</div>
                                 )}
                               </div>
                             );
@@ -464,8 +662,8 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                         </div>
                       ) : (
                         <div>
-                          <div className="text-slate-500 text-xs mb-2">Sélectionnez exactement 4 attaques ({pendingMoves.length}/4)</div>
-                          <div className="flex flex-col gap-1.5 max-h-56 overflow-y-auto">
+                          <div style={{ color: '#6b7280', fontSize: '0.6rem', marginBottom: 6, fontFamily: 'monospace' }}>Sélectionnez exactement 4 attaques ({pendingMoves.length}/4)</div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 220, overflowY: 'auto' }}>
                             {availablePool.map(slug => {
                               const m = MOVES[slug];
                               if (!m) return null;
@@ -474,10 +672,12 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                               return (
                                 <button
                                   key={slug}
-                                  className="flex flex-col rounded-lg px-2 py-1.5 text-left gap-0.5"
                                   style={{
-                                    background: isSelected ? '#3b82f622' : '#ffffff06',
-                                    border: `1px solid ${isSelected ? '#3b82f6' : '#ffffff11'}`,
+                                    display: 'flex', flexDirection: 'column',
+                                    borderRadius: 7, padding: '6px 8px', textAlign: 'left', gap: 3,
+                                    background: isSelected ? '#1a3a1a' : '#0f1a0f',
+                                    border: `1px solid ${isSelected ? '#4ade80' : '#1f2d1f'}`,
+                                    cursor: 'pointer',
                                   }}
                                   onClick={() => {
                                     if (isSelected) {
@@ -487,17 +687,24 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                                     }
                                   }}
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-xs ${isSelected ? 'bg-blue-500 border-blue-400' : 'border-slate-600'}`}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span style={{
+                                      width: 14, height: 14, borderRadius: 3, flexShrink: 0,
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                      fontSize: '0.55rem', fontFamily: 'monospace', fontWeight: 900,
+                                      background: isSelected ? '#4ade80' : 'transparent',
+                                      color: isSelected ? '#0f1a0f' : '#4ade8044',
+                                      border: `1px solid ${isSelected ? '#4ade80' : '#2d4a2d'}`,
+                                    }}>
                                       {isSelected ? '✓' : ''}
                                     </span>
-                                    <span className="text-white font-bold rounded px-1 py-0.5 shrink-0" style={{ background: typeColor, fontSize: '0.4rem' }}>{m.type.toUpperCase()}</span>
-                                    <span className="text-white text-xs font-bold flex-1">{m.name}</span>
-                                    {m.power > 0 && <span className="text-slate-400 text-xs shrink-0">{m.power}</span>}
-                                    <span className="text-slate-500 text-xs shrink-0">{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
+                                    <span style={{ color: 'white', fontWeight: 900, borderRadius: 3, padding: '1px 4px', flexShrink: 0, background: typeColor, fontSize: '0.4rem', fontFamily: 'monospace' }}>{m.type.toUpperCase()}</span>
+                                    <span style={{ color: 'white', fontSize: '0.68rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
+                                    {m.power > 0 && <span style={{ color: '#9ca3af', fontSize: '0.6rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.power}</span>}
+                                    <span style={{ color: '#6b7280', fontSize: '0.58rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
                                   </div>
                                   {m.description && (
-                                    <div className="text-slate-500 pl-6" style={{ fontSize: '0.58rem', lineHeight: 1.3 }}>{m.description}</div>
+                                    <div style={{ color: '#4b5563', paddingLeft: 20, fontSize: '0.56rem', lineHeight: 1.3, fontFamily: 'monospace' }}>{m.description}</div>
                                   )}
                                 </button>
                               );
@@ -527,28 +734,27 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                 const profileLabel = profile === 'tank' ? '🛡️ Tank' : profile === 'equilibre' ? '⚖️ Équilibré' : '💥 Attaquant';
                 const profileColor = profile === 'tank' ? '#4ade80' : profile === 'equilibre' ? '#60a5fa' : '#f87171';
                 return (
-                  <div className="w-full bg-slate-800 rounded-2xl px-4 py-3 flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-slate-400 text-xs font-bold">Profil :</span>
-                      <span className="text-xs font-black px-2 py-0.5 rounded-full" style={{ color: profileColor, background: `${profileColor}22`, border: `1px solid ${profileColor}55` }}>{profileLabel}</span>
+                  <div style={{ background: '#111c11', borderRadius: 10, padding: '12px 14px', border: '1px solid #1f2d1f', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ color: '#6b7280', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>PROFIL :</span>
+                      <span style={{ fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 99, color: profileColor, background: `${profileColor}22`, border: `1px solid ${profileColor}55` }}>{profileLabel}</span>
                     </div>
-                    <div className="text-slate-400 text-xs font-bold mb-1">Stats de base</div>
+                    <div style={{ color: '#4ade80', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 900, letterSpacing: '0.1em', borderBottom: '1px solid #1f2d1f', paddingBottom: 6, marginBottom: 4 }}>
+                      STATS DE BASE
+                    </div>
                     {rows.map(([label, val, color]) => (
-                      <div key={label} className="flex items-center gap-2">
-                        <span className="text-slate-400 font-bold text-xs w-8 shrink-0">{label}</span>
-                        <div className="flex-1 bg-slate-700 rounded-full h-2">
-                          <div className="h-2 rounded-full transition-all" style={{ width: `${Math.round((val / maxStat) * 100)}%`, background: color }} />
+                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ color: '#6b7280', fontWeight: 700, fontSize: '0.65rem', fontFamily: 'monospace', width: 28, flexShrink: 0 }}>{label}</span>
+                        <div style={{ flex: 1, background: '#0f1a0f', borderRadius: 99, height: 6, border: '1px solid #1f2d1f' }}>
+                          <div style={{ height: '100%', borderRadius: 99, background: color, width: `${Math.round((val / maxStat) * 100)}%`, transition: 'width 0.4s' }} />
                         </div>
-                        <span className="text-white text-xs font-black w-7 text-right">{val}</span>
+                        <span style={{ color: 'white', fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace', width: 24, textAlign: 'right' }}>{val}</span>
                       </div>
                     ))}
-                    <div className="mt-1.5 pt-1.5 border-t border-slate-700 flex items-center gap-2 text-xs text-slate-400">
-                      <span className="font-bold">Attaque signature :</span>
-                      <span className="text-white font-bold">{stats.moves[0].name}</span>
-                      <span className="text-slate-500">({stats.moves[0].power} pts · {stats.moves[0].category === 'physical' ? 'Physique' : 'Spéciale'})</span>
-                    </div>
-                    <div className="mt-1.5 pt-1.5 border-t border-slate-700 text-xs text-slate-400">
-                      Capturé <span className="text-white font-bold">{normalCount}</span> fois
+                    <div style={{ marginTop: 4, paddingTop: 8, borderTop: '1px solid #1f2d1f', fontSize: '0.6rem', fontFamily: 'monospace', color: '#6b7280' }}>
+                      <span style={{ fontWeight: 700 }}>Attaque signature : </span>
+                      <span style={{ color: 'white', fontWeight: 700 }}>{stats.moves[0].name}</span>
+                      <span style={{ color: '#4b5563' }}> ({stats.moves[0].power} pts · {stats.moves[0].category === 'physical' ? 'Physique' : 'Spéciale'})</span>
                     </div>
                   </div>
                 );
