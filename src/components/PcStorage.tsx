@@ -80,7 +80,7 @@ function chunkIntoBoxes(ids: number[]): number[][] {
 }
 
 export function PcStorage({
-  state, username, onUpdateParty, onUpdatePcBoxes, onUpdateBoxNames, onClose,
+  state, username, onUpdateParty, onUpdatePcBoxes, onUpdateBoxNames, onClose: _onClose,
   isAdmin: _isAdmin, onSetLevel: _onSetLevel,
   currentZoneId, onAddXp, onBattleWin, onTrainingBattle, onTriggerEvo,
   onSaveCustomMoves,
@@ -898,19 +898,8 @@ export function PcStorage({
       )}
 
       {/* Header DS-style */}
-      <div className="flex items-center justify-between px-3 py-2 shrink-0" style={{ background: 'linear-gradient(180deg,#8fafcf 0%,#6c90b0 100%)', borderBottom: '3px solid #4a7090' }}>
-        <button onClick={onClose} className="text-white font-black text-xs px-2 py-1 rounded" style={{ background: '#4a7090', border: '1px solid #2a5070' }}>
-          ← Fermer
-        </button>
+      <div className="flex items-center justify-center px-3 py-2 shrink-0" style={{ background: 'linear-gradient(180deg,#8fafcf 0%,#6c90b0 100%)', borderBottom: '3px solid #4a7090' }}>
         <div className="text-white font-black text-sm">PC de {username ?? 'Léo'}</div>
-        <button
-          onClick={startTraining}
-          disabled={party.length === 0}
-          className="text-white font-black text-xs px-2 py-1 rounded flex items-center gap-1 disabled:opacity-40"
-          style={{ background: '#e06020', border: '2px solid #b04010', boxShadow: '0 2px 0 #802808' }}
-        >
-          ⚔️ Entraîn.
-        </button>
       </div>
 
       {/* Box header with navigation */}
@@ -1058,6 +1047,17 @@ export function PcStorage({
                 </button>
               );
             })}
+          </div>
+
+          <div className="px-2 pb-2">
+            <button
+              onClick={startTraining}
+              disabled={party.length === 0}
+              className="w-full py-2 rounded-xl font-black text-sm text-white flex items-center justify-center gap-2 disabled:opacity-40"
+              style={{ background: '#e06020', border: '2px solid #b04010', boxShadow: '0 2px 0 #802808' }}
+            >
+              ⚔️ Entraînement
+            </button>
           </div>
 
         </div>

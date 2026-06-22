@@ -32,7 +32,7 @@ const ARENA_BADGES = ZONES.filter(z => z.boss?.badge).map(z => ({
 
 const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
 
-export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
+export function Collection({ state, onClose: _onClose, onMarkTutorialDone }: Props) {
   const [showTutorial, setShowTutorial] = useState(() =>
     !state.completedTutorials?.includes('collection') && !isTutorialDone('collection')
   );
@@ -115,11 +115,7 @@ export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
         }}
       >
         <div className="flex items-center gap-3">
-          <button
-            onClick={onClose}
-            style={{ color: '#fca5a5', fontSize: '1.25rem', padding: '0 4px', background: 'none', border: 'none', cursor: 'pointer' }}
-          >←</button>
-          <div className="flex items-center gap-2 flex-1">
+<div className="flex items-center gap-2 flex-1">
             {/* Pokéball icon */}
             <div style={{
               width: 22, height: 22, borderRadius: '50%',

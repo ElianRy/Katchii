@@ -662,7 +662,7 @@ function PokemonPicker({ state, onPick, onClose }: {
 
 
 // ---- Main Component ----
-export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt, onTrainingWin, onParkDuelResult, currentZoneId = 'zone1', onMarkTutorialDone }: Props) {
+export function PokeParc({ state, username, isAdmin = false, onClose: _onClose, onSetFavoritePokemon, onAddPlayerXp, onAddPokemonXp, onSetLastParkXpAt, onTrainingWin, onParkDuelResult, currentZoneId = 'zone1', onMarkTutorialDone }: Props) {
   const [showTutorial, setShowTutorial] = useState(() =>
     !state.completedTutorials?.includes('pokepark') && !isTutorialDone('pokepark')
   );
@@ -1129,8 +1129,7 @@ export function PokeParc({ state, username, isAdmin = false, onClose, onSetFavor
     <div className="fixed inset-0 z-[100] bg-slate-900 flex flex-col" style={{ height: '100dvh' }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-3 pb-2 bg-black/60 border-b border-slate-700/60 shrink-0" style={{ paddingTop: 'calc(0.5rem + env(safe-area-inset-top, 0px))' }}>
-        <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl px-1">←</button>
-        <div className="font-black text-yellow-400 text-sm flex-1">🌿 PokéParc</div>
+<div className="font-black text-yellow-400 text-sm flex-1">🌿 PokéParc</div>
       </div>
 
       {/* Offline XP modal */}

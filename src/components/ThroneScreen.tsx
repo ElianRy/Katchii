@@ -332,7 +332,7 @@ interface Props {
 }
 
 /* ─── Main component ────────────────────────────────────────────── */
-export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoins }: Props) {
+export function ThroneScreen({ state, username, onClose: _onClose, onChallenge, onClaimCoins }: Props) {
   const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('throne'));
   const [throneData, setThroneData] = useState<ThroneData | null>(null);
   const [phase, setPhase] = useState<'view' | 'pick_mode' | 'pick_pokemon' | 'confirm'>('view');
@@ -810,7 +810,6 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
       style={{ background: 'linear-gradient(180deg, #0a0800 0%, #1a1000 40%, #0d0a00 100%)' }}>
       <div className="flex items-center justify-between px-5 pb-2 shrink-0" style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top, 0px))" }}>
         <h1 className="text-yellow-400 font-black text-2xl tracking-wide">👑 Trône</h1>
-        <button onClick={onClose} className="text-slate-400 hover:text-white text-xl px-2">✕</button>
       </div>
 
       <div className="flex flex-col items-center px-5 gap-8 pb-12 pt-2">

@@ -3,7 +3,7 @@ import { GameState, RARITY_COLORS } from '../types';
 import { POKEMON_BY_ID } from '../data/gen1';
 import { ShinySprite } from './ShinySprite';
 import { Zone, ZONE_ORDER } from '../data/zones';
-import { TeamBuilder, TeamMember } from './TeamBuilder';
+import { TeamMember } from './TeamBuilder';
 import { BattleScreen } from './BattleScreen';
 import { calcMaxHp } from '../data/combatEngine';
 import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
@@ -87,7 +87,7 @@ interface Props {
   onZoneDiscovered?: () => void;
 }
 
-type Phase = 'dialogue' | 'intro' | 'select' | 'battle' | 'result';
+type Phase = 'dialogue' | 'intro' | 'battle' | 'result';
 
 function getBossLevel(zoneId: string): number {
   const idx = ZONE_ORDER.indexOf(zoneId);
@@ -127,12 +127,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
     };
   });
 
-  const handleTeamConfirm = useCallback((team: TeamMember[]) => {
-    setPlayerTeam(team);
-    setPhase('battle');
-  }, []);
-
-  const handleBattleEnd = useCallback((battleWon: boolean, xpGains: Record<number, number>) => {
+const handleBattleEnd = useCallback((battleWon: boolean, xpGains: Record<number, number>) => {
     setWon(battleWon);
     setXpResults(xpGains);
 
@@ -162,7 +157,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
     };
     return (
       <div
-        className="fixed inset-0 z-[510] flex flex-col select-none"
+        className="fixed inset-0 z-[530] flex flex-col select-none"
         style={{ background: 'linear-gradient(160deg, #0a0a14 0%, #050510 100%)' }}
         onClick={advance}
       >
@@ -279,26 +274,24 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
           </div>
 
           <button
-            onClick={() => setPhase('select')}
-            className="w-full max-w-sm py-3 rounded-2xl font-black text-base text-black"
+            onClick={() => {
+              const partyIds = state.partyTeam ?? [];
+              const team: TeamMember[] = partyIds.map(id => {
+                const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
+                const maxHp = calcMaxHp(id, lvData.level);
+                return { pokemonId: id, level: lvData.level, xp: lvData.xp, currentHp: maxHp, maxHp };
+              });
+              setPlayerTeam(team);
+              setPhase('battle');
+            }}
+            disabled={!state.partyTeam || state.partyTeam.length === 0}
+            className="w-full max-w-sm py-3 rounded-2xl font-black text-base text-black disabled:opacity-40"
             style={{ background: 'linear-gradient(90deg, #f59e0b, #ef4444)' }}
           >
-            ⚔️ Choisir mon équipe
+            ⚔️ Combattre avec mon équipe ({state.partyTeam?.length ?? 0} Pokémon)
           </button>
         </div>
       </div>
-    );
-  }
-
-  // SELECT phase — TeamBuilder full screen
-  if (phase === 'select') {
-    return (
-      <TeamBuilder
-        state={state}
-        onConfirm={handleTeamConfirm}
-        onClose={() => setPhase('intro')}
-        title={`Combattre ${boss.name}`}
-      />
     );
   }
 
@@ -433,7 +426,7 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
 
             <div className="flex gap-3 w-full max-w-sm" style={{ animation: 'badge-pop 0.5s 0.65s ease-out both' }}>
               <button
-                onClick={() => { setPhase('select'); setVictoryHandled(false); }}
+                onClick={() => { setPhase('intro'); setVictoryHandled(false); }}
                 className="flex-1 py-3 rounded-2xl font-bold text-white bg-slate-700 hover:bg-slate-600"
               >
                 🔄 Réessayer
