@@ -57,6 +57,7 @@ export function AdminPanel({ gameState, onClose }: Props) {
   const [playerSearch, setPlayerSearch] = useState('');
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerRow | null>(null);
   const [giveCoinsAmt, setGiveCoinsAmt] = useState('1000');
+  const [deletePokemonId, setDeletePokemonId] = useState('');
   const [playerSortBy, setPlayerSortBy] = useState<'name' | 'pokemon' | 'level' | 'coins'>('pokemon');
 
   // stats tab
@@ -135,6 +136,7 @@ export function AdminPanel({ gameState, onClose }: Props) {
     const rows: PlayerRow[] = data.flatMap(row => {
       const s = row.state as GameState | null;
       if (!s) return [];
+      if ((s.username ?? '').toLowerCase() === 'elian') return [];
       const levels = Object.values(s.pokemonLevels ?? {}).map(l => l.level);
       const normalCount = Object.values(s.normalCollection ?? {}).filter(v => v > 0).length;
       const shinyCount = Object.values(s.shinyCollection ?? {}).filter(v => v > 0).length;
@@ -180,6 +182,39 @@ export function AdminPanel({ gameState, onClose }: Props) {
     loadPlayers();
   };
 
+  const handleDeletePokemon = async (player: PlayerRow, pokemonIdStr: string, isShiny: boolean) => {
+    const pokemonId = parseInt(pokemonIdStr);
+    if (isNaN(pokemonId) || pokemonId <= 0) { flash('❌ ID invalide'); return; }
+    if (!player.userId) { flash('❌ userId manquant'); return; }
+    if (!confirm(`Supprimer le Pokémon #${pokemonId}${isShiny ? ' (shiny)' : ''} de ${player.username} ?`)) return;
+    const { data } = await supabase.from('game_saves').select('state').eq('user_id', player.userId).single();
+    if (!data) { flash('❌ Save introuvable'); return; }
+    const s = data.state as GameState;
+    const updated = { ...s };
+    if (isShiny) {
+      const sc = { ...(updated.shinyCollection ?? {}) };
+      delete sc[pokemonId];
+      updated.shinyCollection = sc;
+    } else {
+      const nc = { ...(updated.normalCollection ?? {}) };
+      delete nc[pokemonId];
+      updated.normalCollection = nc;
+    }
+    // Remove from party
+    if (updated.partyTeam) {
+      updated.partyTeam = updated.partyTeam.filter(id => id !== pokemonId);
+    }
+    // Remove from PC boxes
+    if (updated.pcBoxes) {
+      updated.pcBoxes = updated.pcBoxes.map(box => box.filter(id => id !== pokemonId));
+    }
+    const { error } = await supabase.from('game_saves').update({ state: updated }).eq('user_id', player.userId);
+    if (error) { flash(`❌ ${error.message}`); return; }
+    flash(`✅ Pokémon #${pokemonId} supprimé de ${player.username}`);
+    setDeletePokemonId('');
+    loadPlayers();
+  };
+
   const handleResetSave = async (player: PlayerRow) => {
     if (!player.userId) { flash('❌ userId manquant'); return; }
     if (!confirm(`Réinitialiser la save de ${player.username} ? Action irréversible !`)) return;
@@ -214,6 +249,7 @@ export function AdminPanel({ gameState, onClose }: Props) {
     for (const row of data) {
       const s = row.state as GameState | null;
       if (!s) continue;
+      if ((s.username ?? '').toLowerCase() === 'elian') continue;
       const username = s.username ?? '???';
       let playerTotal = 0;
       for (const [idStr, cnt] of Object.entries(s.normalCollection ?? {})) {
@@ -450,6 +486,29 @@ export function AdminPanel({ gameState, onClose }: Props) {
                       <button onClick={() => handleGiveCoins(selectedPlayer)}
                         className="px-4 py-2 rounded-lg font-bold text-sm text-black"
                         style={{ background: '#fbbf24' }}>Envoyer</button>
+                    </div>
+                  </div>
+
+                  {/* Delete Pokémon */}
+                  <div className="mb-3">
+                    <p className="text-slate-400 text-xs font-bold mb-1">🗑️ Supprimer un Pokémon</p>
+                    <div className="flex gap-2 mb-1">
+                      <input type="number" value={deletePokemonId} onChange={e => setDeletePokemonId(e.target.value)}
+                        placeholder="ID Pokémon"
+                        className="flex-1 rounded-lg px-3 py-2 text-sm outline-none"
+                        style={{ background: '#0f172a', color: 'white', border: '1px solid #334155' }} />
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleDeletePokemon(selectedPlayer, deletePokemonId, false)}
+                        className="flex-1 py-2 rounded-lg text-xs font-bold"
+                        style={{ background: '#1e3a5f', color: '#93c5fd', border: '1px solid #1d4ed8' }}>
+                        Supprimer normal
+                      </button>
+                      <button onClick={() => handleDeletePokemon(selectedPlayer, deletePokemonId, true)}
+                        className="flex-1 py-2 rounded-lg text-xs font-bold"
+                        style={{ background: '#78350f', color: '#fde68a', border: '1px solid #d97706' }}>
+                        Supprimer shiny
+                      </button>
                     </div>
                   </div>
 

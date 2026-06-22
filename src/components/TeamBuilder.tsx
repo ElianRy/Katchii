@@ -10,9 +10,8 @@ import { MOVES } from '../data/gen1Moves';
 import { BattleScreen } from './BattleScreen';
 import { EvolutionScreen } from './EvolutionScreen';
 import { checkEvolution } from '../data/evolutionData';
-import { setBattleMute } from '../lib/audio';
+import { setBattleMute, playLevelUp, playVictory } from '../lib/audio';
 import { ShinySprite } from './ShinySprite';
-import { playLevelUp } from '../lib/audio';
 
 export interface TeamMember {
   pokemonId: number;
@@ -284,6 +283,13 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoCountdown]);
+
+  // Victory music
+  useEffect(() => {
+    if (mode === 'result' && battleResult?.won && !autoCombat) {
+      playVictory();
+    }
+  }, [mode, battleResult?.won, autoCombat]);
 
   // Evolution screen: show one evolution at a time before the result screen
   if (evoQueue.length > 0) {
@@ -640,7 +646,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
               })}
             </div>
             {autoCombat ? (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2" style={{ marginTop: 8 }}>
                 <div className="flex items-center justify-center gap-2 bg-indigo-900/40 rounded-xl px-3 py-2 border border-indigo-500/50">
                   <span className="text-indigo-300 text-sm">⚡</span>
                   <span className="text-indigo-300 text-xs font-bold">

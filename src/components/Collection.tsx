@@ -21,16 +21,94 @@ interface DexTheme {
   border: string;
   tabBg: string;
   titleColor: string;
+  contentBg: string;
+  searchBg: string;
+  filterTabBg: string;
+  filterTabActive: string;
+  inputBg: string;
+  cardBg: string;
+  hasAnimation?: boolean;
 }
 
 export const DEX_THEMES: DexTheme[] = [
-  { id: 'default',  name: 'Classique',  emoji: '🔴', price: 0,    bg: '#b91c1c', headerGrad: 'linear-gradient(180deg,#dc2626 0%,#991b1b 100%)', border: '#7f1d1d', tabBg: '#991b1b', titleColor: 'white' },
-  { id: 'ocean',    name: 'Océan',      emoji: '🌊', price: 500,  bg: '#1c3fb9', headerGrad: 'linear-gradient(180deg,#2563dc 0%,#1d2d9b 100%)', border: '#1d2d7f', tabBg: '#1d3a9b', titleColor: 'white' },
-  { id: 'foret',    name: 'Forêt',      emoji: '🌿', price: 500,  bg: '#166534', headerGrad: 'linear-gradient(180deg,#16a34a 0%,#14532d 100%)', border: '#14532d', tabBg: '#166534', titleColor: 'white' },
-  { id: 'nuit',     name: 'Nuit',       emoji: '🌙', price: 1000, bg: '#0f0f1e', headerGrad: 'linear-gradient(180deg,#1e1b4b 0%,#0f0f1e 100%)', border: '#312e81', tabBg: '#1e1b4b', titleColor: '#a5b4fc' },
-  { id: 'rose',     name: 'Sakura',     emoji: '🌸', price: 1000, bg: '#9d174d', headerGrad: 'linear-gradient(180deg,#db2777 0%,#9d174d 100%)', border: '#831843', tabBg: '#be185d', titleColor: 'white' },
-  { id: 'dore',     name: 'Légendaire', emoji: '⭐', price: 2000, bg: '#78350f', headerGrad: 'linear-gradient(180deg,#d97706 0%,#92400e 100%)', border: '#451a03', tabBg: '#92400e', titleColor: '#fde68a' },
+  { id: 'default',  name: 'Classique',  emoji: '🔴', price: 0,    bg: '#b91c1c', headerGrad: 'linear-gradient(180deg,#dc2626 0%,#991b1b 100%)', border: '#7f1d1d', tabBg: '#991b1b', titleColor: 'white',    contentBg: '#b91c1c', searchBg: '#991b1b', filterTabBg: '#991b1b', filterTabActive: '#7f1d1d', inputBg: '#1f2937', cardBg: 'rgba(255,255,255,0.5)' },
+  { id: 'ocean',    name: 'Océan',      emoji: '🌊', price: 500,  bg: '#1c3fb9', headerGrad: 'linear-gradient(180deg,#2563dc 0%,#1d2d9b 100%)', border: '#1d2d7f', tabBg: '#1d3a9b', titleColor: 'white',    contentBg: '#1c3fb9', searchBg: '#1d3a9b', filterTabBg: '#1d3a9b', filterTabActive: '#1d2d7f', inputBg: '#0f1f3d', cardBg: 'rgba(255,255,255,0.15)' },
+  { id: 'foret',    name: 'Forêt',      emoji: '🌿', price: 500,  bg: '#166534', headerGrad: 'linear-gradient(180deg,#16a34a 0%,#14532d 100%)', border: '#14532d', tabBg: '#166534', titleColor: 'white',    contentBg: '#166534', searchBg: '#166534', filterTabBg: '#166534', filterTabActive: '#14532d', inputBg: '#0a2a15', cardBg: 'rgba(255,255,255,0.15)' },
+  { id: 'nuit',     name: 'Nuit',       emoji: '🌙', price: 1000, bg: '#0f0f1e', headerGrad: 'linear-gradient(180deg,#1e1b4b 0%,#0f0f1e 100%)', border: '#312e81', tabBg: '#1e1b4b', titleColor: '#a5b4fc', contentBg: '#0f0f1e', searchBg: '#1e1b4b', filterTabBg: '#1e1b4b', filterTabActive: '#312e81', inputBg: '#0a0a14', cardBg: 'rgba(255,255,255,0.08)' },
+  { id: 'rose',     name: 'Sakura',     emoji: '🌸', price: 1500, bg: '#9d174d', headerGrad: 'linear-gradient(180deg,#db2777 0%,#9d174d 100%)', border: '#831843', tabBg: '#be185d', titleColor: 'white',    contentBg: '#9d174d', searchBg: '#be185d', filterTabBg: '#be185d', filterTabActive: '#831843', inputBg: '#3d0a20', cardBg: 'rgba(255,255,255,0.15)', hasAnimation: true },
+  { id: 'dore',     name: 'Légendaire', emoji: '⭐', price: 2000, bg: '#78350f', headerGrad: 'linear-gradient(180deg,#d97706 0%,#92400e 100%)', border: '#451a03', tabBg: '#92400e', titleColor: '#fde68a', contentBg: '#78350f', searchBg: '#92400e', filterTabBg: '#92400e', filterTabActive: '#451a03', inputBg: '#1a0a00', cardBg: 'rgba(255,255,255,0.12)', hasAnimation: true },
 ];
+
+function AnimatedDexOverlay({ themeId }: { themeId: string }) {
+  if (themeId === 'rose') {
+    const petals = Array.from({ length: 12 }, (_, i) => i);
+    return (
+      <>
+        <style>{`
+          @keyframes dex-petal-fall {
+            0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0.85; }
+            100% { transform: translateY(110%) translateX(40px) rotate(180deg); opacity: 0; }
+          }
+        `}</style>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+          {petals.map(i => (
+            <div key={i} style={{
+              position: 'absolute',
+              top: '-10px',
+              left: `${(i / 12) * 100 + (i % 3) * 3}%`,
+              width: 8 + (i % 3) * 3,
+              height: 8 + (i % 3) * 3,
+              borderRadius: '50% 0 50% 0',
+              background: '#ffb0c8',
+              animation: `dex-petal-fall ${2.5 + (i % 4) * 0.5}s ${i * 0.3}s linear infinite`,
+              opacity: 0.85,
+            }} />
+          ))}
+        </div>
+      </>
+    );
+  }
+  if (themeId === 'dore') {
+    const stars = Array.from({ length: 30 }, (_, i) => i);
+    const shootingStars = [0, 1, 2];
+    return (
+      <>
+        <style>{`
+          @keyframes dex-twinkle { 0%,100% { opacity: 0.2; } 50% { opacity: 1; } }
+          @keyframes dex-shoot { 0% { transform: translateX(0) translateY(0); opacity: 1; } 100% { transform: translateX(80px) translateY(40px); opacity: 0; } }
+        `}</style>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+          {stars.map(i => (
+            <div key={i} style={{
+              position: 'absolute',
+              top: `${(i * 37) % 100}%`,
+              left: `${(i * 61) % 100}%`,
+              width: 2 + (i % 2),
+              height: 2 + (i % 2),
+              borderRadius: '50%',
+              background: '#fde68a',
+              animation: `dex-twinkle ${1 + (i % 3)}s ${(i % 4) * 0.5}s ease-in-out infinite`,
+            }} />
+          ))}
+          {shootingStars.map(i => (
+            <div key={i} style={{
+              position: 'absolute',
+              top: `${10 + i * 25}%`,
+              left: `${10 + i * 20}%`,
+              width: 40,
+              height: 1.5,
+              background: 'linear-gradient(90deg, #fde68a, transparent)',
+              borderRadius: 99,
+              animation: `dex-shoot ${2 + i * 1.5}s ${i * 2.5}s linear infinite`,
+              opacity: 0,
+            }} />
+          ))}
+        </div>
+      </>
+    );
+  }
+  return null;
+}
 
 interface Props {
   state: GameState;
@@ -126,7 +204,8 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
   ];
 
   return (
-    <div className="fixed inset-x-0 top-0 z-[510] flex flex-col" style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))', background: dexTheme.bg, fontFamily: 'monospace' }}>
+    <div className="fixed inset-x-0 top-0 z-[510] flex flex-col" style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))', background: dexTheme.bg, fontFamily: 'monospace', position: 'relative' }}>
+      {dexTheme.hasAnimation && <AnimatedDexOverlay themeId={dexTheme.id} />}
       {/* Header */}
       <div style={{
         background: dexTheme.headerGrad,
@@ -183,7 +262,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
               letterSpacing: '0.08em',
               border: 'none',
               cursor: 'pointer',
-              background: mainTab === tab.id ? '#1f2937' : '#b91c1c',
+              background: mainTab === tab.id ? '#1f2937' : dexTheme.filterTabBg,
               color: mainTab === tab.id ? '#4ade80' : '#fca5a5',
               boxShadow: mainTab === tab.id ? 'inset 0 2px 4px rgba(0,0,0,0.4)' : '0 1px 3px rgba(0,0,0,0.3)',
             }}
@@ -196,7 +275,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
       {mainTab === 'collection' && (
         <>
           {/* Search bar + sort */}
-          <div style={{ padding: '6px 10px', background: '#991b1b', display: 'flex', gap: 8, flexShrink: 0 }}>
+          <div style={{ padding: '6px 10px', background: dexTheme.searchBg, display: 'flex', gap: 8, flexShrink: 0 }}>
             <input
               type="text"
               value={search}
@@ -204,7 +283,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
               placeholder="Rechercher…"
               style={{
                 flex: 1,
-                background: '#1f2937',
+                background: dexTheme.inputBg,
                 border: '1px solid #374151',
                 borderRadius: 6,
                 padding: '5px 10px',
@@ -226,7 +305,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                     fontWeight: 900,
                     fontFamily: 'monospace',
                     cursor: 'pointer',
-                    background: sortMode === k ? '#7f1d1d' : '#1f2937',
+                    background: sortMode === k ? dexTheme.filterTabActive : dexTheme.inputBg,
                     color: sortMode === k ? '#fca5a5' : '#9ca3af',
                     border: `1px solid ${sortMode === k ? '#ef4444' : '#374151'}`,
                   }}>
@@ -237,14 +316,14 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
           </div>
 
           {/* Filter button */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px', background: '#991b1b', borderBottom: '1px solid #7f1d1d', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px', background: dexTheme.searchBg, borderBottom: `1px solid ${dexTheme.border}`, flexShrink: 0 }}>
             <button
               onClick={() => setFilterOpen(o => !o)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
                 padding: '4px 10px', borderRadius: 6,
                 fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace',
-                background: '#7f1d1d', color: '#fca5a5',
+                background: dexTheme.filterTabActive, color: '#fca5a5',
                 border: '1px solid #ef444466', cursor: 'pointer',
               }}
             >
@@ -268,7 +347,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
 
           {/* Filter dropdown */}
           {filterOpen && (
-            <div style={{ borderBottom: '1px solid #7f1d1d', background: '#7f1d1d', flexShrink: 0, padding: '8px 10px' }}>
+            <div style={{ borderBottom: `1px solid ${dexTheme.border}`, background: dexTheme.filterTabActive, flexShrink: 0, padding: '8px 10px' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
                 {filterTabs.map((tab) => (
                   <button
@@ -279,8 +358,8 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                       fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace',
                       cursor: 'pointer', whiteSpace: 'nowrap',
                       background: filter === tab.id
-                        ? (RARITY_ORDER.includes(tab.id as Rarity) ? RARITY_COLORS[tab.id as Rarity] : '#dc2626')
-                        : '#991b1b',
+                        ? (RARITY_ORDER.includes(tab.id as Rarity) ? RARITY_COLORS[tab.id as Rarity] : dexTheme.bg)
+                        : dexTheme.filterTabBg,
                       color: filter === tab.id ? 'white' : '#fca5a5',
                       border: `1px solid ${filter === tab.id ? 'transparent' : '#ef444433'}`,
                     }}
@@ -301,7 +380,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                       cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
                       ...(t === null
                         ? {
-                            background: typeFilter === null ? '#5a0e0e' : '#991b1b',
+                            background: typeFilter === null ? dexTheme.border : dexTheme.filterTabBg,
                             color: typeFilter === null ? '#fca5a5' : '#9ca3af',
                             border: `1px solid ${typeFilter === null ? '#ef4444' : '#374151'}`,
                           }
@@ -321,7 +400,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
           )}
 
           {/* LCD Screen wrapping the grid */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px 80px 8px', background: '#b91c1c' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '8px 8px 80px 8px', background: dexTheme.contentBg, position: 'relative', zIndex: 1 }}>
             <div style={{
               background: '#c8dce8',
               backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,40,0.04) 0px, rgba(0,0,40,0.04) 1px, transparent 1px, transparent 3px)',
@@ -437,7 +516,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
       )}
 
       {mainTab === 'badges' && (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 96px', background: '#b91c1c' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 12px 96px', background: dexTheme.contentBg, position: 'relative', zIndex: 1 }}>
           <p style={{ color: '#fca5a5', fontSize: '0.65rem', fontFamily: 'monospace', textAlign: 'center', marginBottom: 12 }}>
             BATS LES MAÎTRES D'ARÈNE POUR DÉBLOQUER LEURS BADGES
           </p>
