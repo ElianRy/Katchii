@@ -239,7 +239,7 @@ function ShinyCaptureModal({ pokemonId, pokemonName, rarity, level, totalCaught,
       </div>
 
       {/* Pokemon + perspective orbit stars (back layer) */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ zIndex: 10, gap: 0, paddingBottom: '18%' }}>
+      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ zIndex: 10, gap: 0, paddingTop: '45%', paddingBottom: '0%' }}>
         <div className="relative flex items-center justify-center" style={{ marginBottom: 20 }}>
           {/* Stars behind sprite */}
           {SHINY_CAPTURE_ORBIT.filter(s => s.layer === 'back').map((star, i) => (

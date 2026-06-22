@@ -313,6 +313,8 @@ export function BossFightPanel({ zone, state, onClose, onVictory, onAddXp, onZon
         suppressVictorySound
         playerDamageMult={1}
         onQuit={onClose}
+        pokemonCustomMoves={state.pokemonCustomMoves}
+        pokemonMoves={state.pokemonMoves}
       />
     );
   }

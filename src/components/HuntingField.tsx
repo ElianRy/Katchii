@@ -11,43 +11,6 @@ import { Zone, ZONE_BY_ID, ZONE_ORDER } from '../data/zones';
 import { ZoneUnlockCondition } from '../types';
 import { playZoneMusic, stopMusic, playSfxCapture, playSfxShinyCapture, playCatchPoke } from '../lib/audio';
 
-function formatBoostTime(expiresAt: number): string {
-  const ms = Math.max(0, expiresAt - Date.now());
-  const m = Math.floor(ms / 60000);
-  const s = Math.floor((ms % 60000) / 1000);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-function BoostTimerBar({ activeCooldownBoost, activeSpawnBoost }: {
-  activeCooldownBoost?: { expiresAt: number };
-  activeSpawnBoost?: { expiresAt: number };
-}) {
-  const [, setTick] = useState(0);
-  const isCdActive = !!(activeCooldownBoost && Date.now() < activeCooldownBoost.expiresAt);
-  const isSpawnActive = !!(activeSpawnBoost && Date.now() < activeSpawnBoost.expiresAt);
-  useEffect(() => {
-    if (!isCdActive && !isSpawnActive) return;
-    const id = setInterval(() => setTick(t => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [isCdActive, isSpawnActive]);
-  if (!isCdActive && !isSpawnActive) return null;
-  return (
-    <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 z-30 pointer-events-none" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 52px)' }}>
-      {isCdActive && activeCooldownBoost && (
-        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
-          style={{ background: 'rgba(34,211,238,0.18)', border: '1px solid rgba(34,211,238,0.4)', color: '#67e8f9' }}>
-          ⏱️ {formatBoostTime(activeCooldownBoost.expiresAt)}
-        </div>
-      )}
-      {isSpawnActive && activeSpawnBoost && (
-        <div className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
-          style={{ background: 'rgba(74,222,128,0.18)', border: '1px solid rgba(74,222,128,0.4)', color: '#86efac' }}>
-          🕸️ {formatBoostTime(activeSpawnBoost.expiresAt)}
-        </div>
-      )}
-    </div>
-  );
-}
 
 const ZONE_GROUND: Record<string, { ground: string; bush: string }> = {
   zone1: { ground: 'linear-gradient(to top, #14532d 0%, #166534 40%, transparent 100%)', bush: 'linear-gradient(to top, #15803d, #22c55e)' },
@@ -341,12 +304,6 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         );
       })}
 
-      {/* Active boost timers */}
-      <BoostTimerBar
-        activeCooldownBoost={gameState.state.activeCooldownBoost}
-        activeSpawnBoost={gameState.state.activeSpawnBoost}
-      />
-
       {/* HUD */}
       <HUD
         points={gameState.state.points}
@@ -382,6 +339,8 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
         conditionDescription={conditionDescription}
         currentZoneId={currentZoneId}
         onFightBoss={() => { setFightZone(currentZone ?? null); setShowBossFight(true); }}
+        activeCooldownBoost={gameState.state.activeCooldownBoost}
+        activeSpawnBoost={gameState.state.activeSpawnBoost}
       />
 
 

@@ -32,7 +32,7 @@ const ARENA_BADGES = ZONES.filter(z => z.boss?.badge).map(z => ({
 
 const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
 
-export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMoves }: Props) {
+export function Collection({ state, onClose, onMarkTutorialDone }: Props) {
   const [showTutorial, setShowTutorial] = useState(() =>
     !state.completedTutorials?.includes('collection') && !isTutorialDone('collection')
   );
@@ -47,10 +47,8 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
   const [filterOpen, setFilterOpen] = useState(false);
   const [typeFilter, setTypeFilter] = useState<PokemonType | null>(null);
   const [selectedId, setSelectedId_] = useState<number | null>(null);
-  const [editingMoves, setEditingMoves] = useState(false);
-  const [pendingMoves, setPendingMoves] = useState<string[]>([]);
   const [detailTab, setDetailTab] = useState<'attaques' | 'stats'>('attaques');
-  const setSelectedId = (id: number | null) => { setSelectedId_(id); setEditingMoves(false); setDetailTab('attaques'); };
+  const setSelectedId = (id: number | null) => { setSelectedId_(id); setDetailTab('attaques'); };
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState<'id' | 'rarity_desc' | 'level_desc'>(() => {
     try { return (localStorage.getItem('katchii_pokedex_sort') as 'id' | 'rarity_desc' | 'level_desc') ?? 'id'; } catch { return 'id'; }
@@ -489,7 +487,7 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
         const pool = GEN1_MOVEPOOL[selectedId] ?? [];
         const availablePool = getAvailableMoves(selectedId, lvData.level);
         const currentSlugs: string[] = state.pokemonCustomMoves?.[selectedId] ?? availablePool.slice(0, 4);
-        const activeSlugs = editingMoves ? pendingMoves : currentSlugs;
+        const activeSlugs = currentSlugs;
 
         return (
           <div
@@ -626,98 +624,27 @@ export function Collection({ state, onClose, onMarkTutorialDone, onSaveCustomMov
                     <div style={{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '10px 12px', border: '1px solid #a0c0d8' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                         <span style={{ color: '#4a6a8a', fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>ATTAQUES ACTIVES</span>
-                        {onSaveCustomMoves && !editingMoves && (
-                          <button
-                            style={{ fontSize: '0.6rem', fontWeight: 900, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 99, background: '#7f1d1d', color: '#fca5a5', border: '1px solid #ef444455', cursor: 'pointer' }}
-                            onClick={() => { setPendingMoves([...currentSlugs]); setEditingMoves(true); }}
-                          >Modifier</button>
-                        )}
-                        {editingMoves && (
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            <button
-                              style={{ fontSize: '0.6rem', fontWeight: 900, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 99, background: '#ef444433', color: '#f87171', border: '1px solid #ef444455', cursor: 'pointer' }}
-                              onClick={() => setEditingMoves(false)}
-                            >Annuler</button>
-                            <button
-                              style={{ fontSize: '0.6rem', fontWeight: 900, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 99, background: '#22c55e33', color: '#4ade80', border: '1px solid #22c55e55', cursor: 'pointer', opacity: pendingMoves.length === 4 ? 1 : 0.4 }}
-                              onClick={() => { if (pendingMoves.length === 4) { onSaveCustomMoves?.(selectedId, pendingMoves); setEditingMoves(false); } }}
-                            >Sauvegarder</button>
-                          </div>
-                        )}
                       </div>
-                      {!editingMoves ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {activeSlugs.map(slug => {
-                            const m = MOVES[slug];
-                            if (!m) return null;
-                            const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
-                            return (
-                              <div key={slug} style={{ borderRadius: 7, padding: '7px 10px', background: `${typeColor}18`, border: `1px solid ${typeColor}44` }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <span style={{ color: 'white', fontWeight: 900, borderRadius: 3, padding: '1px 5px', flexShrink: 0, background: typeColor, fontSize: '0.42rem', fontFamily: 'monospace' }}>{m.type.toUpperCase()}</span>
-                                  <span style={{ color: '#1a2a3a', fontSize: '0.72rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
-                                  <span style={{ color: '#9ca3af', fontSize: '0.6rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
-                                  {m.power > 0 && <span style={{ color: '#e2e8f0', fontSize: '0.65rem', fontWeight: 900, flexShrink: 0, fontFamily: 'monospace' }}>{m.power}</span>}
-                                </div>
-                                {m.description && (
-                                  <div style={{ color: '#6b7280', marginTop: 3, fontSize: '0.58rem', lineHeight: 1.4, fontFamily: 'monospace' }}>{m.description}</div>
-                                )}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {activeSlugs.map(slug => {
+                          const m = MOVES[slug];
+                          if (!m) return null;
+                          const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
+                          return (
+                            <div key={slug} style={{ borderRadius: 7, padding: '7px 10px', background: `${typeColor}18`, border: `1px solid ${typeColor}44` }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <span style={{ color: 'white', fontWeight: 900, borderRadius: 3, padding: '1px 5px', flexShrink: 0, background: typeColor, fontSize: '0.42rem', fontFamily: 'monospace' }}>{m.type.toUpperCase()}</span>
+                                <span style={{ color: '#1a2a3a', fontSize: '0.72rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
+                                <span style={{ color: '#9ca3af', fontSize: '0.6rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
+                                {m.power > 0 && <span style={{ color: '#e2e8f0', fontSize: '0.65rem', fontWeight: 900, flexShrink: 0, fontFamily: 'monospace' }}>{m.power}</span>}
                               </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div>
-                          <div style={{ color: '#4a6a8a', fontSize: '0.6rem', marginBottom: 6, fontFamily: 'monospace' }}>Sélectionnez exactement 4 attaques ({pendingMoves.length}/4)</div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxHeight: 220, overflowY: 'auto' }}>
-                            {availablePool.map(slug => {
-                              const m = MOVES[slug];
-                              if (!m) return null;
-                              const isSelected = pendingMoves.includes(slug);
-                              const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
-                              return (
-                                <button
-                                  key={slug}
-                                  style={{
-                                    display: 'flex', flexDirection: 'column',
-                                    borderRadius: 7, padding: '6px 8px', textAlign: 'left', gap: 3,
-                                    background: isSelected ? 'rgba(100,150,200,0.2)' : 'rgba(255,255,255,0.4)',
-                                    border: `1px solid ${isSelected ? '#4a7ab0' : '#a0c0d8'}`,
-                                    cursor: 'pointer',
-                                  }}
-                                  onClick={() => {
-                                    if (isSelected) {
-                                      setPendingMoves(prev => prev.filter(s => s !== slug));
-                                    } else if (pendingMoves.length < 4) {
-                                      setPendingMoves(prev => [...prev, slug]);
-                                    }
-                                  }}
-                                >
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                    <span style={{
-                                      width: 14, height: 14, borderRadius: 3, flexShrink: 0,
-                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                      fontSize: '0.55rem', fontFamily: 'monospace', fontWeight: 900,
-                                      background: isSelected ? '#1a4a7a' : 'transparent',
-                                      color: isSelected ? 'white' : '#a0c0d8',
-                                      border: `1px solid ${isSelected ? '#1a4a7a' : '#a0c0d8'}`,
-                                    }}>
-                                      {isSelected ? '✓' : ''}
-                                    </span>
-                                    <span style={{ color: 'white', fontWeight: 900, borderRadius: 3, padding: '1px 4px', flexShrink: 0, background: typeColor, fontSize: '0.4rem', fontFamily: 'monospace' }}>{m.type.toUpperCase()}</span>
-                                    <span style={{ color: '#1a2a3a', fontSize: '0.68rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
-                                    {m.power > 0 && <span style={{ color: '#9ca3af', fontSize: '0.6rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.power}</span>}
-                                    <span style={{ color: '#6b7280', fontSize: '0.58rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
-                                  </div>
-                                  {m.description && (
-                                    <div style={{ color: '#4b5563', paddingLeft: 20, fontSize: '0.56rem', lineHeight: 1.3, fontFamily: 'monospace' }}>{m.description}</div>
-                                  )}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
+                              {m.description && (
+                                <div style={{ color: '#6b7280', marginTop: 3, fontSize: '0.58rem', lineHeight: 1.4, fontFamily: 'monospace' }}>{m.description}</div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </>

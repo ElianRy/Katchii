@@ -473,7 +473,7 @@ function DialogueScreen({ trainer, onDone }: {
               boxShadow: isMaster ? `0 0 30px ${trainer.color}66` : 'none',
               animation: isMaster ? 'aura-pulse 1.5s ease-in-out infinite' : undefined,
             }}>
-            ⚔️ {isMaster ? 'COMBATTRE LE MAÎTRE !' : `Combattre ${trainer.name} !`}
+            ⚔️ {isMaster ? 'Lancer le combat' : `Combattre ${trainer.name} !`}
           </button>
         )}
       </div>
@@ -983,7 +983,8 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
       <div className="fixed inset-0 z-[600]">
         <BattleScreen isLeague suppressVictorySound playerDamageMult={damageMult} playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
           bossName="Peter" trainerImage="/trainers/peter.png" trainerColor="#ef4444" onBattleEnd={handleBattleEnd('dialogue_giovanni', TRAINER_CONFIGS[0].teamSpec)}
-          onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
+          onQuit={() => { setRetrying(true); setPhase('team_select'); }}
+          pokemonCustomMoves={state.pokemonCustomMoves} pokemonMoves={state.pokemonMoves} />
       </div>
     );
   }
@@ -999,7 +1000,8 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
       <div className="fixed inset-0 z-[600]">
         <BattleScreen keepMusic suppressVictorySound playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
           bossName="Giovanni" trainerImage="/trainers/giovanni.webp" trainerColor="#9ca3af" onBattleEnd={handleBattleEnd('dialogue_master', TRAINER_CONFIGS[1].teamSpec)}
-          onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
+          onQuit={() => { setRetrying(true); setPhase('team_select'); }}
+          pokemonCustomMoves={state.pokemonCustomMoves} pokemonMoves={state.pokemonMoves} />
       </div>
     );
   }
@@ -1019,7 +1021,8 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           trainerImage="/trainers/master.png" trainerColor="#a855f7"
           sideOverlay={<MasterSideEffects />}
           onBattleEnd={handleBattleEnd('victory', TRAINER_CONFIGS[2].teamSpec)}
-          onQuit={() => { setRetrying(true); setPhase('team_select'); }} />
+          onQuit={() => { setRetrying(true); setPhase('team_select'); }}
+          pokemonCustomMoves={state.pokemonCustomMoves} pokemonMoves={state.pokemonMoves} />
       </div>
     );
   }

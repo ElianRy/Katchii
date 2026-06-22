@@ -34,6 +34,15 @@ interface Props {
   conditionDescription?: string;
   onFightBoss?: () => void;
   currentZoneId?: string;
+  activeCooldownBoost?: { expiresAt: number };
+  activeSpawnBoost?: { expiresAt: number };
+}
+
+function formatBoostTime(expiresAt: number): string {
+  const ms = Math.max(0, expiresAt - Date.now());
+  const m = Math.floor(ms / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 function zoneEmoji(name: string): string {
@@ -98,8 +107,18 @@ export function HUD({
   onFightBoss,
   currentZoneId,
   hasQuestReward = false,
+  activeCooldownBoost,
+  activeSpawnBoost,
 }: Props) {
   const [showConditionDetail, setShowConditionDetail] = useState(false);
+  const [, setBoostTick] = useState(0);
+  const isCdActive = !!(activeCooldownBoost && Date.now() < activeCooldownBoost.expiresAt);
+  const isSpawnActive = !!(activeSpawnBoost && Date.now() < activeSpawnBoost.expiresAt);
+  useEffect(() => {
+    if (!isCdActive && !isSpawnActive) return;
+    const id = setInterval(() => setBoostTick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, [isCdActive, isSpawnActive]);
   const [showLureInfo, setShowLureInfo] = useState(false);
   // Impact animation when cooldown just finishes
   const [showImpact, setShowImpact] = useState(false);
@@ -173,6 +192,20 @@ export function HUD({
                   </div>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Boost timers — inline with lure */}
+          {isCdActive && activeCooldownBoost && (
+            <div className="shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-bold"
+              style={{ background: 'rgba(34,211,238,0.18)', border: '1px solid rgba(34,211,238,0.4)', color: '#67e8f9' }}>
+              ⏱️ {formatBoostTime(activeCooldownBoost.expiresAt)}
+            </div>
+          )}
+          {isSpawnActive && activeSpawnBoost && (
+            <div className="shrink-0 flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-bold"
+              style={{ background: 'rgba(74,222,128,0.18)', border: '1px solid rgba(74,222,128,0.4)', color: '#86efac' }}>
+              🕸️ {formatBoostTime(activeSpawnBoost.expiresAt)}
             </div>
           )}
 

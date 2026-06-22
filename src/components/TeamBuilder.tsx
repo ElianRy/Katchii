@@ -388,6 +388,7 @@ export function TeamBuilder({ state, currentZoneId, onConfirm, onAddXp, onBattle
         onMuteChange={(v) => { setSessionMuted(v); setBattleMute(v); }}
         pokemonData={state.pokemonData}
         pokemonCustomMoves={state.pokemonCustomMoves}
+        pokemonMoves={state.pokemonMoves}
       />
     );
   }
