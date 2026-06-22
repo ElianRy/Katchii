@@ -16,11 +16,6 @@ const BOX_SIZE = 30;
 const BOX_COLS = 6;
 
 // Re-export buildEnemyTeam logic locally
-const ZONE_LEVEL_RANGE: Record<string, [number, number]> = {
-  zone1: [5, 20], zone2: [15, 35], zone3: [25, 50],
-  zone4: [35, 65], zone5: [50, 75], zone6: [60, 85],
-  zone7: [70, 95], zone8: [80, 100], ligue: [85, 100], zone_libre: [85, 100],
-};
 
 function buildEnemyTeam(_zoneId: string, avgLevel = 20): TeamMember[] {
   // Enemy levels scale around the player's average team level (±20%)
