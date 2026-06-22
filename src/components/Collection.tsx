@@ -11,11 +11,33 @@ import { MOVES } from '../data/gen1Moves';
 import { GEN1_MOVEPOOL, getAvailableMoves } from '../data/gen1Movepools';
 
 
+interface DexTheme {
+  id: string;
+  name: string;
+  emoji: string;
+  price: number;
+  bg: string;
+  headerGrad: string;
+  border: string;
+  tabBg: string;
+  titleColor: string;
+}
+
+export const DEX_THEMES: DexTheme[] = [
+  { id: 'default',  name: 'Classique',  emoji: '🔴', price: 0,    bg: '#b91c1c', headerGrad: 'linear-gradient(180deg,#dc2626 0%,#991b1b 100%)', border: '#7f1d1d', tabBg: '#991b1b', titleColor: 'white' },
+  { id: 'ocean',    name: 'Océan',      emoji: '🌊', price: 500,  bg: '#1c3fb9', headerGrad: 'linear-gradient(180deg,#2563dc 0%,#1d2d9b 100%)', border: '#1d2d7f', tabBg: '#1d3a9b', titleColor: 'white' },
+  { id: 'foret',    name: 'Forêt',      emoji: '🌿', price: 500,  bg: '#166534', headerGrad: 'linear-gradient(180deg,#16a34a 0%,#14532d 100%)', border: '#14532d', tabBg: '#166534', titleColor: 'white' },
+  { id: 'nuit',     name: 'Nuit',       emoji: '🌙', price: 1000, bg: '#0f0f1e', headerGrad: 'linear-gradient(180deg,#1e1b4b 0%,#0f0f1e 100%)', border: '#312e81', tabBg: '#1e1b4b', titleColor: '#a5b4fc' },
+  { id: 'rose',     name: 'Sakura',     emoji: '🌸', price: 1000, bg: '#9d174d', headerGrad: 'linear-gradient(180deg,#db2777 0%,#9d174d 100%)', border: '#831843', tabBg: '#be185d', titleColor: 'white' },
+  { id: 'dore',     name: 'Légendaire', emoji: '⭐', price: 2000, bg: '#78350f', headerGrad: 'linear-gradient(180deg,#d97706 0%,#92400e 100%)', border: '#451a03', tabBg: '#92400e', titleColor: '#fde68a' },
+];
+
 interface Props {
   state: GameState;
   onClose: () => void;
   onMarkTutorialDone?: () => void;
   onSaveCustomMoves?: (pokemonId: number, slugs: string[]) => void;
+  onUpdateTheme?: (themeId: string, unlocked: string[], cost: number) => void;
 }
 
 type FilterTab = 'tous' | 'captures' | 'shinies' | Rarity;
@@ -32,7 +54,10 @@ const ARENA_BADGES = ZONES.filter(z => z.boss?.badge).map(z => ({
 
 const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
 
-export function Collection({ state, onClose: _onClose, onMarkTutorialDone }: Props) {
+export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpdateTheme }: Props) {
+  const dexTheme = DEX_THEMES.find(t => t.id === (state.dexThemeId ?? 'default')) ?? DEX_THEMES[0];
+  const dexUnlocked = state.dexUnlockedThemes ?? ['default'];
+  const [showThemeModal, setShowThemeModal] = useState(false);
   const [showTutorial, setShowTutorial] = useState(() =>
     !state.completedTutorials?.includes('collection') && !isTutorialDone('collection')
   );
@@ -101,21 +126,19 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone }: Pro
   ];
 
   return (
-    <div className="fixed inset-x-0 top-0 z-[510] flex flex-col" style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))', background: '#b91c1c', fontFamily: 'monospace' }}>
+    <div className="fixed inset-x-0 top-0 z-[510] flex flex-col" style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))', background: dexTheme.bg, fontFamily: 'monospace' }}>
       {/* Header */}
-      <div
-        style={{
-          background: 'linear-gradient(180deg, #dc2626 0%, #991b1b 100%)',
-          paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
-          paddingBottom: '0.5rem',
-          paddingLeft: '1rem',
-          paddingRight: '1rem',
-          borderBottom: '2px solid #7f1d1d',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-        }}
-      >
+      <div style={{
+        background: dexTheme.headerGrad,
+        paddingTop: 'calc(0.75rem + env(safe-area-inset-top, 0px))',
+        paddingBottom: '0.5rem',
+        paddingLeft: '1rem',
+        paddingRight: '1rem',
+        borderBottom: `2px solid ${dexTheme.border}`,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+      }}>
         <div className="flex items-center gap-3">
-<div className="flex items-center gap-2 flex-1">
+          <div className="flex items-center gap-2 flex-1">
             {/* Pokéball icon */}
             <div style={{
               width: 22, height: 22, borderRadius: '50%',
@@ -128,19 +151,22 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone }: Pro
               <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 2, background: '#111', transform: 'translateY(-50%)' }} />
               <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 6, height: 6, borderRadius: '50%', background: 'white', border: '1.5px solid #111', zIndex: 1 }} />
             </div>
-            <span style={{ color: 'white', fontWeight: 900, fontSize: '1.1rem', letterSpacing: '0.15em', fontFamily: 'monospace' }}>
+            <span style={{ color: dexTheme.titleColor, fontWeight: 900, fontSize: '1.1rem', letterSpacing: '0.15em', fontFamily: 'monospace' }}>
               POKÉDEX
             </span>
             <div style={{ flex: 1 }} />
-            <span style={{ color: '#fecaca', fontSize: '0.6rem', fontFamily: 'monospace' }}>
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.6rem', fontFamily: 'monospace' }}>
               {totalCaught}/151 · {totalShinyCaught}✨
             </span>
+            <button onClick={() => setShowThemeModal(true)}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-sm"
+              style={{ background: 'rgba(255,255,255,0.15)', border: `1px solid ${dexTheme.border}` }}>⚙️</button>
           </div>
         </div>
       </div>
 
       {/* Main tabs */}
-      <div className="flex shrink-0" style={{ background: '#991b1b', borderBottom: '2px solid #7f1d1d', padding: '6px 12px', gap: 8 }}>
+      <div className="flex shrink-0" style={{ background: dexTheme.tabBg, borderBottom: `2px solid ${dexTheme.border}`, padding: '6px 12px', gap: 8 }}>
         {([
           { id: 'collection' as MainTab, label: '📚 POKÉDEX' },
           { id: 'badges' as MainTab, label: '🥇 BADGES' },
@@ -695,6 +721,55 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone }: Pro
 
       {showTutorial && (
         <TutorialOverlay tutorialKey="collection" steps={COLLECTION_TUTORIAL} onDone={() => { setShowTutorial(false); onMarkTutorialDone?.(); }} bottomOffset={72} />
+      )}
+
+      {/* Theme modal */}
+      {showThemeModal && (
+        <div className="fixed inset-0 z-[600] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}
+          onClick={() => setShowThemeModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="rounded-2xl p-4 w-80 max-w-[92vw]"
+            style={{ background: '#1e293b', border: '2px solid #334155' }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-white font-black text-base">🎨 Thème du Pokédex</span>
+              <button onClick={() => setShowThemeModal(false)} className="text-slate-400 text-xl px-1">✕</button>
+            </div>
+            <div className="text-slate-400 text-xs mb-3">Solde : <span className="text-yellow-400 font-bold">{state.points} 🪙</span></div>
+            <div className="flex flex-col gap-2">
+              {DEX_THEMES.map(t => {
+                const isUnlocked = dexUnlocked.includes(t.id);
+                const isActive = (state.dexThemeId ?? 'default') === t.id;
+                const canAfford = state.points >= t.price;
+                return (
+                  <button key={t.id}
+                    onClick={() => {
+                      if (!isUnlocked) {
+                        if (!canAfford) return;
+                        onUpdateTheme?.(t.id, [...dexUnlocked, t.id], t.price);
+                      } else {
+                        onUpdateTheme?.(t.id, dexUnlocked, 0);
+                      }
+                      setShowThemeModal(false);
+                    }}
+                    disabled={!isUnlocked && !canAfford}
+                    className="flex items-center gap-3 px-3 py-2 rounded-xl disabled:opacity-40"
+                    style={{ background: isActive ? t.headerGrad : 'rgba(255,255,255,0.06)', border: `2px solid ${isActive ? t.border : 'transparent'}` }}>
+                    <div className="w-8 h-8 rounded-lg shrink-0" style={{ background: t.headerGrad, border: `2px solid ${t.border}` }} />
+                    <div className="flex-1 text-left">
+                      <div className="font-black text-sm" style={{ color: isActive ? t.titleColor : 'white' }}>{t.emoji} {t.name}</div>
+                    </div>
+                    {isActive ? (
+                      <span className="text-xs font-bold text-green-400">Actif</span>
+                    ) : isUnlocked ? (
+                      <span className="text-xs font-bold text-slate-400">Équiper</span>
+                    ) : (
+                      <span className="text-xs font-bold text-yellow-400">{t.price} 🪙</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

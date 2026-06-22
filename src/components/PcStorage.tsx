@@ -43,6 +43,27 @@ function buildEnemyTeam(_zoneId: string, avgLevel = 20): TeamMember[] {
   });
 }
 
+interface PcTheme {
+  id: string;
+  name: string;
+  emoji: string;
+  price: number;
+  bg: string;
+  headerGrad: string;
+  border: string;
+  boxHeaderBg: string;
+  titleColor: string;
+}
+
+export const PC_THEMES: PcTheme[] = [
+  { id: 'default',  name: 'Classique',  emoji: '🔵', price: 0,    bg: '#c0d0e0', headerGrad: 'linear-gradient(180deg,#8fafcf 0%,#6c90b0 100%)', border: '#4a7090', boxHeaderBg: '#6c8fac', titleColor: 'white' },
+  { id: 'nuit',     name: 'Nuit',       emoji: '🌙', price: 500,  bg: '#1a2035', headerGrad: 'linear-gradient(180deg,#2a3550 0%,#1a2540 100%)', border: '#3a5080', boxHeaderBg: '#1e2d45', titleColor: '#93c5fd' },
+  { id: 'foret',    name: 'Forêt',      emoji: '🌿', price: 500,  bg: '#c0e0c0', headerGrad: 'linear-gradient(180deg,#8fbe8f 0%,#5a9060 100%)', border: '#3a7040', boxHeaderBg: '#6a9f6a', titleColor: 'white' },
+  { id: 'feu',      name: 'Feu',        emoji: '🔥', price: 1000, bg: '#e0c0a0', headerGrad: 'linear-gradient(180deg,#cf8f60 0%,#a05030 100%)', border: '#803020', boxHeaderBg: '#c07050', titleColor: 'white' },
+  { id: 'dore',     name: 'Doré',       emoji: '✨', price: 1500, bg: '#e8d890', headerGrad: 'linear-gradient(180deg,#d4b040 0%,#a07820 100%)', border: '#806010', boxHeaderBg: '#c0a030', titleColor: '#1a0a00' },
+  { id: 'galaxie',  name: 'Galaxie',    emoji: '🌌', price: 2000, bg: '#120820', headerGrad: 'linear-gradient(180deg,#2a1060 0%,#1a0840 100%)', border: '#5020a0', boxHeaderBg: '#1e0e40', titleColor: '#c084fc' },
+];
+
 interface Props {
   state: GameState;
   username?: string;
@@ -60,6 +81,7 @@ interface Props {
   onTriggerEvo?: (oldId: number, newId: number) => void;
   onMarkPendingEvolution?: (pokemonId: number) => void;
   onSaveCustomMoves?: (pokemonId: number, slugs: string[]) => void;
+  onUpdateTheme?: (themeId: string, unlocked: string[], cost: number) => void;
 }
 
 interface DragState {
@@ -83,8 +105,10 @@ export function PcStorage({
   state, username, onUpdateParty, onUpdatePcBoxes, onUpdateBoxNames, onClose: _onClose,
   isAdmin: _isAdmin, onSetLevel: _onSetLevel,
   currentZoneId, onAddXp, onBattleWin, onTrainingBattle, onTriggerEvo,
-  onSaveCustomMoves,
+  onSaveCustomMoves, onUpdateTheme,
 }: Props) {
+  const theme = PC_THEMES.find(t => t.id === (state.pcThemeId ?? 'default')) ?? PC_THEMES[0];
+  const unlockedThemes = state.pcUnlockedThemes ?? ['default'];
   const PC_BOX_KEY = `katchii_pc_box_${username ?? 'default'}`;
   const MAX_BOXES = 10;
   const [boxIndex, setBoxIndex] = useState(() => {
@@ -96,6 +120,7 @@ export function PcStorage({
     try { localStorage.setItem(PC_BOX_KEY, String(idx)); } catch {}
   };
   const [pokemonDetailId, setPokemonDetailId] = useState<number | null>(null);
+  const [showThemeModal, setShowThemeModal] = useState(false);
   const [autoTraining, setAutoTraining] = useState(false);
   const [xpBarWidths, setXpBarWidths] = useState<Record<number, number>>({});
   const [editingBoxName, setEditingBoxName] = useState(false);
@@ -453,12 +478,12 @@ export function PcStorage({
 
     return (
       <div className="fixed inset-0 z-[650] flex flex-col overflow-y-auto"
-        style={{ background: '#c0d0e0', fontFamily: 'monospace' }}>
+        style={{ background: theme.bg, fontFamily: 'monospace' }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-3 py-2 shrink-0"
-          style={{ background: 'linear-gradient(180deg,#8fafcf 0%,#6c90b0 100%)', borderBottom: '3px solid #4a7090' }}>
-          <button onClick={() => setPokemonDetailId(null)} className="text-white font-black text-xs px-2 py-1 rounded"
-            style={{ background: '#4a7090', border: '1px solid #2a5070' }}>← Retour</button>
+        <div className="flex items-center justify-between px-3 shrink-0"
+          style={{ background: theme.headerGrad, borderBottom: `3px solid ${theme.border}`, paddingTop: 'calc(0.5rem + env(safe-area-inset-top,0px))', paddingBottom: '0.5rem' }}>
+          <button onClick={() => setPokemonDetailId(null)} className="font-black text-xs px-2 py-1 rounded"
+            style={{ background: theme.border, color: theme.titleColor, border: `1px solid ${theme.border}` }}>← Retour</button>
           <div className="text-white font-black text-sm flex items-center gap-1">
             {detailPoke?.name ?? `#${detailId}`}
             {detailIsShiny && <span className="text-yellow-300">⭐</span>}
@@ -883,7 +908,7 @@ export function PcStorage({
   return (
     <div
       className="fixed inset-x-0 top-0 z-[600] flex flex-col select-none"
-      style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))', background: '#c0d0e0', fontFamily: 'monospace' }}
+      style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))', background: theme.bg, fontFamily: 'monospace' }}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
@@ -898,12 +923,16 @@ export function PcStorage({
       )}
 
       {/* Header DS-style */}
-      <div className="flex items-center justify-center px-3 py-2 shrink-0" style={{ background: 'linear-gradient(180deg,#8fafcf 0%,#6c90b0 100%)', borderBottom: '3px solid #4a7090' }}>
-        <div className="text-white font-black text-sm">PC de {username ?? 'Léo'}</div>
+      <div className="flex items-center justify-between px-3 shrink-0"
+        style={{ background: theme.headerGrad, borderBottom: `3px solid ${theme.border}`, paddingTop: 'calc(0.5rem + env(safe-area-inset-top,0px))', paddingBottom: '0.5rem' }}>
+        <div style={{ width: 32 }} />
+        <div className="font-black text-sm" style={{ color: theme.titleColor }}>PC de {username ?? 'Léo'}</div>
+        <button onClick={() => setShowThemeModal(true)} className="w-8 h-8 flex items-center justify-center rounded-lg text-base"
+          style={{ background: 'rgba(255,255,255,0.15)', border: `1px solid ${theme.border}` }}>⚙️</button>
       </div>
 
       {/* Box header with navigation */}
-      <div className="flex items-center justify-between px-2 py-1 shrink-0" style={{ background: '#6c8fac', borderBottom: '2px solid #4a7090' }}>
+      <div className="flex items-center justify-between px-2 py-1 shrink-0" style={{ background: theme.boxHeaderBg, borderBottom: `2px solid ${theme.border}` }}>
         <button
           onClick={() => setBoxIndexPersisted(Math.max(0, safeBoxIdx - 1))}
           disabled={safeBoxIdx === 0}
@@ -997,7 +1026,7 @@ export function PcStorage({
         </div>
 
         {/* Bottom: Party + detail */}
-        <div className="shrink-0" style={{ background: '#c0d0e0', borderTop: '3px solid #4a7090' }}>
+        <div className="shrink-0" style={{ background: theme.bg, borderTop: `3px solid ${theme.border}` }}>
           <div className="px-3 pt-1.5 pb-1 flex items-center justify-between">
             <div className="font-black text-xs text-slate-700">Équipe ({party.length}/3)</div>
           </div>
@@ -1062,6 +1091,56 @@ export function PcStorage({
 
         </div>
       </div>
+
+      {/* Theme modal */}
+      {showThemeModal && (
+        <div className="fixed inset-0 z-[700] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}
+          onClick={() => setShowThemeModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="rounded-2xl p-4 w-80 max-w-[92vw]"
+            style={{ background: '#1e293b', border: '2px solid #334155' }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-white font-black text-base">🎨 Thème du PC</span>
+              <button onClick={() => setShowThemeModal(false)} className="text-slate-400 text-xl px-1">✕</button>
+            </div>
+            <div className="text-slate-400 text-xs mb-3">Solde : <span className="text-yellow-400 font-bold">{state.points} 🪙</span></div>
+            <div className="flex flex-col gap-2">
+              {PC_THEMES.map(t => {
+                const isUnlocked = unlockedThemes.includes(t.id);
+                const isActive = (state.pcThemeId ?? 'default') === t.id;
+                const canAfford = state.points >= t.price;
+                return (
+                  <button key={t.id}
+                    onClick={() => {
+                      if (!isUnlocked) {
+                        if (!canAfford) return;
+                        const newUnlocked = [...unlockedThemes, t.id];
+                        onUpdateTheme?.(t.id, newUnlocked, t.price);
+                      } else {
+                        onUpdateTheme?.(t.id, unlockedThemes, 0);
+                      }
+                      setShowThemeModal(false);
+                    }}
+                    disabled={!isUnlocked && !canAfford}
+                    className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all disabled:opacity-40"
+                    style={{ background: isActive ? t.headerGrad : 'rgba(255,255,255,0.06)', border: `2px solid ${isActive ? t.border : 'transparent'}` }}>
+                    <div className="w-8 h-8 rounded-lg shrink-0" style={{ background: t.headerGrad, border: `2px solid ${t.border}` }} />
+                    <div className="flex-1 text-left">
+                      <div className="font-black text-sm" style={{ color: isActive ? t.titleColor : 'white' }}>{t.emoji} {t.name}</div>
+                    </div>
+                    {isActive ? (
+                      <span className="text-xs font-bold text-green-400">Actif</span>
+                    ) : isUnlocked ? (
+                      <span className="text-xs font-bold text-slate-400">Équiper</span>
+                    ) : (
+                      <span className="text-xs font-bold text-yellow-400">{t.price} 🪙</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

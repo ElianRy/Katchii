@@ -329,11 +329,12 @@ interface Props {
   onClose: () => void;
   onChallenge: (playerTeam: TeamMember[], enemyTeam: TeamMember[], enemyName: string, onDone: (won: boolean) => void) => void;
   onClaimCoins: (amount: number) => void;
+  onMarkTutorialDone?: () => void;
 }
 
 /* ─── Main component ────────────────────────────────────────────── */
-export function ThroneScreen({ state, username, onClose: _onClose, onChallenge, onClaimCoins }: Props) {
-  const [showTutorial, setShowTutorial] = useState(() => !isTutorialDone('throne'));
+export function ThroneScreen({ state, username, onClose: _onClose, onChallenge, onClaimCoins, onMarkTutorialDone }: Props) {
+  const [showTutorial, setShowTutorial] = useState(() => !state.completedTutorials?.includes('throne') && !isTutorialDone('throne'));
   const [throneData, setThroneData] = useState<ThroneData | null>(null);
   const [phase, setPhase] = useState<'view' | 'pick_mode' | 'pick_pokemon' | 'confirm'>('view');
   const [selectedPokemon, setSelectedPokemon] = useState<Array<{ pokemonId: number; isShiny: boolean }>>([]);
@@ -960,7 +961,7 @@ export function ThroneScreen({ state, username, onClose: _onClose, onChallenge, 
         <TutorialOverlay
           steps={THRONE_TUTORIAL}
           tutorialKey="throne"
-          onDone={() => setShowTutorial(false)}
+          onDone={() => { setShowTutorial(false); onMarkTutorialDone?.(); }}
           bottomOffset={80}
         />
       )}

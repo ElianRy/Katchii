@@ -149,6 +149,10 @@ export interface GameState {
   // key = "YYYY-MM-DD:userId", value = fight count today
   parkFightLog?: Record<string, number>;
   forcePasswordChange?: boolean; // set by admin — forces password change on next login
+  pcThemeId?: string;
+  pcUnlockedThemes?: string[];
+  dexThemeId?: string;
+  dexUnlockedThemes?: string[];
 }
 
 export type ZoneUnlockCondition =

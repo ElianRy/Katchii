@@ -439,6 +439,12 @@ export function App() {
           onClose={() => persistView('hunt')}
           onMarkTutorialDone={() => gameState.update(s => ({ ...s, completedTutorials: [...(s.completedTutorials ?? []), 'collection'] }))}
           onSaveCustomMoves={(pokemonId, slugs) => gameState.update(s => ({ ...s, pokemonCustomMoves: { ...(s.pokemonCustomMoves ?? {}), [pokemonId]: slugs } }))}
+          onUpdateTheme={(themeId, unlocked, cost) => gameState.update(s => ({
+            ...s,
+            dexThemeId: themeId,
+            dexUnlockedThemes: unlocked,
+            points: (s.points ?? 0) - cost,
+          }))}
         />
       )}
 
@@ -471,6 +477,12 @@ export function App() {
           onTrainingBattle={gameState.addTrainingWin}
           onTriggerEvo={gameState.triggerEvolution}
           onMarkPendingEvolution={gameState.markPendingEvolution}
+          onUpdateTheme={(themeId, unlocked, cost) => gameState.update(s => ({
+            ...s,
+            pcThemeId: themeId,
+            pcUnlockedThemes: unlocked,
+            points: (s.points ?? 0) - cost,
+          }))}
         />
       )}
 
@@ -607,6 +619,7 @@ export function App() {
             setBattle3v3({ playerTeam, enemyTeam, enemyName, onDone: (_dmg, won) => onResult(won) });
           }}
           onClaimCoins={(amount) => gameState.update(s => ({ ...s, points: (s.points ?? 0) + amount }))}
+          onMarkTutorialDone={() => gameState.update(s => ({ ...s, completedTutorials: [...(s.completedTutorials ?? []), 'throne'] }))}
         />
       )}
 
