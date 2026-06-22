@@ -698,17 +698,17 @@ export function PcStorage({
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* PC Grid */}
         <div className="flex-1 overflow-y-auto p-2" style={{ background: '#88a878' }}>
-          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${BOX_COLS}, 1fr)` }}>
+          <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${BOX_COLS}, 50px)`, width: 'fit-content', margin: '0 auto' }}>
             {Array.from({ length: BOX_SIZE }).map((_, slotIdx) => {
               const id = currentBox[slotIdx];
               if (!id) {
                 return (
                   <div
                     key={slotIdx}
-                    className="aspect-square rounded flex items-center justify-center"
+                    className="rounded flex items-center justify-center"
                     data-slot-type="pc"
                     data-slot-idx={slotIdx}
-                    style={{ background: 'rgba(0,0,0,0.1)' }}
+                    style={{ width: 50, height: 50, background: 'rgba(0,0,0,0.1)' }}
                   />
                 );
               }
@@ -728,8 +728,9 @@ export function PcStorage({
                     setSwapPickOpen(false);
                   }}
                   onTouchStart={e => handleTouchStart(e, id, 'pc', slotIdx)}
-                  className="aspect-square rounded flex flex-col items-center justify-center p-0.5 transition-all active:scale-95"
+                  className="rounded flex flex-col items-center justify-center p-0.5 transition-all active:scale-95"
                   style={{
+                    width: 50, height: 50,
                     background: isSel ? 'rgba(255,220,100,0.7)' : 'rgba(255,255,255,0.15)',
                     outline: isSel ? '2px solid #f59e0b' : 'none',
                     opacity: isDragged ? 0.3 : 1,

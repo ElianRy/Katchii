@@ -224,7 +224,7 @@ export const XP_CANDY_COSTS: Record<XpCandySize, number> = {
 };
 
 export const COOLDOWN_REDUCER_COST  = 400;
-export const SPAWN_NET_COST         = 300;
+export const SPAWN_NET_COST         = 800;
 export const SPAWN_NET_DURATION_MS  = 5 * 60_000;
 export const MYSTERY_CASE_COST      = 800;
 export const COOLDOWN_REDUCED_MS   = 10_000; // 10 seconds

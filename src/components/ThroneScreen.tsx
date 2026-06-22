@@ -876,15 +876,23 @@ export function ThroneScreen({ state, username, onClose, onChallenge, onClaimCoi
                     : 'drop-shadow(0 0 10px rgba(245,158,11,0.7)) drop-shadow(0 0 20px rgba(245,158,11,0.3))';
                   return (
                     <div key={i} className="flex flex-col items-center gap-1" style={{ animation: `${anims[i]} ${2.5 + i * 0.4}s ease-in-out infinite` }}>
-                      <img
-                        src={spriteUrl(m.pokemonId, m.isShiny)}
-                        alt={poke?.name ?? `#${m.pokemonId}`}
-                        width={sizes[i]} height={sizes[i]}
-                        style={{ imageRendering: 'pixelated', filter: glow }}
-                        draggable={false}
-                      />
+                      <div className={`relative inline-block${m.isShiny ? ' shiny-rainbow' : ''}`}>
+                        <img
+                          src={spriteUrl(m.pokemonId, m.isShiny)}
+                          alt={poke?.name ?? `#${m.pokemonId}`}
+                          width={sizes[i]} height={sizes[i]}
+                          style={{ imageRendering: 'pixelated', filter: glow }}
+                          draggable={false}
+                        />
+                        {m.isShiny && (
+                          <>
+                            <span className="absolute pointer-events-none" style={{ top: '10%', left: '50%', fontSize: '0.7rem', animation: 'pokedex-star-orbit-a 2s linear infinite', transformOrigin: '0 0' }}>⭐</span>
+                            <span className="absolute pointer-events-none" style={{ top: '50%', left: '10%', fontSize: '0.6rem', animation: 'pokedex-star-orbit-b 2.5s linear infinite', transformOrigin: '0 0' }}>✦</span>
+                            <span className="absolute pointer-events-none" style={{ top: '80%', left: '80%', fontSize: '0.5rem', animation: 'pokedex-star-orbit-c 1.8s linear infinite', transformOrigin: '0 0' }}>★</span>
+                          </>
+                        )}
+                      </div>
                       <span className="text-yellow-200 text-xs font-bold">{poke?.name ?? `#${m.pokemonId}`}</span>
-                      {m.isShiny && <span className="text-yellow-400" style={{ fontSize: '0.55rem' }}>✨ Shiny</span>}
                     </div>
                   );
                 })}

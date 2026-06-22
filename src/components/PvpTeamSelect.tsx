@@ -410,7 +410,7 @@ export function PvpTeamSelect({
   opponentName, isHost, onConfirm, onCancel,
   pokemonCustomMoves, onSaveCustomMoves, sessionId,
 }: Props) {
-  const [phase, setPhase] = useState<Phase>('mode_select');
+  const [phase, setPhase] = useState<Phase>('rental_select');
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [selectedRental, setSelectedRental] = useState<RentalTeamDef | null>(null);
   const [rentalRequired, setRentalRequired] = useState(false);
@@ -561,11 +561,33 @@ export function PvpTeamSelect({
     return (
       <div className="fixed inset-0 z-[700] flex flex-col bg-slate-950"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-        <div className="shrink-0 px-4 pt-4 pb-3 border-b border-slate-800">
-          <div className="flex items-center justify-between mb-1">
-            <button onClick={() => setPhase('mode_select')} className="text-slate-400 text-sm py-1 active:text-white">← Retour</button>
-            <span className="text-slate-500 text-xs">vs {opponentName}</span>
+
+        {/* Cancel button */}
+        <div className="shrink-0 flex items-center justify-between px-4 pt-4 pb-1">
+          <button onClick={onCancel} className="text-slate-400 text-sm py-1 px-1 active:text-white">← Annuler</button>
+          <span className="text-slate-500 text-xs">vs <span className="text-slate-300 font-bold">{opponentName}</span></span>
+        </div>
+
+        {/* VS Arena */}
+        <div className="shrink-0 flex items-center justify-center gap-0 px-4 py-3 relative" style={{ minHeight: 110 }}>
+          <div className="flex-1 flex flex-col items-center gap-1">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-black border-2 border-indigo-500/60"
+              style={{ background: 'linear-gradient(135deg, #1e1b4b, #312e81)', boxShadow: '0 0 20px #6366f155' }}>👤</div>
+            <span className="text-indigo-300 text-xs font-bold">Toi</span>
           </div>
+          <div className="flex-shrink-0 relative" style={{ width: 72 }}>
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, #a855f755 0%, transparent 70%)', animation: 'pvp-vs-pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ position: 'relative', fontSize: '2.2rem', fontWeight: 900, fontFamily: "'Press Start 2P', system-ui, sans-serif", background: 'linear-gradient(135deg, #facc15, #f97316, #ef4444)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', textAlign: 'center', lineHeight: 1, animation: 'pvp-vs-zoom 0.6s cubic-bezier(0.175,0.885,0.32,1.275) forwards, pvp-vs-shake 2s 0.7s ease-in-out infinite', filter: 'drop-shadow(0 0 10px #f9731688)' }}>VS</div>
+          </div>
+          <div className="flex-1 flex flex-col items-center gap-1">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-black border-2 border-red-500/60"
+              style={{ background: 'linear-gradient(135deg, #3b0a0a, #7f1d1d)', boxShadow: '0 0 20px #ef444455' }}>👤</div>
+            <span className="text-red-300 text-xs font-bold">{opponentName}</span>
+          </div>
+        </div>
+
+        {/* Title */}
+        <div className="shrink-0 px-4 pb-3 border-b border-slate-800">
           <div className="text-white font-black text-xl">🎴 Équipes de prêt</div>
           <div className="text-slate-400 text-sm mt-0.5">6 équipes · Niveau 100 · Attaques personnalisables ensuite</div>
         </div>
