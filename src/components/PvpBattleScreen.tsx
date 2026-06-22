@@ -9,7 +9,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { BattleScreen } from './BattleScreen';
-import type { PvpPersistedState } from './BattleScreen';
+import type { PvpPersistedState, PvpStateSync } from './BattleScreen';
 import { getPvpBattleChannel, finishSession, subscribeToSession } from '../lib/pvp';
 import type { PvpSession } from '../lib/pvp';
 import type { TeamMember } from './TeamBuilder';
@@ -38,6 +38,8 @@ const pvpStateKey = (sessionId: string) => `pvp_state_${sessionId}`;
 
 export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponentName, userId, pokemonCustomMoves, onBattleEnd }: Props) {
   const [isWaiting, setIsWaiting] = useState(false);
+  const [pendingStateSync, setPendingStateSync] = useState<PvpStateSync | null>(null);
+  const lastSentMoveRef = useRef<number | null>(null);
   const [savedState] = useState<PvpPersistedState | null>(() => {
     try {
       const raw = localStorage.getItem(pvpStateKey(session.id));
@@ -113,6 +115,12 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
       if (customMoves) setOpponentCustomMoves(customMoves);
     });
 
+    // Guest receives host's authoritative state sync after each turn
+    channel.on('broadcast', { event: 'pvp_state_sync' }, ({ payload }) => {
+      if (isHost) return;
+      setPendingStateSync(payload as PvpStateSync);
+    });
+
     channel.subscribe();
 
     // Broadcast own custom moves after subscribe; retry once in case opponent subscribed late
@@ -128,6 +136,27 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session.id, isHost]);
 
+  // Retry: guest re-broadcasts player_move every 4s while waiting (handles dropped broadcasts)
+  useEffect(() => {
+    if (!isWaiting || isHost || lastSentMoveRef.current === null) return;
+    const move = lastSentMoveRef.current;
+    const id = setInterval(() => {
+      if (!isWaiting || lastSentMoveRef.current === null) { clearInterval(id); return; }
+      channelRef.current?.send({ type: 'broadcast', event: 'player_move', payload: { moveIndex: move } });
+    }, 4000);
+    return () => clearInterval(id);
+  }, [isWaiting, isHost]);
+
+  // Retry: host re-checks if both moves are already available (handles state sync issues)
+  useEffect(() => {
+    if (!isWaiting || !isHost) return;
+    const id = setInterval(() => {
+      if (myMoveRef.current !== null && opponentMoveRef.current !== null) tryStartTurn();
+    }, 2000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isWaiting, isHost]);
+
   const tryStartTurn = useCallback(() => {
     if (!isHost) return;
     const myMove = myMoveRef.current;
@@ -140,23 +169,26 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
 
   const handleMoveSelect = useCallback((moveIndex: number) => {
     myMoveRef.current = moveIndex;
+    lastSentMoveRef.current = moveIndex;
     setIsWaiting(true);
     if (isHost) {
-      // Host waits for guest's move broadcast
       tryStartTurn();
     } else {
-      // Guest broadcasts move to host
       channelRef.current?.send({ type: 'broadcast', event: 'player_move', payload: { moveIndex } });
     }
   }, [isHost, tryStartTurn]);
 
   const handleTurnComputed = useCallback((payload: { playerMoveIndex: number; enemyMoveIndex: number; pResult: unknown; eResult: unknown }) => {
-    // Host: broadcast full payload to guest, then reset state
     channelRef.current?.send({ type: 'broadcast', event: 'turn_payload', payload });
-    // Reset for next turn
     myMoveRef.current = null;
     opponentMoveRef.current = null;
+    lastSentMoveRef.current = null;
     setPendingPayload(null);
+  }, []);
+
+  const handleTurnResolved = useCallback((sync: PvpStateSync) => {
+    // Host broadcasts authoritative state to guest after each turn
+    channelRef.current?.send({ type: 'broadcast', event: 'pvp_state_sync', payload: sync });
   }, []);
 
   const handleBattleEnd = useCallback(async (won: boolean) => {
@@ -194,6 +226,8 @@ export function PvpBattleScreen({ session, isHost, myTeam, opponentTeam, opponen
         onMoveSelect: handleMoveSelect,
         pendingPayload: pendingPayload as Parameters<typeof BattleScreen>[0]['pvpControls'] extends { pendingPayload: infer T } ? T : never,
         onTurnComputed: isHost ? handleTurnComputed : undefined,
+        onTurnResolved: isHost ? handleTurnResolved : undefined,
+        pendingStateSync,
         onAbandon: handleAbandon,
         forceEnd,
         onSwitch: (newIdx: number, voluntary?: boolean) => {

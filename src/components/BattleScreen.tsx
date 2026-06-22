@@ -24,6 +24,15 @@ import { TeamMember } from './TeamBuilder';
 import type { PokemonInstanceData } from '../types';
 import type { PvpMoveResult } from '../lib/pvp';
 
+export interface PvpStateSync {
+  playerHps: number[];
+  enemyHps: number[];
+  playerStatuses: StatusState[];
+  enemyStatuses: StatusState[];
+  playerStages: Stages[];
+  enemyStages: Stages[];
+}
+
 interface PvpTurnOverride {
   playerMoveIndex: number;
   enemyMoveIndex: number;
@@ -69,6 +78,8 @@ interface Props {
     onMoveSelect: (moveIndex: number) => void;
     pendingPayload: PvpTurnOverride | null;
     onTurnComputed?: (payload: Required<PvpTurnOverride>) => void;
+    onTurnResolved?: (sync: PvpStateSync) => void;
+    pendingStateSync?: PvpStateSync | null;
     onAbandon?: () => void;
     forceEnd?: boolean | null;
     onSwitch?: (newIdx: number, voluntary?: boolean) => void;
@@ -870,6 +881,27 @@ export function BattleScreen({
 
   useEffect(() => { playerFightersRef.current = playerFighters; }, [playerFighters]);
   useEffect(() => { enemyFightersRef.current = enemyFighters; }, [enemyFighters]);
+
+  // Guest: apply host's authoritative state snapshot when entering player_turn
+  const lastAppliedSync = useRef<PvpStateSync | null>(null);
+  useEffect(() => {
+    const sync = pvpControls?.pendingStateSync;
+    if (!sync || !pvpControls || phase !== 'player_turn' || sync === lastAppliedSync.current) return;
+    lastAppliedSync.current = sync;
+    setPlayerFighters(prev => prev.map((f, i) => ({
+      ...f,
+      currentHp: sync.playerHps[i] ?? f.currentHp,
+      statusState: sync.playerStatuses[i] ?? f.statusState,
+      stages: sync.playerStages[i] ?? f.stages,
+    })));
+    setEnemyFighters(prev => prev.map((f, i) => ({
+      ...f,
+      currentHp: sync.enemyHps[i] ?? f.currentHp,
+      statusState: sync.enemyStatuses[i] ?? f.statusState,
+      stages: sync.enemyStages[i] ?? f.stages,
+    })));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, pvpControls?.pendingStateSync]);
   useEffect(() => { playerIdxRef.current = playerIdx; }, [playerIdx]);
   useEffect(() => { enemyIdxRef.current = enemyIdx; }, [enemyIdx]);
   useEffect(() => { phaseRef.current = phase; }, [phase]);
@@ -2188,6 +2220,15 @@ export function BattleScreen({
     if (pf[pIdx].currentHp <= 0) { handlePlayerKo(); return; }
 
     // ── Both alive → next player turn ──
+    // Host broadcasts authoritative state snapshot for guest to apply
+    pvpControls?.onTurnResolved?.({
+      playerHps: pf.map(f => f.currentHp),
+      enemyHps: ef.map(f => f.currentHp),
+      playerStatuses: pf.map(f => f.statusState),
+      enemyStatuses: ef.map(f => f.statusState),
+      playerStages: pf.map(f => f.stages),
+      enemyStages: ef.map(f => f.stages),
+    });
     phaseRef.current = 'player_turn';
     setPhase('player_turn');
   // eslint-disable-next-line react-hooks/exhaustive-deps
