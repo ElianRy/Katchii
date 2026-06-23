@@ -435,9 +435,10 @@ export function AdminPanel({ gameState, onClose }: Props) {
               const isCurrent = (gameState.state.zoneProgress?.currentZoneId ?? 'zone1') === zoneId;
               const bossDefeated = !!gameState.state.zoneProgress?.bossDefeated?.[zoneId];
               return (
-                <button key={zoneId} onClick={() => setZone(zoneId)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-xl border text-left"
-                  style={{ borderColor: isCurrent ? '#ef4444' : '#1e293b', background: isCurrent ? '#450a0a' : '#0f172a' }}>
+                <div key={zoneId}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl border text-left cursor-pointer"
+                  style={{ borderColor: isCurrent ? '#ef4444' : '#1e293b', background: isCurrent ? '#450a0a' : '#0f172a' }}
+                  onClick={() => setZone(zoneId)}>
                   <span className="text-xl">{isCurrent ? '📍' : bossDefeated ? '✅' : '🔒'}</span>
                   <div className="flex-1">
                     <div className="text-white font-bold text-sm">{zone.name}</div>
@@ -450,7 +451,7 @@ export function AdminPanel({ gameState, onClose }: Props) {
                       🔄 Reset
                     </button>
                   )}
-                </button>
+                </div>
               );
             })}
           </div>
