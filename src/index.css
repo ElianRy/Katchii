@@ -163,7 +163,7 @@ input, textarea, select {
   0%   { transform: translateX(0) translateY(0); opacity: 0; }
   4%   { opacity: 1; }
   22%  { opacity: 0; }
-  100% { transform: translateX(-350px) translateY(130px); opacity: 0; }
+  100% { transform: translateX(350px) translateY(130px); opacity: 0; }
 }
 @keyframes shooting-star-c {
   0%   { transform: translateX(0) translateY(0); opacity: 0; }

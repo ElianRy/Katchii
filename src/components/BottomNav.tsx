@@ -14,10 +14,10 @@ interface Props {
 
 export const BOTTOM_NAV_HEIGHT = 72;
 
-const MAIN_ITEMS: { view: View; icon: string | null; iconImg?: string; label: string; color: string; active: string }[] = [
-  { view: 'hunt'       as View, icon: '🎯', label: 'Chasse',     color: 'text-white',       active: 'bg-white/10' },
-  { view: 'collection' as View, icon: null, iconImg: '/icon-pokedex.png', label: 'Pokédex',    color: 'text-blue-400',    active: 'bg-blue-900/30' },
-  { view: 'team'       as View, icon: null, iconImg: '/icon-pc.png',      label: 'PC',         color: 'text-emerald-400', active: 'bg-emerald-900/30' },
+const MAIN_ITEMS: { view: View; icon: string; label: string; color: string; active: string }[] = [
+  { view: 'hunt'       as View, icon: '🎯', label: 'Chasse',   color: 'text-white',       active: 'bg-white/10' },
+  { view: 'collection' as View, icon: '📱', label: 'Pokédex',  color: 'text-blue-400',    active: 'bg-blue-900/30' },
+  { view: 'team'       as View, icon: '💻', label: 'PC',       color: 'text-emerald-400', active: 'bg-emerald-900/30' },
   { view: 'pokepark'   as View, icon: '🌿', label: 'PokéParc',   color: 'text-green-300',   active: 'bg-green-900/30' },
   { view: 'throne'     as View, icon: '👑', label: 'Trône',      color: 'text-yellow-400',  active: 'bg-yellow-900/30' },
 ];
@@ -321,10 +321,7 @@ export function BottomNav({ currentView, onNavigate, favoritePokemon, onShowPlay
               onClick={() => handleNavigate(item.view)}
               className={`relative flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-colors ${item.color} hover:bg-white/5`}
             >
-              {'iconImg' in item && item.iconImg
-                ? <img src={item.iconImg} alt={item.label} className="w-7 h-7 object-contain" />
-                : <span className="text-2xl leading-none">{item.icon as string}</span>
-              }
+              <span className="text-2xl leading-none">{item.icon}</span>
               <span className="text-[0.6rem] font-bold leading-none">{item.label}</span>
               {currentView === item.view && (
                 <span className="absolute" style={{
