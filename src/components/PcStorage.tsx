@@ -68,124 +68,137 @@ export const PC_THEMES: PcTheme[] = [
   { id: 'galaxie',  name: 'Galaxie',    emoji: '🌌', price: 2000, bg: '#120820', headerGrad: 'linear-gradient(180deg,#2a1060 0%,#1a0840 100%)', border: '#5020a0', boxHeaderBg: '#1e0e40', titleColor: '#c084fc', screenBg: '#050510', hasAnimation: true, textColor: '#e0e7ff', subTextColor: '#a5b4fc' },
 ];
 
+// All animation keyframes declared once — injected via a single <style> in the component
+const PC_ANIM_STYLES = `
+  @keyframes pc-flame-rise {
+    0% { transform: translateY(0) scale(1) rotate(-3deg); opacity: 1; }
+    60% { opacity: 0.9; }
+    100% { transform: translateY(-180px) scale(0.2) rotate(8deg); opacity: 0; }
+  }
+  @keyframes pc-fire-title-pulse {
+    0%, 100% { color: #fb923c; text-shadow: 0 0 8px #fb923c, 0 0 18px #ef4444; }
+    50% { color: #ffffff; text-shadow: 0 0 18px #ef4444, 0 0 36px #fb923c; }
+  }
+  @keyframes pc-petal-fall {
+    0% { transform: translateY(-30px) translateX(0) rotate(0deg); opacity: 1; }
+    80% { opacity: 0.8; }
+    100% { transform: translateY(100vh) translateX(55px) rotate(240deg); opacity: 0; }
+  }
+  @keyframes pc-sakura-title-glow {
+    0%, 100% { text-shadow: 0 0 8px #f9a8d4, 0 0 18px #f9a8d4; }
+    50% { text-shadow: 0 0 22px #fce7f3, 0 0 44px #f9a8d4; }
+  }
+  @keyframes pc-twinkle { 0%,100% { opacity: 0.15; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.6); } }
+  @keyframes pc-shoot {
+    0% { transform: scaleX(0.1); opacity: 0; }
+    8% { opacity: 1; }
+    100% { transform: translateX(150px) translateY(75px) scaleX(1); opacity: 0; }
+  }
+  @keyframes pc-nebula { 0%,100% { opacity: 0.2; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.12); } }
+  @keyframes pc-galaxie-title {
+    0% { color: #a5b4fc; text-shadow: 0 0 10px #6366f1, 0 0 28px #4f46e5; }
+    25% { color: #c4b5fd; text-shadow: 0 0 12px #a855f7, 0 0 30px #7c3aed; }
+    50% { color: #93c5fd; text-shadow: 0 0 12px #3b82f6, 0 0 30px #2563eb; }
+    75% { color: #f0abfc; text-shadow: 0 0 12px #e879f9, 0 0 30px #a21caf; }
+    100% { color: #a5b4fc; text-shadow: 0 0 10px #6366f1, 0 0 28px #4f46e5; }
+  }
+`;
+
 function AnimatedPcOverlay({ themeId }: { themeId: string }) {
   if (themeId === 'feu') {
-    const particles = Array.from({ length: 15 }, (_, i) => i);
+    const particles = Array.from({ length: 18 }, (_, i) => i);
     return (
-      <>
-        <style>{`
-          @keyframes pc-flame-rise {
-            0% { transform: translateY(0) scale(1); opacity: 0.85; }
-            100% { transform: translateY(-120px) scale(0.3); opacity: 0; }
-          }
-          @keyframes pc-fire-title-pulse {
-            0%, 100% { color: #fb923c; text-shadow: 0 0 8px #fb923c; }
-            50% { color: #ef4444; text-shadow: 0 0 16px #ef4444, 0 0 32px #fb923c; }
-          }
-        `}</style>
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 10, pointerEvents: 'none' }}>
-          {particles.map(i => (
-            <div key={i} style={{
-              position: 'absolute',
-              bottom: `${(i % 3) * 10}%`,
-              left: `${3 + i * 6}%`,
-              width: 10 + (i % 4) * 5,
-              height: 10 + (i % 4) * 5,
-              borderRadius: '50% 50% 30% 30%',
-              background: 'radial-gradient(circle, #ffcc44, #ff6600)',
-              animation: `pc-flame-rise ${1.2 + (i % 3) * 0.5}s ${i * 0.15}s ease-out infinite`,
-              opacity: 0.7 + (i % 3) * 0.1,
-              zIndex: 10,
-              pointerEvents: 'none',
-            }} />
-          ))}
-        </div>
-      </>
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 2 }}>
+        {particles.map(i => (
+          <div key={i} style={{
+            position: 'absolute',
+            bottom: `${(i % 4) * 8}%`,
+            left: `${2 + i * 5.3}%`,
+            width: 10 + (i % 4) * 6,
+            height: 14 + (i % 4) * 8,
+            borderRadius: '50% 50% 35% 35%',
+            background: i % 3 === 0
+              ? 'radial-gradient(circle at 40% 60%, #ffee44, #ff6600)'
+              : i % 3 === 1
+              ? 'radial-gradient(circle at 40% 60%, #ff8800, #cc2200)'
+              : 'radial-gradient(circle at 40% 60%, #ffcc00, #ff4400)',
+            animation: `pc-flame-rise ${0.9 + (i % 4) * 0.35}s ${i * 0.11}s ease-out infinite`,
+            filter: 'blur(1px)',
+            boxShadow: '0 0 8px #ff6600',
+          }} />
+        ))}
+      </div>
     );
   }
   if (themeId === 'sakura') {
-    const petals = Array.from({ length: 18 }, (_, i) => i);
+    const petals = Array.from({ length: 22 }, (_, i) => i);
     return (
-      <>
-        <style>{`
-          @keyframes pc-petal-fall {
-            0% { transform: translateY(-20px) translateX(0) rotate(0deg); opacity: 0.95; }
-            100% { transform: translateY(110%) translateX(40px) rotate(180deg); opacity: 0; }
-          }
-          @keyframes pc-sakura-title-glow {
-            0%, 100% { text-shadow: 0 0 8px #f9a8d4, 0 0 16px #f9a8d4; }
-            50% { text-shadow: 0 0 20px #fce7f3, 0 0 40px #f9a8d4; }
-          }
-        `}</style>
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 10, pointerEvents: 'none' }}>
-          {petals.map(i => (
-            <div key={i} style={{
-              position: 'absolute',
-              top: '-10px',
-              left: `${(i / 18) * 100 + (i % 3) * 2}%`,
-              width: 12 + (i % 3) * 4,
-              height: 12 + (i % 3) * 4,
-              borderRadius: '50% 0 50% 0',
-              background: i % 3 === 0 ? '#ffb0c8' : i % 3 === 1 ? '#ffd6e7' : '#ff88b8',
-              animation: `pc-petal-fall ${2.5 + (i % 4) * 0.5}s ${i * 0.25}s linear infinite`,
-              opacity: 0.9,
-              zIndex: 10,
-              pointerEvents: 'none',
-            }} />
-          ))}
-        </div>
-      </>
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 2 }}>
+        {petals.map(i => (
+          <div key={i} style={{
+            position: 'absolute',
+            top: '-30px',
+            left: `${(i / 22) * 100 + (i % 4) * 1.2}%`,
+            width: 10 + (i % 4) * 5,
+            height: 10 + (i % 4) * 5,
+            borderRadius: '50% 0 50% 0',
+            background: i % 3 === 0 ? '#ff80b0' : i % 3 === 1 ? '#ffb0d0' : '#ff5090',
+            animation: `pc-petal-fall ${2 + (i % 5) * 0.55}s ${i * 0.17}s linear infinite`,
+            boxShadow: '0 0 5px #ff60a0',
+          }} />
+        ))}
+      </div>
     );
   }
   if (themeId === 'galaxie') {
-    const stars = Array.from({ length: 50 }, (_, i) => i);
-    const shootingStars = [0, 1, 2];
+    const stars = Array.from({ length: 65 }, (_, i) => i);
+    const shootingStars = [0, 1, 2, 3, 4];
+    const nebulas = [0, 1, 2];
     return (
-      <>
-        <style>{`
-          @keyframes pc-twinkle { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
-          @keyframes pc-shoot { 0% { transform: translateX(0) translateY(0); opacity: 1; } 100% { transform: translateX(80px) translateY(40px); opacity: 0; } }
-          @keyframes pc-galaxie-title {
-            0% { color: #a5b4fc; text-shadow: 0 0 8px #a5b4fc; }
-            25% { color: #f9a8d4; text-shadow: 0 0 12px #f9a8d4; }
-            50% { color: #86efac; text-shadow: 0 0 12px #86efac; }
-            75% { color: #fde68a; text-shadow: 0 0 12px #fde68a; }
-            100% { color: #a5b4fc; text-shadow: 0 0 8px #a5b4fc; }
-          }
-        `}</style>
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 10, pointerEvents: 'none' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 60%, rgba(99,40,180,0.35) 0%, transparent 70%)', pointerEvents: 'none' }} />
-          {stars.map(i => (
-            <div key={i} style={{
-              position: 'absolute',
-              top: `${(i * 37) % 100}%`,
-              left: `${(i * 61) % 100}%`,
-              width: 2 + (i % 3),
-              height: 2 + (i % 3),
-              borderRadius: '50%',
-              background: i % 4 === 0 ? '#f9a8d4' : i % 4 === 1 ? '#86efac' : i % 4 === 2 ? '#a5b4fc' : 'white',
-              animation: `pc-twinkle ${1 + (i % 3)}s ${(i % 4) * 0.5}s ease-in-out infinite`,
-              zIndex: 10,
-              pointerEvents: 'none',
-            }} />
-          ))}
-          {shootingStars.map(i => (
-            <div key={i} style={{
-              position: 'absolute',
-              top: `${10 + i * 25}%`,
-              left: `${10 + i * 20}%`,
-              width: 50,
-              height: 2,
-              background: 'linear-gradient(90deg, white, transparent)',
-              borderRadius: 99,
-              animation: `pc-shoot ${2 + i * 1.5}s ${i * 2.5}s linear infinite`,
-              opacity: 0,
-              zIndex: 10,
-              pointerEvents: 'none',
-            }} />
-          ))}
-        </div>
-      </>
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 2 }}>
+        {nebulas.map(i => (
+          <div key={i} style={{
+            position: 'absolute',
+            top: `${10 + i * 30}%`,
+            left: `${5 + i * 33}%`,
+            width: 160,
+            height: 80,
+            borderRadius: '50%',
+            background: i === 0
+              ? 'radial-gradient(ellipse, rgba(99,102,241,0.45), transparent)'
+              : i === 1
+              ? 'radial-gradient(ellipse, rgba(168,85,247,0.38), transparent)'
+              : 'radial-gradient(ellipse, rgba(236,72,153,0.3), transparent)',
+            animation: `pc-nebula ${5 + i * 2.5}s ${i * 1.5}s ease-in-out infinite`,
+          }} />
+        ))}
+        {stars.map(i => (
+          <div key={i} style={{
+            position: 'absolute',
+            top: `${(i * 37 + 11) % 100}%`,
+            left: `${(i * 61 + 7) % 100}%`,
+            width: 1.5 + (i % 3),
+            height: 1.5 + (i % 3),
+            borderRadius: '50%',
+            background: i % 5 === 0 ? '#c4b5fd' : i % 5 === 1 ? '#93c5fd' : i % 5 === 2 ? '#f0abfc' : i % 5 === 3 ? '#fde68a' : 'white',
+            animation: `pc-twinkle ${0.6 + (i % 5) * 0.5}s ${(i % 8) * 0.22}s ease-in-out infinite`,
+            boxShadow: i % 4 === 0 ? '0 0 5px currentColor' : undefined,
+          }} />
+        ))}
+        {shootingStars.map(i => (
+          <div key={i} style={{
+            position: 'absolute',
+            top: `${4 + i * 18}%`,
+            left: `${3 + i * 16}%`,
+            width: 80,
+            height: 2.5,
+            background: 'linear-gradient(90deg, white, rgba(196,181,253,0.8), transparent)',
+            borderRadius: 99,
+            animation: `pc-shoot ${1 + i * 0.6}s ${i * 2.5 + 0.5}s ease-in infinite`,
+            opacity: 0,
+          }} />
+        ))}
+      </div>
     );
   }
   return null;
@@ -1039,6 +1052,8 @@ export function PcStorage({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Global animation keyframes — injected once */}
+      {theme.hasAnimation && <style>{PC_ANIM_STYLES}</style>}
       {/* Floating drag sprite */}
       {dragging && (
         <div
@@ -1056,9 +1071,9 @@ export function PcStorage({
         <div className="font-black text-sm" style={{ color: theme.titleColor }}>
           {theme.hasAnimation && theme.id === 'feu' ? (
             <span>{'PC de '.split('').map((char, i) => (
-              <span key={i} style={{ animation: `pc-fire-title-pulse 1.5s ${i * 0.1}s ease-in-out infinite`, display: 'inline-block' }}>{char}</span>
+              <span key={i} style={{ animation: `pc-fire-title-pulse 1.5s ${i * 0.1}s ease-in-out infinite`, display: 'inline-block', minWidth: char === ' ' ? '0.35em' : undefined }}>{char === ' ' ? ' ' : char}</span>
             ))}{(username ?? 'Léo').split('').map((char, i) => (
-              <span key={i} style={{ animation: `pc-fire-title-pulse 1.5s ${(i + 5) * 0.1}s ease-in-out infinite`, display: 'inline-block' }}>{char}</span>
+              <span key={i} style={{ animation: `pc-fire-title-pulse 1.5s ${(i + 6) * 0.1}s ease-in-out infinite`, display: 'inline-block' }}>{char}</span>
             ))}</span>
           ) : theme.hasAnimation && theme.id === 'sakura' ? (
             <span style={{ animation: 'pc-sakura-title-glow 2s ease-in-out infinite' }}>PC de {username ?? 'Léo'}</span>
