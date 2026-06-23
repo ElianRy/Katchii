@@ -604,11 +604,17 @@ export function App() {
           onClose={() => persistView('hunt')}
           onBuyBooster={() => {
             if (gameState.state.points < 500) return false;
-            const cards = openBooster();
             gameState.spendPoints(500);
-            gameState.addTcgCards(cards.map(c => c.cardId));
-            setBoosterCards(cards);
+            gameState.addToBoosterInventory();
             return true;
+          }}
+          onOpenBooster={() => {
+            const ok = gameState.openBoosterFromInventory?.();
+            if (ok) {
+              const cards = openBooster();
+              gameState.addTcgCards(cards.map(c => c.cardId));
+              setBoosterCards(cards);
+            }
           }}
           onOpenFreeBooster={() => {
             const today = new Date().toISOString().slice(0, 10);
@@ -670,7 +676,16 @@ export function App() {
       {boosterCards && (
         <BoosterOpening
           cards={boosterCards}
+          boosterCount={gameState.state.boosters ?? 0}
           onClose={() => setBoosterCards(null)}
+          onOpenAnother={() => {
+            const ok = gameState.openBoosterFromInventory?.();
+            if (ok) {
+              const cards = openBooster();
+              gameState.addTcgCards(cards.map(c => c.cardId));
+              setBoosterCards(cards);
+            }
+          }}
         />
       )}
 

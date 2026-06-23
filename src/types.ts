@@ -156,6 +156,7 @@ export interface GameState {
   tcgCards?: Record<string, number>;
   tcgFavoriteCard?: string;
   lastFreeBoosterDate?: string;
+  boosters?: number;
 }
 
 export type ZoneUnlockCondition =

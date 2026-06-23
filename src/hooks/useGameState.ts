@@ -1024,6 +1024,21 @@ export function useGameState() {
     update(prev => ({ ...prev, lastFreeBoosterDate: date }));
   }, [update]);
 
+  const addToBoosterInventory = useCallback((count: number = 1) => {
+    update(prev => ({ ...prev, boosters: (prev.boosters ?? 0) + count }));
+  }, [update]);
+
+  const openBoosterFromInventory = useCallback((): boolean => {
+    let hasBooster = false;
+    update(prev => {
+      const current = prev.boosters ?? 0;
+      if (current <= 0) return prev;
+      hasBooster = true;
+      return { ...prev, boosters: current - 1 };
+    });
+    return hasBooster;
+  }, [update]);
+
   const adminGiveAllTcgCards = useCallback(() => {
     update(prev => {
       const tcgCards: Record<string, number> = {};
@@ -1098,6 +1113,8 @@ export function useGameState() {
     addTcgCards,
     setTcgFavoriteCard,
     setLastFreeBoosterDate,
+    addToBoosterInventory,
+    openBoosterFromInventory,
     adminGiveAllTcgCards,
     saveTeam,
     deleteTeam,

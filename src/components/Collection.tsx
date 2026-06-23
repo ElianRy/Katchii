@@ -293,8 +293,8 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
       <div className="flex shrink-0" style={{ background: dexTheme.tabBg, borderBottom: `2px solid ${dexTheme.border}`, padding: '6px 12px', gap: 8 }}>
         {([
           { id: 'collection' as MainTab, label: '📚 POKÉDEX' },
-          { id: 'badges' as MainTab, label: '🥇 BADGES' },
           { id: 'classeur' as MainTab, label: '🎴 CLASSEUR' },
+          { id: 'badges' as MainTab, label: '🥇 BADGES' },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -621,7 +621,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
       )}
 
       {mainTab === 'classeur' && (
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
           <CardBinder
             tcgCards={state.tcgCards ?? {}}
             favoriteCardId={state.tcgFavoriteCard}

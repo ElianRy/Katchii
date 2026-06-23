@@ -16,6 +16,7 @@ interface Props {
   onActivateSpawnNet: () => boolean;
   onClose: () => void;
   onBuyBooster?: () => boolean;
+  onOpenBooster?: () => void;
   onOpenFreeBooster?: () => void;
 }
 
@@ -40,7 +41,7 @@ function formatRemaining(expiresAt: number): string {
 
 interface Toast { id: number; text: string }
 
-export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet, onBuyMysteryCase, onOpenCase, onActivateLure, onActivateCooldownBoost, onActivateSpawnNet, onClose, onBuyBooster, onOpenFreeBooster }: Props) {
+export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet, onBuyMysteryCase, onOpenCase, onActivateLure, onActivateCooldownBoost, onActivateSpawnNet, onClose, onBuyBooster, onOpenBooster, onOpenFreeBooster }: Props) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [counter, setCounter] = useState(0);
   const [tick, setTick] = useState(0);
@@ -321,7 +322,7 @@ export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet,
             <div className="flex items-center gap-3 pt-2 border-t border-slate-700/40">
               <div className="flex-1">
                 <div className="text-white font-black text-sm">Booster Premium</div>
-                <div className="text-slate-400 text-xs mt-0.5">10 cartes · 6C + 3UC + 1 Rare ou mieux</div>
+                <div className="text-slate-400 text-xs mt-0.5">10 cartes aléatoires</div>
               </div>
               <button
                 onClick={() => {
@@ -339,6 +340,26 @@ export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet,
                 {BOOSTER_COST} 🪙
               </button>
             </div>
+            {/* Inventory + Open */}
+            {(state.boosters ?? 0) > 0 && (
+              <div className="flex items-center gap-3 pt-2 border-t border-slate-700/40">
+                <div className="flex-1">
+                  <div className="text-white font-black text-sm">Stock de boosters</div>
+                  <div className="text-slate-400 text-xs mt-0.5">{state.boosters} booster(s) à ouvrir</div>
+                </div>
+                <button
+                  onClick={() => onOpenBooster?.()}
+                  style={{
+                    background: 'linear-gradient(135deg, #7c3aed, #1d4ed8)',
+                    border: '1px solid #a78bfa', color: 'white',
+                    borderRadius: 10, padding: '8px 16px', fontWeight: 900,
+                    fontFamily: 'monospace', fontSize: '0.75rem', cursor: 'pointer',
+                  }}
+                >
+                  🎴 Ouvrir
+                </button>
+              </div>
+            )}
           </div>
         </section>
 

@@ -19,6 +19,7 @@ export default function CardBinder({ tcgCards, favoriteCardId, onSetFavorite }: 
   const [filterOwned, setFilterOwned] = useState<'all' | 'owned' | 'missing'>('all');
   const [sortKey, setSortKey] = useState<SortKey>('number');
   const [selectedCard, setSelectedCard] = useState<TcgCardDef | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const rarityOrder: Record<TcgRarity, number> = { common: 0, uncommon: 1, rare: 2, ultra: 3, secret: 4 };
 
@@ -49,96 +50,113 @@ export default function CardBinder({ tcgCards, favoriteCardId, onSetFavorite }: 
   const isFiltered = filterRarity !== null || filterHolo !== null || filterOwned !== 'all' || sortKey !== 'number';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#0f172a' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, background: '#0f172a' }}>
       {/* Header */}
-      <div style={{ padding: '12px 16px 8px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+      <div style={{ padding: '12px 16px 8px', borderBottom: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <span style={{ color: 'white', fontFamily: 'monospace', fontWeight: 900, fontSize: '0.85rem' }}>
             📖 CLASSEUR
           </span>
-          <span style={{ color: '#94a3b8', fontFamily: 'monospace', fontSize: '0.7rem' }}>
-            {totalOwned} / {totalCards} cartes
-          </span>
-        </div>
-        {/* Filters */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
-          {/* Rarity filter */}
-          {ALL_RARITIES.map(r => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: '#94a3b8', fontFamily: 'monospace', fontSize: '0.7rem' }}>
+              {totalOwned} / {totalCards}
+            </span>
             <button
-              key={r}
-              onClick={() => setFilterRarity(filterRarity === r ? null : r)}
+              onClick={() => setFiltersOpen(o => !o)}
               style={{
-                background: filterRarity === r ? `${TCG_RARITY_COLOR[r]}33` : 'rgba(255,255,255,0.06)',
-                border: `1px solid ${filterRarity === r ? TCG_RARITY_COLOR[r] : 'rgba(255,255,255,0.15)'}`,
-                color: filterRarity === r ? TCG_RARITY_COLOR[r] : '#94a3b8',
+                background: isFiltered ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${isFiltered ? '#6366f1' : 'rgba(255,255,255,0.15)'}`,
+                color: isFiltered ? '#a5b4fc' : '#94a3b8',
                 borderRadius: 6, padding: '2px 8px', fontSize: '0.62rem',
                 fontFamily: 'monospace', cursor: 'pointer', fontWeight: 700,
               }}
             >
-              {TCG_RARITY_LABEL[r].split(' ')[0]}
+              Filtres {filtersOpen ? '▴' : '▾'}
             </button>
-          ))}
-          {/* Holo filter */}
-          <button
-            onClick={() => setFilterHolo(filterHolo === true ? null : true)}
-            style={{
-              background: filterHolo === true ? '#f59e0b33' : 'rgba(255,255,255,0.06)',
-              border: `1px solid ${filterHolo === true ? '#f59e0b' : 'rgba(255,255,255,0.15)'}`,
-              color: filterHolo === true ? '#f59e0b' : '#94a3b8',
-              borderRadius: 6, padding: '2px 8px', fontSize: '0.62rem',
-              fontFamily: 'monospace', cursor: 'pointer', fontWeight: 700,
-            }}
-          >
-            ✦ Holo
-          </button>
-          {/* Owned filter */}
-          {(['all', 'owned', 'missing'] as const).map(o => (
+          </div>
+        </div>
+
+        {/* Collapsible filters */}
+        {filtersOpen && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', paddingTop: 6 }}>
+            {/* Rarity filter */}
+            {ALL_RARITIES.map(r => (
+              <button
+                key={r}
+                onClick={() => setFilterRarity(filterRarity === r ? null : r)}
+                style={{
+                  background: filterRarity === r ? `${TCG_RARITY_COLOR[r]}33` : 'rgba(255,255,255,0.06)',
+                  border: `1px solid ${filterRarity === r ? TCG_RARITY_COLOR[r] : 'rgba(255,255,255,0.15)'}`,
+                  color: filterRarity === r ? TCG_RARITY_COLOR[r] : '#94a3b8',
+                  borderRadius: 6, padding: '2px 8px', fontSize: '0.62rem',
+                  fontFamily: 'monospace', cursor: 'pointer', fontWeight: 700,
+                }}
+              >
+                {TCG_RARITY_LABEL[r].split(' ')[0]}
+              </button>
+            ))}
+            {/* Holo filter */}
             <button
-              key={o}
-              onClick={() => setFilterOwned(o)}
+              onClick={() => setFilterHolo(filterHolo === true ? null : true)}
               style={{
-                background: filterOwned === o ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${filterOwned === o ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)'}`,
-                color: filterOwned === o ? 'white' : '#64748b',
+                background: filterHolo === true ? '#f59e0b33' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${filterHolo === true ? '#f59e0b' : 'rgba(255,255,255,0.15)'}`,
+                color: filterHolo === true ? '#f59e0b' : '#94a3b8',
                 borderRadius: 6, padding: '2px 8px', fontSize: '0.62rem',
-                fontFamily: 'monospace', cursor: 'pointer',
+                fontFamily: 'monospace', cursor: 'pointer', fontWeight: 700,
               }}
             >
-              {o === 'all' ? 'Tout' : o === 'owned' ? 'Possédées' : 'Manquantes'}
+              ✦ Holo
             </button>
-          ))}
-          {/* Sort */}
-          <select
-            value={sortKey}
-            onChange={e => setSortKey(e.target.value as SortKey)}
-            style={{
-              background: '#1e293b', border: '1px solid rgba(255,255,255,0.15)',
-              color: '#94a3b8', borderRadius: 6, padding: '2px 6px',
-              fontSize: '0.62rem', fontFamily: 'monospace', cursor: 'pointer',
-            }}
-          >
-            <option value="number">Trier: n°</option>
-            <option value="rarity">Trier: rareté</option>
-            <option value="name">Trier: nom</option>
-          </select>
-          {/* Reset */}
-          {isFiltered && (
-            <button
-              onClick={() => { setFilterRarity(null); setFilterHolo(null); setFilterOwned('all'); setSortKey('number'); }}
+            {/* Owned filter */}
+            {(['all', 'owned', 'missing'] as const).map(o => (
+              <button
+                key={o}
+                onClick={() => setFilterOwned(o)}
+                style={{
+                  background: filterOwned === o ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${filterOwned === o ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                  color: filterOwned === o ? 'white' : '#64748b',
+                  borderRadius: 6, padding: '2px 8px', fontSize: '0.62rem',
+                  fontFamily: 'monospace', cursor: 'pointer',
+                }}
+              >
+                {o === 'all' ? 'Tout' : o === 'owned' ? 'Possédées' : 'Manquantes'}
+              </button>
+            ))}
+            {/* Sort */}
+            <select
+              value={sortKey}
+              onChange={e => setSortKey(e.target.value as SortKey)}
               style={{
-                background: 'transparent', border: '1px solid #ef4444',
-                color: '#ef4444', borderRadius: 6, padding: '2px 8px',
+                background: '#1e293b', border: '1px solid rgba(255,255,255,0.15)',
+                color: '#94a3b8', borderRadius: 6, padding: '2px 6px',
                 fontSize: '0.62rem', fontFamily: 'monospace', cursor: 'pointer',
               }}
             >
-              ✕ Reset
-            </button>
-          )}
-        </div>
+              <option value="number">Trier: n°</option>
+              <option value="rarity">Trier: rareté</option>
+              <option value="name">Trier: nom</option>
+            </select>
+            {/* Reset */}
+            {isFiltered && (
+              <button
+                onClick={() => { setFilterRarity(null); setFilterHolo(null); setFilterOwned('all'); setSortKey('number'); }}
+                style={{
+                  background: 'transparent', border: '1px solid #ef4444',
+                  color: '#ef4444', borderRadius: 6, padding: '2px 8px',
+                  fontSize: '0.62rem', fontFamily: 'monospace', cursor: 'pointer',
+                }}
+              >
+                ✕ Reset
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Cards grid */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 12 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-start' }}>
           {filtered.map(card => {
             const count = tcgCards[card.cardId] ?? 0;
@@ -160,11 +178,8 @@ export default function CardBinder({ tcgCards, favoriteCardId, onSetFavorite }: 
                     count={count}
                     size="sm"
                     isFavorite={favoriteCardId === card.cardId}
-                    showFavoriteBtn
-                    onFavorite={() => onSetFavorite(favoriteCardId === card.cardId ? undefined : card.cardId)}
                   />
                 ) : (
-                  // Not owned — silhouette with number
                   <div style={{
                     width: 80, height: 112, borderRadius: 5,
                     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
@@ -204,8 +219,6 @@ export default function CardBinder({ tcgCards, favoriteCardId, onSetFavorite }: 
               card={selectedCard}
               size="lg"
               isFavorite={favoriteCardId === selectedCard.cardId}
-              showFavoriteBtn
-              onFavorite={() => onSetFavorite(favoriteCardId === selectedCard.cardId ? undefined : selectedCard.cardId)}
             />
             <div style={{ textAlign: 'center' }}>
               <div style={{ color: 'white', fontFamily: 'monospace', fontWeight: 900, fontSize: '0.95rem' }}>
