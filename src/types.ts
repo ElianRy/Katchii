@@ -153,6 +153,9 @@ export interface GameState {
   pcUnlockedThemes?: string[];
   dexThemeId?: string;
   dexUnlockedThemes?: string[];
+  tcgCards?: Record<string, number>;
+  tcgFavoriteCard?: string;
+  lastFreeBoosterDate?: string;
 }
 
 export type ZoneUnlockCondition =

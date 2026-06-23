@@ -8,6 +8,7 @@ import { loadCloudState, saveCloudState, onSaveStatus, SaveStatus } from '../lib
 import { supabase } from '../lib/supabase';
 import { getUsername } from '../lib/auth';
 import { ZONE_BY_ID } from '../data/zones';
+import { ALL_CARDS as ALL_TCG_CARDS } from '../data/tcgData';
 import { POKEMON_BY_ID } from '../data/gen1';
 
 function zoneRarities(zoneId: string): Set<Rarity> {
@@ -1005,6 +1006,34 @@ export function useGameState() {
     }));
   }, [update]);
 
+  const addTcgCards = useCallback((newCards: string[]) => {
+    update(prev => {
+      const tcgCards = { ...(prev.tcgCards ?? {}) };
+      for (const cardId of newCards) {
+        tcgCards[cardId] = (tcgCards[cardId] ?? 0) + 1;
+      }
+      return { ...prev, tcgCards };
+    });
+  }, [update]);
+
+  const setTcgFavoriteCard = useCallback((cardId: string | undefined) => {
+    update(prev => ({ ...prev, tcgFavoriteCard: cardId }));
+  }, [update]);
+
+  const setLastFreeBoosterDate = useCallback((date: string) => {
+    update(prev => ({ ...prev, lastFreeBoosterDate: date }));
+  }, [update]);
+
+  const adminGiveAllTcgCards = useCallback(() => {
+    update(prev => {
+      const tcgCards: Record<string, number> = {};
+      for (const card of ALL_TCG_CARDS) {
+        tcgCards[card.cardId] = 1;
+      }
+      return { ...prev, tcgCards };
+    });
+  }, [update]);
+
   const adminGiveAllMax = useCallback(() => {
     update(prev => {
       const normalCollection = { ...prev.normalCollection };
@@ -1066,6 +1095,10 @@ export function useGameState() {
     setLastParkXpAt,
     addParkDuelResult,
     adminGiveAllMax,
+    addTcgCards,
+    setTcgFavoriteCard,
+    setLastFreeBoosterDate,
+    adminGiveAllTcgCards,
     saveTeam,
     deleteTeam,
     setFavoriteTeamId,

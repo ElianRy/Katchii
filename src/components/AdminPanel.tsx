@@ -397,6 +397,13 @@ export function AdminPanel({ gameState, onClose }: Props) {
               <button onClick={giveAll} className="flex-1 py-2 rounded-xl font-black text-sm text-black" style={{ background: '#4ade80' }}>✅ Tout donner (nv.100)</button>
               <button onClick={giveAllShiny} className="flex-1 py-2 rounded-xl font-black text-sm text-black" style={{ background: '#fbbf24' }}>✨ Tout Shiny</button>
             </div>
+            <button
+              onClick={() => { gameState.adminGiveAllTcgCards?.(); flash('🎴 Toutes les cartes TCG données !'); }}
+              className="w-full py-2 rounded-xl font-black text-sm text-black"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #1d4ed8)', color: 'white' }}
+            >
+              🎴 Toutes les cartes TCG
+            </button>
 
             {/* Search + grid */}
             <input

@@ -10,6 +10,7 @@ import { GEN1_STATS } from '../data/gen1Stats';
 import { MOVES } from '../data/gen1Moves';
 import { GEN1_MOVEPOOL, getAvailableMoves } from '../data/gen1Movepools';
 import { POKEMON_INFO } from '../data/pokemonInfo';
+import CardBinder from './CardBinder';
 
 
 interface DexTheme {
@@ -154,10 +155,11 @@ interface Props {
   onMarkTutorialDone?: () => void;
   onSaveCustomMoves?: (pokemonId: number, slugs: string[]) => void;
   onUpdateTheme?: (themeId: string, unlocked: string[], cost: number) => void;
+  onSetTcgFavorite?: (cardId: string | undefined) => void;
 }
 
 type FilterTab = 'tous' | 'captures' | 'shinies' | Rarity;
-type MainTab = 'collection' | 'badges';
+type MainTab = 'collection' | 'badges' | 'classeur';
 
 // All arena badges (zones with a boss that has a badge)
 const ARENA_BADGES = ZONES.filter(z => z.boss?.badge).map(z => ({
@@ -170,7 +172,7 @@ const ARENA_BADGES = ZONES.filter(z => z.boss?.badge).map(z => ({
 
 const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
 
-export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpdateTheme }: Props) {
+export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpdateTheme, onSetTcgFavorite }: Props) {
   const dexTheme = DEX_THEMES.find(t => t.id === (state.dexThemeId ?? 'default')) ?? DEX_THEMES[0];
   const dexUnlocked = state.dexUnlockedThemes ?? ['default'];
   const [showThemeModal, setShowThemeModal] = useState(false);
@@ -292,6 +294,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
         {([
           { id: 'collection' as MainTab, label: '📚 POKÉDEX' },
           { id: 'badges' as MainTab, label: '🥇 BADGES' },
+          { id: 'classeur' as MainTab, label: '🎴 CLASSEUR' },
         ]).map((tab) => (
           <button
             key={tab.id}
@@ -614,6 +617,16 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
               );
             })}
           </div>
+        </div>
+      )}
+
+      {mainTab === 'classeur' && (
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <CardBinder
+            tcgCards={state.tcgCards ?? {}}
+            favoriteCardId={state.tcgFavoriteCard}
+            onSetFavorite={cardId => onSetTcgFavorite?.(cardId)}
+          />
         </div>
       )}
 

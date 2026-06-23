@@ -38,6 +38,9 @@ import { supabase } from './lib/supabase';
 import { getUsername, logoutUser } from './lib/auth';
 import { calcMaxHp } from './data/combatEngine';
 import { POKEMON_BY_ID } from './data/gen1';
+import { openBooster } from './data/tcgData';
+import type { TcgCardDef } from './data/tcgData';
+import BoosterOpening from './components/BoosterOpening';
 import { playMenuMusic, stopMusic, playZoneMusic, playSfxConfirm, pauseCurrentMusic, resumeCurrentMusic } from './lib/audio';
 
 export function App() {
@@ -50,6 +53,7 @@ export function App() {
   const [previousView, setPreviousView] = useState<View>('home');
   const [battle3v3, setBattle3v3] = useState<{ playerTeam: TeamMember[]; enemyTeam: TeamMember[]; enemyName: string; onDone?: (dmg: number, won: boolean) => void } | null>(null);
   const [openingCase, setOpeningCase] = useState(false);
+  const [boosterCards, setBoosterCards] = useState<TcgCardDef[] | null>(null);
   const [forcePwChange, setForcePwChange] = useState<{ tempPw: string } | null>(null);
   const [forcePwInput, setForcePwInput] = useState('');
   const [forcePwConfirm, setForcePwConfirm] = useState('');
@@ -445,6 +449,7 @@ export function App() {
             dexUnlockedThemes: unlocked,
             points: (s.points ?? 0) - cost,
           }))}
+          onSetTcgFavorite={(cardId) => gameState.setTcgFavoriteCard(cardId)}
         />
       )}
 
@@ -597,6 +602,21 @@ export function App() {
           onActivateCooldownBoost={gameState.activateCooldownBoost}
           onActivateSpawnNet={gameState.activateSpawnNet}
           onClose={() => persistView('hunt')}
+          onBuyBooster={() => {
+            if (gameState.state.points < 500) return false;
+            const cards = openBooster();
+            gameState.spendPoints(500);
+            gameState.addTcgCards(cards.map(c => c.cardId));
+            setBoosterCards(cards);
+            return true;
+          }}
+          onOpenFreeBooster={() => {
+            const today = new Date().toISOString().slice(0, 10);
+            const cards = openBooster();
+            gameState.addTcgCards(cards.map(c => c.cardId));
+            gameState.setLastFreeBoosterDate(today);
+            setBoosterCards(cards);
+          }}
         />
       )}
 
@@ -646,6 +666,13 @@ export function App() {
           />
         );
       })()}
+
+      {boosterCards && (
+        <BoosterOpening
+          cards={boosterCards}
+          onClose={() => setBoosterCards(null)}
+        />
+      )}
 
       {openingCase && (
         <CaseOpenScreen

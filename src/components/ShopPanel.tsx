@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { GameState, LureType, LURE_COSTS, LURE_LABELS, XpCandySize, COOLDOWN_REDUCER_COST, SPAWN_NET_COST, MYSTERY_CASE_COST } from '../types';
 
+const BOOSTER_COST = 500;
+
 interface Props {
   state: GameState;
   onBuyLure: (type: LureType) => void;
@@ -13,6 +15,8 @@ interface Props {
   onActivateCooldownBoost: () => boolean;
   onActivateSpawnNet: () => boolean;
   onClose: () => void;
+  onBuyBooster?: () => boolean;
+  onOpenFreeBooster?: () => void;
 }
 
 const LURE_ICONS: Record<LureType, string> = { rare: '💎', epique: '🔮', legendaire: '⚡', shiny: '✨' };
@@ -36,7 +40,7 @@ function formatRemaining(expiresAt: number): string {
 
 interface Toast { id: number; text: string }
 
-export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet, onBuyMysteryCase, onOpenCase, onActivateLure, onActivateCooldownBoost, onActivateSpawnNet, onClose }: Props) {
+export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet, onBuyMysteryCase, onOpenCase, onActivateLure, onActivateCooldownBoost, onActivateSpawnNet, onClose, onBuyBooster, onOpenFreeBooster }: Props) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [counter, setCounter] = useState(0);
   const [tick, setTick] = useState(0);
@@ -279,6 +283,61 @@ export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet,
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Boosters TCG */}
+        <section>
+          <h3 className="text-slate-300 font-bold text-sm mb-3 uppercase tracking-wider">🎴 Boosters Cartes</h3>
+          <div className="bg-slate-800/60 rounded-xl border border-slate-700/40 p-4 flex flex-col gap-3">
+            {/* Free daily booster */}
+            {(() => {
+              const today = new Date().toISOString().slice(0, 10);
+              const canFree = state.lastFreeBoosterDate !== today;
+              return (
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="text-white font-black text-sm">Booster Gratuit</div>
+                    <div className="text-slate-400 text-xs mt-0.5">1 booster offert par jour · 10 cartes aléatoires</div>
+                  </div>
+                  <button
+                    onClick={() => { if (canFree && onOpenFreeBooster) { onOpenFreeBooster(); addToast('Booster gratuit ouvert !'); } }}
+                    disabled={!canFree}
+                    style={{
+                      background: canFree ? 'linear-gradient(135deg, #7c3aed, #1d4ed8)' : 'rgba(255,255,255,0.05)',
+                      border: `1px solid ${canFree ? '#a78bfa' : 'rgba(255,255,255,0.1)'}`,
+                      color: canFree ? 'white' : '#475569',
+                      borderRadius: 10, padding: '8px 16px', fontWeight: 900,
+                      fontFamily: 'monospace', fontSize: '0.75rem', cursor: canFree ? 'pointer' : 'default',
+                    }}
+                  >
+                    {canFree ? '🎁 Ouvrir' : '✓ Réclamé'}
+                  </button>
+                </div>
+              );
+            })()}
+            {/* Buy booster */}
+            <div className="flex items-center gap-3 pt-2 border-t border-slate-700/40">
+              <div className="flex-1">
+                <div className="text-white font-black text-sm">Booster Premium</div>
+                <div className="text-slate-400 text-xs mt-0.5">10 cartes · 6C + 3UC + 1 Rare ou mieux</div>
+              </div>
+              <button
+                onClick={() => {
+                  if (state.points < BOOSTER_COST) { addToast('Pas assez de PokéCoins !'); return; }
+                  if (onBuyBooster?.()) addToast('Booster acheté !');
+                }}
+                style={{
+                  background: state.points >= BOOSTER_COST ? 'linear-gradient(135deg, #1d4ed8, #7c3aed)' : 'rgba(255,255,255,0.05)',
+                  border: `1px solid ${state.points >= BOOSTER_COST ? '#60a5fa' : 'rgba(255,255,255,0.1)'}`,
+                  color: state.points >= BOOSTER_COST ? 'white' : '#475569',
+                  borderRadius: 10, padding: '8px 16px', fontWeight: 900,
+                  fontFamily: 'monospace', fontSize: '0.75rem', cursor: state.points >= BOOSTER_COST ? 'pointer' : 'default',
+                }}
+              >
+                {BOOSTER_COST} 🪙
+              </button>
             </div>
           </div>
         </section>

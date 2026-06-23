@@ -5,6 +5,8 @@ import { RARITY_COLORS } from '../types';
 import { playerLevelFromXp, xpToNextLevel, getPlayerGrade } from '../lib/playerLevel';
 import { ShinySprite } from './ShinySprite';
 import type { TeamMember } from './TeamBuilder';
+import TcgCard from './TcgCard';
+import { CARDS_BY_ID, TCG_RARITY_COLOR } from '../data/tcgData';
 
 interface Props {
   userId: string;
@@ -57,6 +59,8 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
   const points = (state?.points as number) ?? 0;
   const playerXp = (state?.playerXp as number) ?? 0;
   const totalPlayTimeMs = ((state?.stats as Record<string, unknown>)?.totalPlayTimeMs as number) ?? 0;
+
+  const tcgFavoriteCard = state?.tcgFavoriteCard as string | undefined;
 
   const normalCount = Object.values(normal).filter(v => v > 0).length;
   const shinyCount  = Object.values(shiny).filter(v  => v > 0).length;
@@ -164,6 +168,18 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
             >
               ⚔️ Défier en PvP
             </button>
+          )}
+
+          {/* ── Carte favorite ── */}
+          {tcgFavoriteCard && CARDS_BY_ID[tcgFavoriteCard] && (
+            <div className="flex flex-col items-center gap-2">
+              <span style={{ color: '#94a3b8', fontFamily: 'monospace', fontSize: '0.65rem', letterSpacing: '0.1em' }}>
+                🎴 CARTE FAVORITE
+              </span>
+              <div style={{ filter: `drop-shadow(0 0 12px ${TCG_RARITY_COLOR[CARDS_BY_ID[tcgFavoriteCard].tcgRarity]}88)` }}>
+                <TcgCard card={CARDS_BY_ID[tcgFavoriteCard]} size="md" />
+              </div>
+            </div>
           )}
 
           {/* ── Pokédex ── */}
