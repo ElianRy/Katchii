@@ -925,7 +925,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           setCurrentTeam(survivors);
         }
         // Feature 8: track money earned per trainer beaten
-        const rewardMap: Record<string, number> = { dialogue_giovanni: 5000, dialogue_master: 10000, victory: 5000 };
+        const rewardMap: Record<string, number> = { victory: 5000 };
         const reward = rewardMap[nextPhase] ?? 0;
         if (reward > 0) {
           setTotalMoneyEarned(prev => prev + reward);

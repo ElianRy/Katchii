@@ -592,6 +592,7 @@ export function App() {
           onBuyCooldownBoost={gameState.buyCooldownBoost}
           onBuySpawnNet={gameState.buySpawnNet}
           onBuyMysteryCase={gameState.buyMysteryCase}
+          onOpenCase={() => setOpeningCase(true)}
           onActivateLure={gameState.activateLure}
           onActivateCooldownBoost={gameState.activateCooldownBoost}
           onActivateSpawnNet={gameState.activateSpawnNet}

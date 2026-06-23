@@ -448,6 +448,7 @@ export function HuntingField({ onOpenCollection, onOpenTeam, onOpenAdmin, isAdmi
           state={gameState.state}
           onClose={() => { setShowBossFight(false); setFightZone(null); setTimeout(() => playZoneMusic(currentZoneId), 1000); }}
           onAddXp={(pokemonId, xp) => gameState.addPokemonXp(pokemonId, xp)}
+          onEarnMoney={(amount) => gameState.spendPoints(-amount)}
           onVictory={() => {
             gameState.defeatZoneBoss('zone8', 'zone_libre');
             gameState.spendPoints(-100);

@@ -8,6 +8,7 @@ interface Props {
   onBuyCooldownBoost: () => boolean;
   onBuySpawnNet: () => boolean;
   onBuyMysteryCase: () => boolean;
+  onOpenCase?: () => void;
   onActivateLure: (type: LureType) => boolean;
   onActivateCooldownBoost: () => boolean;
   onActivateSpawnNet: () => boolean;
@@ -35,7 +36,7 @@ function formatRemaining(expiresAt: number): string {
 
 interface Toast { id: number; text: string }
 
-export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet, onBuyMysteryCase, onActivateLure, onActivateCooldownBoost, onActivateSpawnNet, onClose }: Props) {
+export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet, onBuyMysteryCase, onOpenCase, onActivateLure, onActivateCooldownBoost, onActivateSpawnNet, onClose }: Props) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [counter, setCounter] = useState(0);
   const [tick, setTick] = useState(0);
@@ -251,18 +252,32 @@ export function ShopPanel({ state, onBuyLure, onBuyCooldownBoost, onBuySpawnNet,
                   </span>
                   <span className="text-xs font-bold text-yellow-400">🪙 {MYSTERY_CASE_COST}</span>
                 </div>
-                <button
-                  onClick={() => { if (onBuyMysteryCase()) addToast('✅ Acheté !'); }}
-                  disabled={coins < MYSTERY_CASE_COST}
-                  className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
-                  style={{
-                    background: coins >= MYSTERY_CASE_COST ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b',
-                    color: coins >= MYSTERY_CASE_COST ? '#fff' : '#475569',
-                    cursor: coins >= MYSTERY_CASE_COST ? 'pointer' : 'not-allowed',
-                  }}
-                >
-                  Acheter
-                </button>
+                <div className="flex gap-1.5">
+                  <button
+                    onClick={() => { if (onBuyMysteryCase()) addToast('✅ Acheté !'); }}
+                    disabled={coins < MYSTERY_CASE_COST}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                    style={{
+                      background: coins >= MYSTERY_CASE_COST ? 'linear-gradient(135deg,#f59e0b,#ef7c00)' : '#1e293b',
+                      color: coins >= MYSTERY_CASE_COST ? '#fff' : '#475569',
+                      cursor: coins >= MYSTERY_CASE_COST ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    Acheter
+                  </button>
+                  <button
+                    onClick={() => onOpenCase?.()}
+                    disabled={!((state.mysteryCases ?? 0) > 0)}
+                    className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all active:scale-95"
+                    style={{
+                      background: (state.mysteryCases ?? 0) > 0 ? 'linear-gradient(135deg,#7c3aed,#6d28d9)' : '#1e293b',
+                      color: (state.mysteryCases ?? 0) > 0 ? '#fff' : '#475569',
+                      cursor: (state.mysteryCases ?? 0) > 0 ? 'pointer' : 'not-allowed',
+                    }}
+                  >
+                    Utiliser
+                  </button>
+                </div>
               </div>
             </div>
           </div>
