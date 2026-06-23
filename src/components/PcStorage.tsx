@@ -14,20 +14,34 @@ import type { PokemonType } from '../data/pokemonTypes';
 
 const BOX_SIZE = 30;
 
-const ALL_TYPES = [
-  'normal','feu','eau','électrik','plante','glace','combat','poison',
-  'sol','vol','psy','insecte','roche','spectre','dragon',
-] as const;
+// English keys must match POKEMON_TYPE / TYPE_COLORS keys
+const ALL_TYPES: { key: string; label: string }[] = [
+  { key: 'normal', label: 'Normal' }, { key: 'fire', label: 'Feu' }, { key: 'water', label: 'Eau' },
+  { key: 'grass', label: 'Plante' }, { key: 'electric', label: 'Électrik' }, { key: 'ice', label: 'Glace' },
+  { key: 'fighting', label: 'Combat' }, { key: 'poison', label: 'Poison' }, { key: 'ground', label: 'Sol' },
+  { key: 'flying', label: 'Vol' }, { key: 'psychic', label: 'Psy' }, { key: 'bug', label: 'Insecte' },
+  { key: 'rock', label: 'Roche' }, { key: 'ghost', label: 'Spectre' }, { key: 'dragon', label: 'Dragon' },
+];
+
+const ALL_RARITIES: { key: string; label: string; color: string }[] = [
+  { key: 'commun', label: 'Commun', color: '#94a3b8' },
+  { key: 'peu_commun', label: 'Peu commun', color: '#4ade80' },
+  { key: 'rare', label: 'Rare', color: '#60a5fa' },
+  { key: 'elite', label: 'Élite', color: '#a78bfa' },
+  { key: 'legendaire', label: 'Légendaire', color: '#fbbf24' },
+];
 
 interface PcFilter {
   name: string;
   types: string[];
+  rarities: string[];
+  shiny: boolean;
   minLevel: number | null;
   maxLevel: number | null;
 }
-const EMPTY_FILTER: PcFilter = { name: '', types: [], minLevel: null, maxLevel: null };
+const EMPTY_FILTER: PcFilter = { name: '', types: [], rarities: [], shiny: false, minLevel: null, maxLevel: null };
 function filterIsEmpty(f: PcFilter) {
-  return !f.name && f.types.length === 0 && f.minLevel === null && f.maxLevel === null;
+  return !f.name && f.types.length === 0 && f.rarities.length === 0 && !f.shiny && f.minLevel === null && f.maxLevel === null;
 }
 const BOX_COLS = 6;
 
@@ -327,10 +341,12 @@ export function PcStorage({
     const types = (POKEMON_TYPE[id] ?? ['normal']) as string[];
     if (pcFilter.name && !poke?.name.toLowerCase().includes(pcFilter.name.toLowerCase())) return false;
     if (pcFilter.types.length > 0 && !pcFilter.types.some(t => types.includes(t))) return false;
+    if (pcFilter.rarities.length > 0 && !pcFilter.rarities.includes(poke?.rarity ?? 'commun')) return false;
+    if (pcFilter.shiny && (state.shinyCollection[id] ?? 0) === 0) return false;
     if (pcFilter.minLevel !== null && lvData.level < pcFilter.minLevel) return false;
     if (pcFilter.maxLevel !== null && lvData.level > pcFilter.maxLevel) return false;
     return true;
-  }, [pcFilter, state.pokemonLevels]);
+  }, [pcFilter, state.pokemonLevels, state.shinyCollection]);
 
   const owned = useMemo(() => {
     return Object.keys(state.normalCollection)
@@ -1079,16 +1095,6 @@ export function PcStorage({
       {/* Header DS-style */}
       <div className="flex items-center justify-between px-3 shrink-0"
         style={{ background: theme.headerGrad, borderBottom: `3px solid ${theme.border}`, paddingTop: 'calc(0.5rem + env(safe-area-inset-top,0px))', paddingBottom: '0.5rem' }}>
-        <button
-          onClick={() => { setFilterDraft({ ...pcFilter }); setShowFilterModal(true); }}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-base relative"
-          style={{ background: !filterIsEmpty(pcFilter) ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.15)', border: !filterIsEmpty(pcFilter) ? '1px solid #fbbf24' : `1px solid ${theme.border}` }}
-        >
-          🔍
-          {!filterIsEmpty(pcFilter) && (
-            <span style={{ position: 'absolute', top: -4, right: -4, width: 10, height: 10, borderRadius: '50%', background: '#fbbf24', border: '2px solid #92400e' }} />
-          )}
-        </button>
         <div className="font-black text-sm" style={{ color: theme.titleColor }}>
           {theme.hasAnimation && theme.id === 'feu' ? (
             <span>{'PC de '.split('').map((char, i) => (
@@ -1104,8 +1110,20 @@ export function PcStorage({
             `PC de ${username ?? 'Léo'}`
           )}
         </div>
-        <button onClick={() => setShowThemeModal(true)} className="w-8 h-8 flex items-center justify-center rounded-lg text-base"
-          style={{ background: 'rgba(255,255,255,0.15)', border: `1px solid ${theme.border}` }}>⚙️</button>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setShowThemeModal(true)} className="w-8 h-8 flex items-center justify-center rounded-lg text-base"
+            style={{ background: 'rgba(255,255,255,0.15)', border: `1px solid ${theme.border}` }}>⚙️</button>
+          <button
+            onClick={() => { setFilterDraft({ ...pcFilter }); setShowFilterModal(true); }}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-base relative"
+            style={{ background: !filterIsEmpty(pcFilter) ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.15)', border: !filterIsEmpty(pcFilter) ? '1px solid #fbbf24' : `1px solid ${theme.border}` }}
+          >
+            🔍
+            {!filterIsEmpty(pcFilter) && (
+              <span style={{ position: 'absolute', top: -4, right: -4, width: 10, height: 10, borderRadius: '50%', background: '#fbbf24', border: '2px solid #92400e' }} />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Box header with navigation */}
@@ -1187,7 +1205,7 @@ export function PcStorage({
                   style={{
                     width: 52, height: 52,
                     background: 'rgba(255,255,255,0.15)',
-                    opacity: isDragged ? 0.3 : isFiltered ? 0.18 : 1,
+                    opacity: isDragged ? 0.3 : isFiltered ? 0.12 : 1,
                     filter: isFiltered ? 'grayscale(1)' : 'none',
                     position: 'relative',
                   }}
@@ -1249,7 +1267,7 @@ export function PcStorage({
                   style={{
                     background: 'rgba(255,255,255,0.5)',
                     border: '2px solid #8fa8c0',
-                    opacity: isDragged ? 0.3 : isPartyFiltered ? 0.22 : 1,
+                    opacity: isDragged ? 0.3 : isPartyFiltered ? 0.12 : 1,
                     filter: isPartyFiltered ? 'grayscale(1)' : 'none',
                   }}
                 >
@@ -1318,27 +1336,75 @@ export function PcStorage({
               <div>
                 <div className="text-slate-400 text-xs font-bold mb-2 uppercase tracking-wider">Types</div>
                 <div className="flex flex-wrap gap-2">
-                  {ALL_TYPES.map(t => {
-                    const color = TYPE_COLORS[t as PokemonType] ?? '#475569';
-                    const active = filterDraft.types.includes(t);
+                  {ALL_TYPES.map(({ key, label }) => {
+                    const color = TYPE_COLORS[key as PokemonType] ?? '#475569';
+                    const active = filterDraft.types.includes(key);
                     return (
                       <button
-                        key={t}
+                        key={key}
                         onClick={() => setFilterDraft(f => ({
                           ...f,
-                          types: active ? f.types.filter(x => x !== t) : [...f.types, t],
+                          types: active ? f.types.filter(x => x !== key) : [...f.types, key],
                         }))}
-                        className="px-3 py-1 rounded-full text-xs font-black transition-all"
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-black transition-all"
                         style={{
-                          background: active ? color : `${color}22`,
-                          color: active ? 'white' : color,
-                          border: `1.5px solid ${color}`,
-                          boxShadow: active ? `0 0 8px ${color}66` : 'none',
+                          background: active ? `${color}33` : 'rgba(255,255,255,0.05)',
+                          color: active ? 'white' : '#94a3b8',
+                          border: `1.5px solid ${active ? color : 'rgba(255,255,255,0.1)'}`,
+                          boxShadow: active ? `0 0 8px ${color}55` : 'none',
                         }}
-                      >{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+                      >
+                        <span style={{ width: 10, height: 10, borderRadius: 2, background: active ? color : `${color}44`, border: `1.5px solid ${color}`, display: 'inline-block', flexShrink: 0 }} />
+                        {label}
+                      </button>
                     );
                   })}
                 </div>
+              </div>
+              {/* Rarity */}
+              <div>
+                <div className="text-slate-400 text-xs font-bold mb-2 uppercase tracking-wider">Rareté</div>
+                <div className="flex flex-wrap gap-2">
+                  {ALL_RARITIES.map(({ key, label, color }) => {
+                    const active = filterDraft.rarities.includes(key);
+                    return (
+                      <button
+                        key={key}
+                        onClick={() => setFilterDraft(f => ({
+                          ...f,
+                          rarities: active ? f.rarities.filter(x => x !== key) : [...f.rarities, key],
+                        }))}
+                        className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-black transition-all"
+                        style={{
+                          background: active ? `${color}33` : 'rgba(255,255,255,0.05)',
+                          color: active ? 'white' : '#94a3b8',
+                          border: `1.5px solid ${active ? color : 'rgba(255,255,255,0.1)'}`,
+                          boxShadow: active ? `0 0 8px ${color}55` : 'none',
+                        }}
+                      >
+                        <span style={{ width: 10, height: 10, borderRadius: 2, background: active ? color : `${color}44`, border: `1.5px solid ${color}`, display: 'inline-block', flexShrink: 0 }} />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Shiny */}
+              <div>
+                <div className="text-slate-400 text-xs font-bold mb-2 uppercase tracking-wider">Spécial</div>
+                <button
+                  onClick={() => setFilterDraft(f => ({ ...f, shiny: !f.shiny }))}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-black transition-all"
+                  style={{
+                    background: filterDraft.shiny ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.05)',
+                    border: `1.5px solid ${filterDraft.shiny ? '#fbbf24' : 'rgba(255,255,255,0.1)'}`,
+                    color: filterDraft.shiny ? '#fbbf24' : '#94a3b8',
+                    boxShadow: filterDraft.shiny ? '0 0 10px rgba(251,191,36,0.4)' : 'none',
+                  }}
+                >
+                  <span style={{ width: 14, height: 14, borderRadius: 3, background: filterDraft.shiny ? '#fbbf24' : 'rgba(251,191,36,0.2)', border: '1.5px solid #fbbf24', display: 'inline-block' }} />
+                  ✨ Shiny uniquement
+                </button>
               </div>
               {/* Level range */}
               <div>
