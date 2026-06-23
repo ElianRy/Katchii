@@ -13,6 +13,22 @@ import type { TeamMember } from './TeamBuilder';
 import type { PokemonType } from '../data/pokemonTypes';
 
 const BOX_SIZE = 30;
+
+const ALL_TYPES = [
+  'normal','feu','eau','électrik','plante','glace','combat','poison',
+  'sol','vol','psy','insecte','roche','spectre','dragon',
+] as const;
+
+interface PcFilter {
+  name: string;
+  types: string[];
+  minLevel: number | null;
+  maxLevel: number | null;
+}
+const EMPTY_FILTER: PcFilter = { name: '', types: [], minLevel: null, maxLevel: null };
+function filterIsEmpty(f: PcFilter) {
+  return !f.name && f.types.length === 0 && f.minLevel === null && f.maxLevel === null;
+}
 const BOX_COLS = 6;
 
 // Re-export buildEnemyTeam logic locally
@@ -259,6 +275,17 @@ export function PcStorage({
     setBoxIndex(idx);
     try { localStorage.setItem(PC_BOX_KEY, String(idx)); } catch {}
   };
+  const PC_FILTER_KEY = `katchii_pc_filter_${username ?? 'default'}`;
+  const [pcFilter, setPcFilter] = useState<PcFilter>(() => {
+    try { return { ...EMPTY_FILTER, ...JSON.parse(localStorage.getItem(PC_FILTER_KEY) ?? '{}') }; }
+    catch { return EMPTY_FILTER; }
+  });
+  const savePcFilter = (f: PcFilter) => {
+    setPcFilter(f);
+    try { localStorage.setItem(PC_FILTER_KEY, JSON.stringify(f)); } catch {}
+  };
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [filterDraft, setFilterDraft] = useState<PcFilter>(EMPTY_FILTER);
   const [pokemonDetailId, setPokemonDetailId] = useState<number | null>(null);
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [autoTraining, setAutoTraining] = useState(false);
@@ -288,6 +315,18 @@ export function PcStorage({
   const dragRef = useRef<DragState | null>(null);
   const [dragging, setDragging] = useState<{ pokemonId: number; x: number; y: number } | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const matchesFilter = useCallback((id: number): boolean => {
+    if (filterIsEmpty(pcFilter)) return true;
+    const poke = POKEMON_BY_ID[id];
+    const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
+    const types = (POKEMON_TYPE[id] ?? ['normal']) as string[];
+    if (pcFilter.name && !poke?.name.toLowerCase().includes(pcFilter.name.toLowerCase())) return false;
+    if (pcFilter.types.length > 0 && !pcFilter.types.some(t => types.includes(t))) return false;
+    if (pcFilter.minLevel !== null && lvData.level < pcFilter.minLevel) return false;
+    if (pcFilter.maxLevel !== null && lvData.level > pcFilter.maxLevel) return false;
+    return true;
+  }, [pcFilter, state.pokemonLevels]);
 
   const owned = useMemo(() => {
     return Object.keys(state.normalCollection)
@@ -1015,7 +1054,16 @@ export function PcStorage({
       {/* Header DS-style */}
       <div className="flex items-center justify-between px-3 shrink-0"
         style={{ background: theme.headerGrad, borderBottom: `3px solid ${theme.border}`, paddingTop: 'calc(0.5rem + env(safe-area-inset-top,0px))', paddingBottom: '0.5rem' }}>
-        <div style={{ width: 32 }} />
+        <button
+          onClick={() => { setFilterDraft({ ...pcFilter }); setShowFilterModal(true); }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-base relative"
+          style={{ background: !filterIsEmpty(pcFilter) ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.15)', border: !filterIsEmpty(pcFilter) ? '1px solid #fbbf24' : `1px solid ${theme.border}` }}
+        >
+          🔍
+          {!filterIsEmpty(pcFilter) && (
+            <span style={{ position: 'absolute', top: -4, right: -4, width: 10, height: 10, borderRadius: '50%', background: '#fbbf24', border: '2px solid #92400e' }} />
+          )}
+        </button>
         <div className="font-black text-sm" style={{ color: theme.titleColor }}>
           {theme.hasAnimation && theme.id === 'feu' ? (
             <span>{'PC de '.split('').map((char, i) => (
@@ -1098,6 +1146,7 @@ export function PcStorage({
               const targets = evoEntry?.choices ?? (evoEntry?.evolvesInto ? [evoEntry.evolvesInto] : []);
               const allOwned = targets.every(tid => (state.normalCollection[tid] ?? 0) > 0);
               const showEvoBadge = canEvolve && !allOwned;
+              const isFiltered = !matchesFilter(id);
               return (
                 <button
                   key={slotIdx}
@@ -1113,7 +1162,8 @@ export function PcStorage({
                   style={{
                     width: 52, height: 52,
                     background: 'rgba(255,255,255,0.15)',
-                    opacity: isDragged ? 0.3 : 1,
+                    opacity: isDragged ? 0.3 : isFiltered ? 0.18 : 1,
+                    filter: isFiltered ? 'grayscale(1)' : 'none',
                     position: 'relative',
                   }}
                 >
@@ -1158,6 +1208,7 @@ export function PcStorage({
               const isShiny = (state.shinyCollection[id] ?? 0) > 0;
               const color = RARITY_COLORS[poke?.rarity ?? 'commun'];
               const isDragged = dragging?.pokemonId === id;
+              const isPartyFiltered = !matchesFilter(id);
               return (
                 <button
                   key={i}
@@ -1173,7 +1224,8 @@ export function PcStorage({
                   style={{
                     background: 'rgba(255,255,255,0.5)',
                     border: '2px solid #8fa8c0',
-                    opacity: isDragged ? 0.3 : 1,
+                    opacity: isDragged ? 0.3 : isPartyFiltered ? 0.22 : 1,
+                    filter: isPartyFiltered ? 'grayscale(1)' : 'none',
                   }}
                 >
                   <ShinySprite pokemonId={id} isShiny={isShiny} width={36} height={36} compact />
@@ -1196,6 +1248,102 @@ export function PcStorage({
 
         </div>
       </div>
+
+      {/* Filter modal */}
+      {showFilterModal && (
+        <div className="fixed inset-0 z-[700] flex flex-col justify-end" style={{ background: 'rgba(0,0,0,0.6)' }}
+          onClick={() => setShowFilterModal(false)}>
+          <div onClick={e => e.stopPropagation()} className="rounded-t-3xl flex flex-col max-h-[80vh]"
+            style={{ background: '#0f172a', border: '2px solid #1e293b', borderBottom: 'none' }}>
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-1 shrink-0">
+              <div className="w-10 h-1 rounded-full bg-slate-600" />
+            </div>
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-2 shrink-0">
+              <span className="text-white font-black text-sm">🔍 Filtres</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => { const f = EMPTY_FILTER; setFilterDraft(f); savePcFilter(f); }}
+                  className="text-xs font-bold px-3 py-1 rounded-full"
+                  style={{ background: '#ef444422', color: '#f87171', border: '1px solid #ef444455' }}
+                >Tout effacer</button>
+                <button
+                  onClick={() => { savePcFilter(filterDraft); setShowFilterModal(false); }}
+                  className="text-xs font-bold px-3 py-1 rounded-full"
+                  style={{ background: '#22c55e22', color: '#4ade80', border: '1px solid #22c55e55' }}
+                >Appliquer</button>
+              </div>
+            </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto px-4 pb-6 flex flex-col gap-4">
+              {/* Name */}
+              <div>
+                <div className="text-slate-400 text-xs font-bold mb-2 uppercase tracking-wider">Nom</div>
+                <input
+                  type="text"
+                  placeholder="Rechercher un Pokémon..."
+                  value={filterDraft.name}
+                  onChange={e => setFilterDraft(f => ({ ...f, name: e.target.value }))}
+                  className="w-full rounded-xl px-3 py-2 text-sm text-white font-bold outline-none"
+                  style={{ background: '#1e293b', border: '1.5px solid #334155', fontFamily: 'monospace' }}
+                />
+              </div>
+              {/* Types */}
+              <div>
+                <div className="text-slate-400 text-xs font-bold mb-2 uppercase tracking-wider">Types</div>
+                <div className="flex flex-wrap gap-2">
+                  {ALL_TYPES.map(t => {
+                    const color = TYPE_COLORS[t as PokemonType] ?? '#475569';
+                    const active = filterDraft.types.includes(t);
+                    return (
+                      <button
+                        key={t}
+                        onClick={() => setFilterDraft(f => ({
+                          ...f,
+                          types: active ? f.types.filter(x => x !== t) : [...f.types, t],
+                        }))}
+                        className="px-3 py-1 rounded-full text-xs font-black transition-all"
+                        style={{
+                          background: active ? color : `${color}22`,
+                          color: active ? 'white' : color,
+                          border: `1.5px solid ${color}`,
+                          boxShadow: active ? `0 0 8px ${color}66` : 'none',
+                        }}
+                      >{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Level range */}
+              <div>
+                <div className="text-slate-400 text-xs font-bold mb-2 uppercase tracking-wider">Niveau</div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={1} max={100}
+                    placeholder="Min"
+                    value={filterDraft.minLevel ?? ''}
+                    onChange={e => setFilterDraft(f => ({ ...f, minLevel: e.target.value ? Number(e.target.value) : null }))}
+                    className="flex-1 rounded-xl px-3 py-2 text-sm text-white font-bold outline-none text-center"
+                    style={{ background: '#1e293b', border: '1.5px solid #334155', fontFamily: 'monospace' }}
+                  />
+                  <span className="text-slate-500 font-bold">—</span>
+                  <input
+                    type="number"
+                    min={1} max={100}
+                    placeholder="Max"
+                    value={filterDraft.maxLevel ?? ''}
+                    onChange={e => setFilterDraft(f => ({ ...f, maxLevel: e.target.value ? Number(e.target.value) : null }))}
+                    className="flex-1 rounded-xl px-3 py-2 text-sm text-white font-bold outline-none text-center"
+                    style={{ background: '#1e293b', border: '1.5px solid #334155', fontFamily: 'monospace' }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Theme modal */}
       {showThemeModal && (

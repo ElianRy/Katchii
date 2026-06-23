@@ -2451,7 +2451,7 @@ export function BattleScreen({
       {sideOverlay && <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 35 }}>{sideOverlay}</div>}
 
       {/* Boutons Auto + Mute — haut droite */}
-      <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 40, display: 'flex', gap: 6 }}>
+      <div style={{ position: 'absolute', top: 'calc(env(safe-area-inset-top, 0px) + 10px)', right: 10, zIndex: 40, display: 'flex', gap: 6 }}>
         <button
           onClick={() => {
             const next = !battleMuted;
