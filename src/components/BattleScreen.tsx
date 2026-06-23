@@ -834,7 +834,12 @@ export function BattleScreen({
   const [statsPanelPlayer, setStatsPanelPlayer] = useState(false);
   const [statsPanelEnemy, setStatsPanelEnemy] = useState(false);
   const [battleMuted, setBattleMutedLocal] = useState(initialMuted ?? false);
-  const setBattleMuted = (v: boolean) => { setBattleMutedLocal(v); onMuteChange?.(v); };
+  const setBattleMuted = (v: boolean) => { setBattleMutedLocal(v); setBattleMute(v); onMuteChange?.(v); };
+  // Apply initial mute state on mount; reset on unmount so zone music isn't silenced
+  useEffect(() => {
+    if (initialMuted) setBattleMute(true);
+    return () => setBattleMute(false);
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
   const [attackEvt, setAttackEvt] = useState<AttackEvent | null>(null);
   const [floatingDmg, setFloatingDmg] = useState<FloatingDmg[]>([]);
   const [hitFlash, setHitFlash] = useState<'player' | 'enemy' | null>(null);
@@ -2451,7 +2456,6 @@ export function BattleScreen({
           onClick={() => {
             const next = !battleMuted;
             setBattleMuted(next);
-            setBattleMute(next);
           }}
           style={{
             padding: '4px 10px', borderRadius: 12, fontSize: '0.6rem', fontWeight: 900,

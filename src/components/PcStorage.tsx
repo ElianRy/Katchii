@@ -262,6 +262,7 @@ export function PcStorage({
   const [pokemonDetailId, setPokemonDetailId] = useState<number | null>(null);
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [autoTraining, setAutoTraining] = useState(false);
+  const [trainingMuted, setTrainingMuted] = useState(false);
   const [xpBarWidths, setXpBarWidths] = useState<Record<number, number>>({});
   const [editingBoxName, setEditingBoxName] = useState(false);
   const [boxNameInput, setBoxNameInput] = useState('');
@@ -513,12 +514,9 @@ export function PcStorage({
       onBattleWin?.(party);
     }
 
-    if (autoTraining && won) {
+    if (autoTraining) {
       setTimeout(() => startTraining(), 300);
       return;
-    }
-    if (autoTraining && !won) {
-      setAutoTraining(false);
     }
 
     setBattleResult({ won, xpGains });
@@ -792,7 +790,9 @@ export function PcStorage({
         onBattleEnd={handleBattleEnd}
         autoCombat={autoTraining}
         onAutoCombatChange={setAutoTraining}
-        onQuit={() => { setBattleTeam(null); setAutoTraining(false); }}
+        initialMuted={trainingMuted}
+        onMuteChange={v => setTrainingMuted(v)}
+        onQuit={() => { setBattleTeam(null); setAutoTraining(false); setTrainingMuted(false); }}
         pokemonCustomMoves={state.pokemonCustomMoves}
         pokemonMoves={state.pokemonMoves}
       />

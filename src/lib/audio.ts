@@ -223,7 +223,10 @@ const ZONE_MUSIC: Record<string, string> = {
 };
 
 // ── Battle-scope mute (does not touch localStorage settings) ─────────────────
+let _battleMuted = false;
+
 export function setBattleMute(muted: boolean) {
+  _battleMuted = muted;
   getCtx();
   if (_masterGain) {
     if (muted) {
@@ -367,6 +370,7 @@ export function playLevelUp()          { playSfxFile('level_up'); }
 
 // ── Pokemon cry ───────────────────────────────────────────────────────────
 export function playPokemonCry(pokemonId: number) {
+  if (_battleMuted) return;
   const s = loadAudioSettings();
   if (!s.sound) return;
   // Play cry directly without Web Audio (GitHub raw CORS blocks createMediaElementSource)
