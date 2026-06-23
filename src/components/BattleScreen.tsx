@@ -57,6 +57,8 @@ interface Props {
   playerDamageMult?: number;
   isLeague?: boolean;
   suppressVictorySound?: boolean;
+  skipVictoryScreen?: boolean;
+  preservePP?: boolean;
   keepMusic?: boolean;
   keepMusicOnUnmount?: boolean;
   autoCombat?: boolean;
@@ -137,6 +139,7 @@ interface FloatingDmg {
   effectiveness: number;
   isCrit?: boolean;
   isMiss?: boolean;
+  isHeal?: boolean;
 }
 
 // Precomputed stars
@@ -793,25 +796,28 @@ function ConfusionAppliedVfx({ uid: _uid }: { uid: number }) {
 export function BattleScreen({
   playerTeam, enemyTeam, bossName: _bossName, onBattleEnd,
   playerDamageMult = 1, isLeague = false,
-  suppressVictorySound = false, keepMusic = false, keepMusicOnUnmount = false,
+  suppressVictorySound = false, skipVictoryScreen = false, preservePP = false, keepMusic = false, keepMusicOnUnmount = false,
   autoCombat, onAutoCombatChange,
   onQuit, initialMuted, onMuteChange, trainerImage, trainerColor, sideOverlay, pokemonData, pokemonMoves,
   pokemonCustomMoves, enemyPokemonCustomMoves, pvpControls,
 }: Props) {
 
-  const initFighters = (team: TeamMember[], useCurrentHp: boolean): FighterState[] =>
-    team.map(m => ({
-      ...m,
-      currentHp: useCurrentHp && m.currentHp > 0 ? m.currentHp : m.maxHp,
-      currentPP: initPP(m.pokemonId, pokemonMoves?.[m.pokemonId], pokemonCustomMoves?.[m.pokemonId]),
-      stages: emptyStages(),
-      statusState: emptyStatus(),
-    }));
+  const initFighters = (team: TeamMember[], useCurrentHp: boolean, preservePP = false): FighterState[] =>
+    team.map(m => {
+      const existingPP = (m as unknown as Partial<FighterState>).currentPP;
+      return {
+        ...m,
+        currentHp: useCurrentHp && m.currentHp > 0 ? m.currentHp : m.maxHp,
+        currentPP: preservePP && existingPP ? existingPP : initPP(m.pokemonId, pokemonMoves?.[m.pokemonId], pokemonCustomMoves?.[m.pokemonId]),
+        stages: emptyStages(),
+        statusState: emptyStatus(),
+      };
+    });
 
   const savedState = pvpControls?.savedState ?? null;
   const isPvp = !!pvpControls;
-  const [playerFighters, setPlayerFighters] = useState<FighterState[]>(() => savedState ? savedState.playerFighters : initFighters(playerTeam, !isPvp));
-  const playerFightersRef = useRef<FighterState[]>(savedState ? savedState.playerFighters : initFighters(playerTeam, !isPvp));
+  const [playerFighters, setPlayerFighters] = useState<FighterState[]>(() => savedState ? savedState.playerFighters : initFighters(playerTeam, !isPvp, preservePP));
+  const playerFightersRef = useRef<FighterState[]>(savedState ? savedState.playerFighters : initFighters(playerTeam, !isPvp, preservePP));
   const enemyFightersRef = useRef<FighterState[]>(savedState ? savedState.enemyFighters : initFighters(enemyTeam, false));
   const boostActiveRef = useRef(playerDamageMult > 1);
   const [boostActive, setBoostActive] = useState(playerDamageMult > 1);
@@ -1111,9 +1117,9 @@ export function BattleScreen({
     return () => clearTimeout(t);
   }, [phase, autoCombat]);
 
-  const addDmg = useCallback((value: number, target: 'player' | 'enemy', effectiveness: number, isCrit?: boolean, isMiss?: boolean) => {
+  const addDmg = useCallback((value: number, target: 'player' | 'enemy', effectiveness: number, isCrit?: boolean, isMiss?: boolean, isHeal?: boolean) => {
     const id = dmgCounter++;
-    setFloatingDmg(prev => [...prev, { id, value, target, effectiveness, isCrit, isMiss }]);
+    setFloatingDmg(prev => [...prev, { id, value, target, effectiveness, isCrit, isMiss, isHeal }]);
     setTimeout(() => setFloatingDmg(prev => prev.filter(d => d.id !== id)), 1100);
   }, []);
 
@@ -1184,7 +1190,7 @@ export function BattleScreen({
           durationMs: Date.now() - battleStartTimeRef.current,
         });
       } else {
-        setTimeout(() => onBattleEnd(wonSnap, snap, finalTeam, enemyDmgRef.current), 500);
+        setTimeout(() => onBattleEnd(wonSnap, snap, finalTeam, enemyDmgRef.current), skipVictoryScreen ? 0 : 500);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1917,7 +1923,7 @@ export function BattleScreen({
       } else if (result.effectiveness === 0) {
         addDmg(0, defSide, 0, false, false);
         addLog('Ça n\'a aucun effet...', '#94a3b8');
-      } else if (!isStatusOnly && !result.appliedStatus) {
+      } else if (!isStatusOnly && !result.appliedStatus && !result.appliedSeed) {
         addLog('Ça n\'a aucun effet...', '#94a3b8');
       }
 
@@ -1961,6 +1967,7 @@ export function BattleScreen({
       if (result.drainHeal && result.drainHeal > 0) {
         if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], currentHp: Math.min(pf[atkIdx].maxHp, pf[atkIdx].currentHp + result.drainHeal) };
         else          ef[atkIdx] = { ...ef[atkIdx], currentHp: Math.min(ef[atkIdx].maxHp, ef[atkIdx].currentHp + result.drainHeal) };
+        addDmg(result.drainHeal, atkSide, 1, false, false, true);
         addLog(`${atkName} récupère des PV !`, '#86efac');
         flush();
       }
@@ -2264,6 +2271,7 @@ export function BattleScreen({
       pf[pIdx] = { ...pf[pIdx], currentHp: Math.max(0, pf[pIdx].currentHp - sd) };
       ef[eIdx] = { ...ef[eIdx], currentHp: Math.min(ef[eIdx].maxHp, ef[eIdx].currentHp + sd) };
       addDmg(sd, 'player', 1);
+      addDmg(sd, 'enemy', 1, false, false, true);
       addLog(`${pName} est drainé(e) par la Vampigraine !`, '#86efac');
       addLog(`${eName} récupère des PV grâce à la Vampigraine !`, '#86efac');
       flush();
@@ -2273,6 +2281,7 @@ export function BattleScreen({
       ef[eIdx] = { ...ef[eIdx], currentHp: Math.max(0, ef[eIdx].currentHp - sd) };
       pf[pIdx] = { ...pf[pIdx], currentHp: Math.min(pf[pIdx].maxHp, pf[pIdx].currentHp + sd) };
       addDmg(sd, 'enemy', 1);
+      addDmg(sd, 'player', 1, false, false, true);
       addLog(`${eName} est drainé(e) par la Vampigraine !`, '#86efac');
       addLog(`${pName} récupère des PV grâce à la Vampigraine !`, '#86efac');
       flush();
@@ -2501,25 +2510,38 @@ export function BattleScreen({
 
         {attackEvt && <TypeVfx key={attackEvt.uid} type={attackEvt.type} direction={attackEvt.attacker === 'player' ? 'ltr' : 'rtl'} uid={attackEvt.uid} moveName={attackEvt.attacker === 'player' ? playerMoves[playerIdx]?.name : undefined} />}
         {hitFlash && <div className="absolute inset-0 pointer-events-none battle-hit-flash" style={{ background: hitFlash === 'player' ? 'rgba(239,68,68,0.2)' : 'rgba(250,204,21,0.13)' }} />}
-        {/* Solar Beam charge overlay */}
+        {/* Solar Beam charge — subtle rays overlay */}
         {solarCharging && (
           <div style={{
-            position: 'fixed', inset: 0, zIndex: 999,
-            background: 'radial-gradient(circle,rgba(255,220,50,0.85),rgba(255,140,0,0.6))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexDirection: 'column', gap: '1rem',
-            animation: 'solar-charge-in 300ms ease-out forwards',
-            pointerEvents: 'none',
+            position: 'absolute', inset: 0, zIndex: 15,
+            pointerEvents: 'none', overflow: 'hidden',
           }}>
-            <span style={{ fontSize: '6rem', lineHeight: 1 }}>☀️</span>
-            <span style={{ fontSize: '1.5rem', color: '#fff', fontWeight: 'bold', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>Le soleil se charge...</span>
+            {/* Radial glow at center */}
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: 220, height: 220,
+              background: 'radial-gradient(circle, rgba(255,220,50,0.18) 0%, transparent 70%)',
+              animation: 'solar-charge-in 300ms ease-out forwards',
+            }} />
+            {/* Sun rays */}
+            {[0,45,90,135,180,225,270,315].map(deg => (
+              <div key={deg} style={{
+                position: 'absolute', top: '50%', left: '50%',
+                width: 2, height: 80,
+                background: 'linear-gradient(to bottom, rgba(255,220,50,0.55), transparent)',
+                transform: `translate(-50%, -100%) rotate(${deg}deg)`,
+                transformOrigin: '50% 100%',
+                animation: 'solar-charge-in 300ms ease-out forwards',
+              }} />
+            ))}
           </div>
         )}
         {/* Status move animation — rendered inside sprites below */}
 
         {/* Floating damage */}
         {floatingDmg.map(d => {
-          const color = d.isMiss ? '#94a3b8' : d.isCrit ? '#fbbf24' : d.effectiveness === 0 ? '#94a3b8' : '#ef4444';
+          const color = d.isHeal ? '#86efac' : d.isMiss ? '#94a3b8' : d.isCrit ? '#fbbf24' : d.effectiveness === 0 ? '#94a3b8' : '#ef4444';
           const pos = d.target === 'enemy'
             ? { top: '14%', right: 'max(7%, calc(50% - 220px))' }
             : { bottom: '32%', left: 'max(7%, calc(50% - 220px))' };
@@ -2531,7 +2553,7 @@ export function BattleScreen({
               textShadow: d.isCrit ? `0 0 18px #fbbf24, 0 0 32px #f59e0b` : `0 0 12px ${color}`,
               animation: 'dmg-float 1.6s ease-out forwards', transform: 'translateX(-50%)',
             }}>
-              {d.isMiss ? 'RATÉ!' : d.value === 0 && d.effectiveness === 0 ? 'IMMUNISÉ' : `−${d.value}`}
+              {d.isHeal ? `+${d.value} PV` : d.isMiss ? 'RATÉ!' : d.value === 0 && d.effectiveness === 0 ? 'IMMUNISÉ' : `−${d.value}`}
               {d.isCrit && <div style={{ fontSize: '0.6rem', textAlign: 'center', color: '#fde047', letterSpacing: '0.1em' }}>CRITIQUE !</div>}
               {!d.isMiss && d.effectiveness >= 2 && (
                 <div style={{ fontSize: '0.58rem', textAlign: 'center', color: '#fde047', fontWeight: 900, letterSpacing: '0.04em', marginTop: 2 }}>

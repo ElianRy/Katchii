@@ -925,7 +925,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
           setCurrentTeam(survivors);
         }
         // Feature 8: track money earned per trainer beaten
-        const rewardMap: Record<string, number> = { dialogue_giovanni: 5000, dialogue_master: 10000, victory: 25000 };
+        const rewardMap: Record<string, number> = { dialogue_giovanni: 5000, dialogue_master: 10000, victory: 5000 };
         const reward = rewardMap[nextPhase] ?? 0;
         if (reward > 0) {
           setTotalMoneyEarned(prev => prev + reward);
@@ -960,7 +960,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   if (phase === 'battle_peter') {
     return (
       <div className="fixed inset-0 z-[600]">
-        <BattleScreen isLeague suppressVictorySound playerDamageMult={damageMult} playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
+        <BattleScreen isLeague suppressVictorySound skipVictoryScreen playerDamageMult={damageMult} playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[0].teamSpec)}
           bossName="Peter" trainerImage="/trainers/peter.png" trainerColor="#ef4444" onBattleEnd={handleBattleEnd('dialogue_giovanni', TRAINER_CONFIGS[0].teamSpec)}
           onQuit={() => { setRetrying(true); setPhase('league_team_select'); }}
           pokemonCustomMoves={state.pokemonCustomMoves} pokemonMoves={state.pokemonMoves} />
@@ -977,7 +977,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
   if (phase === 'battle_giovanni') {
     return (
       <div className="fixed inset-0 z-[600]">
-        <BattleScreen keepMusic suppressVictorySound playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
+        <BattleScreen keepMusic suppressVictorySound skipVictoryScreen preservePP playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[1].teamSpec)}
           bossName="Giovanni" trainerImage="/trainers/giovanni.webp" trainerColor="#9ca3af" onBattleEnd={handleBattleEnd('dialogue_master', TRAINER_CONFIGS[1].teamSpec)}
           onQuit={() => { setRetrying(true); setPhase('league_team_select'); }}
           pokemonCustomMoves={state.pokemonCustomMoves} pokemonMoves={state.pokemonMoves} />
@@ -995,7 +995,7 @@ export function LeagueChallengeScreen({ state, onClose, onVictory, onAddXp, onZo
       <div className="fixed inset-0 z-[600]">
         <div className="absolute inset-0 pointer-events-none z-10"
           style={{ boxShadow: 'inset 0 0 50px rgba(168,85,247,0.4)', animation: 'aura-pulse 1.2s ease-in-out infinite' }} />
-        <BattleScreen keepMusic playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[2].teamSpec)}
+        <BattleScreen keepMusic suppressVictorySound preservePP playerTeam={currentTeam} enemyTeam={buildEnemyTeam(TRAINER_CONFIGS[2].teamSpec)}
           bossName="⚡ Maître Berix ⚡"
           trainerImage="/trainers/master.png" trainerColor="#a855f7"
           sideOverlay={<MasterSideEffects />}
