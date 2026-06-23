@@ -9,6 +9,7 @@ import { xpToNextLevel, getPokemonProfile } from '../data/combatEngine';
 import { GEN1_STATS } from '../data/gen1Stats';
 import { MOVES } from '../data/gen1Moves';
 import { GEN1_MOVEPOOL, getAvailableMoves } from '../data/gen1Movepools';
+import { POKEMON_INFO } from '../data/pokemonInfo';
 
 
 interface DexTheme {
@@ -687,12 +688,21 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
               {/* Info */}
               <div style={{ flex: 1, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <div style={{ color: rarityColor, fontSize: '0.58rem', fontFamily: 'monospace', fontWeight: 700, textShadow: `0 0 6px ${rarityColor}` }}>{RARITY_LABELS[p.rarity]}</div>
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
                   {types.map(t => (
                     <span key={t} style={{ background: TYPE_COLORS[t as PokemonType] ?? '#888', color: 'white', fontWeight: 900, fontFamily: 'monospace', borderRadius: 4, padding: '2px 8px', fontSize: '0.58rem' }}>
                       {t.charAt(0).toUpperCase() + t.slice(1)}
                     </span>
                   ))}
+                  {(() => {
+                    const info = POKEMON_INFO[selectedId];
+                    if (!info) return null;
+                    return (
+                      <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.55rem', fontFamily: 'monospace', fontWeight: 700 }}>
+                        {info.height}m · {info.weight}kg
+                      </span>
+                    );
+                  })()}
                 </div>
                 <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 99, padding: '2px 10px', color: 'rgba(255,255,255,0.75)', fontSize: '0.58rem', fontFamily: 'monospace', fontWeight: 700, alignSelf: 'flex-start' }}>
                   Capturé {normalCount} fois
@@ -704,6 +714,22 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
             <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 80px', display: 'flex', flexDirection: 'column', gap: 12, background: dexTheme.contentBg }}>
               {/* ── Pokédex data panels ──────────────────────────── */}
               <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+
+              {/* Description Pokédex */}
+              {(() => {
+                const info = POKEMON_INFO[selectedId];
+                if (!info) return null;
+                return (
+                  <div style={{ background: 'rgba(0,0,0,0.45)', borderRadius: 10, border: `2px solid ${dexTheme.border}`, overflow: 'hidden' }}>
+                    <div style={{ background: dexTheme.filterTabBg, borderBottom: `1px solid ${dexTheme.border}`, padding: '4px 10px' }}>
+                      <span style={{ color: dexTheme.titleColor, fontSize: '0.55rem', fontFamily: 'monospace', fontWeight: 900, letterSpacing: '0.15em' }}>◉ DESCRIPTION</span>
+                    </div>
+                    <div style={{ padding: '10px 12px', color: 'rgba(255,255,255,0.75)', fontSize: '0.68rem', fontFamily: 'monospace', lineHeight: 1.6 }}>
+                      {info.description}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* SCANNER — level / XP / profile */}
               {(() => {
