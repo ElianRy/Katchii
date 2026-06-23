@@ -286,7 +286,11 @@ export function PcStorage({
   };
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterDraft, setFilterDraft] = useState<PcFilter>(EMPTY_FILTER);
-  const [pokemonDetailId, setPokemonDetailId] = useState<number | null>(null);
+  const [pokemonDetailId, setPokemonDetailId_] = useState<number | null>(null);
+  const setPokemonDetailId = (id: number | null) => {
+    setPokemonDetailId_(id);
+    if (id !== pokemonDetailId) { setDetailEditMode(false); setDetailPendingMoves([]); }
+  };
   const [showThemeModal, setShowThemeModal] = useState(false);
   const [autoTraining, setAutoTraining] = useState(false);
   const [trainingMuted, setTrainingMuted] = useState(false);
@@ -941,6 +945,27 @@ export function PcStorage({
                         }} />
                       </div>
                     )}
+                    {(() => {
+                      const pre = preCombatLevels[id] ?? { level: 1, xp: 0 };
+                      const post = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
+                      if (post.level <= pre.level) return null;
+                      const preMoveSet = new Set(getAvailableMoves(id, pre.level));
+                      const newMoves = getAvailableMoves(id, post.level).filter(m => !preMoveSet.has(m));
+                      if (newMoves.length === 0) return null;
+                      return (
+                        <div style={{ marginTop: 3 }}>
+                          {newMoves.map(slug => {
+                            const mv = MOVES[slug];
+                            if (!mv) return null;
+                            return (
+                              <div key={slug} style={{ fontSize: '0.6rem', color: '#4ade80', fontWeight: 700, lineHeight: 1.4 }}>
+                                🆕 {mv.name} débloquée !
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                     {flashLevel !== undefined && (
                       <div style={{
                         position: 'absolute',
@@ -1121,7 +1146,7 @@ export function PcStorage({
 
       {/* Main area */}
       <div className="flex flex-col flex-1 overflow-hidden" style={{ position: 'relative' }}>
-        {theme.hasAnimation && <AnimatedPcOverlay themeId={theme.id} />}
+        {theme.hasAnimation && <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}><AnimatedPcOverlay themeId={theme.id} /></div>}
         {/* PC Grid */}
         <div className="flex-1 overflow-y-auto p-2" style={{ background: theme.screenBg, backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,40,0.04) 0px, rgba(0,0,40,0.04) 1px, transparent 1px, transparent 3px)', position: 'relative', zIndex: 1 }}>
           <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${BOX_COLS}, 52px)`, width: 'fit-content', margin: '0 auto', overflow: 'visible' }}>
@@ -1168,7 +1193,7 @@ export function PcStorage({
                   }}
                 >
                   <ShinySprite pokemonId={id} isShiny={isShiny} width={32} height={32} compact />
-                  <span className="font-black" style={{ fontSize: '0.42rem', color: theme.subTextColor ?? '#475569' }}>
+                  <span className="font-black" style={{ fontSize: '0.42rem', color: theme.subTextColor ?? '#475569', textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
                     Niv.{lvData.level}
                   </span>
                   {showEvoBadge && (
@@ -1229,7 +1254,7 @@ export function PcStorage({
                   }}
                 >
                   <ShinySprite pokemonId={id} isShiny={isShiny} width={36} height={36} compact />
-                  <span className="font-black" style={{ fontSize: '0.5rem', color }}>Nv.{lvData.level}</span>
+                  <span className="font-black" style={{ fontSize: '0.5rem', color, textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>Nv.{lvData.level}</span>
                 </button>
               );
             })}

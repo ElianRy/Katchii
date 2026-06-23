@@ -443,8 +443,8 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
 
           {/* LCD Screen wrapping the grid */}
           <div style={{ flex: 1, overflowY: 'auto', background: dexTheme.contentBg, position: 'relative', zIndex: 1 }}>
-            {/* Animation overlay: absolute inside scroll area, pointer-events:none keeps grid clickable */}
-            {dexTheme.hasAnimation && <AnimatedDexOverlay themeId={dexTheme.id} />}
+            {/* Animation overlay: zIndex 0 so it stays behind the grid (zIndex 1) */}
+            {dexTheme.hasAnimation && <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}><AnimatedDexOverlay themeId={dexTheme.id} /></div>}
             <div style={{ padding: '8px 8px 80px 8px' }}>
             <div style={{
               background: dexTheme.cardBg,
@@ -665,73 +665,43 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
               <div style={{ flexShrink: 0, width: 60 }} />
             </div>
 
-            {/* Scrollable content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 80px', display: 'flex', flexDirection: 'column', gap: 12, background: dexTheme.contentBg }}>
-
-              {/* Hero: scan-line screen background + floating sprite */}
-              <div style={{
-                position: 'relative',
-                background: dexTheme.cardBg,
-                backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 1px, transparent 1px, transparent 4px)',
-                borderBottom: `2px solid ${dexTheme.border}`,
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                paddingTop: 24, paddingBottom: 20, gap: 10, overflow: 'hidden',
-              }}>
-                {/* Radial glow behind sprite */}
-                <div style={{
-                  position: 'absolute', top: '50%', left: '50%',
-                  transform: 'translate(-50%,-50%)',
-                  width: 180, height: 180,
-                  background: `radial-gradient(circle, ${rarityColor}30 0%, transparent 70%)`,
-                  pointerEvents: 'none',
-                }} />
-                <div
-                  className={isShiny ? 'shiny-rainbow' : ''}
-                  style={{ animation: 'dex-float 3s ease-in-out infinite', position: 'relative', zIndex: 1 }}
-                >
-                  <img
-                    src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${isShiny ? 'shiny/' : ''}${selectedId}.png`}
-                    alt={p.name}
-                    width={120}
-                    height={120}
-                    style={{
-                      imageRendering: 'pixelated',
-                      filter: isShiny ? `drop-shadow(0 0 14px #fbbf24)` : `drop-shadow(0 0 12px ${rarityColor})`,
-                    }}
-                  />
-                </div>
-                <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-                  <div style={{ color: 'white', fontWeight: 900, fontSize: '1.3rem', fontFamily: 'monospace', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{p.name}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', fontFamily: 'monospace', marginTop: 2 }}>{numStr}</div>
-                  <div style={{ color: rarityColor, fontSize: '0.65rem', fontFamily: 'monospace', marginTop: 2, fontWeight: 700, textShadow: `0 0 8px ${rarityColor}` }}>{RARITY_LABELS[p.rarity]}</div>
-                </div>
-                <div style={{ display: 'flex', gap: 6, position: 'relative', zIndex: 1 }}>
+            {/* Hero: scan-line screen background + floating sprite — FIXED, outside scroll */}
+            <div style={{
+              position: 'relative', flexShrink: 0,
+              background: dexTheme.cardBg,
+              backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 1px, transparent 1px, transparent 4px)',
+              borderBottom: `2px solid ${dexTheme.border}`,
+              display: 'flex', flexDirection: 'row', alignItems: 'center',
+              padding: '10px 16px', gap: 14, overflow: 'hidden',
+            }}>
+              {/* Radial glow */}
+              <div style={{ position: 'absolute', top: '50%', left: 60, transform: 'translate(-50%,-50%)', width: 120, height: 120, background: `radial-gradient(circle, ${rarityColor}35 0%, transparent 70%)`, pointerEvents: 'none' }} />
+              {/* Sprite */}
+              <div className={isShiny ? 'shiny-rainbow' : ''} style={{ animation: 'dex-float 3s ease-in-out infinite', position: 'relative', zIndex: 1, flexShrink: 0 }}>
+                <img
+                  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${isShiny ? 'shiny/' : ''}${selectedId}.png`}
+                  alt={p.name} width={88} height={88}
+                  style={{ imageRendering: 'pixelated', filter: isShiny ? `drop-shadow(0 0 10px #fbbf24)` : `drop-shadow(0 0 8px ${rarityColor})` }}
+                />
+              </div>
+              {/* Info */}
+              <div style={{ flex: 1, position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ color: rarityColor, fontSize: '0.58rem', fontFamily: 'monospace', fontWeight: 700, textShadow: `0 0 6px ${rarityColor}` }}>{RARITY_LABELS[p.rarity]}</div>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {types.map(t => (
-                    <span key={t}
-                      style={{
-                        background: TYPE_COLORS[t as PokemonType] ?? '#888',
-                        color: 'white', fontWeight: 900, fontFamily: 'monospace',
-                        borderRadius: 4, padding: '2px 10px', fontSize: '0.65rem',
-                      }}>
+                    <span key={t} style={{ background: TYPE_COLORS[t as PokemonType] ?? '#888', color: 'white', fontWeight: 900, fontFamily: 'monospace', borderRadius: 4, padding: '2px 8px', fontSize: '0.58rem' }}>
                       {t.charAt(0).toUpperCase() + t.slice(1)}
                     </span>
                   ))}
                 </div>
-                {/* Capture count chip */}
-                <div style={{
-                  background: 'rgba(0,0,0,0.35)',
-                  border: `1px solid rgba(255,255,255,0.15)`,
-                  borderRadius: 99,
-                  padding: '3px 12px',
-                  color: 'rgba(255,255,255,0.85)',
-                  fontSize: '0.65rem',
-                  fontFamily: 'monospace',
-                  fontWeight: 700,
-                  position: 'relative', zIndex: 1,
-                }}>
+                <div style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 99, padding: '2px 10px', color: 'rgba(255,255,255,0.75)', fontSize: '0.58rem', fontFamily: 'monospace', fontWeight: 700, alignSelf: 'flex-start' }}>
                   Capturé {normalCount} fois
                 </div>
               </div>
+            </div>
+
+            {/* Scrollable content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 80px', display: 'flex', flexDirection: 'column', gap: 12, background: dexTheme.contentBg }}>
               {/* ── Pokédex data panels ──────────────────────────── */}
               <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
