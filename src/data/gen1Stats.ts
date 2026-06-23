@@ -3,7 +3,7 @@ export type StatusEffect = 'burn' | 'poison' | 'paralysis' | 'sleep' | 'freeze';
 export type AnimationType = 'fire' | 'water' | 'electric' | 'grass' | 'psychic' | 'ice' | 'fighting' | 'poison' | 'ground' | 'flying' | 'bug' | 'rock' | 'ghost' | 'dragon' | 'normal' | 'dark' | 'steel';
 
 export interface StatBoost {
-  stat: 'attack' | 'defense' | 'spAttack' | 'spDefense' | 'speed';
+  stat: 'attack' | 'defense' | 'spAttack' | 'spDefense' | 'speed' | 'evasion' | 'accuracy';
   target: 'self' | 'foe';
   stages: number;
 }

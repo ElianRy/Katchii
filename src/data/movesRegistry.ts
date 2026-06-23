@@ -23,17 +23,28 @@ export interface MoveRegistryEntry {
   priority: number;
   description: string;
   multiHit?: boolean;
+  /** Always hits exactly 2 times (e.g. Double Kick) */
+  alwaysTwoHits?: boolean;
   highCrit?: boolean;
   statBoost?: {
-    stat: 'attack'|'defense'|'spAttack'|'spDefense'|'speed';
+    stat: 'attack'|'defense'|'spAttack'|'spDefense'|'speed'|'evasion'|'accuracy';
     target: 'self'|'foe';
     stages: number;
     chance?: number; // 0–100
+  };
+  /** Secondary stat boost (used when a move boosts two stats, e.g. Amnesia) */
+  statBoost2?: {
+    stat: 'attack'|'defense'|'spAttack'|'spDefense'|'speed'|'evasion'|'accuracy';
+    target: 'self'|'foe';
+    stages: number;
+    chance?: number;
   };
   effect?: {
     type: 'burn'|'poison'|'toxic'|'paralysis'|'sleep'|'freeze'|'confusion';
     chance: number;
   };
+  /** Causes the defender to flinch (lose their turn) with given chance (0–100) */
+  flinch?: number;
   recoil?: number;
   alwaysHit?: boolean;
   draining?: number;
@@ -46,6 +57,12 @@ export interface MoveRegistryEntry {
   chargingMessage?: string;
   /** True for protect-type moves — grants full immunity for the turn */
   isProtect?: boolean;
+  /** One-hit KO move — instant KO if it hits (fails if user level < target level) */
+  isOhko?: boolean;
+  /** Deals a fixed number of HP regardless of stats */
+  fixedDamage?: number;
+  /** Deals damage equal to the user's level */
+  levelDamage?: boolean;
 }
 
 function m(
@@ -79,23 +96,23 @@ export const MOVES_REGISTRY: Record<string, MoveRegistryEntry> = {
   'fury-swipes':   m('fury-swipes','Griffe-Tornade','Fury Swipes','normal','physical',18,80,15,0,"Frappe 2 à 5 fois.",{multiHit:true}),
   'spike-cannon':  m('spike-cannon','Canon Pics','Spike Cannon','normal','physical',20,100,15,0,"Frappe 2 à 5 fois.",{multiHit:true}),
   'slam':          m('slam','Claquoir','Slam','normal','physical',80,75,20,0,"Frappe avec la queue ou des tentacules."),
-  'skull-bash':    m('skull-bash',"Coud'Crâne",'Skull Bash','normal','physical',100,100,15,0,"Attaque puissante chargée."),
+  'skull-bash':    m('skull-bash',"Coud'Crâne",'Skull Bash','normal','physical',100,100,15,0,"Se baisse la tête au tour 1 (augmente la Déf), frappe au tour 2.",{isTwoTurnMove:true,chargingMessage:'baisse la tête et augmente sa Défense !'}),
   'take-down':     m('take-down','Bélier','Take Down','normal','physical',90,85,20,0,"Subit des dégâts de recul.",{recoil:0.25}),
-  'double-edge':   m('double-edge','Damoclès','Double-Edge','normal','physical',120,100,15,0,"Subit des dégâts de recul importants.",{recoil:0.33}),
+  'double-edge':   m('double-edge','Damoclès','Double-Edge','normal','physical',120,100,15,0,"Subit des dégâts de recul importants.",{recoil:0.25}),
   'wrap':          m('wrap','Ligotage','Wrap','normal','physical',15,90,20,0,"Ligote l'adversaire pendant plusieurs tours."),
   'swift':         m('swift','Météores','Swift','normal','special',60,0,20,0,"Ne rate jamais.",{alwaysHit:true}),
-  'razor-wind':    m('razor-wind','Rasoir-Vent','Razor Wind','normal','special',80,100,10,0,"Taux de critiques élevé.",{highCrit:true}),
+  'razor-wind':    m('razor-wind','Rasoir-Vent','Razor Wind','normal','special',80,100,10,0,"Se prépare au tour 1, frappe au tour 2 avec un taux de critiques élevé.",{isTwoTurnMove:true,chargingMessage:'prépare un tourbillon !',highCrit:true}),
   'hyper-beam':    m('hyper-beam','Rayon Hyper','Hyper Beam','normal','special',150,90,5,0,"Nécessite de se reposer au tour suivant."),
   'explosion':     m('explosion','Explosion','Explosion','normal','physical',250,100,5,0,"Le lanceur est mis K.O."),
   'sharpen':       m('sharpen','Acuité','Sharpen','normal','status',0,100,30,0,"Augmente l'Attaque.",{statBoost:{stat:'attack',target:'self',stages:1}}),
   'swords-dance':  m('swords-dance','Danse-Lames','Swords Dance','normal','status',0,100,20,0,"Augmente fortement l'Attaque.",{statBoost:{stat:'attack',target:'self',stages:2}}),
-  'minimize':      m('minimize','Esquive','Minimize','normal','status',0,100,20,0,"Augmente l'esquive.",{statBoost:{stat:'defense',target:'self',stages:2}}),
-  'smokescreen':   m('smokescreen','Rideau Fumée','Smokescreen','normal','status',0,100,20,0,"Réduit la précision adverse.",{statBoost:{stat:'defense',target:'foe',stages:-1}}),
+  'minimize':      m('minimize','Esquive','Minimize','normal','status',0,100,20,0,"Augmente fortement l'esquive.",{statBoost:{stat:'evasion',target:'self',stages:1}}),
+  'smokescreen':   m('smokescreen','Rideau Fumée','Smokescreen','normal','status',0,100,20,0,"Réduit la précision adverse.",{statBoost:{stat:'accuracy',target:'foe',stages:-1}}),
   'glare':         m('glare','Regard Mortel','Glare','normal','status',0,90,30,0,"Paralyse l'adversaire.",{effect:{type:'paralysis',chance:100}}),
   'sing':          m('sing','Chant','Sing','normal','status',0,55,15,0,"Endort l'adversaire.",{effect:{type:'sleep',chance:100}}),
   'defense-curl':  m('defense-curl','Affûtage','Defense Curl','normal','status',0,100,40,0,"Augmente la Défense.",{statBoost:{stat:'defense',target:'self',stages:1}}),
   'harden':        m('harden','Armure','Harden','normal','status',0,100,30,0,"Augmente la Défense.",{statBoost:{stat:'defense',target:'self',stages:1}}),
-  'double-team':   m('double-team','Division','Double Team','normal','status',0,100,15,0,"Augmente l'esquive.",{statBoost:{stat:'defense',target:'self',stages:1}}),
+  'double-team':   m('double-team','Division','Double Team','normal','status',0,100,15,0,"Augmente l'esquive.",{statBoost:{stat:'evasion',target:'self',stages:1}}),
   'transform':     m('transform','Transformation','Transform','normal','status',0,100,10,0,"Le Pokémon copie l'adversaire."),
   'splash':        m('splash','Éclaboussure','Splash','normal','status',0,100,40,0,"N'a aucun effet."),
   'supersonic':    m('supersonic','Ultrasons','Supersonic','normal','status',0,55,20,0,"Confond l'adversaire.",{effect:{type:'confusion',chance:100}}),
@@ -159,7 +176,7 @@ export const MOVES_REGISTRY: Record<string, MoveRegistryEntry> = {
 
   // ── Fighting ──────────────────────────────────────────────────────────────
   'karate-chop':    m('karate-chop','Poing Karaté','Karate Chop','fighting','physical',50,100,25,0,"Taux de critiques élevé.",{highCrit:true}),
-  'double-kick':    m('double-kick','Double-Pied','Double Kick','fighting','physical',30,100,30,0,"Frappe deux fois.",{multiHit:true}),
+  'double-kick':    m('double-kick','Double-Pied','Double Kick','fighting','physical',30,100,30,0,"Frappe exactement deux fois.",{alwaysTwoHits:true}),
   'low-kick':       m('low-kick','Balayage','Low Kick','fighting','physical',65,100,20,0,"Frappe les jambes."),
   'close-combat':   m('close-combat','Close Combat','Close Combat','fighting','physical',120,100,5,0,"Réduit la Défense du lanceur.",{statBoost:{stat:'defense',target:'self',stages:-1}}),
   'submission':     m('submission','Sacrifice','Submission','fighting','physical',80,80,25,0,"Subit des dégâts de recul.",{recoil:0.25}),
@@ -172,14 +189,14 @@ export const MOVES_REGISTRY: Record<string, MoveRegistryEntry> = {
   'smog':          m('smog','Smog','Smog','poison','special',20,70,20,0,"Peut empoisonner.",{effect:{type:'poison',chance:40}}),
   'sludge':        m('sludge','Beurk','Sludge','poison','special',65,100,20,0,"Peut empoisonner.",{effect:{type:'poison',chance:30}}),
   'sludge-bomb':   m('sludge-bomb',"Bomb' Beurk",'Sludge Bomb','poison','special',90,100,10,0,"Peut empoisonner.",{effect:{type:'poison',chance:30}}),
-  'toxic':         m('toxic','Toxik','Toxic','poison','status',0,90,10,0,"Empoisonne gravement.",{effect:{type:'toxic',chance:100}}),
+  'toxic':         m('toxic','Toxik','Toxic','poison','status',0,85,10,0,"Empoisonne gravement l'adversaire d'un venin qui empire à chaque tour.",{effect:{type:'toxic',chance:100}}),
   'poison-gas':    m('poison-gas','Gaz Toxik','Poison Gas','poison','status',0,55,40,0,"Empoisonne l'adversaire.",{effect:{type:'poison',chance:100}}),
 
   // ── Ground ────────────────────────────────────────────────────────────────
   'earthquake':    m('earthquake','Séisme','Earthquake','ground','physical',100,100,10,0,"Tremblement de terre puissant."),
   'dig':           m('dig','Fouille','Dig','ground','physical',80,100,10,0,"Se cache sous terre au tour 1."),
-  'mud-slap':      m('mud-slap','Boue-Bombe','Mud-Slap','ground','special',20,100,10,0,"Réduit la précision adverse.",{statBoost:{stat:'speed',target:'foe',stages:-1,chance:100}}),
-  'sand-attack':   m('sand-attack','Jet de Sable','Sand Attack','ground','status',0,100,15,0,"Réduit la précision adverse.",{statBoost:{stat:'defense',target:'foe',stages:-1}}),
+  'mud-slap':      m('mud-slap','Boue-Bombe','Mud-Slap','ground','special',20,100,10,0,"Réduit la précision adverse.",{statBoost:{stat:'accuracy',target:'foe',stages:-1,chance:100}}),
+  'sand-attack':   m('sand-attack','Jet de Sable','Sand Attack','ground','status',0,100,15,0,"Réduit la précision adverse.",{statBoost:{stat:'accuracy',target:'foe',stages:-1}}),
 
   // ── Flying ────────────────────────────────────────────────────────────────
   'peck':          m('peck','Bec Vrille','Peck','flying','physical',35,100,35,0,"Frappe avec le bec."),
@@ -195,29 +212,29 @@ export const MOVES_REGISTRY: Record<string, MoveRegistryEntry> = {
   'psybeam':       m('psybeam','Rayon Psy','Psybeam','psychic','special',65,100,20,0,"Peut confondre.",{effect:{type:'confusion',chance:10}}),
   'hypnosis':      m('hypnosis','Hypnose','Hypnosis','psychic','status',0,60,20,0,"Endort l'adversaire.",{effect:{type:'sleep',chance:100}}),
   'dream-eater':   m('dream-eater','Bouffe-Rêve','Dream Eater','psychic','special',100,100,15,0,"Fonctionne sur un Pokémon endormi.",{draining:0.5}),
-  'amnesia':       m('amnesia','Amnésie','Amnesia','psychic','status',0,100,20,0,"Augmente fortement la Défense Spéciale.",{statBoost:{stat:'spDefense',target:'self',stages:2}}),
+  'amnesia':       m('amnesia','Amnésie','Amnesia','psychic','status',0,100,20,0,"Vide l'esprit pour augmenter fortement l'Attaque Spéciale et la Défense Spéciale.",{statBoost:{stat:'spDefense',target:'self',stages:2},statBoost2:{stat:'spAttack',target:'self',stages:2}}),
   'barrier':       m('barrier','Barrière','Barrier','psychic','status',0,100,30,0,"Augmente fortement la Défense.",{statBoost:{stat:'defense',target:'self',stages:2}}),
   'calm-mind':     m('calm-mind','Méditation','Calm Mind','psychic','status',0,100,20,0,"Augmente l'Attaque Spéciale.",{statBoost:{stat:'spAttack',target:'self',stages:1}}),
   'agility':       m('agility','Hâte','Agility','psychic','status',0,100,30,0,"Augmente fortement la Vitesse.",{statBoost:{stat:'speed',target:'self',stages:2}}),
 
   // ── Dark ──────────────────────────────────────────────────────────────────
-  'bite':          m('bite','Morsure','Bite','dark','physical',60,100,25,0,"Peut faire sursauter.",{effect:{type:'paralysis',chance:30}}),
+  'bite':          m('bite','Morsure','Bite','dark','physical',60,100,25,0,"Peut faire sursauter l'adversaire, l'empêchant d'agir ce tour.",{flinch:30}),
   'crunch':        m('crunch',"Coud'Croc",'Crunch','dark','physical',80,100,15,0,"Peut réduire la Défense.",{statBoost:{stat:'defense',target:'foe',stages:-1,chance:20}}),
   'faint-attack':  m('faint-attack','Feinte','Faint Attack','dark','physical',60,100,20,0,"Ne rate jamais.",{alwaysHit:true}),
   'nasty-plot':    m('nasty-plot','Complot','Nasty Plot','dark','status',0,100,20,0,"Augmente fortement l'Attaque Spéciale.",{statBoost:{stat:'spAttack',target:'self',stages:2}}),
 
   // ── Ghost ─────────────────────────────────────────────────────────────────
-  'night-shade':   m('night-shade','Ombre Nuit','Night Shade','ghost','special',60,100,15,0,"Inflige des dégâts égaux au niveau."),
+  'night-shade':   m('night-shade','Ombre Nuit','Night Shade','ghost','special',0,100,15,0,"Inflige des dégâts égaux au niveau du lanceur.",{levelDamage:true}),
   'confuse-ray':   m('confuse-ray','Rayon Confus','Confuse Ray','ghost','status',0,100,10,0,"Confond l'adversaire.",{effect:{type:'confusion',chance:100}}),
   'lick':          m('lick','Léchage','Lick','ghost','physical',20,100,30,0,"Peut paralyser.",{effect:{type:'paralysis',chance:30}}),
 
   // ── Rock ──────────────────────────────────────────────────────────────────
   'rock-throw':    m('rock-throw','Jet-Roc','Rock Throw','rock','physical',50,90,15,0,"Lance des rochers."),
-  'rock-slide':    m('rock-slide','Éboulement','Rock Slide','rock','physical',75,90,10,0,"Peut faire sursauter.",{effect:{type:'paralysis',chance:30}}),
+  'rock-slide':    m('rock-slide','Éboulement','Rock Slide','rock','physical',75,90,10,0,"Des rochers s'abattent sur l'adversaire. Peut le faire sursauter.",{flinch:30}),
   'ancient-power': m('ancient-power','Antique Pouvoir','AncientPower','rock','special',60,100,5,0,"Peut augmenter toutes les stats.",{allStatBoost:{stages:1,chance:10}}),
 
   // ── Dragon ────────────────────────────────────────────────────────────────
-  'dragon-rage':   m('dragon-rage','Rage du Dragon','Dragon Rage','dragon','special',80,100,10,0,"Inflige des dégâts fixes."),
+  'dragon-rage':   m('dragon-rage','Rage du Dragon','Dragon Rage','dragon','special',0,100,10,0,"Inflige toujours exactement 40 points de dégâts.",{fixedDamage:40}),
   'dragon-breath': m('dragon-breath','Draco-Souffle','DragonBreath','dragon','special',60,100,20,0,"Peut paralyser.",{effect:{type:'paralysis',chance:30}}),
   'dragon-claw':   m('dragon-claw','Draco-Griffe','Dragon Claw','dragon','physical',80,100,15,0,"Griffes de dragon puissantes."),
   'outrage':       m('outrage','Colère','Outrage','dragon','physical',120,100,10,0,"Attaque 2-3 tours puis confond.",{recoil:0}),
@@ -237,7 +254,7 @@ export const MOVES_REGISTRY: Record<string, MoveRegistryEntry> = {
   'sunny-day':     m('sunny-day','Zénith','Sunny Day','fire','status',0,100,5,0,"Augmente l'Att. Spé. temporairement.",{statBoost:{stat:'spAttack',target:'self',stages:1}}),
 
   // ── Additional Flying ─────────────────────────────────────────────────────
-  'air-slash':     m('air-slash','Tranche-Air','Air Slash','flying','special',75,95,15,0,"Peut faire sursauter.",{effect:{type:'paralysis',chance:30}}),
+  'air-slash':     m('air-slash','Tranche-Air','Air Slash','flying','special',75,95,15,0,"Une lame d'air tranche l'ennemi. Peut le faire sursauter.",{flinch:30}),
   'roost':         m('roost','Repos','Roost','flying','status',0,100,10,0,"Restaure 50% des PV.",{selfHeal:0.5}),
 
   // ── Additional Grass ──────────────────────────────────────────────────────
@@ -253,11 +270,21 @@ export const MOVES_REGISTRY: Record<string, MoveRegistryEntry> = {
   'shadow-ball':   m('shadow-ball','Ball\'Ombre','Shadow Ball','ghost','special',80,100,15,0,"Peut réduire la Déf. Spé.",{statBoost:{stat:'spDefense',target:'foe',stages:-1,chance:20}}),
 
   // ── Additional Dark ───────────────────────────────────────────────────────
-  'dark-pulse':    m('dark-pulse','Ténèbres','Dark Pulse','dark','special',80,100,15,0,"Peut faire sursauter.",{effect:{type:'paralysis',chance:20}}),
+  'dark-pulse':    m('dark-pulse','Ténèbres','Dark Pulse','dark','special',80,100,15,0,"Une vague d'énergie sombre. Peut faire sursauter l'adversaire.",{flinch:20}),
 
   // ── Additional Ice ────────────────────────────────────────────────────────
   'ice-shard':     m('ice-shard','Éclats Glace','Ice Shard','ice','physical',40,100,30,1,"Attaque en priorité."),
-  'icicle-crash':  m('icicle-crash','Chute Givre','Icicle Crash','ice','physical',85,90,10,0,"Peut faire tituber.",{effect:{type:'paralysis',chance:30}}),
+  'icicle-crash':  m('icicle-crash','Chute Givre','Icicle Crash','ice','physical',85,90,10,0,"De grandes stalactites tombent sur l'ennemi. Peut le faire sursauter.",{flinch:30}),
+
+  // ── OHKO Moves ────────────────────────────────────────────────────────────
+  'guillotine':    m('guillotine','Guillotine','Guillotine','normal','physical',0,30,5,0,"Met K.O. en un coup si ça touche. Échoue si le lanceur est de niveau inférieur.",{isOhko:true}),
+  'fissure':       m('fissure','Fissure','Fissure','ground','physical',0,30,5,0,"Met K.O. en un coup si ça touche. Échoue si le lanceur est de niveau inférieur.",{isOhko:true}),
+  'horn-drill':    m('horn-drill',"Koud'Korne",'Horn Drill','normal','physical',0,30,5,0,"Met K.O. en un coup si ça touche. Échoue si le lanceur est de niveau inférieur.",{isOhko:true}),
+
+  // ── Fixed / Level Damage ──────────────────────────────────────────────────
+  'seismic-toss':  m('seismic-toss','Jackpot','Seismic Toss','fighting','physical',0,100,20,0,"Inflige des dégâts égaux au niveau du lanceur.",{levelDamage:true}),
+  'sonic-boom':    m('sonic-boom','Éclate-Oreilles','Sonic Boom','normal','special',0,90,20,0,"Inflige toujours exactement 20 points de dégâts.",{fixedDamage:20}),
+
 };
 
 export const MOVE_IDS = Object.keys(MOVES_REGISTRY);

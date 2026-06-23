@@ -134,11 +134,11 @@ export function getTypeEffectiveness(attackType: PokemonType, defenderTypes: Pok
 }
 
 // Stat stage keys used in BattleScreen
-export type StageKey = 'attack' | 'defense' | 'spAttack' | 'spDefense' | 'speed';
+export type StageKey = 'attack' | 'defense' | 'spAttack' | 'spDefense' | 'speed' | 'evasion' | 'accuracy';
 export type Stages = Record<StageKey, number>;
 
 export function emptyStages(): Stages {
-  return { attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0 };
+  return { attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0, evasion: 0, accuracy: 0 };
 }
 
 // ── Major Status Conditions (Gen 4) ─────────────────────────────────────────
@@ -166,7 +166,7 @@ export function applyMajorStatus(
   if (newStatus === null) return null;
   const next: StatusState = { condition: newStatus };
   if (newStatus === 'slp') {
-    next.sleepTurns = 1 + Math.floor(Math.random() * 4); // 1-4 turns
+    next.sleepTurns = 1 + Math.floor(Math.random() * 7); // 1-7 turns (Gen 1)
   }
   if (newStatus === 'par') {
     next.parTurns = 2 + Math.floor(Math.random() * 5); // 2-6 turns
@@ -190,8 +190,8 @@ export function checkCanAct(status: StatusState): { canAct: boolean; nextStatus:
   if (status.condition === 'slp') {
     const remaining = (status.sleepTurns ?? 1) - 1;
     if (remaining <= 0) {
-      // Wakes up this turn — can act immediately (HG/SS: no lost turn on wake)
-      return { canAct: true, nextStatus: { condition: null }, wokeUp: true };
+      // Wakes up this turn — Gen 1: loses the turn it wakes up (can't act)
+      return { canAct: false, nextStatus: { condition: null }, wokeUp: true };
     }
     return { canAct: false, nextStatus: { ...status, sleepTurns: remaining } };
   }
@@ -337,8 +337,10 @@ export type MoveResult = {
   hits: number;
   statusEffect?: { type: string; chance: number };
   statBoost?: StatBoost;
+  statBoost2?: StatBoost;
   appliedStatus?: MajorStatus;  // status actually applied this turn (after chance roll)
   appliedConfusion?: boolean;   // confusion applied this turn (volatile, not major status)
+  appliedFlinch?: boolean;      // defender must skip their turn if they haven't acted yet
   priority?: number;
   cureDefenderStatus?: boolean; // true when fire move thaws a frozen defender
   allStatBoosted?: boolean;
@@ -346,6 +348,7 @@ export type MoveResult = {
   drainHeal?: number;
   selfHeal?: number;
   failedSpecial?: string;
+  isOhko?: boolean;             // true if this was a OHKO hit
 };
 
 // ── HeartGold damage formula ─────────────────────────────────────────────────
@@ -396,7 +399,12 @@ export function calcDamage(
         if (move.effect.type === 'confusion') {
           appliedConfusion = true;
         } else if (defenderStatus?.condition === null) {
-          appliedStatus = effectTypeToStatus(move.effect.type);
+          // Thunder Wave immunity: Ground types are immune to Electric status moves
+          const defTypes = (POKEMON_TYPE[defenderId] ?? ['normal']) as PokemonType[];
+          const isGroundImmune = moveType === 'electric' && defTypes.includes('ground' as PokemonType);
+          if (!isGroundImmune) {
+            appliedStatus = effectTypeToStatus(move.effect.type);
+          }
         }
       }
     }
@@ -405,6 +413,7 @@ export function calcDamage(
       isMiss: false, moveType, recoil: 0, hits: 0,
       statusEffect: move.effect,
       statBoost: move.statBoost,
+      statBoost2: move.statBoost2,
       appliedStatus,
       appliedConfusion: appliedConfusion || undefined,
       appliedSeed: !!(move.isSeed),
@@ -416,6 +425,24 @@ export function calcDamage(
   // Dream-eater: only works on sleeping targets
   if (move.draining && move.id === 'dream-eater' && defenderStatus?.condition !== 'slp') {
     return { damage: 0, effectiveness: 1, moveName, isCrit: false, isMiss: false, moveType, recoil: 0, hits: 0, failedSpecial: 'not-sleeping', priority: movePriority };
+  }
+
+  // OHKO: instant KO — fails if attacker level < defender level
+  if (move.isOhko) {
+    if (attackerLevel < defenderLevel) {
+      return { damage: 0, effectiveness: 1, moveName, isCrit: false, isMiss: true, moveType, recoil: 0, hits: 0, failedSpecial: 'ohko-level', priority: movePriority };
+    }
+    return { damage: 999999, effectiveness: 1, moveName, isCrit: false, isMiss: false, moveType, recoil: 0, hits: 1, isOhko: true, priority: movePriority };
+  }
+
+  // Fixed damage (Dragon Rage = 40, Sonic Boom = 20)
+  if (move.fixedDamage) {
+    return { damage: move.fixedDamage, effectiveness: 1, moveName, isCrit: false, isMiss: false, moveType, recoil: 0, hits: 1, priority: movePriority };
+  }
+
+  // Level damage (Seismic Toss, Night Shade = attacker level)
+  if (move.levelDamage) {
+    return { damage: attackerLevel, effectiveness: 1, moveName, isCrit: false, isMiss: false, moveType, recoil: 0, hits: 1, priority: movePriority };
   }
 
   // Frozen defender thaws instantly on fire move (still takes full damage)
@@ -445,7 +472,8 @@ export function calcDamage(
   }
 
   // Multi-hit: 2-5 hits (HGSS distribution: 2→37.5%, 3→37.5%, 4→12.5%, 5→12.5%)
-  const hitCount = move.multiHit ? ([2,2,2,3,3,3,4,5][Math.floor(Math.random() * 8)]) : 1;
+  // alwaysTwoHits: always exactly 2 (e.g. Double Kick)
+  const hitCount = move.alwaysTwoHits ? 2 : move.multiHit ? ([2,2,2,3,3,3,4,5][Math.floor(Math.random() * 8)]) : 1;
 
   let totalDmg = 0;
   let isCrit = false;
@@ -485,14 +513,19 @@ export function calcDamage(
   const allStatBoosted = move.allStatBoost && finalDmg > 0
     ? Math.random() * 100 < move.allStatBoost.chance
     : undefined;
+  const appliedFlinch = move.flinch && finalDmg > 0
+    ? Math.random() * 100 < move.flinch
+    : undefined;
 
   return {
     damage: finalDmg, effectiveness, moveName, isCrit, isMiss: false,
     moveType, recoil, hits: hitCount,
     statusEffect: move.effect,
     statBoost: move.statBoost,
+    statBoost2: move.statBoost2,
     appliedStatus,
     appliedConfusion: appliedConfusion || undefined,
+    appliedFlinch: appliedFlinch || undefined,
     priority: movePriority,
     cureDefenderStatus,
     drainHeal,
@@ -549,9 +582,11 @@ export type RawMove = {
   id?: string;
   name: string; type: string; category: string; power: number;
   accuracy: number; pp: number; description?: string;
-  multiHit?: boolean; highCrit?: boolean;
+  multiHit?: boolean; alwaysTwoHits?: boolean; highCrit?: boolean;
   statBoost?: StatBoost;
+  statBoost2?: StatBoost;
   effect?: { type: string; chance: number };
+  flinch?: number;
   recoil?: number;
   alwaysHit?: boolean;
   priority?: number;
@@ -559,6 +594,11 @@ export type RawMove = {
   allStatBoost?: { stages: number; chance: number };
   isSeed?: boolean;
   isProtect?: boolean;
+  isOhko?: boolean;
+  fixedDamage?: number;
+  levelDamage?: boolean;
+  isTwoTurnMove?: boolean;
+  chargingMessage?: string;
 };
 
 /**

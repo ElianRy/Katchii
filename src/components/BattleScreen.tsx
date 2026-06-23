@@ -117,6 +117,7 @@ interface FighterState extends TeamMember {
   confusionTurns?: number;
   chargingMove?: { moveId: string; moveIndex: number } | null;
   mustRecharge?: boolean;
+  isFlinched?: boolean;  // loses next action this turn (flinch)
   isProtecting?: boolean;
   protectConsecutive?: number; // tracks consecutive protect uses for 50% success rate halving
   // Morphing (Transform) — ephemeral, only lives during combat
@@ -1474,6 +1475,10 @@ export function BattleScreen({
       return;
     }
 
+    // Clear flinch from previous turn (flinch only lasts one turn)
+    if (pf[pIdx].isFlinched) pf[pIdx] = { ...pf[pIdx], isFlinched: false };
+    if (ef[eIdx].isFlinched) ef[eIdx] = { ...ef[eIdx], isFlinched: false };
+
     // Status: tick counters + clear badges INSTANTLY, but log wake messages in turn order below
     const pCanActResult = checkCanAct(pFighter.statusState);
     const eCanActResult = checkCanAct(eFighter.statusState);
@@ -1705,6 +1710,19 @@ export function BattleScreen({
         }
       }
 
+      // Flinch: attacker was hit before they could act this turn
+      {
+        const atkArr = isPlayer ? pf : ef;
+        if (atkArr[atkIdx].isFlinched) {
+          if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], isFlinched: false };
+          else ef[atkIdx] = { ...ef[atkIdx], isFlinched: false };
+          flush();
+          addLog(`${atkName} a sursauté et ne peut pas agir !`, '#f59e0b');
+          await sleep(1200);
+          return false;
+        }
+      }
+
       // Status block
       if (!canActResult.canAct) {
         const cond = (isPlayer ? pf : ef)[atkIdx].statusState.condition;
@@ -1792,6 +1810,35 @@ export function BattleScreen({
         }
       }
 
+      // Generic 2-turn moves (skull-bash, razor-wind, etc.) — excluding fly and solar-beam which have custom VFX
+      let genericTwoTurnCharging = false;
+      if (rawMove?.isTwoTurnMove && rawMove?.id !== 'fly' && rawMove?.id !== 'solar-beam') {
+        const atkArr = isPlayer ? pf : ef;
+        if (!atkArr[atkIdx].chargingMove) {
+          // Turn 1 — charge, apply any self-boost (e.g. skull-bash raises Defense)
+          const chargeMsg = `${atkName} ${rawMove.chargingMessage ?? 'se prépare !'}`;
+          addLog(chargeMsg, '#fde68a');
+          await sleep(logTypeDuration(chargeMsg));
+          // skull-bash: raise Defense +1 on charge turn
+          if (rawMove.id === 'skull-bash') {
+            const defBoost = { stat: 'defense' as const, target: 'self' as const, stages: 1 };
+            if (isPlayer) pf[atkIdx] = applyBoostToFighter(pf[atkIdx], defBoost, atkName, atkSide);
+            else ef[atkIdx] = applyBoostToFighter(ef[atkIdx], defBoost, atkName, atkSide);
+          }
+          const storedIdx = isPlayer ? playerMoveIndex : eMoveIndex;
+          if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: { moveId: rawMove.id ?? '', moveIndex: storedIdx } };
+          else ef[atkIdx] = { ...ef[atkIdx], chargingMove: { moveId: rawMove.id ?? '', moveIndex: storedIdx } };
+          flush();
+          genericTwoTurnCharging = true;
+        } else {
+          // Turn 2 — clear flag and proceed with damage (without re-applying statBoost)
+          if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], chargingMove: null };
+          else ef[atkIdx] = { ...ef[atkIdx], chargingMove: null };
+          flush();
+        }
+      }
+      if (genericTwoTurnCharging) { return false; }
+
       // Lance-Soleil: 2-turn charge mechanic
       let solarBeamCharging = false;
       if (rawMove?.id === 'solar-beam' || rawMove?.name === 'Lance-Soleil') {
@@ -1851,6 +1898,10 @@ export function BattleScreen({
       // failedSpecial
       if (result.failedSpecial === 'not-sleeping') {
         addLog('Mais ça n\'a aucun effet !', '#94a3b8');
+        return false;
+      }
+      if (result.failedSpecial === 'ohko-level') {
+        addLog(`C'est un échec total !`, '#94a3b8');
         return false;
       }
 
@@ -1953,6 +2004,17 @@ export function BattleScreen({
         else          pf[defIdx] = applyBoostToFighter(pf[defIdx], result.statBoost!, defName, defSide);
         flush();
       }
+      // Secondary stat boost (e.g. Amnesia boosts both SpAtk and SpDef)
+      if (result.statBoost2?.target === 'self') {
+        if (isPlayer) pf[atkIdx] = applyBoostToFighter(pf[atkIdx], result.statBoost2!, atkName, atkSide);
+        else          ef[atkIdx] = applyBoostToFighter(ef[atkIdx], result.statBoost2!, atkName, atkSide);
+        flush();
+      }
+      if (result.statBoost2?.target === 'foe') {
+        if (isPlayer) ef[defIdx] = applyBoostToFighter(ef[defIdx], result.statBoost2!, defName, defSide);
+        else          pf[defIdx] = applyBoostToFighter(pf[defIdx], result.statBoost2!, defName, defSide);
+        flush();
+      }
       if (result.allStatBoosted) {
         const allStats: Array<{ stat: keyof typeof pFighter.stages; stages: number; target: 'self' | 'foe' }> = [
           { stat: 'attack', stages: 1, target: 'self' },
@@ -1994,6 +2056,12 @@ export function BattleScreen({
         flush();
       }
 
+      // Flinch: mark defender as flinched (they lose their turn if they haven't acted yet)
+      if (result.appliedFlinch) {
+        if (isPlayer) ef[defIdx] = { ...ef[defIdx], isFlinched: true };
+        else          pf[defIdx] = { ...pf[defIdx], isFlinched: true };
+      }
+
       // Seed
       if (result.appliedSeed) {
         if (isPlayer) ef[defIdx] = { ...ef[defIdx], isSeeded: true };
@@ -2001,11 +2069,14 @@ export function BattleScreen({
         addLog(`${defName} est ensemencé(e) par la Vampigraine !`, '#86efac');
       }
 
-      // Hyper Beam: set mustRecharge after use
+      // Hyper Beam: set mustRecharge after use — Gen 1: no recharge if target fainted
       if (rawMove?.id === 'hyper-beam' && result.damage > 0 && !result.isMiss) {
-        if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], mustRecharge: true };
-        else ef[atkIdx] = { ...ef[atkIdx], mustRecharge: true };
-        flush();
+        const defFainted = (isPlayer ? ef[defIdx] : pf[defIdx]).currentHp <= 0;
+        if (!defFainted) {
+          if (isPlayer) pf[atkIdx] = { ...pf[atkIdx], mustRecharge: true };
+          else ef[atkIdx] = { ...ef[atkIdx], mustRecharge: true };
+          flush();
+        }
       }
 
       // Protect: activate for this turn if move is protect
