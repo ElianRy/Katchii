@@ -187,8 +187,8 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
   const [filterOpen, setFilterOpen] = useState(false);
   const [typeFilter, setTypeFilter] = useState<PokemonType | null>(null);
   const [selectedId, setSelectedId_] = useState<number | null>(null);
-  const [detailTab, setDetailTab] = useState<'attaques' | 'stats'>('attaques');
-  const setSelectedId = (id: number | null) => { setSelectedId_(id); setDetailTab('attaques'); };
+
+  const setSelectedId = (id: number | null) => { setSelectedId_(id); };
   const [search, setSearch] = useState('');
   const [sortMode, setSortMode] = useState<'id' | 'rarity_desc' | 'level_desc'>(() => {
     try { return (localStorage.getItem('katchii_pokedex_sort') as 'id' | 'rarity_desc' | 'level_desc') ?? 'id'; } catch { return 'id'; }
@@ -657,11 +657,12 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
             >
               <button
                 onClick={() => setSelectedId(null)}
-                style={{ color: dexTheme.titleColor, fontSize: '0.85rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 900 }}
+                style={{ color: dexTheme.titleColor, fontSize: '0.85rem', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'monospace', fontWeight: 900, flexShrink: 0 }}
               >← Retour</button>
-              <span style={{ color: 'white', fontWeight: 900, fontSize: '0.9rem', fontFamily: 'monospace', flex: 1 }}>
+              <span style={{ color: 'white', fontWeight: 900, fontSize: '0.9rem', fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center', padding: '0 8px' }}>
                 <span style={{ color: '#4ade80' }}>{numStr}</span> — {p.name.toUpperCase()}
               </span>
+              <div style={{ flexShrink: 0, width: 60 }} />
             </div>
 
             {/* Scrollable content */}
@@ -731,118 +732,104 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                   Capturé {normalCount} fois
                 </div>
               </div>
-              <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* ── Pokédex data panels ──────────────────────────── */}
+              <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-              {/* Level / XP bar */}
-              <div style={{ background: dexTheme.cardBg, borderRadius: 10, padding: '10px 14px', border: `1px solid ${dexTheme.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: dexTheme.titleColor, fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: 700 }}>NIVEAU</span>
-                  <span style={{ color: dexTheme.titleColor, fontSize: '0.85rem', fontFamily: 'monospace', fontWeight: 900 }}>{lvData.level >= 100 ? 'MAX' : lvData.level}</span>
-                </div>
-                <div style={{ width: '100%', background: dexTheme.filterTabBg, borderRadius: 99, height: 6, border: `1px solid ${dexTheme.border}` }}>
-                  <div style={{ height: '100%', borderRadius: 99, transition: 'width 0.4s', width: `${xpPct}%`, background: `linear-gradient(90deg, ${rarityColor}, #fbbf24)` }} />
-                </div>
-                {lvData.level < 100 && (
-                  <div style={{ textAlign: 'right', fontSize: '0.6rem', color: dexTheme.titleColor, fontFamily: 'monospace', opacity: 0.7 }}>
-                    {lvData.xp} / {xpToNextLevel(lvData.level)} XP
-                  </div>
-                )}
-                {pool.length > 0 && availablePool.length < pool.length && (
-                  <div style={{ fontSize: '0.6rem', color: dexTheme.titleColor, fontFamily: 'monospace', opacity: 0.6 }}>
-                    🔓 {availablePool.length}/{pool.length} attaques débloquées
-                  </div>
-                )}
-              </div>
-
-              {/* Tab selector */}
-              <div style={{ display: 'flex', gap: 6, background: dexTheme.filterTabBg, borderRadius: 8, padding: 4 }}>
-                {(['attaques', 'stats'] as const).map(tab => (
-                  <button key={tab} onClick={() => setDetailTab(tab)}
-                    style={{
-                      flex: 1, padding: '6px', borderRadius: 6,
-                      fontSize: '0.68rem', fontWeight: 900, fontFamily: 'monospace',
-                      cursor: 'pointer', border: 'none',
-                      background: detailTab === tab ? dexTheme.filterTabActive : 'transparent',
-                      color: dexTheme.titleColor,
-                      boxShadow: detailTab === tab ? 'inset 0 1px 3px rgba(0,0,80,0.15)' : 'none',
-                    }}>
-                    {tab === 'attaques' ? '⚔️ ATTAQUES' : '📊 STATS'}
-                  </button>
-                ))}
-              </div>
-
-              {/* Tab: Attaques */}
-              {detailTab === 'attaques' && (
-                <>
-                  {/* Movepool editor */}
-                  {pool.length > 0 && (
-                    <div style={{ background: dexTheme.cardBg, borderRadius: 10, padding: '10px 12px', border: `1px solid ${dexTheme.border}` }}>
-                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                        <span style={{ color: dexTheme.titleColor, fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>ATTAQUES ACTIVES</span>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        {activeSlugs.map(slug => {
-                          const m = MOVES[slug];
-                          if (!m) return null;
-                          const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
-                          return (
-                            <div key={slug} style={{ borderRadius: 7, padding: '7px 10px', background: `${typeColor}18`, border: `1px solid ${typeColor}44` }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <span style={{ color: 'white', fontWeight: 900, borderRadius: 3, padding: '1px 5px', flexShrink: 0, background: typeColor, fontSize: '0.42rem', fontFamily: 'monospace' }}>{m.type.toUpperCase()}</span>
-                                <span style={{ color: dexTheme.titleColor, fontSize: '0.72rem', fontWeight: 700, fontFamily: 'monospace', flex: 1 }}>{m.name}</span>
-                                <span style={{ color: '#9ca3af', fontSize: '0.6rem', flexShrink: 0, fontFamily: 'monospace' }}>{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
-                                {m.power > 0 && <span style={{ color: '#e2e8f0', fontSize: '0.65rem', fontWeight: 900, flexShrink: 0, fontFamily: 'monospace' }}>{m.power}</span>}
-                              </div>
-                              {m.description && (
-                                <div style={{ color: '#6b7280', marginTop: 3, fontSize: '0.58rem', lineHeight: 1.4, fontFamily: 'monospace' }}>{m.description}</div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
+              {/* SCANNER — level / XP / profile */}
+              {(() => {
+                const stats = GEN1_STATS[selectedId];
+                const profile = stats ? getPokemonProfile(stats.hp) : 'equilibre';
+                const profileLabel = profile === 'tank' ? 'TANK' : profile === 'equilibre' ? 'ÉQUILIBRÉ' : 'ATTAQUANT';
+                const profileColor = profile === 'tank' ? '#4ade80' : profile === 'equilibre' ? '#60a5fa' : '#f87171';
+                return (
+                  <div style={{ background: 'rgba(0,0,0,0.45)', borderRadius: 10, border: `2px solid ${dexTheme.border}`, overflow: 'hidden' }}>
+                    {/* Panel label */}
+                    <div style={{ background: dexTheme.filterTabBg, borderBottom: `1px solid ${dexTheme.border}`, padding: '4px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ color: dexTheme.titleColor, fontSize: '0.55rem', fontFamily: 'monospace', fontWeight: 900, letterSpacing: '0.15em' }}>◉ DONNÉES</span>
+                      <span style={{ color: profileColor, fontSize: '0.55rem', fontFamily: 'monospace', fontWeight: 900, background: `${profileColor}22`, padding: '1px 6px', borderRadius: 3 }}>{profileLabel}</span>
                     </div>
-                  )}
-                </>
+                    <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.6rem', fontFamily: 'monospace', width: 36 }}>NIV.</span>
+                        <span style={{ color: 'white', fontSize: '1.1rem', fontFamily: 'monospace', fontWeight: 900, lineHeight: 1 }}>{lvData.level >= 100 ? 'MAX' : lvData.level}</span>
+                        {lvData.level < 100 && (
+                          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.6rem', fontFamily: 'monospace', marginLeft: 'auto' }}>{lvData.xp} / {xpToNextLevel(lvData.level)} XP</span>
+                        )}
+                      </div>
+                      <div style={{ width: '100%', background: 'rgba(255,255,255,0.08)', borderRadius: 2, height: 5, border: '1px solid rgba(255,255,255,0.12)' }}>
+                        <div style={{ height: '100%', borderRadius: 2, width: `${xpPct}%`, background: `linear-gradient(90deg, ${rarityColor}, #fbbf24)`, transition: 'width 0.4s' }} />
+                      </div>
+                      {pool.length > 0 && availablePool.length < pool.length && (
+                        <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.58rem', fontFamily: 'monospace' }}>
+                          🔓 {availablePool.length} / {pool.length} attaques débloquées
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* MOVES — 2×2 hardware button grid */}
+              {activeSlugs.length > 0 && (
+                <div style={{ background: 'rgba(0,0,0,0.45)', borderRadius: 10, border: `2px solid ${dexTheme.border}`, overflow: 'hidden' }}>
+                  <div style={{ background: dexTheme.filterTabBg, borderBottom: `1px solid ${dexTheme.border}`, padding: '4px 10px' }}>
+                    <span style={{ color: dexTheme.titleColor, fontSize: '0.55rem', fontFamily: 'monospace', fontWeight: 900, letterSpacing: '0.15em' }}>◉ ATTAQUES</span>
+                  </div>
+                  <div style={{ padding: '10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    {activeSlugs.map(slug => {
+                      const m = MOVES[slug];
+                      if (!m) return null;
+                      const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
+                      return (
+                        <div key={slug} style={{
+                          borderRadius: 8,
+                          padding: '8px 10px',
+                          background: `linear-gradient(135deg, rgba(0,0,0,0.6) 0%, ${typeColor}22 100%)`,
+                          border: `2px solid ${typeColor}55`,
+                          boxShadow: `0 3px 0 rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
+                          display: 'flex', flexDirection: 'column', gap: 3,
+                        }}>
+                          <span style={{ color: 'white', fontWeight: 900, borderRadius: 3, padding: '1px 5px', alignSelf: 'flex-start', background: typeColor, fontSize: '0.4rem', fontFamily: 'monospace', letterSpacing: '0.05em' }}>{m.type.toUpperCase()}</span>
+                          <span style={{ color: 'white', fontSize: '0.72rem', fontWeight: 900, fontFamily: 'monospace', lineHeight: 1.2 }}>{m.name}</span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.55rem', fontFamily: 'monospace' }}>{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
+                            {m.power > 0 && <span style={{ color: typeColor, fontSize: '0.72rem', fontWeight: 900, fontFamily: 'monospace' }}>{m.power}</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
 
-              {/* Tab: Stats */}
-              {detailTab === 'stats' && (() => {
+              {/* STATS — digital readout */}
+              {(() => {
                 const stats = GEN1_STATS[selectedId];
                 if (!stats) return null;
                 const rows: [string, number, string][] = [
-                  ['PV',   stats.hp,        '#4ade80'],
-                  ['ATK',  stats.attack,     '#f87171'],
-                  ['DEF',  stats.defense,    '#fb923c'],
-                  ['SpA',  stats.spAttack,   '#818cf8'],
-                  ['SpD',  stats.spDefense,  '#60a5fa'],
-                  ['VIT',  stats.speed,      '#fbbf24'],
+                  ['PV',  stats.hp,        '#4ade80'],
+                  ['ATK', stats.attack,    '#f87171'],
+                  ['DEF', stats.defense,   '#fb923c'],
+                  ['SpA', stats.spAttack,  '#818cf8'],
+                  ['SpD', stats.spDefense, '#60a5fa'],
+                  ['VIT', stats.speed,     '#fbbf24'],
                 ];
                 const maxStat = 255;
-                const profile = getPokemonProfile(stats.hp);
-                const profileLabel = profile === 'tank' ? '🛡️ Tank' : profile === 'equilibre' ? '⚖️ Équilibré' : '💥 Attaquant';
-                const profileColor = profile === 'tank' ? '#4ade80' : profile === 'equilibre' ? '#60a5fa' : '#f87171';
                 return (
-                  <div style={{ background: dexTheme.cardBg, borderRadius: 10, padding: '12px 14px', border: `1px solid ${dexTheme.border}`, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span style={{ color: dexTheme.titleColor, fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 700 }}>PROFIL :</span>
-                      <span style={{ fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace', padding: '2px 8px', borderRadius: 99, color: profileColor, background: `${profileColor}22`, border: `1px solid ${profileColor}55` }}>{profileLabel}</span>
+                  <div style={{ background: 'rgba(0,0,0,0.45)', borderRadius: 10, border: `2px solid ${dexTheme.border}`, overflow: 'hidden', marginBottom: 8 }}>
+                    <div style={{ background: dexTheme.filterTabBg, borderBottom: `1px solid ${dexTheme.border}`, padding: '4px 10px' }}>
+                      <span style={{ color: dexTheme.titleColor, fontSize: '0.55rem', fontFamily: 'monospace', fontWeight: 900, letterSpacing: '0.15em' }}>◉ STATS DE BASE</span>
                     </div>
-                    <div style={{ color: dexTheme.titleColor, fontSize: '0.65rem', fontFamily: 'monospace', fontWeight: 900, letterSpacing: '0.1em', borderBottom: `1px solid ${dexTheme.border}`, paddingBottom: 6, marginBottom: 4 }}>
-                      STATS DE BASE
-                    </div>
-                    {rows.map(([label, val, color]) => (
-                      <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ color: '#4a6a8a', fontWeight: 700, fontSize: '0.65rem', fontFamily: 'monospace', width: 28, flexShrink: 0 }}>{label}</span>
-                        <div style={{ flex: 1, background: dexTheme.filterTabBg, borderRadius: 99, height: 6, border: `1px solid ${dexTheme.border}` }}>
-                          <div style={{ height: '100%', borderRadius: 99, background: color, width: `${Math.round((val / maxStat) * 100)}%`, transition: 'width 0.4s' }} />
+                    <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                      {rows.map(([label, val, color]) => (
+                        <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ color: 'rgba(255,255,255,0.4)', fontWeight: 700, fontSize: '0.6rem', fontFamily: 'monospace', width: 28, flexShrink: 0 }}>{label}</span>
+                          <div style={{ flex: 1, background: 'rgba(255,255,255,0.08)', borderRadius: 2, height: 5, border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ height: '100%', borderRadius: 2, background: color, width: `${Math.round((val / maxStat) * 100)}%`, transition: 'width 0.4s', boxShadow: `0 0 6px ${color}88` }} />
+                          </div>
+                          <span style={{ color: 'white', fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace', width: 24, textAlign: 'right' }}>{val}</span>
                         </div>
-                        <span style={{ color: dexTheme.titleColor, fontSize: '0.65rem', fontWeight: 900, fontFamily: 'monospace', width: 24, textAlign: 'right' }}>{val}</span>
-                      </div>
-                    ))}
-                    <div style={{ marginTop: 4, paddingTop: 8, borderTop: `1px solid ${dexTheme.border}`, fontSize: '0.6rem', fontFamily: 'monospace', color: dexTheme.titleColor, opacity: 0.8 }}>
-                      <span style={{ fontWeight: 700 }}>Attaque signature : </span>
-                      <span style={{ fontWeight: 700 }}>{stats.moves[0].name}</span>
-                      <span style={{ opacity: 0.7 }}> ({stats.moves[0].power} pts · {stats.moves[0].category === 'physical' ? 'Physique' : 'Spéciale'})</span>
+                      ))}
                     </div>
                   </div>
                 );

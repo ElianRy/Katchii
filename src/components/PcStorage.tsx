@@ -269,10 +269,10 @@ export function PcStorage({
   const [swapPickOpen, setSwapPickOpen] = useState(false);
   const [pendingPcId, setPendingPcId] = useState<number | null>(null);
 
-  // Move editor
-  const [moveEditorId, setMoveEditorId] = useState<number | null>(null);
-  const [editingMoves, setEditingMoves] = useState(false);
-  const [pendingMoves, setPendingMoves] = useState<string[]>([]);
+
+  // Inline move edit inside PC detail view
+  const [detailEditMode, setDetailEditMode] = useState(false);
+  const [detailPendingMoves, setDetailPendingMoves] = useState<string[]>([]);
 
   // Battle state
   const [battleTeam, setBattleTeam] = useState<{ playerTeam: TeamMember[]; enemyTeam: TeamMember[] } | null>(null);
@@ -522,14 +522,6 @@ export function PcStorage({
     setBattleResult({ won, xpGains });
   }, [party, owned, state.pokemonLevels, onTrainingBattle, onAddXp, onBattleWin, state.shinyCollection, autoTraining, startTraining]);
 
-  // ── Move editor ──────────────────────────────────────────────────────────────
-  const openMoveEditor = (id: number) => {
-    const lvData = state.pokemonLevels?.[id] ?? { level: 1, xp: 0 };
-    const current = state.pokemonCustomMoves?.[id] ?? getAvailableMoves(id, lvData.level).slice(0, 4);
-    setPendingMoves([...current]);
-    setMoveEditorId(id);
-    setEditingMoves(false);
-  };
 
   // XP bar animation on victory screen
   useEffect(() => {
@@ -661,31 +653,86 @@ export function PcStorage({
         <div className="mx-3 mb-3 rounded-xl px-3 py-2" style={{ background: 'rgba(255,255,255,0.6)', border: '2px solid #6c90b0' }}>
           <div className="flex items-center justify-between mb-2">
             <div className="font-black text-slate-700 text-xs">Attaques</div>
-            {onSaveCustomMoves && (
+            {onSaveCustomMoves && !detailEditMode && (
               <button
-                onClick={() => { openMoveEditor(detailId); setPokemonDetailId(null); setEditingMoves(true); }}
+                onClick={() => { setDetailPendingMoves([...detailMoves]); setDetailEditMode(true); }}
                 className="text-xs font-bold px-2 py-0.5 rounded-full"
                 style={{ background: '#3b82f633', color: '#60a5fa', border: '1px solid #3b82f655' }}
               >✏️ Modifier</button>
             )}
+            {detailEditMode && (
+              <div className="flex gap-1.5">
+                <button
+                  className="text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: '#ef444433', color: '#f87171', border: '1px solid #ef444455' }}
+                  onClick={() => setDetailEditMode(false)}
+                >Annuler</button>
+                <button
+                  className="text-xs font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: '#22c55e33', color: '#4ade80', border: '1px solid #22c55e55', opacity: detailPendingMoves.length === 4 ? 1 : 0.4 }}
+                  onClick={() => {
+                    if (detailPendingMoves.length === 4) {
+                      onSaveCustomMoves?.(detailId, detailPendingMoves);
+                      setDetailEditMode(false);
+                    }
+                  }}
+                >Sauvegarder</button>
+              </div>
+            )}
           </div>
-          <div className="flex flex-col gap-1.5">
-            {detailMoves.map(slug => {
-              const m = MOVES[slug];
-              if (!m) return null;
-              const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
-              return (
-                <div key={slug} className="rounded-lg px-2 py-1.5" style={{ background: `${typeColor}18`, border: `1px solid ${typeColor}44` }}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white font-bold rounded px-1.5 py-0.5 shrink-0" style={{ background: typeColor, fontSize: '0.42rem' }}>{m.type.toUpperCase()}</span>
-                    <span className="text-white text-xs font-bold flex-1">{m.name}</span>
-                    <span className="text-slate-400 text-xs shrink-0">{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
-                    {m.power > 0 && <span className="text-slate-300 text-xs font-black shrink-0">{m.power}</span>}
+          {!detailEditMode ? (
+            <div className="flex flex-col gap-1.5">
+              {detailMoves.map(slug => {
+                const m = MOVES[slug];
+                if (!m) return null;
+                const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
+                return (
+                  <div key={slug} className="rounded-lg px-2 py-1.5" style={{ background: `${typeColor}18`, border: `1px solid ${typeColor}44` }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-bold rounded px-1.5 py-0.5 shrink-0" style={{ background: typeColor, fontSize: '0.42rem' }}>{m.type.toUpperCase()}</span>
+                      <span className="text-white text-xs font-bold flex-1">{m.name}</span>
+                      <span className="text-slate-400 text-xs shrink-0">{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
+                      {m.power > 0 && <span className="text-slate-300 text-xs font-black shrink-0">{m.power}</span>}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <div className="text-slate-500 text-xs mb-1">Sélectionne 4 attaques ({detailPendingMoves.length}/4)</div>
+              {(() => {
+                const pool = getAvailableMoves(detailId, detailLevel);
+                return pool.map(slug => {
+                  const m = MOVES[slug];
+                  if (!m) return null;
+                  const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
+                  const selected = detailPendingMoves.includes(slug);
+                  return (
+                    <button
+                      key={slug}
+                      onClick={() => {
+                        if (selected) {
+                          setDetailPendingMoves(prev => prev.filter(s => s !== slug));
+                        } else if (detailPendingMoves.length < 4) {
+                          setDetailPendingMoves(prev => [...prev, slug]);
+                        }
+                      }}
+                      className="rounded-lg px-2 py-1.5 text-left w-full"
+                      style={{ background: selected ? `${typeColor}35` : `${typeColor}10`, border: `1px solid ${selected ? typeColor : typeColor + '44'}`, opacity: !selected && detailPendingMoves.length >= 4 ? 0.4 : 1 }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span style={{ fontSize: '0.75rem' }}>{selected ? '✓' : '○'}</span>
+                        <span className="text-white font-bold rounded px-1.5 py-0.5 shrink-0" style={{ background: typeColor, fontSize: '0.42rem' }}>{m.type.toUpperCase()}</span>
+                        <span className="text-white text-xs font-bold flex-1">{m.name}</span>
+                        {m.power > 0 && <span className="text-slate-300 text-xs font-black shrink-0">{m.power}</span>}
+                      </div>
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          )}
         </div>
 
         {/* Stats */}
@@ -897,114 +944,6 @@ export function PcStorage({
         >
           Continuer
         </button>
-      </div>
-    );
-  }
-
-  // ── Move editor modal ─────────────────────────────────────────────────────────
-  if (moveEditorId !== null) {
-    const p = POKEMON_BY_ID[moveEditorId];
-    const lvData = state.pokemonLevels?.[moveEditorId] ?? { level: 1, xp: 0 };
-    const availablePool = getAvailableMoves(moveEditorId, lvData.level);
-    const currentSlugs = state.pokemonCustomMoves?.[moveEditorId] ?? availablePool.slice(0, 4);
-    const activeSlugs = editingMoves ? pendingMoves : currentSlugs;
-
-    return (
-      <div className="fixed inset-0 z-[750] flex items-center justify-center bg-black/80 px-4">
-        <div className="w-full max-w-xs bg-slate-900 rounded-3xl overflow-hidden border-2 border-slate-700 flex flex-col max-h-[88vh]">
-          {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-700 shrink-0">
-            <ShinySprite pokemonId={moveEditorId} isShiny={(state.shinyCollection[moveEditorId] ?? 0) > 0} width={44} height={44} />
-            <div className="flex-1">
-              <div className="text-white font-black text-base">{p?.name ?? `#${moveEditorId}`}</div>
-              <div className="text-slate-400 text-xs">Niv. {lvData.level} — Attaques</div>
-            </div>
-            <button onClick={() => setMoveEditorId(null)} className="text-slate-400 text-xl">✕</button>
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto px-4 py-3">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-slate-400 text-xs font-bold">Attaques actives</span>
-              {onSaveCustomMoves && !editingMoves && (
-                <button
-                  className="text-xs font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: '#3b82f633', color: '#60a5fa', border: '1px solid #3b82f655' }}
-                  onClick={() => { setPendingMoves([...currentSlugs]); setEditingMoves(true); }}
-                >Modifier</button>
-              )}
-              {editingMoves && (
-                <div className="flex gap-1.5">
-                  <button
-                    className="text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: '#ef444433', color: '#f87171', border: '1px solid #ef444455' }}
-                    onClick={() => setEditingMoves(false)}
-                  >Annuler</button>
-                  <button
-                    className="text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: '#22c55e33', color: '#4ade80', border: '1px solid #22c55e55', opacity: pendingMoves.length === 4 ? 1 : 0.4 }}
-                    onClick={() => {
-                      if (pendingMoves.length === 4) {
-                        onSaveCustomMoves?.(moveEditorId, pendingMoves);
-                        setEditingMoves(false);
-                      }
-                    }}
-                  >Sauvegarder</button>
-                </div>
-              )}
-            </div>
-
-            {!editingMoves ? (
-              <div className="flex flex-col gap-2">
-                {activeSlugs.map(slug => {
-                  const m = MOVES[slug];
-                  if (!m) return null;
-                  const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
-                  return (
-                    <div key={slug} className="rounded-lg px-2 py-1.5" style={{ background: `${typeColor}18`, border: `1px solid ${typeColor}44` }}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-white font-bold rounded px-1.5 py-0.5 shrink-0" style={{ background: typeColor, fontSize: '0.42rem' }}>{m.type.toUpperCase()}</span>
-                        <span className="text-white text-xs font-bold flex-1">{m.name}</span>
-                        <span className="text-slate-400 text-xs shrink-0">{m.category === 'physical' ? 'PHYS' : m.category === 'special' ? 'SPÉ' : 'STAT'}</span>
-                        {m.power > 0 && <span className="text-slate-300 text-xs font-black shrink-0">{m.power}</span>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div>
-                <div className="text-slate-500 text-xs mb-2">Sélectionnez exactement 4 attaques ({pendingMoves.length}/4)</div>
-                <div className="flex flex-col gap-1.5">
-                  {availablePool.map(slug => {
-                    const m = MOVES[slug];
-                    if (!m) return null;
-                    const isSelected = pendingMoves.includes(slug);
-                    const typeColor = TYPE_COLORS[m.type as PokemonType] ?? '#475569';
-                    return (
-                      <button
-                        key={slug}
-                        className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left"
-                        style={{ background: isSelected ? '#3b82f622' : '#ffffff06', border: `1px solid ${isSelected ? '#3b82f6' : '#ffffff11'}` }}
-                        onClick={() => {
-                          if (isSelected) setPendingMoves(prev => prev.filter(s => s !== slug));
-                          else if (pendingMoves.length < 4) setPendingMoves(prev => [...prev, slug]);
-                        }}
-                      >
-                        <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-xs ${isSelected ? 'bg-blue-500 border-blue-400' : 'border-slate-600'}`}>
-                          {isSelected ? '✓' : ''}
-                        </span>
-                        <span className="text-white font-bold rounded px-1 py-0.5 shrink-0" style={{ background: typeColor, fontSize: '0.4rem' }}>{m.type.toUpperCase()}</span>
-                        <span className="text-white text-xs font-bold flex-1">{m.name}</span>
-                        {m.power > 0 && <span className="text-slate-400 text-xs shrink-0">{m.power}</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     );
   }

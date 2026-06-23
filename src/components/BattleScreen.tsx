@@ -1539,10 +1539,10 @@ export function BattleScreen({
     const pHasMoves = getMoveList(pFighter.pokemonId, pokemonMoves?.[pFighter.pokemonId], pCustomSlugs).length > 0;
     const playerUsesStruggle = pHasMoves && pFighter.currentPP[playerMoveIndex] <= 0;
     const pPP = [...pf[pIdx].currentPP];
-    if (pCanActResult.canAct && !playerUsesStruggle && pHasMoves && pPP[playerMoveIndex] > 0) pPP[playerMoveIndex]--;
+    if (pCanActResult.canAct && !playerUsesStruggle && pHasMoves && pPP[playerMoveIndex] > 0 && !pf[pIdx].chargingMove) pPP[playerMoveIndex]--;
     pf[pIdx] = { ...pf[pIdx], currentPP: pPP };
     const ePP = [...ef[eIdx].currentPP];
-    if (eCanActResult.canAct && eMoveIndex >= 0 && ePP[eMoveIndex] > 0) ePP[eMoveIndex]--;
+    if (eCanActResult.canAct && eMoveIndex >= 0 && ePP[eMoveIndex] > 0 && !ef[eIdx].chargingMove) ePP[eMoveIndex]--;
     ef[eIdx] = { ...ef[eIdx], currentPP: ePP };
 
     // Raw move references for transform detection
