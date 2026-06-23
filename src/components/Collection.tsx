@@ -59,6 +59,7 @@ const DEX_ANIM_STYLES = `
     100% { transform: translateX(150px) translateY(75px) scaleX(1); opacity: 0; }
   }
   @keyframes dex-nebula { 0%,100% { opacity: 0.2; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.12); } }
+  @keyframes dex-float { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
   @keyframes dex-galaxie-title {
     0% { color: #a5b4fc; text-shadow: 0 0 10px #6366f1, 0 0 28px #4f46e5; }
     25% { color: #c4b5fd; text-shadow: 0 0 12px #a855f7, 0 0 30px #7c3aed; }
@@ -664,21 +665,28 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
             </div>
 
             {/* Scrollable content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 12px 80px', display: 'flex', flexDirection: 'column', gap: 12, background: dexTheme.contentBg }}>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 0 80px', display: 'flex', flexDirection: 'column', gap: 12, background: dexTheme.contentBg }}>
 
-              {/* Sprite + name block */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              {/* Hero: scan-line screen background + floating sprite */}
+              <div style={{
+                position: 'relative',
+                background: dexTheme.cardBg,
+                backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 1px, transparent 1px, transparent 4px)',
+                borderBottom: `2px solid ${dexTheme.border}`,
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                paddingTop: 24, paddingBottom: 20, gap: 10, overflow: 'hidden',
+              }}>
+                {/* Radial glow behind sprite */}
+                <div style={{
+                  position: 'absolute', top: '50%', left: '50%',
+                  transform: 'translate(-50%,-50%)',
+                  width: 180, height: 180,
+                  background: `radial-gradient(circle, ${rarityColor}30 0%, transparent 70%)`,
+                  pointerEvents: 'none',
+                }} />
                 <div
                   className={isShiny ? 'shiny-rainbow' : ''}
-                  style={{
-                    display: 'inline-block',
-                    background: dexTheme.searchBg,
-                    backgroundImage: 'repeating-linear-gradient(0deg, rgba(0,0,40,0.06) 0px, rgba(0,0,40,0.06) 1px, transparent 1px, transparent 3px)',
-                    borderRadius: 16,
-                    padding: '12px',
-                    boxShadow: `0 0 24px ${rarityColor}66, inset 0 0 10px rgba(0,0,80,0.1)`,
-                    border: `2px solid ${rarityColor}44`,
-                  }}
+                  style={{ animation: 'dex-float 3s ease-in-out infinite', position: 'relative', zIndex: 1 }}
                 >
                   <img
                     src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${isShiny ? 'shiny/' : ''}${selectedId}.png`}
@@ -687,16 +695,16 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                     height={120}
                     style={{
                       imageRendering: 'pixelated',
-                      filter: isShiny ? undefined : `drop-shadow(0 0 10px ${rarityColor})`,
+                      filter: isShiny ? `drop-shadow(0 0 14px #fbbf24)` : `drop-shadow(0 0 12px ${rarityColor})`,
                     }}
                   />
                 </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ color: '#1a2a3a', fontWeight: 900, fontSize: '1.3rem', fontFamily: 'monospace' }}>{p.name}</div>
-                  <div style={{ color: '#2c4a6a', fontSize: '0.75rem', fontFamily: 'monospace', marginTop: 2 }}>{numStr}</div>
-                  <div style={{ color: rarityColor, fontSize: '0.65rem', fontFamily: 'monospace', marginTop: 2 }}>{RARITY_LABELS[p.rarity]}</div>
+                <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+                  <div style={{ color: 'white', fontWeight: 900, fontSize: '1.3rem', fontFamily: 'monospace', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}>{p.name}</div>
+                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', fontFamily: 'monospace', marginTop: 2 }}>{numStr}</div>
+                  <div style={{ color: rarityColor, fontSize: '0.65rem', fontFamily: 'monospace', marginTop: 2, fontWeight: 700, textShadow: `0 0 8px ${rarityColor}` }}>{RARITY_LABELS[p.rarity]}</div>
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 6, position: 'relative', zIndex: 1 }}>
                   {types.map(t => (
                     <span key={t}
                       style={{
@@ -710,18 +718,20 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                 </div>
                 {/* Capture count chip */}
                 <div style={{
-                  background: dexTheme.cardBg,
-                  border: `1px solid ${dexTheme.border}`,
+                  background: 'rgba(0,0,0,0.35)',
+                  border: `1px solid rgba(255,255,255,0.15)`,
                   borderRadius: 99,
                   padding: '3px 12px',
-                  color: dexTheme.titleColor,
+                  color: 'rgba(255,255,255,0.85)',
                   fontSize: '0.65rem',
                   fontFamily: 'monospace',
                   fontWeight: 700,
+                  position: 'relative', zIndex: 1,
                 }}>
                   Capturé {normalCount} fois
                 </div>
               </div>
+              <div style={{ padding: '0 12px', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
               {/* Level / XP bar */}
               <div style={{ background: dexTheme.cardBg, borderRadius: 10, padding: '10px 14px', border: `1px solid ${dexTheme.border}`, display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -838,6 +848,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
                 );
               })()}
 
+            </div>{/* end padding wrapper */}
             </div>
           </div>
         );

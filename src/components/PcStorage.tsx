@@ -5,7 +5,7 @@ import { ShinySprite } from './ShinySprite';
 import { POKEMON_TYPE, TYPE_COLORS } from '../data/pokemonTypes';
 import { calcMaxHp, calcAttack, calcDefense, calcSpAttack, calcSpDefense, calcSpeed, xpToNextLevel } from '../data/combatEngine';
 import { EVOLUTION_DATA } from '../data/evolutionData';
-import { getAvailableMoves } from '../data/gen1Movepools';
+import { getAvailableMoves, GEN1_MOVEPOOL } from '../data/gen1Movepools';
 import { MOVES } from '../data/gen1Moves';
 import { EvolutionScreen } from './EvolutionScreen';
 import { BattleScreen } from './BattleScreen';
@@ -638,17 +638,26 @@ export function PcStorage({
         </div>
 
         {/* XP bar */}
-        {detailLevel < 100 && (
-          <div className="mx-3 mb-3 rounded-xl px-3 py-2" style={{ background: 'rgba(255,255,255,0.6)', border: '2px solid #6c90b0' }}>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-slate-500 text-xs font-bold">XP</span>
-              <span className="text-slate-500 text-xs">{detailXp}/{xpToNextLevel(detailLevel)}</span>
+        {detailLevel < 100 && (() => {
+          const detailPool = GEN1_MOVEPOOL[detailId] ?? [];
+          const detailAvailable = getAvailableMoves(detailId, detailLevel);
+          return (
+            <div className="mx-3 mb-3 rounded-xl px-3 py-2" style={{ background: 'rgba(255,255,255,0.6)', border: '2px solid #6c90b0' }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-slate-500 text-xs font-bold">XP</span>
+                <span className="text-slate-500 text-xs">{detailXp}/{xpToNextLevel(detailLevel)}</span>
+              </div>
+              <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(0,0,0,0.15)' }}>
+                <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.floor(detailXp / xpToNextLevel(detailLevel) * 100))}%`, background: '#3b82f6' }} />
+              </div>
+              {detailPool.length > 0 && detailAvailable.length < detailPool.length && (
+                <div className="text-slate-400 text-xs mt-1.5">
+                  🔓 {detailAvailable.length}/{detailPool.length} attaques débloquées
+                </div>
+              )}
             </div>
-            <div className="w-full rounded-full overflow-hidden" style={{ height: 6, background: 'rgba(0,0,0,0.15)' }}>
-              <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.floor(detailXp / xpToNextLevel(detailLevel) * 100))}%`, background: '#3b82f6' }} />
-            </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Moves */}
         <div className="mx-3 mb-3 rounded-xl px-3 py-2" style={{ background: 'rgba(255,255,255,0.6)', border: '2px solid #6c90b0' }}>
@@ -656,7 +665,7 @@ export function PcStorage({
             <div className="font-black text-slate-700 text-xs">Attaques</div>
             {onSaveCustomMoves && (
               <button
-                onClick={() => { openMoveEditor(detailId); setPokemonDetailId(null); }}
+                onClick={() => { openMoveEditor(detailId); setPokemonDetailId(null); setEditingMoves(true); }}
                 className="text-xs font-bold px-2 py-0.5 rounded-full"
                 style={{ background: '#3b82f633', color: '#60a5fa', border: '1px solid #3b82f655' }}
               >✏️ Modifier</button>

@@ -1789,7 +1789,7 @@ export function BattleScreen({
 
       // Lance-Soleil: 2-turn charge mechanic
       let solarBeamCharging = false;
-      if (rawMove?.id === 'solar-beam') {
+      if (rawMove?.id === 'solar-beam' || rawMove?.name === 'Lance-Soleil') {
         const atkArr = isPlayer ? pf : ef;
         if (!atkArr[atkIdx].chargingMove) {
           // Turn 1 — charge only, no damage, no hit VFX
