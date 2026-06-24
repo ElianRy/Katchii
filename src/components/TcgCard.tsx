@@ -187,6 +187,13 @@ export default function TcgCard({ card, count, size = 'md', onClick, isFavorite 
           0%, 100% { box-shadow: 0 0 8px ${rarityColor}66, inset 0 0 8px ${rarityColor}22; }
           50%       { box-shadow: 0 0 20px ${rarityColor}bb, 0 0 40px ${rarityColor}44, inset 0 0 15px ${rarityColor}33; }
         }
+        @keyframes holo-sheen {
+          0%   { transform: translateX(-120%); opacity: 0; }
+          15%  { opacity: 0.7; }
+          50%  { opacity: 0.5; }
+          85%  { opacity: 0.7; }
+          100% { transform: translateX(220%); opacity: 0; }
+        }
         @keyframes tcg-ultra {
           0%, 100% { box-shadow: 0 0 10px ${typeColor}88; filter: brightness(1); }
           50%       { box-shadow: 0 0 25px ${typeColor}cc, 0 0 50px ${typeColor}44; filter: brightness(1.1); }
@@ -265,6 +272,15 @@ export default function TcgCard({ card, count, size = 'md', onClick, isFavorite 
               mixBlendMode: 'screen',
             }} />
           )}
+          {/* Vertical sheen sweep on holo cards */}
+          {card.isHolo && (
+            <div style={{
+              position: 'absolute', top: 0, bottom: 0, left: 0, zIndex: 8, pointerEvents: 'none',
+              width: '35%',
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.55) 50%, transparent 100%)',
+              animation: 'holo-sheen 3s ease-in-out infinite',
+            }} />
+          )}
           {/* Ultra holo extra shimmer */}
           {card.tcgRarity === 'ultra' && card.isHolo && (
             <div style={{
@@ -291,8 +307,8 @@ export default function TcgCard({ card, count, size = 'md', onClick, isFavorite 
         {/* Favorite star */}
         {isFavorite && (
           <div style={{
-            position: 'absolute', top: 3, left: 4, zIndex: 10,
-            color: '#fbbf24', fontSize: s.subFont + 1, textShadow: '0 0 6px #fbbf24',
+            position: 'absolute', top: size === 'sm' ? 2 : 3, left: size === 'sm' ? 3 : 4, zIndex: 10,
+            color: '#fbbf24', fontSize: size === 'sm' ? s.font + 2 : s.subFont + 1, textShadow: '0 0 6px #fbbf24, 0 0 12px #fbbf24',
           }}>★</div>
         )}
 

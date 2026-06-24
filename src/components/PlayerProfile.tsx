@@ -69,10 +69,9 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
   const { progress, needed } = xpToNextLevel(playerXp);
   const level   = playerLevelFromXp(playerXp);
 
-  // Favorite team from savedTeams
-  const savedTeams = (state?.savedTeams as Array<{ id: string; name: string; members: Array<{ pokemonId: number; isShiny?: boolean; level: number }> }>) ?? [];
-  const favoriteTeamId = state?.favoriteTeamId as string | undefined;
-  const favoriteTeam = savedTeams.find(t => t.id === favoriteTeamId);
+  // Team to display: partyTeam from PC (active equipped party)
+  const partyTeam = (state?.partyTeam as number[] | undefined) ?? [];
+  const pokemonLevels = (state?.pokemonLevels as Record<number, { level: number }>) ?? {};
 
   // Sorted owned pokemon ids (rarity desc then id)
   const ownedIds = Object.entries(normal)
@@ -84,10 +83,8 @@ export function PlayerProfile({ userId, username, isOnline, lastSeen, onClose, o
       return rb !== ra ? rb - ra : b - a;
     });
 
-  // Team to display: favorite team or top 3 best pokemon
-  const pokemonLevels = (state?.pokemonLevels as Record<number, { level: number }>) ?? {};
-  const teamToShow: Array<{ pokemonId: number; isShiny: boolean; level: number }> = favoriteTeam
-    ? favoriteTeam.members.slice(0, 3).map(m => ({ pokemonId: m.pokemonId, isShiny: m.isShiny ?? false, level: m.level }))
+  const teamToShow: Array<{ pokemonId: number; isShiny: boolean; level: number }> = partyTeam.length > 0
+    ? partyTeam.filter(id => (normal[id] ?? 0) > 0).map(id => ({ pokemonId: id, isShiny: (shiny[id] ?? 0) > 0, level: pokemonLevels[id]?.level ?? 1 }))
     : ownedIds.slice(0, 9)
         .sort((a, b) => {
           const la = pokemonLevels[a]?.level ?? 1;

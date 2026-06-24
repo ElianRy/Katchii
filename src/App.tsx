@@ -54,6 +54,7 @@ export function App() {
   const [battle3v3, setBattle3v3] = useState<{ playerTeam: TeamMember[]; enemyTeam: TeamMember[]; enemyName: string; onDone?: (dmg: number, won: boolean) => void } | null>(null);
   const [openingCase, setOpeningCase] = useState(false);
   const [boosterCards, setBoosterCards] = useState<TcgCardDef[] | null>(null);
+  const [boosterOpenCount, setBoosterOpenCount] = useState(0);
   const [forcePwChange, setForcePwChange] = useState<{ tempPw: string } | null>(null);
   const [forcePwInput, setForcePwInput] = useState('');
   const [forcePwConfirm, setForcePwConfirm] = useState('');
@@ -614,7 +615,7 @@ export function App() {
             if (ok) {
               const cards = openBooster();
               gameState.addTcgCards(cards.map(c => c.cardId));
-              setBoosterCards(cards);
+              setBoosterCards(cards); setBoosterOpenCount(c => c + 1);
             }
           }}
           onOpenFreeBooster={() => {
@@ -676,6 +677,7 @@ export function App() {
 
       {boosterCards && (
         <BoosterOpening
+          key={boosterOpenCount}
           cards={boosterCards}
           boosterCount={gameState.state.boosters ?? 0}
           onClose={() => setBoosterCards(null)}
@@ -684,7 +686,7 @@ export function App() {
             if (ok) {
               const cards = openBooster();
               gameState.addTcgCards(cards.map(c => c.cardId));
-              setBoosterCards(cards);
+              setBoosterCards(cards); setBoosterOpenCount(c => c + 1);
             }
           }}
         />

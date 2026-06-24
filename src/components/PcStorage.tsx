@@ -1205,13 +1205,13 @@ export function PcStorage({
                   style={{
                     width: 52, height: 52,
                     background: 'rgba(255,255,255,0.15)',
-                    opacity: isDragged ? 0.3 : isFiltered ? 0.12 : 1,
-                    filter: isFiltered ? 'grayscale(1)' : 'none',
+                    opacity: isDragged ? 0.3 : 1,
+                    filter: isFiltered ? 'grayscale(1) brightness(0.25)' : 'none',
                     position: 'relative',
                   }}
                 >
                   <ShinySprite pokemonId={id} isShiny={isShiny} width={32} height={32} compact />
-                  <span className="font-black" style={{ fontSize: '0.42rem', color: theme.subTextColor ?? '#475569', textShadow: '0 1px 3px rgba(0,0,0,0.9)' }}>
+                  <span className="font-black" style={{ fontSize: '0.42rem', color: 'rgba(255,255,255,0.75)', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
                     Niv.{lvData.level}
                   </span>
                   {showEvoBadge && (
@@ -1267,8 +1267,8 @@ export function PcStorage({
                   style={{
                     background: 'rgba(255,255,255,0.5)',
                     border: '2px solid #8fa8c0',
-                    opacity: isDragged ? 0.3 : isPartyFiltered ? 0.12 : 1,
-                    filter: isPartyFiltered ? 'grayscale(1)' : 'none',
+                    opacity: isDragged ? 0.3 : 1,
+                    filter: isPartyFiltered ? 'grayscale(1) brightness(0.25)' : 'none',
                   }}
                 >
                   <ShinySprite pokemonId={id} isShiny={isShiny} width={36} height={36} compact />
@@ -1348,13 +1348,12 @@ export function PcStorage({
                         }))}
                         className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-black transition-all"
                         style={{
-                          background: active ? `${color}33` : 'rgba(255,255,255,0.05)',
-                          color: active ? 'white' : '#94a3b8',
-                          border: `1.5px solid ${active ? color : 'rgba(255,255,255,0.1)'}`,
-                          boxShadow: active ? `0 0 8px ${color}55` : 'none',
+                          background: active ? color : 'rgba(255,255,255,0.05)',
+                          color: 'white',
+                          border: `1.5px solid ${color}`,
+                          boxShadow: active ? `0 0 8px ${color}88` : 'none',
                         }}
                       >
-                        <span style={{ width: 10, height: 10, borderRadius: 2, background: active ? color : `${color}44`, border: `1.5px solid ${color}`, display: 'inline-block', flexShrink: 0 }} />
                         {label}
                       </button>
                     );
@@ -1376,13 +1375,12 @@ export function PcStorage({
                         }))}
                         className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-black transition-all"
                         style={{
-                          background: active ? `${color}33` : 'rgba(255,255,255,0.05)',
-                          color: active ? 'white' : '#94a3b8',
-                          border: `1.5px solid ${active ? color : 'rgba(255,255,255,0.1)'}`,
-                          boxShadow: active ? `0 0 8px ${color}55` : 'none',
+                          background: active ? color : 'rgba(255,255,255,0.05)',
+                          color: 'white',
+                          border: `1.5px solid ${color}`,
+                          boxShadow: active ? `0 0 8px ${color}88` : 'none',
                         }}
                       >
-                        <span style={{ width: 10, height: 10, borderRadius: 2, background: active ? color : `${color}44`, border: `1.5px solid ${color}`, display: 'inline-block', flexShrink: 0 }} />
                         {label}
                       </button>
                     );
@@ -1394,16 +1392,15 @@ export function PcStorage({
                 <div className="text-slate-400 text-xs font-bold mb-2 uppercase tracking-wider">Spécial</div>
                 <button
                   onClick={() => setFilterDraft(f => ({ ...f, shiny: !f.shiny }))}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-black transition-all"
+                  className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-black transition-all"
                   style={{
-                    background: filterDraft.shiny ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.05)',
-                    border: `1.5px solid ${filterDraft.shiny ? '#fbbf24' : 'rgba(255,255,255,0.1)'}`,
-                    color: filterDraft.shiny ? '#fbbf24' : '#94a3b8',
-                    boxShadow: filterDraft.shiny ? '0 0 10px rgba(251,191,36,0.4)' : 'none',
+                    background: filterDraft.shiny ? '#fbbf24' : 'rgba(255,255,255,0.05)',
+                    color: 'white',
+                    border: '1.5px solid #fbbf24',
+                    boxShadow: filterDraft.shiny ? '0 0 8px #fbbf2488' : 'none',
                   }}
                 >
-                  <span style={{ width: 14, height: 14, borderRadius: 3, background: filterDraft.shiny ? '#fbbf24' : 'rgba(251,191,36,0.2)', border: '1.5px solid #fbbf24', display: 'inline-block' }} />
-                  ✨ Shiny uniquement
+                  ✨ Shiny
                 </button>
               </div>
               {/* Level range */}
