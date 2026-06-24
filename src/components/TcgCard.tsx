@@ -122,7 +122,7 @@ function OrbitStars({ w, h, tier, rarityColor }: { w: number; h: number; tier: n
 }
 
 // Type-specific particles
-function TypeParticles({ primaryType, w, h, tier }: { primaryType: string; w: number; h: number; tier: number }) {
+function TypeParticles({ primaryType, w, tier }: { primaryType: string; w: number; tier: number }) {
   if (tier < 1) return null;
   const particleClass = TYPE_PARTICLE[primaryType];
   if (!particleClass) return null;
@@ -284,7 +284,7 @@ export default function TcgCard({ card, count, size = 'md', onClick, isFavorite 
         {/* Type particles — only on md/lg */}
         {size !== 'sm' && (
           <div style={{ position: 'absolute', inset: 0, borderRadius: s.w * 0.06, overflow: 'hidden', zIndex: 4, pointerEvents: 'none' }}>
-            <TypeParticles primaryType={primaryType} w={s.w} h={s.h} tier={tier} />
+            <TypeParticles primaryType={primaryType} w={s.w} tier={tier} />
           </div>
         )}
 
