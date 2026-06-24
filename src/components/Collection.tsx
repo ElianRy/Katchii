@@ -244,7 +244,7 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
   ];
 
   return (
-    <div className="fixed inset-x-0 top-0 z-[510] flex flex-col" style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))', background: dexTheme.bg, fontFamily: 'monospace', position: 'relative' }}>
+    <div className="fixed inset-x-0 top-0 z-[510] flex flex-col" style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))', background: dexTheme.bg, fontFamily: 'monospace', overflow: 'hidden' }}>
       {/* Global animation keyframes — injected once, not inside overlays */}
       <style>{DEX_ANIM_STYLES}</style>
       {/* Header */}

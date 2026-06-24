@@ -84,6 +84,7 @@ export function App() {
       return v;
     });
     setShowPlayers(false);
+    setBoosterCards(null);
     if (v !== 'auth' && v !== 'home') {
       localStorage.setItem('katchii_last_view', v);
     }

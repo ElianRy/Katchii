@@ -11,33 +11,12 @@ interface BoosterOpeningProps {
 }
 
 function PokeBallBack({ size }: { size: { w: number; h: number } }) {
-  const r = size.w * 0.06;
   return (
-    <div style={{
-      width: size.w, height: size.h, borderRadius: r, overflow: 'hidden', flexShrink: 0,
-      border: '2px solid #1e293b', position: 'relative', background: '#1e293b',
-    }}>
-      {/* Red top half */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '50%', background: '#dc2626' }} />
-      {/* White bottom half */}
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%', background: '#f1f5f9' }} />
-      {/* Black divider */}
-      <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 3, background: '#0f172a', transform: 'translateY(-50%)' }} />
-      {/* Center circle outer */}
-      <div style={{
-        position: 'absolute', top: '50%', left: '50%',
-        width: size.w * 0.32, height: size.w * 0.32,
-        borderRadius: '50%', background: '#0f172a',
-        transform: 'translate(-50%, -50%)',
-      }} />
-      {/* Center circle inner */}
-      <div style={{
-        position: 'absolute', top: '50%', left: '50%',
-        width: size.w * 0.2, height: size.w * 0.2,
-        borderRadius: '50%', background: '#f1f5f9',
-        transform: 'translate(-50%, -50%)',
-      }} />
-    </div>
+    <img
+      src="/card-back.webp"
+      alt="card back"
+      style={{ width: size.w, height: size.h, borderRadius: size.w * 0.06, flexShrink: 0, objectFit: 'cover', display: 'block' }}
+    />
   );
 }
 
