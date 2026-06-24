@@ -281,10 +281,12 @@ export default function TcgCard({ card, count, size = 'md', onClick, isFavorite 
           border: `1px solid rgba(255,255,255,0.15)`, zIndex: 3, pointerEvents: 'none',
         }} />
 
-        {/* Type particles (inside card clip area) */}
-        <div style={{ position: 'absolute', inset: 0, borderRadius: s.w * 0.06, overflow: 'hidden', zIndex: 4, pointerEvents: 'none' }}>
-          <TypeParticles primaryType={primaryType} w={s.w} h={s.h} tier={tier} />
-        </div>
+        {/* Type particles — only on md/lg */}
+        {size !== 'sm' && (
+          <div style={{ position: 'absolute', inset: 0, borderRadius: s.w * 0.06, overflow: 'hidden', zIndex: 4, pointerEvents: 'none' }}>
+            <TypeParticles primaryType={primaryType} w={s.w} h={s.h} tier={tier} />
+          </div>
+        )}
 
         {/* Favorite star */}
         {isFavorite && (
@@ -413,8 +415,8 @@ export default function TcgCard({ card, count, size = 'md', onClick, isFavorite 
           </span>
         </div>
 
-        {/* Orbit stars — rendered outside clip, around card */}
-        <OrbitStars w={s.w} h={s.h} tier={tier} rarityColor={rarityColor} />
+        {/* Orbit stars — only on md/lg */}
+        {size !== 'sm' && <OrbitStars w={s.w} h={s.h} tier={tier} rarityColor={rarityColor} />}
       </div>
     </>
   );
