@@ -16,6 +16,7 @@ const ALL_RARITIES: TcgRarity[] = ['common', 'uncommon', 'rare', 'ultra', 'secre
 export default function CardBinder({ tcgCards, favoriteCardId, onSetFavorite }: CardBinderProps) {
   const [filterRarity, setFilterRarity] = useState<TcgRarity | null>(null);
   const [filterHolo, setFilterHolo] = useState<boolean | null>(null);
+  const [filterShiny, setFilterShiny] = useState(false);
   const [filterOwned, setFilterOwned] = useState<'all' | 'owned' | 'missing'>('all');
   const [sortKey, setSortKey] = useState<SortKey>('number');
   const [selectedCard, setSelectedCard] = useState<TcgCardDef | null>(null);
@@ -27,6 +28,7 @@ export default function CardBinder({ tcgCards, favoriteCardId, onSetFavorite }: 
     let cards = [...ALL_CARDS];
     if (filterRarity) cards = cards.filter(c => c.tcgRarity === filterRarity);
     if (filterHolo !== null) cards = cards.filter(c => c.isHolo === filterHolo);
+    if (filterShiny) cards = cards.filter(c => c.isShiny === true);
     if (filterOwned === 'owned') cards = cards.filter(c => (tcgCards[c.cardId] ?? 0) > 0);
     if (filterOwned === 'missing') cards = cards.filter(c => (tcgCards[c.cardId] ?? 0) === 0);
     cards.sort((a, b) => {
@@ -42,12 +44,12 @@ export default function CardBinder({ tcgCards, favoriteCardId, onSetFavorite }: 
       return 0;
     });
     return cards;
-  }, [filterRarity, filterHolo, filterOwned, sortKey, tcgCards]);
+  }, [filterRarity, filterHolo, filterShiny, filterOwned, sortKey, tcgCards]);
 
   const totalOwned = ALL_CARDS.filter(c => (tcgCards[c.cardId] ?? 0) > 0).length;
   const totalCards = ALL_CARDS.length;
 
-  const isFiltered = filterRarity !== null || filterHolo !== null || filterOwned !== 'all' || sortKey !== 'number';
+  const isFiltered = filterRarity !== null || filterHolo !== null || filterShiny || filterOwned !== 'all' || sortKey !== 'number';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, background: '#0f172a' }}>
@@ -108,6 +110,19 @@ export default function CardBinder({ tcgCards, favoriteCardId, onSetFavorite }: 
             >
               ✦ Holo
             </button>
+            {/* Shiny filter */}
+            <button
+              onClick={() => setFilterShiny(s => !s)}
+              style={{
+                background: filterShiny ? '#fbbf2433' : 'rgba(255,255,255,0.06)',
+                border: `1px solid ${filterShiny ? '#fbbf24' : 'rgba(255,255,255,0.15)'}`,
+                color: filterShiny ? '#fbbf24' : '#94a3b8',
+                borderRadius: 6, padding: '2px 8px', fontSize: '0.62rem',
+                fontFamily: 'monospace', cursor: 'pointer', fontWeight: 700,
+              }}
+            >
+              ✨ Shiny
+            </button>
             {/* Owned filter */}
             {(['all', 'owned', 'missing'] as const).map(o => (
               <button
@@ -141,7 +156,7 @@ export default function CardBinder({ tcgCards, favoriteCardId, onSetFavorite }: 
             {/* Reset */}
             {isFiltered && (
               <button
-                onClick={() => { setFilterRarity(null); setFilterHolo(null); setFilterOwned('all'); setSortKey('number'); }}
+                onClick={() => { setFilterRarity(null); setFilterHolo(null); setFilterShiny(false); setFilterOwned('all'); setSortKey('number'); }}
                 style={{
                   background: 'transparent', border: '1px solid #ef4444',
                   color: '#ef4444', borderRadius: 6, padding: '2px 8px',
