@@ -1207,7 +1207,7 @@ export function PcStorage({
                   }}
                 >
                   <ShinySprite pokemonId={id} isShiny={isShiny} width={32} height={32} compact />
-                  <span className="font-black" style={{ fontSize: '0.42rem', color: 'rgba(255,255,255,0.75)', textShadow: '0 1px 2px rgba(0,0,0,0.6)' }}>
+                  <span className="font-black" style={{ fontSize: '0.42rem', color: '#111' }}>
                     Niv.{lvData.level}
                   </span>
                   {showEvoBadge && (

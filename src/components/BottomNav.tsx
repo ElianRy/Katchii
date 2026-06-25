@@ -254,7 +254,7 @@ export function BottomNav({ currentView, onNavigate, favoritePokemon, onShowPlay
 
       {/* Overflow menu sheet with slide-up animation */}
       <div
-        className="fixed inset-0 z-[550]"
+        className="fixed inset-0 z-[800]"
         style={{ pointerEvents: menuOpen ? 'auto' : 'none' }}
         onClick={() => setMenuOpen(false)}
       >
