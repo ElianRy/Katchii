@@ -275,10 +275,9 @@ export function PcStorage({
   state, username, onUpdateParty, onUpdatePcBoxes, onUpdateBoxNames, onClose: _onClose,
   isAdmin: _isAdmin, onSetLevel: _onSetLevel,
   currentZoneId, onAddXp, onBattleWin, onTrainingBattle, onTriggerEvo,
-  onSaveCustomMoves, onUpdateTheme,
+  onSaveCustomMoves,
 }: Props) {
   const theme = PC_THEMES.find(t => t.id === (state.pcThemeId ?? 'default')) ?? PC_THEMES[0];
-  const unlockedThemes = state.pcUnlockedThemes ?? ['default'];
   const PC_BOX_KEY = `katchii_pc_box_${username ?? 'default'}`;
   const MAX_BOXES = 10;
   const [boxIndex, setBoxIndex] = useState(() => {
@@ -305,7 +304,6 @@ export function PcStorage({
     setPokemonDetailId_(id);
     if (id !== pokemonDetailId) { setDetailEditMode(false); setDetailPendingMoves([]); }
   };
-  const [showThemeModal, setShowThemeModal] = useState(false);
   const [autoTraining, setAutoTraining] = useState(false);
   const [trainingMuted, setTrainingMuted] = useState(false);
   const [xpBarWidths, setXpBarWidths] = useState<Record<number, number>>({});
@@ -1111,8 +1109,6 @@ export function PcStorage({
           )}
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setShowThemeModal(true)} className="w-8 h-8 flex items-center justify-center rounded-lg text-base"
-            style={{ background: 'rgba(255,255,255,0.15)', border: `1px solid ${theme.border}` }}>⚙️</button>
           <button
             onClick={() => { setFilterDraft({ ...pcFilter }); setShowFilterModal(true); }}
             className="w-8 h-8 flex items-center justify-center rounded-lg text-base relative"
@@ -1433,55 +1429,6 @@ export function PcStorage({
         </div>
       )}
 
-      {/* Theme modal */}
-      {showThemeModal && (
-        <div className="fixed inset-0 z-[700] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}
-          onClick={() => setShowThemeModal(false)}>
-          <div onClick={e => e.stopPropagation()} className="rounded-2xl p-4 w-80 max-w-[92vw]"
-            style={{ background: '#1e293b', border: '2px solid #334155' }}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-white font-black text-base">🎨 Thème du PC</span>
-              <button onClick={() => setShowThemeModal(false)} className="text-slate-400 text-xl px-1">✕</button>
-            </div>
-            <div className="text-slate-400 text-xs mb-3">Solde : <span className="text-yellow-400 font-bold">{state.points} 🪙</span></div>
-            <div className="flex flex-col gap-2">
-              {PC_THEMES.map(t => {
-                const isUnlocked = unlockedThemes.includes(t.id);
-                const isActive = (state.pcThemeId ?? 'default') === t.id;
-                const canAfford = state.points >= t.price;
-                return (
-                  <button key={t.id}
-                    onClick={() => {
-                      if (!isUnlocked) {
-                        if (!canAfford) return;
-                        const newUnlocked = [...unlockedThemes, t.id];
-                        onUpdateTheme?.(t.id, newUnlocked, t.price);
-                      } else {
-                        onUpdateTheme?.(t.id, unlockedThemes, 0);
-                      }
-                      setShowThemeModal(false);
-                    }}
-                    disabled={!isUnlocked && !canAfford}
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all disabled:opacity-40"
-                    style={{ background: isActive ? t.headerGrad : 'rgba(255,255,255,0.06)', border: `2px solid ${isActive ? t.border : 'transparent'}` }}>
-                    <div className="w-8 h-8 rounded-lg shrink-0" style={{ background: t.headerGrad, border: `2px solid ${t.border}` }} />
-                    <div className="flex-1 text-left">
-                      <div className="font-black text-sm" style={{ color: isActive ? t.titleColor : 'white' }}>{t.emoji} {t.name}</div>
-                    </div>
-                    {isActive ? (
-                      <span className="text-xs font-bold text-green-400">Actif</span>
-                    ) : isUnlocked ? (
-                      <span className="text-xs font-bold text-slate-400">Équiper</span>
-                    ) : (
-                      <span className="text-xs font-bold text-yellow-400">{t.price} 🪙</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

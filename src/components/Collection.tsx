@@ -172,10 +172,8 @@ const ARENA_BADGES = ZONES.filter(z => z.boss?.badge).map(z => ({
 
 const RARITY_ORDER: Rarity[] = ['commun', 'peu_commun', 'rare', 'elite', 'legendaire'];
 
-export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpdateTheme, onSetTcgFavorite }: Props) {
+export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onSetTcgFavorite }: Props) {
   const dexTheme = DEX_THEMES.find(t => t.id === (state.dexThemeId ?? 'default')) ?? DEX_THEMES[0];
-  const dexUnlocked = state.dexUnlockedThemes ?? ['default'];
-  const [showThemeModal, setShowThemeModal] = useState(false);
   const [showTutorial, setShowTutorial] = useState(() =>
     !state.completedTutorials?.includes('collection') && !isTutorialDone('collection')
   );
@@ -282,9 +280,6 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.6rem', fontFamily: 'monospace' }}>
               {totalCaught}/151 · {totalShinyCaught}✨
             </span>
-            <button onClick={() => setShowThemeModal(true)}
-              className="w-7 h-7 flex items-center justify-center rounded-lg text-sm"
-              style={{ background: 'rgba(255,255,255,0.15)', border: `1px solid ${dexTheme.border}` }}>⚙️</button>
           </div>
         </div>
       </div>
@@ -854,54 +849,6 @@ export function Collection({ state, onClose: _onClose, onMarkTutorialDone, onUpd
         <TutorialOverlay tutorialKey="collection" steps={COLLECTION_TUTORIAL} onDone={() => { setShowTutorial(false); onMarkTutorialDone?.(); }} bottomOffset={72} />
       )}
 
-      {/* Theme modal */}
-      {showThemeModal && (
-        <div className="fixed inset-0 z-[600] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)' }}
-          onClick={() => setShowThemeModal(false)}>
-          <div onClick={e => e.stopPropagation()} className="rounded-2xl p-4 w-80 max-w-[92vw]"
-            style={{ background: '#1e293b', border: '2px solid #334155' }}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-white font-black text-base">🎨 Thème du Pokédex</span>
-              <button onClick={() => setShowThemeModal(false)} className="text-slate-400 text-xl px-1">✕</button>
-            </div>
-            <div className="text-slate-400 text-xs mb-3">Solde : <span className="text-yellow-400 font-bold">{state.points} 🪙</span></div>
-            <div className="flex flex-col gap-2">
-              {DEX_THEMES.map(t => {
-                const isUnlocked = dexUnlocked.includes(t.id);
-                const isActive = (state.dexThemeId ?? 'default') === t.id;
-                const canAfford = state.points >= t.price;
-                return (
-                  <button key={t.id}
-                    onClick={() => {
-                      if (!isUnlocked) {
-                        if (!canAfford) return;
-                        onUpdateTheme?.(t.id, [...dexUnlocked, t.id], t.price);
-                      } else {
-                        onUpdateTheme?.(t.id, dexUnlocked, 0);
-                      }
-                      setShowThemeModal(false);
-                    }}
-                    disabled={!isUnlocked && !canAfford}
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl disabled:opacity-40"
-                    style={{ background: isActive ? t.headerGrad : 'rgba(255,255,255,0.06)', border: `2px solid ${isActive ? t.border : 'transparent'}` }}>
-                    <div className="w-8 h-8 rounded-lg shrink-0" style={{ background: t.headerGrad, border: `2px solid ${t.border}` }} />
-                    <div className="flex-1 text-left">
-                      <div className="font-black text-sm" style={{ color: isActive ? t.titleColor : 'white' }}>{t.emoji} {t.name}</div>
-                    </div>
-                    {isActive ? (
-                      <span className="text-xs font-bold text-green-400">Actif</span>
-                    ) : isUnlocked ? (
-                      <span className="text-xs font-bold text-slate-400">Équiper</span>
-                    ) : (
-                      <span className="text-xs font-bold text-yellow-400">{t.price} 🪙</span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
